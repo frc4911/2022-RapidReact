@@ -18,7 +18,10 @@ public class Robot extends TimedRobot {
    * initialization code.
    */
   @Override
-  public void robotInit() {}
+  public void robotInit() {
+    //lololololololololololololol testing code stuffs blah blah
+    System.out.println("Hello World!");
+  }
 
   @Override
   public void robotPeriodic() {}
