@@ -4,7 +4,15 @@
 
 package frc.robot;
 
+import java.util.Arrays;
+
 import edu.wpi.first.wpilibj.TimedRobot;
+
+import libraries.cheesylib.loops.Looper;
+import libraries.cheesylib.subsystems.SubsystemManager;
+
+import frc.robot.Subsystems.JSticks;
+import frc.robot.Subsystems.Superstructure;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -17,14 +25,39 @@ public class Robot extends TimedRobot {
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
    */
-  @Override
-  public void robotInit() {
-    //lololololololololololololol testing code stuffs blah blah
-    System.out.println("Hello World!");
-  }
+
+  private String mClassName;
+
+  // Subsystems
+  private SubsystemManager mSubsystemManager;
+  private Superstructure   mSuperstructure;
+  private JSticks          mJSticks;
+
+  private final double mLoopPeriod = .005;
+  private Looper mSubsystemLooper = new Looper(mLoopPeriod,Thread.NORM_PRIORITY+1);
 
   @Override
-  public void robotPeriodic() {}
+  public void robotInit() {
+    //Initializing subsystems
+    mClassName = this.getClass().getSimpleName();
+    mSubsystemManager = SubsystemManager.getInstance(mClassName);
+    mSuperstructure = Superstructure.getInstance(mClassName);
+    mJSticks = JSticks.getInstance(mClassName);
+
+    //Create subsystem manager and add all subsystems it will manage
+    mSubsystemManager = SubsystemManager.getInstance(mClassName);
+		mSubsystemManager.initializeSubsystemManager( (int)(mLoopPeriod*1000),
+        Arrays.asList(
+          //List of subsystems
+          mSuperstructure,
+          mJSticks
+        )
+    );
+
+    // ask each subsystem to register itself
+		mSubsystemManager.registerEnabledLoops(mSubsystemLooper);
+
+  }
 
   @Override
   public void autonomousInit() {}
