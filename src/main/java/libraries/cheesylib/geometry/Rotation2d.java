@@ -187,4 +187,32 @@ public class Rotation2d implements IRotation2d<Rotation2d> {
     public Rotation2d getRotation() {
         return this;
     }
+
+    /**
+     * Subtracts the new rotation from the current rotation and returns the new
+     * rotation.
+     *
+     * <p>For example, Rotation2d.fromDegrees(10) - Rotation2d.fromDegrees(100) =
+     * Rotation2d{-pi/2}
+     *
+     * @param other The rotation to subtract.
+     * @return The difference between the two rotations.
+     */
+    public Rotation2d minus(Rotation2d other) {
+        return rotateBy(other.inverse());
+    }
+
+    /**
+     * Adds two rotations together, with the result being bounded between -pi and
+     * pi.
+     *
+     * <p>For example, Rotation2d.fromDegrees(30) + Rotation2d.fromDegrees(60) =
+     * Rotation2d{-pi/2}
+     *
+     * @param other The rotation to add.
+     * @return The sum of the two rotations.
+     */
+    public Rotation2d plus(Rotation2d other) {
+        return rotateBy(other);
+    }
 }

@@ -1,9 +1,10 @@
 package libraries.cheesylib.geometry;
 
 import libraries.cheesylib.util.Util;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+
 
 public class TestSE2Math {
     public static final double kTestEpsilon = Util.kEpsilon;

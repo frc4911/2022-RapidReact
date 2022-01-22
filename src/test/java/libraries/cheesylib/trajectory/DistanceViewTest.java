@@ -3,12 +3,12 @@ package libraries.cheesylib.trajectory;
 
 import libraries.cheesylib.geometry.Translation2d;
 import libraries.cheesylib.util.Util;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DistanceViewTest {
     public static final double kTestEpsilon = Util.kEpsilon;

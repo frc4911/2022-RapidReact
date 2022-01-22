@@ -7,13 +7,14 @@ import libraries.cheesylib.trajectory.DistanceView;
 import libraries.cheesylib.trajectory.Trajectory;
 import libraries.cheesylib.trajectory.timing.TimingConstraint.MinMaxAcceleration;
 import libraries.cheesylib.util.Util;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+
 
 public class TimingUtilTest {
 
