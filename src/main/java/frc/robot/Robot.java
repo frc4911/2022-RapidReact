@@ -7,12 +7,10 @@ package frc.robot;
 import java.util.Arrays;
 
 import edu.wpi.first.wpilibj.TimedRobot;
-
+import frc.robot.subsystems.JSticks;
+import frc.robot.subsystems.Superstructure;
 import libraries.cheesylib.loops.Looper;
 import libraries.cheesylib.subsystems.SubsystemManager;
-
-import frc.robot.Subsystems.JSticks;
-import frc.robot.Subsystems.Superstructure;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to

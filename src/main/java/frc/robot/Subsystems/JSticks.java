@@ -1,5 +1,6 @@
-package frc.robot.Subsystems;
+package frc.robot.subsystems;
 
+import libraries.cheesylib.loops.ILooper;
 import libraries.cheesylib.loops.Loop;
 import libraries.cheesylib.subsystems.Subsystem;
 
@@ -49,6 +50,11 @@ public class JSticks extends Subsystem{
     public void stop() {
         // TODO Auto-generated method stub
         
+    }
+
+    @Override
+    public void registerEnabledLoops(ILooper enabledLooper) {
+        enabledLooper.register(mLoop);
     }
 
     @Override
