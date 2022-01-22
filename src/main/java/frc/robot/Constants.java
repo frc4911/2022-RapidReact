@@ -3,7 +3,9 @@ package frc.robot;
 import java.util.Arrays;
 import java.util.List;
 
+import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.LimeLights.LimeLight;
+import frc.robot.subsystems.SwerveDriveModule;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Rotation2d;
 import libraries.cheesylib.geometry.Translation2d;
@@ -77,6 +79,11 @@ public class Constants {
     // Swerve Calculations Constants (measurements are in inches)
     public static final double kWheelbaseLength = 21.0;
     public static final double kWheelbaseWidth = 21.0;
+
+    // New Swerve requires SI units
+    public static final double kWheelbaseLengthInMeters = Units.inchesToMeters(kWheelbaseLength);
+    public static final double kWheelbaseWidthInMeters = Units.inchesToMeters(kWheelbaseWidth);
+
     public static final double kSwerveDiagonal = Math.hypot(kWheelbaseLength, kWheelbaseWidth);
 
     public static double kMaxAngleAimError = 1;
@@ -244,6 +251,72 @@ public class Constants {
 
     public static final List<Translation2d> kModulePositions = Arrays.asList(kVehicleToModuleZero,
             kVehicleToModuleOne, kVehicleToModuleTwo, kVehicleToModuleThree);
+
+    // NEW SWERVE
+    // If CW, then right is positive.  If CCW left is positive
+    public static final Translation2d kFrontRightModuleLocation = new Translation2d(kWheelbaseLengthInMeters / 2, kWheelbaseWidthInMeters / 2);
+    public static final Translation2d kFrontLeftModuleLocation = new Translation2d(kWheelbaseLengthInMeters / 2, -kWheelbaseWidthInMeters / 2);
+    public static final Translation2d kBackLeftModuleLocation = new Translation2d(-kWheelbaseLengthInMeters / 2, -kWheelbaseWidthInMeters / 2);
+    public static final Translation2d kBackRightModuleLocation = new Translation2d(-kWheelbaseLengthInMeters / 2, kWheelbaseWidthInMeters / 2);
+
+    public static final List<Translation2d> kModuleLocations = Arrays.asList(kFrontRightModuleLocation,
+            kFrontLeftModuleLocation, kBackLeftModuleLocation, kBackRightModuleLocation);
+
+    public static final double kDriveDeadband = 0.05;
+
+    // swerve modules
+    // zero - bezel to the left
+    public static final SwerveDriveModule.SwerveModuleConstants kFrontRightModuleConstants = new SwerveDriveModule.SwerveModuleConstants();
+
+    /*
+     * FL 4196.0 - 45.0 * 4096.0 / 360.0 = 3,684 + 2048 //invert FR 1,327 + 45 *
+     * 4096.0 / 360.0 = 1839 BL 5120.0 - 135 * 4096 / 360 = 3584 + 2048 //invert BR
+     * 2060.0 + 135 * 4096 / 360 = 3596
+     *
+     */
+
+    static {
+        kFrontRightModuleConstants.kName = "Front Right";
+        kFrontRightModuleConstants.kDriveMotorTalonId = Ports.FRONT_RIGHT_DRIVE;
+        kFrontRightModuleConstants.kRotationMotorTalonId = Ports.FRONT_RIGHT_ROTATION;
+        kFrontRightModuleConstants.kRotationMotorEncoderHomeOffset = 883.0;
+        kFrontRightModuleConstants.kCANCoderId = Ports.FRONT_RIGHT_ENC;
+        /* ... */
+    }
+
+    public static final SwerveDriveModule.SwerveModuleConstants kFrontLeftModuleConstants = new SwerveDriveModule.SwerveModuleConstants();
+
+    static {
+        kFrontLeftModuleConstants.kName = "Front Left";
+        kFrontLeftModuleConstants.kDriveMotorTalonId = Ports.FRONT_LEFT_DRIVE;
+        kFrontLeftModuleConstants.kRotationMotorTalonId = Ports.FRONT_LEFT_ROTATION;
+        kFrontLeftModuleConstants.kRotationMotorEncoderHomeOffset = 1683.0;
+        kFrontLeftModuleConstants.kCANCoderId = Ports.FRONT_LEFT_ENC;
+        /* ... */
+    }
+
+    public static final SwerveDriveModule.SwerveModuleConstants kBackLeftModuleConstants = new SwerveDriveModule.SwerveModuleConstants();
+
+    static {
+        kBackLeftModuleConstants.kName = "Back Left";
+        kBackLeftModuleConstants.kDriveMotorTalonId = Ports.REAR_LEFT_DRIVE;
+        kBackLeftModuleConstants.kRotationMotorTalonId = Ports.REAR_LEFT_ROTATION;
+        kBackLeftModuleConstants.kRotationMotorEncoderHomeOffset = 3451.0;
+        kBackLeftModuleConstants.kCANCoderId = Ports.REAR_LEFT_ENC;
+        /* ... */
+    }
+
+    public static final SwerveDriveModule.SwerveModuleConstants kBackRightModuleConstants = new SwerveDriveModule.SwerveModuleConstants();
+
+    static {
+        kBackRightModuleConstants.kName = "Back Right";
+        kBackRightModuleConstants.kDriveMotorTalonId = Ports.REAR_RIGHT_DRIVE;
+        kBackRightModuleConstants.kRotationMotorTalonId = Ports.REAR_RIGHT_ROTATION;
+        kBackRightModuleConstants.kRotationMotorEncoderHomeOffset = -327.0;
+        kBackRightModuleConstants.kCANCoderId = Ports.REAR_RIGHT_ENC;
+        /* ... */
+    }
+    // END NEW SWERVE
 
     //Panel Manipulator Constants
     public static final int kPanelManipulatorTalonID    = 0; //TODO: temporary value, need adjustments
