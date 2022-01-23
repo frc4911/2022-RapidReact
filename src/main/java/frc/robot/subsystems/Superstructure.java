@@ -68,13 +68,13 @@ public class Superstructure extends Subsystem{
     @Override
     public String getLogHeaders() {
         // TODO Auto-generated method stub
-        return null;
+        return "Superstructure";
     }
 
     @Override
     public String getLogValues(boolean telemetry) {
         // TODO Auto-generated method stub
-        return null;
+        return "Superstructure.Values";
     }
 
     @Override

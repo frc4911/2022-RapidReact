@@ -226,10 +226,10 @@ public class Constants {
     public static final int kRearLeftCancoderStartingPosDegreesCetus = -13;
     public static final int kRearRightCancoderStartingPosDegreesCetus = -130;
 
-    public static final int kFrontRightCancoderStartingPosDegreesR1 = 34; //35; //34
-    public static final int kFrontLeftCancoderStartingPosDegreesR1 = -48; //-76; //-74; //-76
-    public static final int kRearLeftCancoderStartingPosDegreesR1 = -81;//-78; //-77; //-78
-    public static final int kRearRightCancoderStartingPosDegreesR1 = -152; 		//79
+    public static final int kFrontRightCancoderStartingPosDegreesR1 = 359; //1; //-slight tuning blockparty day 2 //148;
+    public static final int kFrontLeftCancoderStartingPosDegreesR1 = 211; //151; //345;//-wheel was reoriented for repairs (loose falcons) //332;-temp fix //45;
+    public static final int kRearLeftCancoderStartingPosDegreesR1 = 235; //125; //5;
+    public static final int kRearRightCancoderStartingPosDegreesR1 = 250;
 
     public static final int kFrontRightCancoderStartingPosDegreesR2 = 0;
     public static final int kFrontLeftCancoderStartingPosDegreesR2 = 0;

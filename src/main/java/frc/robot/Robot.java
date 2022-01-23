@@ -9,8 +9,11 @@ import java.util.Arrays;
 import edu.wpi.first.wpilibj.TimedRobot;
 import frc.robot.subsystems.JSticks;
 import frc.robot.subsystems.Superstructure;
+import frc.robot.subsystems.Swerve;
+import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.loops.Looper;
 import libraries.cheesylib.subsystems.SubsystemManager;
+import libraries.cheesylib.util.CrashTracker;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -30,6 +33,7 @@ public class Robot extends TimedRobot {
   private SubsystemManager mSubsystemManager;
   private Superstructure   mSuperstructure;
   private JSticks          mJSticks;
+  private Swerve           mSwerve;
 
   private final double mLoopPeriod = .005;
   private Looper mSubsystemLooper = new Looper(mLoopPeriod,Thread.NORM_PRIORITY+1);
@@ -39,23 +43,38 @@ public class Robot extends TimedRobot {
     //Initializing subsystems
     mClassName = this.getClass().getSimpleName();
     mSubsystemManager = SubsystemManager.getInstance(mClassName);
-    mSuperstructure = Superstructure.getInstance(mClassName);
     mJSticks = JSticks.getInstance(mClassName);
+    mSuperstructure = Superstructure.getInstance(mClassName);
+    mSwerve = Swerve.getInstance(mClassName);
 
     //Create subsystem manager and add all subsystems it will manage
     mSubsystemManager = SubsystemManager.getInstance(mClassName);
 		mSubsystemManager.initializeSubsystemManager( (int)(mLoopPeriod*1000),
         Arrays.asList(
           //List of subsystems
+          mJSticks,
           mSuperstructure,
-          mJSticks
+          mSwerve
         )
     );
 
     // ask each subsystem to register itself
 		mSubsystemManager.registerEnabledLoops(mSubsystemLooper);
 
+    if (mSwerve != null) {
+			mSwerve.zeroSensors();
+			mSwerve.zeroSensors(new Pose2d());
+
+			// robotState.feignVisionTargets();
+			// mSwerve.startTracking(Constants.kDiskTargetHeight, new Translation2d(-6.0,
+			// 0.0), true, new Rotation2d());
+			mSwerve.stop();
+		}
+
   }
+
+  @Override
+  public void robotPeriodic() {}
 
   @Override
   public void autonomousInit() {}
@@ -64,7 +83,17 @@ public class Robot extends TimedRobot {
   public void autonomousPeriodic() {}
 
   @Override
-  public void teleopInit() {}
+  public void teleopInit() {
+    try {
+			mSubsystemLooper.stop();
+			mSubsystemLooper.start();
+			//teleopConfig();
+			//robotState.enableXTarget(false);
+		} catch (Throwable t) {
+			CrashTracker.logThrowableCrash(t);
+			throw t;
+		}
+  }
 
   @Override
   public void teleopPeriodic() {}
