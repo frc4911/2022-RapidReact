@@ -85,6 +85,8 @@ public class Constants {
     public static final double kWheelbaseWidthInMeters = Units.inchesToMeters(kWheelbaseWidth);
 
     public static final double kSwerveDiagonal = Math.hypot(kWheelbaseLength, kWheelbaseWidth);
+    final static double kRadiusInMeters = Math.hypot(kWheelbaseWidthInMeters/2, kWheelbaseLengthInMeters/2);
+
 
     public static double kMaxAngleAimError = 1;
     public static final double kMaxAimTurningVelocity = 0.1;
@@ -223,6 +225,11 @@ public class Constants {
     // setting slightly below to assure it is reachable
     public static final double kSwerveRotationMaxSpeed = 21000.0; // rotation motor ticks/100ms
     public static final double kSwerveRotation10VoltMaxSpeed = 1350.0; // TODO: tune this!!!
+
+    // Max translational velocity in m/s
+    public static final double kSwerveDriveMaxSpeedInMetersPerSecond = Units.inchesToMeters(kSwerveMaxSpeedInchesPerSecond) ;
+    // Maximum angular velocity in rad/s
+    public static final double kSwerveRotationSpeedInMetersPerSecond = kSwerveMaxSpeedInchesPerSecond / kRadiusInMeters;
 
     // 7/190 = .037
     public static final double kSwerveRotationSpeedScalar = ((1.0 / 0.125) - 1.0) / kSwerveMaxSpeedInchesPerSecond;

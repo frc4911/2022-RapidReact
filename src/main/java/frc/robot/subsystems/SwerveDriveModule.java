@@ -1,6 +1,5 @@
 package frc.robot.subsystems;
 
-import com.ctre.phoenix.motorcontrol.ControlFrame;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
@@ -26,8 +25,6 @@ import libraries.cheesylib.subsystems.Subsystem;
 import libraries.madtownlib.util.Utils;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-
-import static libraries.cheesylib.util.Util.epsilonEquals;
 
 /**
  * Represents a swerve module consisting of a drive motor that controls the speed of the wheel and
@@ -138,7 +135,7 @@ public class SwerveDriveModule extends Subsystem {
 		// drive measurement
 		public int kDriveStatusFrame2UpdateRate = 15; // feedback for selected sensor, ms
 		public int kDriveStatusFrame10UpdateRate = 200; // motion magic, ms
-		public VelocityMeasPeriod kDriveVelocityMeasurementPeriod = VelocityMeasPeriod.Period_10Ms; // dt for velocity measurements, ms
+//		public VelocityMeasPeriod kDriveVelocityMeasurementPeriod = VelocityMeasPeriod.Period_10Ms; // dt for velocity measurements, ms
 		public int kDriveVelocityMeasurementWindow = 32; // # of samples in rolling average
 	}
 
@@ -170,26 +167,6 @@ public class SwerveDriveModule extends Subsystem {
         configureMotors();
         getRawAngle();
     }
-
-
-//    public SwerveDriveModule(int rotationSlot, int driveSlot, int encSlot, int moduleID,
-//                             int encoderOffset, Translation2d startingPose){
-//        mModuleName += (moduleID + " ");
-//        mRotationMotor = TalonFXFactory.createDefaultTalon(rotationSlot);
-//        mDriveMotor = TalonFXFactory.createDefaultTalon(driveSlot);
-//        mCANCoder = new CANCoder(encSlot);
-//        mCANCoder.configSensorInitializationStrategy(SensorInitializationStrategy.BootToAbsolutePosition, Constants.kLongCANTimeoutMs);
-//        mCANCoder.setStatusFramePeriod(CANCoderStatusFrame.VbatAndFaults, 255);
-//        mCANCoder.setStatusFramePeriod(CANCoderStatusFrame.SensorData, 255);
-//        this.moduleID = moduleID;
-//        this.cancoderOffsetDegrees = encoderOffset;
-//        configureMotors();
-//        previousEncDistance = 0;
-//        position = startingPose;
-//        this.startingPosition = startingPose;
-//        getRawAngle();
-//        mPeriodicIO.moduleID = moduleID;
-//    }
 
     /**
      * Configure motors based on current SwerveModuleConstants.
@@ -281,8 +258,8 @@ public class SwerveDriveModule extends Subsystem {
         mDriveMotor.config_kI(0, 0.0, Constants.kLongCANTimeoutMs);
         mDriveMotor.config_kD(0, 24.0, Constants.kLongCANTimeoutMs);
         mDriveMotor.config_kF(0, 1023.0/Constants.kSwerveDriveMaxSpeed, Constants.kLongCANTimeoutMs);
-        mDriveMotor.configMotionCruiseVelocity((int)(Constants.kSwerveDriveMaxSpeed*0.9), Constants.kLongCANTimeoutMs);
-        mDriveMotor.configMotionAcceleration((int)(Constants.kSwerveDriveMaxSpeed), Constants.kLongCANTimeoutMs);
+        mDriveMotor.configMotionCruiseVelocity(Constants.kSwerveDriveMaxSpeed*0.9, Constants.kLongCANTimeoutMs);
+        mDriveMotor.configMotionAcceleration(Constants.kSwerveDriveMaxSpeed, Constants.kLongCANTimeoutMs);
         // Slot 1 corresponds to velocity mode (USED FOR AUTO)
         mDriveMotor.config_kP(1, 0.03, Constants.kLongCANTimeoutMs);
         mDriveMotor.config_kI(1, 0.0, Constants.kLongCANTimeoutMs);
@@ -309,7 +286,7 @@ public class SwerveDriveModule extends Subsystem {
 
 	/**
 	 * Sets the state for the module.
-	 * It converts the velocity in SI units (meters per second) to a voltage (as a percentage) for the motor controller.
+	 * It converts the velocity in SI units (meters per second) to a voltage (as a percentage) for the motor controllers.
 	 *
 	 * @param state Desired state with speed and angle.
 	 */
@@ -319,10 +296,6 @@ public class SwerveDriveModule extends Subsystem {
 		setModuleAngle(state.angle.getDegrees());
 	}
 	
-    public void setCarpetDirection(boolean standardDirection) {
-        standardCarpetDirection = standardDirection;
-    }
-
 	@Override
 	public synchronized void stop() {
 		if (mControlState != ControlState.NEUTRAL) {
@@ -344,37 +317,15 @@ public class SwerveDriveModule extends Subsystem {
 	private double getRawAngle() {
 		return encUnitsToDegrees(mPeriodicIO.rotationPosition);
 	}
-	
-	public Rotation2d getModuleAngle() {
-		return Rotation2d.fromDegrees(getRawAngle()); // - encUnitsToDegrees(mConstants.kCANCoderOffsetDegrees));
-	}
-	
 
-    public void setModuleAngle(double goalAngle){
+    private void setModuleAngle(double goalAngle){
 		double angle = Utils.placeInAppropriate0To360Scope(getRawAngle(), goalAngle);
 		int setpoint = degreesToEncUnits(angle);
         mPeriodicIO.rotationControlMode = ControlMode.MotionMagic;
         mPeriodicIO.rotationDemand = setpoint;
     }
 
-    public boolean angleOnTarget(){
-        double error = encUnitsToDegrees(Math.abs(mPeriodicIO.rotationDemand - mPeriodicIO.rotationPosition));
-        return error < 4.5;
-    }
-
-    public void set10VoltRotationMode(boolean tenVolts){
-        if(tenVolts && !tenVoltRotationMode){
-            mRotationMotor.selectProfileSlot(1, 0);
-            mRotationMotor.configVoltageCompSaturation(10.0, Constants.kLongCANTimeoutMs);
-            tenVoltRotationMode = true;
-        }else if(!tenVolts && tenVoltRotationMode){
-            mRotationMotor.selectProfileSlot(0, 0);
-            mRotationMotor.configVoltageCompSaturation(7.0, Constants.kLongCANTimeoutMs);
-            tenVoltRotationMode = false;
-        }
-    }
-
-    public void setRotationOpenLoop(double power){
+    public void setRotationOpenLoop(double power) {
         mPeriodicIO.rotationControlMode = ControlMode.PercentOutput;
         mPeriodicIO.rotationDemand = power;
     }
@@ -382,73 +333,25 @@ public class SwerveDriveModule extends Subsystem {
     /**
      * @param velocity Normalized value
      */
-    public void setDriveOpenLoop(double velocity){
+    public void setDriveOpenLoop(double velocity) {
         if (mControlState != ControlState.OPEN_LOOP) {
             mControlState = ControlState.OPEN_LOOP;
         }
+
         mPeriodicIO.driveControlMode = ControlMode.PercentOutput;
         mPeriodicIO.driveDemand = velocity;
     }
 
-    public void setDrivePositionTarget(double deltaDistanceInches){
-        mDriveMotor.selectProfileSlot(0, 0);
-        mPeriodicIO.driveControlMode = ControlMode.MotionMagic;
-        mPeriodicIO.driveDemand = mPeriodicIO.drivePosition + inchesToEncUnits(deltaDistanceInches);
-        if (mModuleName.equals("Module 0 ")){
-            System.out.println("drive motion magic");
-        }
-    }
-
-    public boolean drivePositionOnTarget(){
-        if(mDriveMotor.getControlMode() == ControlMode.MotionMagic)
-            return encUnitsToInches((int)Math.abs(mPeriodicIO.driveDemand - mPeriodicIO.drivePosition)) < 2.0;
-        return false;
-    }
-
-    double minSpeed = 800; // 127 fails to move Cetus
-    final double hack = 1;//3.8; // this is a hack. I don't know why it is needed but the robot goes too fast otherwise
-    public void setVelocitySetpoint(double inchesPerSecond){
-        mDriveMotor.selectProfileSlot(1, 0);
-        mPeriodicIO.driveControlMode = ControlMode.Velocity;
-        double vel = inchesPerSecondToEncVelocity(inchesPerSecond)/hack;
-        if (Math.abs(vel) < minSpeed){
-            if(vel==0){
-                mPeriodicIO.driveDemand = 0;
-            }
-            else if (vel>0){
-                mPeriodicIO.driveDemand = minSpeed;
-            }
-            else{
-                mPeriodicIO.driveDemand = -minSpeed;
-            }
-        }
-        else{
-            mPeriodicIO.driveDemand = vel;
-        }
-        // if (name.equals("Module 0 ")){
-        // 	// if (periodicIO.driveDemand == vel){
-        // 	// 	// System.out.println(inchesPerSecond+" "+(vel*hack));
-        // 	// }
-        // 	// else{
-        // 	// 	// System.out.println(inchesPerSecond+" "+vel+" (min "+minSpeed+")");
-        // 	// }
-        // }
-    }
-
-    private double getDriveDistanceInches(){
-        return encUnitsToInches(mPeriodicIO.drivePosition);
-    }
-
-    public double encUnitsToInches(double encUnits){
+    public double encUnitsToInches(double encUnits) {
         return encUnits/Constants.kSwerveEncUnitsPerInch;
     }
 
-    public int inchesToEncUnits(double inches){
-        return (int) (inches*Constants.kSwerveEncUnitsPerInch);
+    public double inchesToEncUnits(double inches) {
+        return inches * Constants.kSwerveEncUnitsPerInch;
     }
 
-    public int metersPerSecondToEncVelocity(double metersPerSecond) {
-        return (int) (inchesToEncUnits(Units.metersToInches(metersPerSecond) / 10.0));
+    public double metersPerSecondToEncVelocity(double metersPerSecond) {
+        return inchesToEncUnits(Units.metersToInches(metersPerSecond) / 10.0);
     }
 
     public double encVelocityToInchesPerSecond(double encUnitsPer100ms){
@@ -459,47 +362,33 @@ public class SwerveDriveModule extends Subsystem {
         return Units.inchesToMeters(encVelocityToInchesPerSecond(encUnitsPer100ms));
     }
 
-    public int inchesPerSecondToEncVelocity(double inchesPerSecond){
-        return (int) (inchesToEncUnits(inchesPerSecond / 10.0));
+    public double inchesPerSecondToEncVelocity(double inchesPerSecond){
+        return inchesToEncUnits(inchesPerSecond / 10.0);
     }
 
-    public int degreesToEncUnits(double degrees){
-        return (int) (degrees/360.0*Constants.kSwerveRotationMotorTicksPerRotation);
+    public int degreesToEncUnits(double degrees) {
+        return (int) (degrees / 360.0 * Constants.kSwerveRotationMotorTicksPerRotation);
     }
 
-    public double encUnitsToDegrees(double encUnits){
-        return encUnits/Constants.kSwerveRotationMotorTicksPerRotation*360.0;
+    public double encUnitsToDegrees(double encUnits) {
+        return encUnits / Constants.kSwerveRotationMotorTicksPerRotation * 360.0;
     }
 
-    public Translation2d getPosition(){
+    public Translation2d getPosition() {
         return position;
     }
 
-//    public Pose2d getEstimatedRobotPose(){
-//        return estimatedRobotPose;
-//    }
-
-    public synchronized void resetPose(Pose2d robotPose){
+    public synchronized void resetPose(Pose2d robotPose) {
         Translation2d modulePosition = robotPose.transformBy(Pose2d.fromTranslation(startingPosition)).getTranslation();
         position = modulePosition;
     }
 
-//    public synchronized void resetPose(){
-//        position = startingPosition;
-//    }
-//
-//    public synchronized void resetLastEncoderReading(){
-//        previousEncDistance = getDriveDistanceInches();
-//    }
-
     public synchronized void zeroSensors(Pose2d robotPose) {
         //driveMotor.setSelectedSensorPosition(0, 0, 100); TODO check if this is necessary
         resetPose(robotPose);
-//        estimatedRobotPose = robotPose;
-//        previousEncDistance = getDriveDistanceInches();
     }
 
-    public synchronized void disable(){
+    public synchronized void disable() {
         setDriveOpenLoop(0.0);
         setRotationOpenLoop(0.0);
     }

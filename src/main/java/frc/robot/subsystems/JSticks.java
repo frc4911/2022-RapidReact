@@ -137,12 +137,17 @@ public class JSticks extends Subsystem{
 		double swerveXInput = dr_RightStickY_Translate;
 		double swerveRotationInput = dr_LeftStickX_Rotate;
 
-        mSwerve.sendInput(swerveXInput, swerveYInput, swerveRotationInput, dr_LeftToggleDown_RobotOrient, false);
+//        mSwerve.sendInput(swerveXInput, swerveYInput, swerveRotationInput, dr_LeftToggleDown_RobotOrient, false);
+
+        // NEW SWERVE
+        mSwerve.setTeleopInputs(swerveXInput, swerveYInput, swerveRotationInput,
+                dr_LeftToggleDown_RobotOrient, false, false);
+        // END NEW SWERVE
 
 		if (dr_YButton_ResetIMU) {
-			mSwerve.temporarilyDisableHeadingController();
+//			mSwerve.temporarilyDisableHeadingController();
 			mSwerve.zeroSensors(Constants.kRobotStartingPose);
-			mSwerve.resetAveragedDirection();
+//			mSwerve.resetAveragedDirection();
 		}
 
 	}

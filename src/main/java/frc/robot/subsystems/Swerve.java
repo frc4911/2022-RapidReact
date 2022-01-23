@@ -24,6 +24,7 @@ import libraries.cheesylib.vision.AimingParameters;
 import libraries.cyberlib.kinematics.ChassisSpeeds;
 import libraries.cyberlib.kinematics.SwerveDriveKinematics;
 import libraries.cyberlib.kinematics.SwerveDriveOdometry;
+import libraries.cyberlib.kinematics.SwerveModuleState;
 import libraries.cyberlib.utils.RobotName;
 import libraries.madtownlib.util.SwerveHeadingController;
 import libraries.madtownlib.util.SwerveInverseKinematics;
@@ -192,7 +193,6 @@ public class Swerve extends Subsystem {
         @Override
         public void onLoop(double timestamp) {
             synchronized(Swerve.this){
-                updateOdometry(timestamp);
                 updateControlCycle(timestamp);
                 lastUpdateTimestamp = timestamp;
             }
@@ -232,14 +232,19 @@ public class Swerve extends Subsystem {
 
 
     /** Called every cycle to update the swerve based on its control state */
-    public synchronized void updateControlCycle(double timestamp){
-        switch(mControlState){
+    public synchronized void updateControlCycle(double timestamp) {
+        switch(mControlState) {
             case MANUAL:
                 // Calculates and updates the swerve states in PeriodicIO
-                var chassisSpeed = swerveDriveHelper(mPeriodicIO.forward, mPeriodicIO.strafe, mPeriodicIO.rotation, mPeriodicIO.low_power,
+                // The PeriodicIO values are set in JSticks TeleOp method, by calling setTeleopInputs().
+                var chassisSpeeds = swerveDriveHelper(mPeriodicIO.forward, mPeriodicIO.strafe, mPeriodicIO.rotation, mPeriodicIO.low_power,
                         mPeriodicIO.field_relative, mPeriodicIO.use_heading_controller);
-                // TODO:  Update Swerve Module states
 
+                // Now command the new Swerve Module states
+                mPeriodicIO.swerveModuleStates = mKinematics.toSwerveModuleStates(chassisSpeeds);
+
+                // Make sure they are valid
+                SwerveDriveKinematics.desaturateWheelSpeeds(mPeriodicIO.swerveModuleStates, Constants.kSwerveDriveMaxSpeedInMetersPerSecond);
                 break;
             case TRAJECTORY:
 //                if(!motionPlanner.isDone()){
@@ -321,10 +326,10 @@ public class Swerve extends Subsystem {
         return hasFinishedPath;
     }
 
-    //Assigns appropriate directions for scrub factors
-    public void setCarpetDirection(boolean standardDirection){
-        mModules.forEach((m) -> m.setCarpetDirection(standardDirection));
-    }
+//    //Assigns appropriate directions for scrub factors
+//    public void setCarpetDirection(boolean standardDirection){
+//        mModules.forEach((m) -> m.setCarpetDirection(standardDirection));
+//    }
 
     public ControlState getState(){
         return mControlState;
@@ -408,10 +413,10 @@ public class Swerve extends Subsystem {
     int count = 0;
 
 
-    /** Increases each module's rotational power cap for the beginning of auto */
-    public void set10VoltRotationMode(boolean tenVolts){
-        mModules.forEach((m) -> m.set10VoltRotationMode(tenVolts));
-    }
+//    /** Increases each module's rotational power cap for the beginning of auto */
+//    public void set10VoltRotationMode(boolean tenVolts){
+//        mModules.forEach((m) -> m.set10VoltRotationMode(tenVolts));
+//    }
 
 //    /**
 //     * @return Whether or not at least one module has reached its MotionMagic setpoint
@@ -500,15 +505,38 @@ public class Swerve extends Subsystem {
     public synchronized void zeroSensors(Pose2d startingPose){
         mPigeon.setAngle(startingPose.getRotation().getUnboundedDegrees());
         mModules.forEach((m) -> m.zeroSensors(startingPose));
-        pose = startingPose;
-        distanceTraveled = 0;
+//        pose = startingPose;
+//        distanceTraveled = 0;
     }
 
     public synchronized void resetPosition(Pose2d newPose){
         pose = new Pose2d(newPose.getTranslation(), pose.getRotation());
         mModules.forEach((m) -> m.zeroSensors(pose));
-        distanceTraveled = 0;
+//        distanceTraveled = 0;
     }
+
+    /**
+     * Sets inputs from driver in teleop mode
+     *
+     * @param forward percent to drive forwards/backwards (as double [-1.0,1.0]).
+     * @param strafe percent to drive sideways left/right (as double [-1.0,1.0]).
+     * @param rotation percent to rotate chassis (as double [-1.0,1.0]).
+     * @param low_power whether to use low or high power.
+     * @param field_relative whether operation is robot centric or field relative.
+     * @param use_heading_controller whether the heading controller is being used.
+     */
+    public void setTeleopInputs(double forward, double strafe, double rotation, boolean low_power, boolean field_relative, boolean use_heading_controller) {
+        if (mControlState != ControlState.MANUAL) {
+            mControlState = ControlState.MANUAL;
+        }
+        mPeriodicIO.forward = forward;
+        mPeriodicIO.strafe = strafe;
+        mPeriodicIO.rotation = rotation;
+        mPeriodicIO.low_power = low_power;
+        mPeriodicIO.field_relative = field_relative;
+        mPeriodicIO.use_heading_controller = use_heading_controller;
+    }
+
 
     private final static double kHighAdjustmentPower = 1.75 + 0.4375;
     private final static double kLowAdjustmentPower = 1.50;
@@ -532,7 +560,7 @@ public class Swerve extends Subsystem {
      * @param use_heading_controller
      * @return A ChassisSpeeds object for the inputs
      */
-    private ChassisSpeeds swerveDriveHelper(double forwardInput, double strafeInput, double rotationInput,
+    public ChassisSpeeds swerveDriveHelper(double forwardInput, double strafeInput, double rotationInput,
                                    boolean low_power, boolean field_relative, boolean use_heading_controller) {
 
         Translation2d translationalInput = new Translation2d(forwardInput, strafeInput);
@@ -582,9 +610,11 @@ public class Swerve extends Subsystem {
             rotationInput *= kHighPowerRotationScalar;
         }
 
-        ChassisSpeeds chassisSpeeds = new ChassisSpeeds(translationalInput.x(), translationalInput.y(), rotationInput);
-//        mPeriodicIO.swerveModuleStates = mKinematics.toSwerveModuleStates(chassisSpeeds);
-//		SwerveDriveKinematics.normalizeWheelSpeeds(mPeriodicIO.swerveModuleStates, kMaxSpeed);
+        // Convert the joystick inputs to SI units for
+        ChassisSpeeds chassisSpeeds = new ChassisSpeeds(
+                translationalInput.x() * Constants.kSwerveDriveMaxSpeedInMetersPerSecond,
+                translationalInput.y() * Constants.kSwerveDriveMaxSpeedInMetersPerSecond,
+                rotationInput * Constants.kSwerveRotationSpeedInMetersPerSecond);
         return chassisSpeeds;
     }
 
@@ -643,7 +673,11 @@ public class Swerve extends Subsystem {
         double now                   = Timer.getFPGATimestamp();
         mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
         mPeriodicIO.lastSchedStart   = now;
-//brian
+
+        // Read odometry every in every loop
+        updateOdometry(now);
+
+        //brian
         aimingParameters = robotState.getOuterGoalParameters();
         mIsOnTarget = false;
         if (aimingParameters.isPresent()) {
@@ -665,11 +699,16 @@ public class Swerve extends Subsystem {
         // }
         SmartDashboard.putNumber("LL error", Math.toDegrees(error));
 
-        mModules.forEach((m) -> m.readPeriodicInputs());
     }
 
     @Override
     public synchronized void writePeriodicOutputs() {
+        // Set the module state for each module
+        // All modes should use this method of module states.
+        for (int i = 0; i < mModules.size(); i++) {
+            mModules.get(i).setState(mPeriodicIO.swerveModuleStates[i]);
+        }
+
         mModules.forEach((m) -> m.writePeriodicOutputs());
     }
 
@@ -718,17 +757,25 @@ public class Swerve extends Subsystem {
 
     public static class PeriodicIO {
         // LOGGING
-        public  int    schedDeltaDesired;
-        public  double schedDeltaActual;
-        public  double schedDuration;
+        public int schedDeltaDesired;
+        public double schedDeltaActual;
+        public double schedDuration;
         private double lastSchedStart;
 
-        // Driver controls
+        // Inputs
         public double forward;
         public double strafe;
         public double rotation;
         public boolean low_power;
         public boolean field_relative;
         public boolean use_heading_controller;
+
+        // OUTPUTS
+        public SwerveModuleState[] swerveModuleStates = new SwerveModuleState[]{
+                new SwerveModuleState(0, Rotation2d.identity()),
+                new SwerveModuleState(0, Rotation2d.identity()),
+                new SwerveModuleState(0, Rotation2d.identity()),
+                new SwerveModuleState(0, Rotation2d.identity())
+        };
     }
 }
