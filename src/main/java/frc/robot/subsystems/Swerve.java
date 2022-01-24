@@ -2,13 +2,13 @@ package frc.robot.subsystems;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 import frc.robot.RobotState;
+import frc.robot.planners.DriveMotionPlanner;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Pose2dWithCurvature;
 import libraries.cheesylib.geometry.Rotation2d;
@@ -17,26 +17,18 @@ import libraries.cheesylib.loops.ILooper;
 import libraries.cheesylib.loops.Loop;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.trajectory.Trajectory;
+import libraries.cheesylib.trajectory.TrajectoryIterator;
 import libraries.cheesylib.trajectory.timing.TimedState;
-import libraries.cheesylib.util.SynchronousPIDF;
-import libraries.cheesylib.util.Util;
-import libraries.cheesylib.vision.AimingParameters;
 import libraries.cyberlib.kinematics.ChassisSpeeds;
 import libraries.cyberlib.kinematics.SwerveDriveKinematics;
 import libraries.cyberlib.kinematics.SwerveDriveOdometry;
 import libraries.cyberlib.kinematics.SwerveModuleState;
 import libraries.cyberlib.utils.RobotName;
-import libraries.madtownlib.util.SwerveHeadingController;
-import libraries.madtownlib.util.SwerveInverseKinematics;
-import libraries.madtownlib.util.Utils;
-import libraries.madtownlib.util.VisionCriteria;
-import libraries.madtownlib.vectors.VectorField;
 
 public class Swerve extends Subsystem {
 
     public enum ControlState{
-        NEUTRAL, MANUAL, POSITION, ROTATION, DISABLED, VECTORIZED,
-        TRAJECTORY, VELOCITY, VISION, VISION_AIM, CELL_AIM
+        NEUTRAL, MANUAL, DISABLED, TRAJECTORY, VISION_AIM
     }
 
     private ControlState mControlState = ControlState.NEUTRAL;
@@ -59,65 +51,21 @@ public class Swerve extends Subsystem {
 	private final SwerveDriveKinematics mKinematics = new SwerveDriveKinematics(Constants.kModuleLocations);
 	private ChassisSpeeds mChassisSpeeds;
 
+    // Updated as part of periodic odometry
+    private Pose2d mPose = Pose2d.identity();
 
-    // Heading controller methods
-    SwerveHeadingController headingController = new SwerveHeadingController(Constants.kIsUsingTractionWheels);
+    // Trajectory following
+    private DriveMotionPlanner mMotionPlanner;
+    private boolean mOverrideTrajectory = false;
 
     RobotState robotState;
     private int mListIndex = -1;
-
-    // Vision dependencies
-    boolean visionUpdatesAllowed = true;
-    Translation2d visionTargetPosition = new Translation2d();
-    public Translation2d getVisionTargetPosition(){ return visionTargetPosition; }
-    int visionUpdateCount = 0;
-    int attemptedVisionUpdates = 0;
-    int visionVisibleCycles = 0;
-    boolean firstVisionCyclePassed = false;
-    VisionCriteria visionCriteria = new VisionCriteria();
-    double initialVisionDistance = 0.0;
-    Optional<AimingParameters> aimingParameters;
-    double error = 0;
-    // AimingParameters latestAim = new AimingParameters(100.0, new Rotation2d(), 0.0, 0.0, new Rotation2d());
-    AimingParameters latestAim = new AimingParameters( new Pose2d(), new Pose2d(), new Rotation2d(), 0.0, 0.0, new Rotation2d(), 1);
-    Translation2d latestTargetPosition = new Translation2d();
-    Translation2d lastVisionEndTranslation = new Translation2d(-Constants.kRobotProbeExtrusion, 0.0);
-    boolean visionUpdateRequested = false;
-    boolean robotHasDisk = false;
-    boolean useFixedVisionOrientation = false;
-    Rotation2d fixedVisionOrientation = Rotation2d.fromDegrees(180.0);
-    double visionCutoffDistance = Constants.kClosestVisionDistance;
-    double visionTrackingSpeed = Constants.kDefaultVisionTrackingSpeed;
-    // private double lastAimTimestamp;
-    private boolean mIsOnTarget;
-    boolean needsToNotifyDrivers = false;
-//    TrajectoryGenerator generator;
-
-    // Odometry variables
-    Pose2d pose;
-    double distanceTraveled;
-    double currentVelocity = 0;
-
-    // Module configuration variables (for beginnning of auto)
-    boolean modulesReady = false;
-    boolean alwaysConfigureModules = false;
-    boolean moduleConfigRequested = false;
-    Pose2d startingPose = Constants.kRobotStartingPose;
-
-    // Trajectory variables
-//    DriveMotionPlanner motionPlanner;
-    double rotationScalar;
-    double trajectoryStartTime = 0;
-    Translation2d lastTrajectoryVector = new Translation2d();
-    boolean hasStartedFollowing = false;
-    boolean hasFinishedPath = false;
-
 
     private static String sClassName;
     private static int sInstanceCount;
     private static Swerve sInstance = null;
     public  static Swerve getInstance(String caller) {
-        if(sInstance == null) {
+        if (sInstance == null) {
             sInstance = new Swerve(caller);
         }
         else {
@@ -126,7 +74,7 @@ public class Swerve extends Subsystem {
         return sInstance;
     }
 
-    private static void printUsage(String caller){
+    private static void printUsage(String caller) {
         System.out.println("("+caller+") "+"getInstance " + sClassName + " " + ++sInstanceCount);
     }
 
@@ -166,7 +114,7 @@ public class Swerve extends Subsystem {
 
 		mOdometry= new SwerveDriveOdometry(mKinematics, mPigeon.getYaw());
 
-//        motionPlanner = new DriveMotionPlanner();
+        mMotionPlanner = new DriveMotionPlanner();
         robotState = RobotState.getInstance(sClassName);
 //        generator = TrajectoryGenerator.getInstance();
     }
@@ -175,8 +123,7 @@ public class Swerve extends Subsystem {
 
         @Override
         public void onStart(Phase phase) {
-            synchronized(Swerve.this){
-                headingController.temporarilyDisable();
+            synchronized(Swerve.this) {
                 stop();
                 lastUpdateTimestamp = Timer.getFPGATimestamp();
                 switch (phase) {
@@ -192,7 +139,7 @@ public class Swerve extends Subsystem {
 
         @Override
         public void onLoop(double timestamp) {
-            synchronized(Swerve.this){
+            synchronized(Swerve.this) {
                 updateControlCycle(timestamp);
                 lastUpdateTimestamp = timestamp;
             }
@@ -200,7 +147,7 @@ public class Swerve extends Subsystem {
 
         @Override
         public void onStop(double timestamp) {
-            synchronized(Swerve.this){
+            synchronized(Swerve.this) {
                 stop();
             }
         }
@@ -216,6 +163,11 @@ public class Swerve extends Subsystem {
         return mPigeon.getYaw();
     }
 
+    public Rotation2d getHeading() {
+        return mPeriodicIO.gyro_heading;
+    }
+
+
     /**
      * Updates the field relative position of the robot.
      */
@@ -226,12 +178,13 @@ public class Swerve extends Subsystem {
         var backRight = mBackRight.getState();
 
         mChassisSpeeds = mKinematics.toChassisSpeeds(frontLeft,frontRight, backLeft, backRight);
-        mOdometry.updateWithTime(timestamp, getAngle(), frontLeft,frontRight, backLeft, backRight
-        );
+        mPose = mOdometry.updateWithTime(timestamp, getAngle(), frontLeft, frontRight, backLeft, backRight);
     }
 
 
-    /** Called every cycle to update the swerve based on its control state */
+    /**
+     * Called every cycle to update the swerve based on its control state
+     * */
     public synchronized void updateControlCycle(double timestamp) {
         switch(mControlState) {
             case MANUAL:
@@ -247,51 +200,7 @@ public class Swerve extends Subsystem {
                 SwerveDriveKinematics.desaturateWheelSpeeds(mPeriodicIO.swerveModuleStates, Constants.kSwerveDriveMaxSpeedInMetersPerSecond);
                 break;
             case TRAJECTORY:
-//                if(!motionPlanner.isDone()){
-//                    Translation2d driveVector = motionPlanner.update(timestamp, pose);
-//
-//                    if(modulesReady){
-//                        if(!hasStartedFollowing){
-//                            if(moduleConfigRequested){
-//                                zeroSensors(startingPose);
-//                                System.out.println("Position reset for auto");
-//                            }
-//                            hasStartedFollowing = true;
-//                        }
-//                        double rotationInput = Util.deadBand(Util.limit(rotationCorrection*rotationScalar*driveVector.norm(), motionPlanner.getMaxRotationSpeed()), 0.01);
-//                        if(Util.epsilonEquals(driveVector.norm(), 0.0, Constants.kEpsilon)){
-//                            driveVector = lastTrajectoryVector;
-//                            setVelocityDriveOutput(inverseKinematics.updateDriveVectors(driveVector,
-//                                    rotationInput, pose, false), 0.0);
-//                            // System.out.println("Trajectory Vector set: " + driveVector.toString());
-//                        }else{
-//                            setVelocityDriveOutput(inverseKinematics.updateDriveVectors(driveVector,
-//                                    rotationInput, pose, false));
-//                            // System.out.println("Trajectory Vector set: " + driveVector.toString());
-//                        }
-//                    }else if(!moduleConfigRequested){
-//                        //set10VoltRotationMode(true);
-//                        setModuleAngles(inverseKinematics.updateDriveVectors(driveVector,
-//                                0.0, pose, false));
-//                        moduleConfigRequested = true;
-//                    }
-//
-//                    if(moduleAnglesOnTarget() && !modulesReady){
-//                        set10VoltRotationMode(false);
-//                        modules.forEach((m) -> m.resetLastEncoderReading());
-//                        modulesReady = true;
-//                        System.out.println("Modules Ready");
-//                    }
-//
-//                    lastTrajectoryVector = driveVector;
-//                }else{
-//
-//                    if(!hasFinishedPath){
-//                        System.out.println("Path completed in: " + (timestamp - trajectoryStartTime));
-//                        hasFinishedPath = true;
-//                        if(alwaysConfigureModules) requireModuleConfiguration();
-//                    }
-//                }
+                updatePathFollower();
                 break;
             case NEUTRAL:
                 stop();
@@ -318,41 +227,35 @@ public class Swerve extends Subsystem {
         mListIndex = enabledLooper.register(loop);
     }
 
-    public Pose2d getPose(){
-        return pose;
+    public Pose2d getPose() {
+        return mPose;
     }
 
-    public boolean hasFinishedPath() {
-        return hasFinishedPath;
-    }
+//    public boolean hasFinishedPath() {
+//        return hasFinishedPath;
+//    }
 
 //    //Assigns appropriate directions for scrub factors
-//    public void setCarpetDirection(boolean standardDirection){
+//    public void setCarpetDirection(boolean standardDirection) {
 //        mModules.forEach((m) -> m.setCarpetDirection(standardDirection));
 //    }
 
-    public ControlState getState(){
+    public ControlState getState() {
         return mControlState;
     }
 
-    public void setState(ControlState newState){
+    public void setState(ControlState newState) {
         if (mControlState != newState) {
             System.out.println(mControlState + " to " + newState);
-            switch (newState){
+            switch (newState) {
                 case NEUTRAL:
                 case MANUAL:
                 case DISABLED:
                     mPeriodicIO.schedDeltaDesired = 100;
                     break;
-                case ROTATION:
-                case POSITION:
 
                 case VISION_AIM:
-                case CELL_AIM:
-                case VELOCITY:
-                case VECTORIZED:
                 case TRAJECTORY:
-                case VISION:
                     mPeriodicIO.schedDeltaDesired = 20;
                     break;
             }
@@ -370,148 +273,66 @@ public class Swerve extends Subsystem {
         mPeriodicIO.strafe = strafe;
         mPeriodicIO.rotation = rotation;
         ChassisSpeeds chassisSpeeds = new ChassisSpeeds(mPeriodicIO.forward, mPeriodicIO.strafe,mPeriodicIO.rotation);
-//        mPeriodicIO.swerveModuleStates = mKinematics.toSwerveModuleStates(chassisSpeeds);
     }
 
-    //Various methods to control the heading controller
-//    public synchronized void rotate(double goalHeading){
-//        if(translationalVector.x() == 0 && translationalVector.y() == 0)
-//            rotateInPlace(goalHeading);
-//        else
-//            headingController.setStabilizationTarget(
-//                    Utils.placeInAppropriate0To360Scope(pose.getRotation().getUnboundedDegrees(), goalHeading));
-//    }
-
-    public void rotateInPlace(double goalHeading){
-        setState(ControlState.ROTATION);
-        headingController.setStationaryTarget(
-                Utils.placeInAppropriate0To360Scope(pose.getRotation().getUnboundedDegrees(), goalHeading));
+    public synchronized void setTrajectory(TrajectoryIterator<TimedState<Pose2dWithCurvature>> trajectory) {
+        if (mMotionPlanner != null) {
+            mOverrideTrajectory = false;
+            mMotionPlanner.reset();
+            mMotionPlanner.setTrajectory(trajectory);
+            mControlState = ControlState.TRAJECTORY;
+        }
     }
 
-
-    public synchronized boolean isOnTarget() {
-        return mIsOnTarget;
+    public boolean isDoneWithTrajectory() {
+        if (mMotionPlanner == null || mControlState != ControlState.TRAJECTORY) {
+            return false;
+        }
+        return mMotionPlanner.isDone() || mOverrideTrajectory;
     }
 
-    public void setAbsolutePathHeading(double absoluteHeading){
-        headingController.setSnapTarget(absoluteHeading);
+    public void overrideTrajectory(boolean value) {
+        mOverrideTrajectory = value;
     }
 
-//    /** Configures each module to match its assigned vector */
-//    public void setDriveOutput(List<Translation2d> driveVectors){
-//        for(int i=0; i<mModules.size(); i++){
-//            if(Utils.shouldReverse(driveVectors.get(i).direction().getDegrees(), modules.get(i).getModuleAngle().getDegrees())){
-//                modules.get(i).setModuleAngle(driveVectors.get(i).direction().getDegrees() + 180.0);
-//                modules.get(i).setDriveOpenLoop(-driveVectors.get(i).norm());
-//            }else{
-//                modules.get(i).setModuleAngle(driveVectors.get(i).direction().getDegrees());
-//                modules.get(i).setDriveOpenLoop(driveVectors.get(i).norm());
+    private void updatePathFollower() {
+        // TODO: Implement Trajectory Following
+        if (mControlState == ControlState.TRAJECTORY) {
+            final double now = Timer.getFPGATimestamp();
+
+//            var output = mMotionPlanner.update(now, RobotState.getInstance().getFieldToVehicle(now));
+//
+//            // DriveSignal signal = new DriveSignal(demand.left_feedforward_voltage / 12.0, demand.right_feedforward_voltage / 12.0);
+//
+//            mPeriodicIO.error = mMotionPlanner.error();
+//            mPeriodicIO.path_setpoint = mMotionPlanner.setpoint();
+//
+//            if (!mOverrideTrajectory) {
+//                setVelocity(new DriveSignal(radiansPerSecondToTicksPer100ms(output.left_velocity), radiansPerSecondToTicksPer100ms(output.right_velocity)),
+//                        new DriveSignal(output.left_feedforward_voltage / 12.0, output.right_feedforward_voltage / 12.0));
+//
+//                mPeriodicIO.left_accel = radiansPerSecondToTicksPer100ms(output.left_accel) / 1000.0;
+//                mPeriodicIO.right_accel = radiansPerSecondToTicksPer100ms(output.right_accel) / 1000.0;
+//            } else {
+//                setVelocity(DriveSignal.BRAKE, DriveSignal.BRAKE);
+//                mPeriodicIO.left_accel = mPeriodicIO.right_accel = 0.0;
 //            }
-//        }
-//    }
-
-    int count = 0;
-
-
-//    /** Increases each module's rotational power cap for the beginning of auto */
-//    public void set10VoltRotationMode(boolean tenVolts){
-//        mModules.forEach((m) -> m.set10VoltRotationMode(tenVolts));
-//    }
-
-//    /**
-//     * @return Whether or not at least one module has reached its MotionMagic setpoint
-//     */
-//    public boolean positionOnTarget(){
-//        boolean onTarget = false;
-//        for(SwerveDriveModule m : modules){
-//            onTarget |= m.drivePositionOnTarget();
-//        }
-//        return onTarget;
-//    }
-
-    /**
-     * @return Whether or not all modules have reached their angle setpoints
-     */
-//    public boolean moduleAnglesOnTarget(){
-//        boolean onTarget = true;
-//        for(SwerveDriveModule m : modules){
-//            onTarget &= m.angleOnTarget();
-//        }
-//        return onTarget;
-//    }
-
-    /**
-     * Sets a trajectory for the robot to follow
-     * @param trajectory
-     * @param targetHeading Heading that the robot will rotate to during its path following
-     * @param rotationScalar Scalar to increase or decrease the robot's rotation speed
-     * @param followingCenter The point (relative to the robot) that will follow the trajectory
-     */
-    public synchronized void setTrajectory(Trajectory<TimedState<Pose2dWithCurvature>> trajectory, double targetHeading,
-                                           double rotationScalar, Translation2d followingCenter) {
-//        hasStartedFollowing = false;
-//        hasFinishedPath = false;
-//        moduleConfigRequested = false;
-////        motionPlanner.reset();
-////        motionPlanner.setTrajectory(new TrajectoryIterator<>(new TimedView<>(trajectory)));
-////        motionPlanner.setFollowingCenter(followingCenter);
-//        inverseKinematics.setCenterOfRotation(followingCenter);
-//        setAbsolutePathHeading(targetHeading);
-//        this.rotationScalar = rotationScalar;
-//        trajectoryStartTime = Timer.getFPGATimestamp();
-//        setState(ControlState.TRAJECTORY);
+//        } else {
+//            DriverStation.reportError("Drive is not in path following state", false);
+        }
     }
-
-    public synchronized void setTrajectory(Trajectory<TimedState<Pose2dWithCurvature>> trajectory, double targetHeading,
-                                           double rotationScalar){
-        setTrajectory(trajectory, targetHeading, rotationScalar, Translation2d.identity());
-    }
-
-    // *** NEW SWERVE ***
-//    public synchronized void setTrajectory(TrajectoryIterator<TimedState<Pose2dWithCurvature>> trajectory) {
-//        if (mMotionPlanner != null) {
-//            mOverrideTrajectory = false;
-//            mMotionPlanner.reset();
-//            mMotionPlanner.setTrajectory(trajectory);
-//            setState(ControlState.TRAJECTORY);
-//        }
-//    }
-    // END NEW WERVE
-
-    public synchronized void setRobotCentricTrajectory(Translation2d relativeEndPos, double targetHeading){
-        setRobotCentricTrajectory(relativeEndPos, targetHeading, 45.0);
-    }
-
-    public synchronized void setRobotCentricTrajectory(Translation2d relativeEndPos, double targetHeading, double defaultVel){
-//        modulesReady = true;
-//        Translation2d endPos = pose.transformBy(Pose2d.fromTranslation(relativeEndPos)).getTranslation();
-//        Rotation2d startHeading = endPos.translateBy(pose.getTranslation().inverse()).direction();
-//        List<Pose2d> waypoints = new ArrayList<>();
-//        waypoints.add(new Pose2d(pose.getTranslation(), startHeading));
-//        waypoints.add(new Pose2d(pose.transformBy(Pose2d.fromTranslation(relativeEndPos)).getTranslation(), startHeading));
-//        Trajectory<TimedState<Pose2dWithCurvature>> trajectory = generator.generateTrajectory(false, waypoints, Arrays.asList(), 96.0, 60.0, 60.0, 9.0, defaultVel, 1);
-//        double heading = Utils.placeInAppropriate0To360Scope(pose.getRotation().getUnboundedDegrees(), targetHeading);
-//        setTrajectory(trajectory, heading, 1.0);
-    }
-
 
     /** Puts all rotation and drive motors into open-loop mode */
-    public synchronized void disable(){
+    public synchronized void disable() {
         mModules.forEach((m) -> m.disable());
         setState(ControlState.DISABLED);
     }
 
     /** Zeroes the drive motors, and sets the robot's internal position and heading to match that of the fed pose */
-    public synchronized void zeroSensors(Pose2d startingPose){
+    public synchronized void zeroSensors(Pose2d startingPose) {
         mPigeon.setAngle(startingPose.getRotation().getUnboundedDegrees());
         mModules.forEach((m) -> m.zeroSensors(startingPose));
 //        pose = startingPose;
-//        distanceTraveled = 0;
-    }
-
-    public synchronized void resetPosition(Pose2d newPose){
-        pose = new Pose2d(newPose.getTranslation(), pose.getRotation());
-        mModules.forEach((m) -> m.zeroSensors(pose));
 //        distanceTraveled = 0;
     }
 
@@ -549,6 +370,7 @@ public class Swerve extends Subsystem {
     private final static double kDeadband = 0.25;
     private final static double kRotationDeadband = 0.15;
 
+    // TODO: Consider separate helper class
     /**
      * Based on Team 1323's sendInput method to make driving feel better.
      *
@@ -622,8 +444,8 @@ public class Swerve extends Subsystem {
     @Override
     public String getLogHeaders() {
         StringBuilder allHeaders = new StringBuilder(256);
-        for (SwerveDriveModule m: mModules){
-            if (allHeaders.length() > 0){
+        for (SwerveDriveModule m: mModules) {
+            if (allHeaders.length() > 0) {
                 allHeaders.append(",");
             }
             allHeaders.append(m.getLogHeaders());
@@ -637,9 +459,9 @@ public class Swerve extends Subsystem {
         return allHeaders.toString();
     }
 
-    private String generateLogValues(boolean telemetry){
+    private String generateLogValues(boolean telemetry) {
         String values;
-        if (telemetry){
+        if (telemetry) {
             values = ""+/*mPeriodicIO.schedDeltaDesired+*/","+
                     /*mPeriodicIO.schedDeltaActual+*/","
             /*mPeriodicIO.schedDuration*/;
@@ -658,8 +480,8 @@ public class Swerve extends Subsystem {
     @Override
     public String getLogValues(boolean telemetry) {
         StringBuilder allValues = new StringBuilder(256);
-        for (SwerveDriveModule m: mModules){
-            if (allValues.length() > 0){
+        for (SwerveDriveModule m: mModules) {
+            if (allValues.length() > 0) {
                 allValues.append(",");
             }
             allValues.append(m.getLogValues(telemetry));
@@ -676,29 +498,6 @@ public class Swerve extends Subsystem {
 
         // Read odometry every in every loop
         updateOdometry(now);
-
-        //brian
-        aimingParameters = robotState.getOuterGoalParameters();
-        mIsOnTarget = false;
-        if (aimingParameters.isPresent()) {
-            //error = -1 * aimingParameters.get().getRobotToGoal().getTranslation().y();
-            //radians
-            error = Math.atan2(-aimingParameters.get().getRobotToGoal().getTranslation().y(), aimingParameters.get().getRobotToGoal().getTranslation().x());
-            if (Math.abs(error) <= Math.toRadians(2.0)){
-                if (++count>3){
-                    mIsOnTarget = true; //0.5
-                }
-            }
-            else{
-                count = 0;
-            }
-            // System.out.println(count+" "+Math.toDegrees(error));
-        }
-        // else{
-        // 	System.out.println("error not present******************************************");
-        // }
-        SmartDashboard.putNumber("LL error", Math.toDegrees(error));
-
     }
 
     @Override
@@ -721,15 +520,15 @@ public class Swerve extends Subsystem {
     public void outputTelemetry() {
         mModules.forEach((m) -> m.outputTelemetry());
         SmartDashboard.putString("Swerve/Swerve State", mControlState.toString());
-        SmartDashboard.putBoolean("Swerve/isOnTarget", isOnTarget());
-        if(Constants.kDebuggingOutput){
+//        SmartDashboard.putBoolean("Swerve/isOnTarget", isOnTarget());
+        if (Constants.kDebuggingOutput) {
             // Get the current pose from odometry state
             Pose2d pose = mOdometry.getPose();
             SmartDashboard.putString("Swerve/pose", pose.toString());
             SmartDashboard.putString("Swerve/State", mControlState.toString());
             SmartDashboard.putNumberArray("Swerve/Pigeon YPR", mPigeon.getYPR());
-            SmartDashboard.putString("Swerve/Heading Controller", headingController.getState().toString());
-            SmartDashboard.putNumber("Swerve/Target Heading", headingController.getTargetHeading());
+//            SmartDashboard.putString("Swerve/Heading Controller", mHeadingController.getState().toString());
+//            SmartDashboard.putNumber("Swerve/Target Heading", mHeadingController.getTargetHeading());
             SmartDashboard.putNumber("Swerve/Distance from start/last reset", mOdometry.getPose().getTranslation().norm());
             SmartDashboard.putNumber("Swerve/Translational Velocity m/s",
                     Math.hypot(
@@ -740,19 +539,19 @@ public class Swerve extends Subsystem {
                             Units.metersToFeet(mChassisSpeeds.vxInMetersPerSecond),
                             Units.metersToFeet(mChassisSpeeds.vyInMetersPerSecond)));
             SmartDashboard.putString("Swerve/Chassis Speed", mChassisSpeeds.toString());
-            SmartDashboard.putBoolean("Swerve/Vision Updates Allowed", visionUpdatesAllowed);
+//            SmartDashboard.putBoolean("Swerve/Vision Updates Allowed", visionUpdatesAllowed);
 
             SmartDashboard.putNumberArray("Swerve/Robot Pose", new double[]{pose.getTranslation().x(), pose.getTranslation().y(), pose.getRotation().getUnboundedDegrees()});
             SmartDashboard.putNumber("Swerve/Robot X", pose.getTranslation().x());
             SmartDashboard.putNumber("Swerve/Robot Y", pose.getTranslation().y());
             SmartDashboard.putNumber("Swerve/Robot Heading", pose.getRotation().getUnboundedDegrees());
-            SmartDashboard.putNumber("Swerve/Robot Velocity", currentVelocity);
+//            SmartDashboard.putNumber("Swerve/Robot Velocity", currentVelocity);
         }
 
-        if(!hasFinishedPath() && hasStartedFollowing){
-            double currentTime = Timer.getFPGATimestamp();
-            SmartDashboard.putNumber("Autopath Timer", currentTime - trajectoryStartTime);
-        }
+//        if (!hasFinishedPath() && hasStartedFollowing) {
+//            double currentTime = Timer.getFPGATimestamp();
+//            SmartDashboard.putNumber("Autopath Timer", currentTime - trajectoryStartTime);
+//        }
     }
 
     public static class PeriodicIO {
@@ -763,6 +562,7 @@ public class Swerve extends Subsystem {
         private double lastSchedStart;
 
         // Inputs
+        public Rotation2d gyro_heading = Rotation2d.identity();
         public double forward;
         public double strafe;
         public double rotation;

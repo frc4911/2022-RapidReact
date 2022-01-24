@@ -5,11 +5,18 @@ import frc.robot.Constants;
 import libraries.cheesylib.loops.ILooper;
 import libraries.cheesylib.loops.Loop;
 import libraries.cheesylib.subsystems.Subsystem;
+import libraries.cheesylib.util.LatchedBoolean;
+import libraries.cheesylib.util.TimeDelayedBoolean;
+import libraries.cyberlib.control.SwerveHeadingController;
 import libraries.cyberlib.io.CW;
-import libraries.cyberlib.io.LogitechPS4;
 import libraries.cyberlib.io.Xbox;
 
 public class JSticks extends Subsystem{
+
+    // Heading controller methods
+    private final SwerveHeadingController mHeadingController = SwerveHeadingController.getInstance();
+    private final LatchedBoolean shouldChangeHeadingSetpoint = new LatchedBoolean();
+    private final TimeDelayedBoolean mShouldMaintainHeading = new TimeDelayedBoolean();
 
     public enum SystemState {
         READINGBUTTONS,
@@ -78,6 +85,10 @@ public class JSticks extends Subsystem{
                 mSystemState = SystemState.READINGBUTTONS;
                 mWantedState = WantedState.READBUTTONS;
                 mStateChanged = true;
+
+                // Force true on first iteration of teleop periodic
+                shouldChangeHeadingSetpoint.update(false);
+
                 System.out.println(sClassName + " state " + mSystemState);
                 switch (phase) {
                     case DISABLED:
@@ -140,16 +151,36 @@ public class JSticks extends Subsystem{
 //        mSwerve.sendInput(swerveXInput, swerveYInput, swerveRotationInput, dr_LeftToggleDown_RobotOrient, false);
 
         // NEW SWERVE
-        mSwerve.setTeleopInputs(swerveXInput, swerveYInput, swerveRotationInput,
-                dr_LeftToggleDown_RobotOrient, false, false);
-        // END NEW SWERVE
+        boolean maintainHeading = mShouldMaintainHeading.update(swerveRotationInput == 0, 0.2);
+        boolean changeHeadingSetpoint = shouldChangeHeadingSetpoint.update(maintainHeading);
+
+        if (!maintainHeading) {
+            mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.OFF);
+        } else if ((mHeadingController
+                .getHeadingControllerState() == SwerveHeadingController.HeadingControllerState.SNAP
+                && mHeadingController.isAtGoal()) || changeHeadingSetpoint) {
+            mHeadingController
+                    .setHeadingControllerState(SwerveHeadingController.HeadingControllerState.MAINTAIN);
+            mHeadingController.setGoal(mSwerve.getHeading().getDegrees());
+        }
+
+        if (mHeadingController.getHeadingControllerState() != SwerveHeadingController.HeadingControllerState.OFF) {
+            mSwerve.setTeleopInputs(swerveXInput, swerveYInput, mHeadingController.update(),
+                    false, dr_LeftToggleDown_RobotOrient, true);
+        } else {
+            mSwerve.setTeleopInputs(swerveXInput, swerveYInput,swerveRotationInput,
+                    false, dr_LeftToggleDown_RobotOrient, false);
+        }
 
 		if (dr_YButton_ResetIMU) {
-//			mSwerve.temporarilyDisableHeadingController();
-			mSwerve.zeroSensors(Constants.kRobotStartingPose);
-//			mSwerve.resetAveragedDirection();
-		}
+            // Seems safest to disable heading controller if were resetting IMU.
+            if (mHeadingController.getHeadingControllerState() != SwerveHeadingController.HeadingControllerState.OFF) {
+                mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.OFF);
+            }
 
+            mSwerve.zeroSensors(Constants.kRobotStartingPose);
+		}
+        // END NEW SWERVE
 	}
 
     @Override

@@ -323,6 +323,21 @@ public class Constants {
         kBackRightModuleConstants.kCANCoderId = Ports.REAR_RIGHT_ENC;
         /* ... */
     }
+
+    // Swerve Heading Controller
+    public static final double kSwerveHeadingControllerErrorTolerance = 1.0; // degrees
+
+    // good for snapping (dpad)
+    public static final double kSnapSwerveHeadingKp = 0.031;
+    public static final double kSnapSwerveHeadingKi = 0.0;
+    public static final double kSnapSwerveHeadingKd = 0.003;
+
+    // good for maintaining heading
+    public static final double kMaintainSwerveHeadingKp = 0.020;
+    public static final double kMaintainSwerveHeadingKi = 0.0;
+    public static final double kMaintainSwerveHeadingKd = 0.002;
+
+
     // END NEW SWERVE
 
     //Panel Manipulator Constants
