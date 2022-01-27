@@ -250,11 +250,11 @@ public class Constants {
     // TODO: use SDS MK4 module configurations file.
     // These settings are for an inverted Mk4 L2.  The steering reduction is different:
     // (14.0/50.0) verses (15.0 / 32.0) on a standard Mk4_L2.
-    public static final double wheelDiameter  = 0.10033;
-    public static final double driveReduction = (14.0 / 50.0) * (27.0 / 17.0) * (15.0 / 45.0);
-    public static final boolean driveInverted = true;
-    public static final double steerReduction = (14.0/50.0) * (10.0 / 60.0);
-    public static final boolean steerInverted = true;
+    public static final double kMK4_L2iWheelDiameter = 0.10033;
+    public static final double kMK4_l2iDriveReduction = (14.0 / 50.0) * (27.0 / 17.0) * (15.0 / 45.0);
+    public static final boolean kMK4_l2iDriveInverted = true;
+    public static final double kMK4_l2iSteerReduction = (14.0/50.0) * (10.0 / 60.0);
+    public static final boolean kMK4_l2iSteerInverted = true;
 
     // New Swerve requires SI units
     public static final double kWheelbaseLengthInMeters = Units.inchesToMeters(kWheelbaseLength);
@@ -266,7 +266,8 @@ public class Constants {
     // Max translational velocity in m/s
     public static final double kSwerveDriveMaxSpeedInMetersPerSecond = Units.inchesToMeters(kSwerveMaxSpeedInchesPerSecond) ;
     // Maximum angular velocity in rad/s
-    public static final double kSwerveRotationMaxSpeedInMetersPerSecond = kSwerveMaxSpeedInchesPerSecond / kRadiusInMeters;
+    public static final double kSwerveRotationMaxSpeedInRadiansPerSecond = kSwerveMaxSpeedInchesPerSecond / kRadiusInMeters;
+    public static final double kRotationMotorTicksPerRadian = 2048.0 / (2 * Math.PI);
 
     // If CW, then right is positive.  If CCW left is positive
     public static final Translation2d kFrontRightModuleLocation = new Translation2d(kWheelbaseLengthInMeters / 2, kWheelbaseWidthInMeters / 2);
@@ -296,6 +297,8 @@ public class Constants {
         kFrontRightModuleConstants.kRotationMotorTalonId = Ports.FRONT_RIGHT_ROTATION;
         kFrontRightModuleConstants.kRotationMotorEncoderHomeOffset = 883.0;
         kFrontRightModuleConstants.kCANCoderId = Ports.FRONT_RIGHT_ENC;
+        kFrontRightModuleConstants.kWheelDiameter = kMK4_L2iWheelDiameter;
+        kFrontRightModuleConstants.kDriveReduction = kMK4_l2iDriveReduction;
         /* ... */
     }
 
@@ -307,6 +310,8 @@ public class Constants {
         kFrontLeftModuleConstants.kRotationMotorTalonId = Ports.FRONT_LEFT_ROTATION;
         kFrontLeftModuleConstants.kRotationMotorEncoderHomeOffset = 1683.0;
         kFrontLeftModuleConstants.kCANCoderId = Ports.FRONT_LEFT_ENC;
+        kFrontLeftModuleConstants.kWheelDiameter = kMK4_L2iWheelDiameter;
+        kFrontLeftModuleConstants.kDriveReduction = kMK4_l2iDriveReduction;
         /* ... */
     }
 
@@ -318,6 +323,8 @@ public class Constants {
         kBackLeftModuleConstants.kRotationMotorTalonId = Ports.REAR_LEFT_ROTATION;
         kBackLeftModuleConstants.kRotationMotorEncoderHomeOffset = 3451.0;
         kBackLeftModuleConstants.kCANCoderId = Ports.REAR_LEFT_ENC;
+        kBackLeftModuleConstants.kWheelDiameter = kMK4_L2iWheelDiameter;
+        kBackLeftModuleConstants.kDriveReduction = kMK4_l2iDriveReduction;
         /* ... */
     }
 
@@ -329,6 +336,8 @@ public class Constants {
         kBackRightModuleConstants.kRotationMotorTalonId = Ports.REAR_RIGHT_ROTATION;
         kBackRightModuleConstants.kRotationMotorEncoderHomeOffset = -327.0;
         kBackRightModuleConstants.kCANCoderId = Ports.REAR_RIGHT_ENC;
+        kBackRightModuleConstants.kWheelDiameter = kMK4_L2iWheelDiameter;
+        kBackRightModuleConstants.kDriveReduction = kMK4_l2iDriveReduction;
         /* ... */
     }
 

@@ -61,7 +61,8 @@ public class SwerveDriveModule extends Subsystem {
 		public boolean kInvertRotationMotor = true;
 		public boolean kInvertRotationMotorSensorPhase = true;
 		public NeutralMode kRotationMotorInitNeutralMode = NeutralMode.Brake; // neutral mode could change
-		public double kRotationMotorTicksPerRadian = 4096.0 / (2 * Math.PI); // for rotation motor
+        public double kRotationMotorTicksPerRadian = 2048.0 / (2 * Math.PI); // for rotation motor
+        public double kRotationMotorTicksPerRadianPerSecond = kRotationMotorTicksPerRadian / 10; // for rotation motor
 		public double kRotationMotorEncoderHomeOffset = 0;
 
 		// Rotation CANCoder
@@ -118,9 +119,11 @@ public class SwerveDriveModule extends Subsystem {
 		public boolean kInvertDrive = true;
 		public boolean kInvertDriveSensorPhase = false;
 		public NeutralMode kDriveInitNeutralMode = NeutralMode.Brake; // neutral mode could change
-		public double kWheelDiameter = 4.0; // Probably should tune for each individual wheel maybe
-		public double kDriveTicksPerUnitDistance = (1.0 / 4096.0) * (18.0 / 28.0 * 15.0 / 45.0)
-				* (Math.PI * kWheelDiameter);
+        // Default wheel diameter and drive reduction to Mk4_L2i values which are in SI units
+        public double kWheelDiameter = 0.10033; // Probably should tune for each individual wheel maybe
+        public double kDriveReduction = (14.0 / 50.0) * (27.0 / 17.0) * (15.0 / 45.0);
+		public double kDriveTicksPerUnitDistance = (1.0 / 2048.0) * kDriveReduction * (Math.PI * kWheelDiameter);
+        public double kDriveTicksPerUnitVelocity = kDriveTicksPerUnitDistance / 10;  // Motor controller unit is ticks per 100 ms
 		public double kDriveDeadband = 0.01;
 
 		// drive current/voltage
@@ -142,10 +145,8 @@ public class SwerveDriveModule extends Subsystem {
 	private final boolean mLoggingEnabled = true;    // used to disable logging for this subsystem only
 	private final CheckFaults mFaultChecker = new CheckFaults();
 
-	boolean tenVoltRotationMode = false;
-	private Translation2d position;
-	private Translation2d startingPosition;
-	private boolean standardCarpetDirection = true;
+//	boolean tenVoltRotationMode = false;
+//	private boolean standardCarpetDirection = true;
 
 	private final PeriodicIO mPeriodicIO = new PeriodicIO();
 	private ControlState mControlState = ControlState.NEUTRAL;
@@ -205,6 +206,7 @@ public class SwerveDriveModule extends Subsystem {
         mRotationMotor.enableVoltageCompensation(mConstants.kRotationMotorEnableVoltageCompensation);
         mRotationMotor.configAllowableClosedloopError(0, mConstants.kRotationMotorClosedLoopAllowableError, Constants.kLongCANTimeoutMs);
 
+        // TODO: Set these correctly
         mRotationMotor.configMotionAcceleration(Constants.kSwerveRotationMaxSpeed * 12.5, Constants.kLongCANTimeoutMs);
         mRotationMotor.configMotionCruiseVelocity(Constants.kSwerveRotationMaxSpeed, Constants.kLongCANTimeoutMs);
 //        mRotationMotor.configVelocityMeasurementPeriod(mConstants.kRotationMotorVelocityMeasurementPeriod, Constants.kLongCANTimeoutMs);
@@ -252,14 +254,18 @@ public class SwerveDriveModule extends Subsystem {
         mDriveMotor.setInverted(mConstants.kInvertDrive);
         mDriveMotor.setSensorPhase(mConstants.kInvertDriveSensorPhase);
         mDriveMotor.setNeutralMode(mConstants.kDriveInitNeutralMode);
+
         // Slot 0 is reserved for MotionMagic
         mDriveMotor.selectProfileSlot(0, 0);
         mDriveMotor.config_kP(0, 2.0, Constants.kLongCANTimeoutMs);
         mDriveMotor.config_kI(0, 0.0, Constants.kLongCANTimeoutMs);
         mDriveMotor.config_kD(0, 24.0, Constants.kLongCANTimeoutMs);
         mDriveMotor.config_kF(0, 1023.0/Constants.kSwerveDriveMaxSpeed, Constants.kLongCANTimeoutMs);
+
+        // TODO: Set these correctly
         mDriveMotor.configMotionCruiseVelocity(Constants.kSwerveDriveMaxSpeed*0.9, Constants.kLongCANTimeoutMs);
         mDriveMotor.configMotionAcceleration(Constants.kSwerveDriveMaxSpeed, Constants.kLongCANTimeoutMs);
+
         // Slot 1 corresponds to velocity mode (USED FOR AUTO)
         mDriveMotor.config_kP(1, 0.03, Constants.kLongCANTimeoutMs);
         mDriveMotor.config_kI(1, 0.0, Constants.kLongCANTimeoutMs);
@@ -292,9 +298,9 @@ public class SwerveDriveModule extends Subsystem {
 	 * @param state Desired state with speed and angle.
 	 */
 	public void setState(SwerveModuleState state) {
-		// Convert SwerveModuleState speed (m/s) into percent output
+		// Converts SwerveModuleState speed (m/s) into a percent output
 		setDriveOpenLoop(metersPerSecondToEncVelocity(state.speedInMetersPerSecond));
-		setModuleAngle(state.angle.getDegrees());
+        setReferenceAngle(state.angle.getDegrees());
 	}
 	
 	@Override
@@ -302,38 +308,48 @@ public class SwerveDriveModule extends Subsystem {
 		if (mControlState != ControlState.NEUTRAL) {
 			mControlState = ControlState.NEUTRAL;
 		}
+
 		mDriveMotor.set(ControlMode.PercentOutput, 0.0);
 		mRotationMotor.set(ControlMode.PercentOutput, 0.0);
 	}
-
-    @Override
-    public synchronized void zeroSensors() {
-        zeroSensors(new Pose2d());
-    }
-
-    @Override
-    public void registerEnabledLoops(ILooper enabledLooper) {
-    }
 
 	private double getRawAngle() {
 		return encUnitsToDegrees(mPeriodicIO.rotationPosition);
 	}
 
-    private void setModuleAngle(double goalAngle){
-		double angle = Utils.placeInAppropriate0To360Scope(getRawAngle(), goalAngle);
-		int setpoint = degreesToEncUnits(angle);
+    /**
+     * Sets the reference angle for the rotation motor
+     * <p>
+     * @param referenceAngleRadians goal angle in radians
+     */
+    private void setReferenceAngle(double referenceAngleRadians) {
+        double currentAngleRadians = encoderUnitsToRadians(mPeriodicIO.rotationPosition);
+
+        double currentAngleRadiansMod = currentAngleRadians % (2.0 * Math.PI);
+        if (currentAngleRadiansMod < 0.0) {
+            currentAngleRadiansMod += 2.0 * Math.PI;
+        }
+
+        // The reference angle has the range [0, 2pi) but the Falcon's encoder can go above that
+        double adjustedReferenceAngleRadians = referenceAngleRadians + currentAngleRadians - currentAngleRadiansMod;
+        if (referenceAngleRadians - currentAngleRadiansMod > Math.PI) {
+            adjustedReferenceAngleRadians -= 2.0 * Math.PI;
+        } else if (referenceAngleRadians - currentAngleRadiansMod < -Math.PI) {
+            adjustedReferenceAngleRadians += 2.0 * Math.PI;
+        }
+
         mPeriodicIO.rotationControlMode = ControlMode.MotionMagic;
-        mPeriodicIO.rotationDemand = setpoint;
+        mPeriodicIO.rotationDemand = radiansToEncoderUnits(adjustedReferenceAngleRadians);
     }
 
     /**
      * Sets the motor controller settings and values for the Rotation motor.
      * <p>
-     * @param angularVelocity Normalized value
+     * @param angularVelocityInRadiansPerSecond Normalized value
      */
-    public void setRotationOpenLoop(double angularVelocity) {
+    public void setRotationOpenLoop(double angularVelocityInRadiansPerSecond) {
         mPeriodicIO.rotationControlMode = ControlMode.PercentOutput;
-        mPeriodicIO.rotationDemand = angularVelocity;
+        mPeriodicIO.rotationDemand = angularVelocityInRadiansPerSecond;
     }
 
     /**
@@ -350,69 +366,46 @@ public class SwerveDriveModule extends Subsystem {
         mPeriodicIO.driveDemand = velocity;
     }
 
-    // Rotation
-    public synchronized double encoderUnitsToRadians(double ticks) {
+    // Rotation motor
+    private double encoderUnitsToRadians(double ticks) {
         return ticks / mConstants.kRotationMotorTicksPerRadian;
     }
 
-    public synchronized double radiansToEncoderUnits(double radians) {
+    private double radiansToEncoderUnits(double radians) {
         return radians * mConstants.kRotationMotorTicksPerRadian;
     }
 
+    private int degreesToEncUnits(double degrees) {
+        return (int) radiansToEncoderUnits(Math.toRadians(degrees));
+    }
+
+    private double encUnitsToDegrees(double encUnits) {
+        return Math.toDegrees(encoderUnitsToRadians(encUnits));
+    }
+
     // Drive motor
-    public synchronized double encoderUnitsToDistance(double ticks) {
+    private double encoderUnitsToDistance(double ticks) {
         return ticks * mConstants.kDriveTicksPerUnitDistance;
     }
 
-    public synchronized double distanceToEncoderUnits(double distance) {
-        return distance / mConstants.kDriveTicksPerUnitDistance;
+    private double distanceToEncoderUnits(double distanceInMeters) {
+        return distanceInMeters / mConstants.kDriveTicksPerUnitDistance;
     }
 
-
-    public double encUnitsToInches(double encUnits) {
-        return encUnits/Constants.kSwerveEncUnitsPerInch;
+    private double encUnitsToInches(double encUnits) {
+        return Units.metersToInches(encoderUnitsToDistance(encUnits));
     }
 
-    public double inchesToEncUnits(double inches) {
-        return inches * Constants.kSwerveEncUnitsPerInch;
+    private double inchesToEncUnits(double inches) {
+        return distanceToEncoderUnits(Units.inchesToMeters(inches));
     }
 
-    public double metersPerSecondToEncVelocity(double metersPerSecond) {
-        return inchesToEncUnits(Units.metersToInches(metersPerSecond) / 10.0);
+    private double metersPerSecondToEncVelocity(double metersPerSecond) {
+        return metersPerSecond * mConstants.kDriveTicksPerUnitVelocity;
     }
 
-    public double encVelocityToInchesPerSecond(double encUnitsPer100ms){
-        return encUnitsToInches(encUnitsPer100ms) * 10;
-    }
-
-    public double encVelocityToMetersPerSecond(double encUnitsPer100ms) {
-        return Units.inchesToMeters(encVelocityToInchesPerSecond(encUnitsPer100ms));
-    }
-
-    public double inchesPerSecondToEncVelocity(double inchesPerSecond){
-        return inchesToEncUnits(inchesPerSecond / 10.0);
-    }
-
-    public int degreesToEncUnits(double degrees) {
-        return (int) (degrees / 360.0 * Constants.kSwerveRotationMotorTicksPerRotation);
-    }
-
-    public double encUnitsToDegrees(double encUnits) {
-        return encUnits / Constants.kSwerveRotationMotorTicksPerRotation * 360.0;
-    }
-
-    public Translation2d getPosition() {
-        return position;
-    }
-
-    public synchronized void resetPose(Pose2d robotPose) {
-        Translation2d modulePosition = robotPose.transformBy(Pose2d.fromTranslation(startingPosition)).getTranslation();
-        position = modulePosition;
-    }
-
-    public synchronized void zeroSensors(Pose2d robotPose) {
-        //driveMotor.setSelectedSensorPosition(0, 0, 100); TODO check if this is necessary
-        resetPose(robotPose);
+    private double encVelocityToMetersPerSecond(double encUnitsPer100ms) {
+        return encUnitsPer100ms / mConstants.kDriveTicksPerUnitVelocity;
     }
 
     public synchronized void disable() {
@@ -422,7 +415,7 @@ public class SwerveDriveModule extends Subsystem {
 
     @Override
     public String getLogHeaders() {
-        if (mLoggingEnabled){
+        if (mLoggingEnabled) {
             cf.clearFaults(mDriveMotor);
             cf.clearFaults(mRotationMotor);
             String shortName = mModuleName;
@@ -441,10 +434,10 @@ public class SwerveDriveModule extends Subsystem {
         return null;
     }
 
-    private String generateLogValues(boolean telemetry){
+    private String generateLogValues(boolean telemetry) {
         String values;
 
-        if (telemetry){
+        if (telemetry) {
             mPeriodicIO.rotationCurrent = mRotationMotor.getStatorCurrent();
             mPeriodicIO.driveCurrent    = mDriveMotor.getStatorCurrent();
             mPeriodicIO.rotationFaults  = cf.getFaults(mRotationMotor);
@@ -471,14 +464,14 @@ public class SwerveDriveModule extends Subsystem {
                     /*periodicIO.rotationCurrent+*/","+
                     /*periodicIO.driveCurrent+*/","+
                     /*cf.getFXFaults(rotationMotor)+*/","
-            /*cf.getFXFaults(driveMotor)*/;
+                    /*cf.getFXFaults(driveMotor)*/;
         }
         return values;
     }
 
     @Override
     public String getLogValues(boolean telemetry) {
-        if (mLoggingEnabled){
+        if (mLoggingEnabled) {
             return generateLogValues(telemetry);
         }
         return null;
@@ -519,7 +512,7 @@ public class SwerveDriveModule extends Subsystem {
         // SmartDashboard.putNumber(name + "Position", periodicIO.drivePosition); // Alex
         // SmartDashboard.putNumber(name + "Velocity", driveMotor.getSelectedSensorVelocity(0)); // Alex
         //SmartDashboard.putNumber(name + "Velocity", encVelocityToInchesPerSecond(periodicIO.velocity));
-        if(Constants.kDebuggingOutput){
+        if(Constants.kDebuggingOutput) {
             SmartDashboard.putNumber(mModuleName + "Pulse Width", mRotationMotor.getSelectedSensorPosition(0));
             if(mRotationMotor.getControlMode() == ControlMode.MotionMagic)
                 SmartDashboard.putNumber(mModuleName + "Error", encUnitsToDegrees(mRotationMotor.getClosedLoopError(0)));
@@ -540,7 +533,7 @@ public class SwerveDriveModule extends Subsystem {
         public String driveFaults;
 
 
-        //Outputs
+        //Outputs are in units for the motor controller.
         public ControlMode rotationControlMode = ControlMode.PercentOutput;
         public ControlMode driveControlMode = ControlMode.PercentOutput;
         public double rotationDemand;

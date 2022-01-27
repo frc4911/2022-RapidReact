@@ -339,7 +339,7 @@ public class Swerve extends Subsystem {
     /** Zeroes the drive motors, and sets the robot's internal position and heading to match that of the fed pose */
     public synchronized void zeroSensors(Pose2d startingPose) {
         mPigeon.setAngle(startingPose.getRotation().getUnboundedDegrees());
-        mModules.forEach((m) -> m.zeroSensors(startingPose));
+//        mModules.forEach((m) -> m.zeroSensors(startingPose));
 //        pose = startingPose;
 //        distanceTraveled = 0;
     }
@@ -444,7 +444,7 @@ public class Swerve extends Subsystem {
         ChassisSpeeds chassisSpeeds = new ChassisSpeeds(
                 translationalInput.x() * Constants.kSwerveDriveMaxSpeedInMetersPerSecond,
                 translationalInput.y() * Constants.kSwerveDriveMaxSpeedInMetersPerSecond,
-                rotationInput * Constants.kSwerveRotationMaxSpeedInMetersPerSecond);
+                rotationInput * Constants.kSwerveRotationMaxSpeedInRadiansPerSecond);
         return chassisSpeeds;
     }
 
