@@ -111,7 +111,7 @@ public class SwerveDriveModule extends Subsystem {
 		// Rotation Motor measurement
 		public int kRotationMotorStatusFrame2UpdateRate = 10; // feedback for selected sensor, ms
 		public int kRotationMotorStatusFrame10UpdateRate = 10; // motion magic, ms
-		public VelocityMeasPeriod kRotationMotorVelocityMeasurementPeriod = VelocityMeasPeriod.Period_100Ms; // dt for velocity measurements, ms
+//		public VelocityMeasPeriod kRotationMotorVelocityMeasurementPeriod = VelocityMeasPeriod.Period_100Ms; // dt for velocity measurements, ms
 		public int kRotationMotorVelocityMeasurementWindow = 64; // # of samples in rolling average
 
 		// general drive
@@ -274,20 +274,21 @@ public class SwerveDriveModule extends Subsystem {
 
 	/**
 	 * Returns the current state of the module.
-	 *
+	 * <p>
 	 * @return The current state of the module.
 	 */
 	public SwerveModuleState getState() {
+        // Convert to encoder readings to SI units.
 		return new SwerveModuleState(
-                // Convert to SI units to keep everything consistent.
                 encVelocityToMetersPerSecond(mPeriodicIO.driveDemand),
 				new Rotation2d(encUnitsToDegrees(mPeriodicIO.rotationPosition)));
 	}
 
 	/**
 	 * Sets the state for the module.
-	 * It converts the velocity in SI units (meters per second) to a voltage (as a percentage) for the motor controllers.
-	 *
+	 * <p>
+     * It converts the velocity in SI units (meters per second) to a voltage (as a percentage) for the motor controllers.
+	 * <p>
 	 * @param state Desired state with speed and angle.
 	 */
 	public void setState(SwerveModuleState state) {
@@ -325,12 +326,19 @@ public class SwerveDriveModule extends Subsystem {
         mPeriodicIO.rotationDemand = setpoint;
     }
 
-    public void setRotationOpenLoop(double power) {
+    /**
+     * Sets the motor controller settings and values for the Rotation motor.
+     * <p>
+     * @param angularVelocity Normalized value
+     */
+    public void setRotationOpenLoop(double angularVelocity) {
         mPeriodicIO.rotationControlMode = ControlMode.PercentOutput;
-        mPeriodicIO.rotationDemand = power;
+        mPeriodicIO.rotationDemand = angularVelocity;
     }
 
     /**
+     * Sets the motor controller settings and values for the Drive motor.
+     * <p>
      * @param velocity Normalized value
      */
     public void setDriveOpenLoop(double velocity) {
@@ -341,6 +349,25 @@ public class SwerveDriveModule extends Subsystem {
         mPeriodicIO.driveControlMode = ControlMode.PercentOutput;
         mPeriodicIO.driveDemand = velocity;
     }
+
+    // Rotation
+    public synchronized double encoderUnitsToRadians(double ticks) {
+        return ticks / mConstants.kRotationMotorTicksPerRadian;
+    }
+
+    public synchronized double radiansToEncoderUnits(double radians) {
+        return radians * mConstants.kRotationMotorTicksPerRadian;
+    }
+
+    // Drive motor
+    public synchronized double encoderUnitsToDistance(double ticks) {
+        return ticks * mConstants.kDriveTicksPerUnitDistance;
+    }
+
+    public synchronized double distanceToEncoderUnits(double distance) {
+        return distance / mConstants.kDriveTicksPerUnitDistance;
+    }
+
 
     public double encUnitsToInches(double encUnits) {
         return encUnits/Constants.kSwerveEncUnitsPerInch;

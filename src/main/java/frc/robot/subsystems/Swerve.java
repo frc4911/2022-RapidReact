@@ -16,7 +16,6 @@ import libraries.cheesylib.geometry.Translation2d;
 import libraries.cheesylib.loops.ILooper;
 import libraries.cheesylib.loops.Loop;
 import libraries.cheesylib.subsystems.Subsystem;
-import libraries.cheesylib.trajectory.Trajectory;
 import libraries.cheesylib.trajectory.TrajectoryIterator;
 import libraries.cheesylib.trajectory.timing.TimedState;
 import libraries.cyberlib.kinematics.ChassisSpeeds;
@@ -140,9 +139,44 @@ public class Swerve extends Subsystem {
         @Override
         public void onLoop(double timestamp) {
             synchronized(Swerve.this) {
-                updateControlCycle(timestamp);
                 lastUpdateTimestamp = timestamp;
+
+                switch(mControlState) {
+                    case MANUAL:
+                        handleManual();
+                        break;
+                    case TRAJECTORY:
+                        updatePathFollower();
+                        break;
+                    case NEUTRAL:
+                        stop();
+                        break;
+                    case DISABLED:
+                    default:
+                        break;
+                }
             }
+        }
+
+        /**
+         * Handles MANUAL state which corresponds to joy stick inputs.
+         * <p>
+         * Using the joy stick values in PeriodicIO, calculate and updates the swerve states. The joy stick values
+         * are as percent [-1.0, 1.0].  The swerveDriverHelper converts percent inputs to SI units before creating
+         * the ChassisSpeeds.
+         */
+        private void handleManual() {
+            // Helper to make driving feel better
+            var chassisSpeeds = swerveDriveHelper(
+                    mPeriodicIO.forward, mPeriodicIO.strafe, mPeriodicIO.rotation, mPeriodicIO.low_power,
+                    mPeriodicIO.field_relative, mPeriodicIO.use_heading_controller);
+
+            // Now calculate the new Swerve Module states using kinematics.
+            mPeriodicIO.swerveModuleStates = mKinematics.toSwerveModuleStates(chassisSpeeds);
+
+            // Normalize wheels speeds if any individual speed is above the specified maximum.
+            SwerveDriveKinematics.desaturateWheelSpeeds(
+                    mPeriodicIO.swerveModuleStates, Constants.kSwerveDriveMaxSpeedInMetersPerSecond);
         }
 
         @Override
@@ -152,64 +186,6 @@ public class Swerve extends Subsystem {
             }
         }
     };
-
-    /**
-     * Returns the angle of the robot as a Rotation2d.
-     *
-     * @return The angle of the robot (CCW).
-     */
-    private Rotation2d getAngle() {
-        // Expects CCW.
-        return mPigeon.getYaw();
-    }
-
-    public Rotation2d getHeading() {
-        return mPeriodicIO.gyro_heading;
-    }
-
-
-    /**
-     * Updates the field relative position of the robot.
-     */
-    private void updateOdometry(double timestamp) {
-        var frontLeft = mFrontLeft.getState();
-        var frontRight = mFrontRight.getState();
-        var backLeft = mBackLeft.getState();
-        var backRight = mBackRight.getState();
-
-        mChassisSpeeds = mKinematics.toChassisSpeeds(frontLeft,frontRight, backLeft, backRight);
-        mPose = mOdometry.updateWithTime(timestamp, getAngle(), frontLeft, frontRight, backLeft, backRight);
-    }
-
-
-    /**
-     * Called every cycle to update the swerve based on its control state
-     * */
-    public synchronized void updateControlCycle(double timestamp) {
-        switch(mControlState) {
-            case MANUAL:
-                // Calculates and updates the swerve states in PeriodicIO
-                // The PeriodicIO values are set in JSticks TeleOp method, by calling setTeleopInputs().
-                var chassisSpeeds = swerveDriveHelper(mPeriodicIO.forward, mPeriodicIO.strafe, mPeriodicIO.rotation, mPeriodicIO.low_power,
-                        mPeriodicIO.field_relative, mPeriodicIO.use_heading_controller);
-
-                // Now command the new Swerve Module states
-                mPeriodicIO.swerveModuleStates = mKinematics.toSwerveModuleStates(chassisSpeeds);
-
-                // Make sure they are valid
-                SwerveDriveKinematics.desaturateWheelSpeeds(mPeriodicIO.swerveModuleStates, Constants.kSwerveDriveMaxSpeedInMetersPerSecond);
-                break;
-            case TRAJECTORY:
-                updatePathFollower();
-                break;
-            case NEUTRAL:
-                stop();
-                break;
-            case DISABLED:
-            default:
-                break;
-        }
-    }
 
     @Override
     public synchronized void stop() {
@@ -227,9 +203,6 @@ public class Swerve extends Subsystem {
         mListIndex = enabledLooper.register(loop);
     }
 
-    public Pose2d getPose() {
-        return mPose;
-    }
 
 //    public boolean hasFinishedPath() {
 //        return hasFinishedPath;
@@ -264,16 +237,51 @@ public class Swerve extends Subsystem {
         mControlState = newState;
     }
 
-    public synchronized void setOpenLoop(double forward, double strafe, double rotation) {
-        if (mControlState != ControlState.MANUAL) {
-            mControlState = ControlState.MANUAL;
-        }
-
-        mPeriodicIO.forward = forward;
-        mPeriodicIO.strafe = strafe;
-        mPeriodicIO.rotation = rotation;
-        ChassisSpeeds chassisSpeeds = new ChassisSpeeds(mPeriodicIO.forward, mPeriodicIO.strafe,mPeriodicIO.rotation);
+    /**
+     * Returns the angle of the robot as a Rotation2d.
+     * <p>
+     * @return The angle of the robot (CCW).
+     */
+    private synchronized Rotation2d getAngle() {
+        // Expects CCW.
+        return mPigeon.getYaw();
     }
+
+    public Pose2d getPose() {
+        return mPose;
+    }
+
+    public Rotation2d getHeading() {
+        return mPeriodicIO.gyro_heading;
+    }
+
+
+    /**
+     * Updates the field relative position of the robot.
+     *
+     * @param timestamp The current time
+     */
+    private void updateOdometry(double timestamp) {
+        var frontLeft = mFrontLeft.getState();
+        var frontRight = mFrontRight.getState();
+        var backLeft = mBackLeft.getState();
+        var backRight = mBackRight.getState();
+
+        mChassisSpeeds = mKinematics.toChassisSpeeds(frontLeft,frontRight, backLeft, backRight);
+        mPose = mOdometry.updateWithTime(timestamp, getAngle(), frontLeft, frontRight, backLeft, backRight);
+    }
+
+
+//    public synchronized void setOpenLoop(double forward, double strafe, double rotation) {
+//        if (mControlState != ControlState.MANUAL) {
+//            mControlState = ControlState.MANUAL;
+//        }
+//
+//        mPeriodicIO.forward = forward;
+//        mPeriodicIO.strafe = strafe;
+//        mPeriodicIO.rotation = rotation;
+//        ChassisSpeeds chassisSpeeds = new ChassisSpeeds(mPeriodicIO.forward, mPeriodicIO.strafe, mPeriodicIO.rotation);
+//    }
 
     public synchronized void setTrajectory(TrajectoryIterator<TimedState<Pose2dWithCurvature>> trajectory) {
         if (mMotionPlanner != null) {
@@ -337,7 +345,7 @@ public class Swerve extends Subsystem {
     }
 
     /**
-     * Sets inputs from driver in teleop mode
+     * Sets inputs from driver in teleop mode.
      *
      * @param forward percent to drive forwards/backwards (as double [-1.0,1.0]).
      * @param strafe percent to drive sideways left/right (as double [-1.0,1.0]).
@@ -432,11 +440,11 @@ public class Swerve extends Subsystem {
             rotationInput *= kHighPowerRotationScalar;
         }
 
-        // Convert the joystick inputs to SI units for
+        // Convert the joystick inputs to SI units.
         ChassisSpeeds chassisSpeeds = new ChassisSpeeds(
                 translationalInput.x() * Constants.kSwerveDriveMaxSpeedInMetersPerSecond,
                 translationalInput.y() * Constants.kSwerveDriveMaxSpeedInMetersPerSecond,
-                rotationInput * Constants.kSwerveRotationSpeedInMetersPerSecond);
+                rotationInput * Constants.kSwerveRotationMaxSpeedInMetersPerSecond);
         return chassisSpeeds;
     }
 

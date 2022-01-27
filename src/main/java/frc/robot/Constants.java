@@ -19,7 +19,6 @@ public class Constants {
     public static final String kRobot1Name = "Robot1";
     public static final String kRobot2Name = "Robot2";
 
-
     public static final double kLooperDt = 0.02;
 
     public static final double kEpsilon = 0.0001;
@@ -79,14 +78,6 @@ public class Constants {
     // Swerve Calculations Constants (measurements are in inches)
     public static final double kWheelbaseLength = 21.0;
     public static final double kWheelbaseWidth = 21.0;
-
-    // New Swerve requires SI units
-    public static final double kWheelbaseLengthInMeters = Units.inchesToMeters(kWheelbaseLength);
-    public static final double kWheelbaseWidthInMeters = Units.inchesToMeters(kWheelbaseWidth);
-
-    public static final double kSwerveDiagonal = Math.hypot(kWheelbaseLength, kWheelbaseWidth);
-    final static double kRadiusInMeters = Math.hypot(kWheelbaseWidthInMeters/2, kWheelbaseLengthInMeters/2);
-
 
     public static double kMaxAngleAimError = 1;
     public static final double kMaxAimTurningVelocity = 0.1;
@@ -226,10 +217,6 @@ public class Constants {
     public static final double kSwerveRotationMaxSpeed = 21000.0; // rotation motor ticks/100ms
     public static final double kSwerveRotation10VoltMaxSpeed = 1350.0; // TODO: tune this!!!
 
-    // Max translational velocity in m/s
-    public static final double kSwerveDriveMaxSpeedInMetersPerSecond = Units.inchesToMeters(kSwerveMaxSpeedInchesPerSecond) ;
-    // Maximum angular velocity in rad/s
-    public static final double kSwerveRotationSpeedInMetersPerSecond = kSwerveMaxSpeedInchesPerSecond / kRadiusInMeters;
 
     // 7/190 = .037
     public static final double kSwerveRotationSpeedScalar = ((1.0 / 0.125) - 1.0) / kSwerveMaxSpeedInchesPerSecond;
@@ -260,6 +247,27 @@ public class Constants {
             kVehicleToModuleOne, kVehicleToModuleTwo, kVehicleToModuleThree);
 
     // NEW SWERVE
+    // TODO: use SDS MK4 module configurations file.
+    // These settings are for an inverted Mk4 L2.  The steering reduction is different:
+    // (14.0/50.0) verses (15.0 / 32.0) on a standard Mk4_L2.
+    public static final double wheelDiameter  = 0.10033;
+    public static final double driveReduction = (14.0 / 50.0) * (27.0 / 17.0) * (15.0 / 45.0);
+    public static final boolean driveInverted = true;
+    public static final double steerReduction = (14.0/50.0) * (10.0 / 60.0);
+    public static final boolean steerInverted = true;
+
+    // New Swerve requires SI units
+    public static final double kWheelbaseLengthInMeters = Units.inchesToMeters(kWheelbaseLength);
+    public static final double kWheelbaseWidthInMeters = Units.inchesToMeters(kWheelbaseWidth);
+
+    public static final double kSwerveDiagonal = Math.hypot(kWheelbaseLength, kWheelbaseWidth);
+    final static double kRadiusInMeters = Math.hypot(kWheelbaseWidthInMeters / 2, kWheelbaseLengthInMeters / 2);
+
+    // Max translational velocity in m/s
+    public static final double kSwerveDriveMaxSpeedInMetersPerSecond = Units.inchesToMeters(kSwerveMaxSpeedInchesPerSecond) ;
+    // Maximum angular velocity in rad/s
+    public static final double kSwerveRotationMaxSpeedInMetersPerSecond = kSwerveMaxSpeedInchesPerSecond / kRadiusInMeters;
+
     // If CW, then right is positive.  If CCW left is positive
     public static final Translation2d kFrontRightModuleLocation = new Translation2d(kWheelbaseLengthInMeters / 2, kWheelbaseWidthInMeters / 2);
     public static final Translation2d kFrontLeftModuleLocation = new Translation2d(kWheelbaseLengthInMeters / 2, -kWheelbaseWidthInMeters / 2);
@@ -276,10 +284,10 @@ public class Constants {
     public static final SwerveDriveModule.SwerveModuleConstants kFrontRightModuleConstants = new SwerveDriveModule.SwerveModuleConstants();
 
     /*
-     * FL 4196.0 - 45.0 * 4096.0 / 360.0 = 3,684 + 2048 //invert FR 1,327 + 45 *
-     * 4096.0 / 360.0 = 1839 BL 5120.0 - 135 * 4096 / 360 = 3584 + 2048 //invert BR
-     * 2060.0 + 135 * 4096 / 360 = 3596
-     *
+     * FL 4196.0 - 45.0 * 4096.0 / 360.0 = 3,684 + 2048 //invert
+     * FR 1,327 + 45 * 4096.0 / 360.0 = 1839
+     * BL 5120.0 - 135 * 4096 / 360 = 3584 + 2048 //invert
+     * BR 2060.0 + 135 * 4096 / 360 = 3596
      */
 
     static {
