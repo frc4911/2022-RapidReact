@@ -119,6 +119,7 @@ public class RobotState {
     public synchronized void reset(double start_time, Pose2d initial_field_to_vehicle) {
         field_to_vehicle_ = new InterpolatingTreeMap<>(kObservationBufferSize);
         field_to_vehicle_.put(new InterpolatingDouble(start_time), initial_field_to_vehicle);
+        mSwerve.setRobotPosition(initial_field_to_vehicle);
         mGoalTracker = new GoalTracker();
         mPowerCellTracker = new GoalTracker();
         distance_driven_ = 0.0;

@@ -23,11 +23,12 @@ import libraries.cyberlib.kinematics.SwerveDriveKinematics;
 import libraries.cyberlib.kinematics.SwerveDriveOdometry;
 import libraries.cyberlib.kinematics.SwerveModuleState;
 import libraries.cyberlib.utils.RobotName;
+import libraries.cyberlib.utils.SwerveDriveHelper;
 
 public class Swerve extends Subsystem {
 
     public enum ControlState{
-        NEUTRAL, MANUAL, DISABLED, TRAJECTORY, VISION_AIM
+        NEUTRAL, MANUAL, DISABLED, PATH_FOLLOWING, VISION_AIM
     }
 
     private ControlState mControlState = ControlState.NEUTRAL;
@@ -45,7 +46,6 @@ public class Swerve extends Subsystem {
 	private final Pigeon mPigeon;
 	private Rotation2d mGyroOffset = Rotation2d.identity();
 
-	// TODO Consider moving odometry to RobotStateEstimator
 	private final SwerveDriveOdometry mOdometry;
 	private final SwerveDriveKinematics mKinematics = new SwerveDriveKinematics(Constants.kModuleLocations);
 	private ChassisSpeeds mChassisSpeeds;
@@ -111,7 +111,8 @@ public class Swerve extends Subsystem {
 		mModules.add(mBackRight = new SwerveDriveModule(Constants.kBackRightModuleConstants));
 		mModules.add(mBackLeft = new SwerveDriveModule(Constants.kBackLeftModuleConstants));
 
-		mOdometry= new SwerveDriveOdometry(mKinematics, mPigeon.getYaw());
+		mOdometry = new SwerveDriveOdometry(mKinematics, mPigeon.getYaw());
+        mPose = mOdometry.getPose();
 
         mMotionPlanner = new DriveMotionPlanner();
         robotState = RobotState.getInstance(sClassName);
@@ -119,7 +120,6 @@ public class Swerve extends Subsystem {
     }
 
     private final Loop loop = new Loop() {
-
         @Override
         public void onStart(Phase phase) {
             synchronized(Swerve.this) {
@@ -141,11 +141,11 @@ public class Swerve extends Subsystem {
             synchronized(Swerve.this) {
                 lastUpdateTimestamp = timestamp;
 
-                switch(mControlState) {
+                switch (mControlState) {
                     case MANUAL:
                         handleManual();
                         break;
-                    case TRAJECTORY:
+                    case PATH_FOLLOWING:
                         updatePathFollower();
                         break;
                     case NEUTRAL:
@@ -156,27 +156,6 @@ public class Swerve extends Subsystem {
                         break;
                 }
             }
-        }
-
-        /**
-         * Handles MANUAL state which corresponds to joy stick inputs.
-         * <p>
-         * Using the joy stick values in PeriodicIO, calculate and updates the swerve states. The joy stick values
-         * are as percent [-1.0, 1.0].  The swerveDriverHelper converts percent inputs to SI units before creating
-         * the ChassisSpeeds.
-         */
-        private void handleManual() {
-            // Helper to make driving feel better
-            var chassisSpeeds = swerveDriveHelper(
-                    mPeriodicIO.forward, mPeriodicIO.strafe, mPeriodicIO.rotation, mPeriodicIO.low_power,
-                    mPeriodicIO.field_relative, mPeriodicIO.use_heading_controller);
-
-            // Now calculate the new Swerve Module states using kinematics.
-            mPeriodicIO.swerveModuleStates = mKinematics.toSwerveModuleStates(chassisSpeeds);
-
-            // Normalize wheels speeds if any individual speed is above the specified maximum.
-            SwerveDriveKinematics.desaturateWheelSpeeds(
-                    mPeriodicIO.swerveModuleStates, Constants.kSwerveDriveMaxSpeedInMetersPerSecond);
         }
 
         @Override
@@ -203,21 +182,48 @@ public class Swerve extends Subsystem {
         mListIndex = enabledLooper.register(loop);
     }
 
+    /**
+     * Handles MANUAL state which corresponds to joy stick inputs.
+     * <p>
+     * Using the joy stick values in PeriodicIO, calculate and updates the swerve states. The joy stick values
+     * are as percent [-1.0, 1.0].  The swerveDriverHelper converts percent inputs to SI units before creating
+     * the ChassisSpeeds.
+     */
+    private void handleManual() {
+        // Helper to make driving feel better
+        var chassisSpeeds = SwerveDriveHelper.calculateChassisSpeeds(
+                mPeriodicIO.forward, mPeriodicIO.strafe, mPeriodicIO.rotation, mPeriodicIO.low_power,
+                mPeriodicIO.field_relative, mPeriodicIO.use_heading_controller);
 
-//    public boolean hasFinishedPath() {
-//        return hasFinishedPath;
-//    }
+        // Now calculate the new Swerve Module states using inverse kinematics.
+        mPeriodicIO.swerveModuleStates = mKinematics.toSwerveModuleStates(chassisSpeeds);
+
+        // Normalize wheels speeds if any individual speed is above the specified maximum.
+        SwerveDriveKinematics.desaturateWheelSpeeds(
+                mPeriodicIO.swerveModuleStates, Constants.kSwerveDriveMaxSpeedInMetersPerSecond);
+    }
+
 
 //    //Assigns appropriate directions for scrub factors
 //    public void setCarpetDirection(boolean standardDirection) {
 //        mModules.forEach((m) -> m.setCarpetDirection(standardDirection));
 //    }
 
-    public ControlState getState() {
+    /**
+     * Gets the current control state for the Swerve Drive.
+     * <p>
+     * @return The current control state.
+     */
+    public synchronized ControlState getState() {
         return mControlState;
     }
 
-    public void setState(ControlState newState) {
+    /**
+     * Sets the control state for the Swerve Drive.
+     * <p>
+     * @param newState The desired state.
+     */
+     public synchronized void setState(ControlState newState) {
         if (mControlState != newState) {
             System.out.println(mControlState + " to " + newState);
             switch (newState) {
@@ -228,12 +234,11 @@ public class Swerve extends Subsystem {
                     break;
 
                 case VISION_AIM:
-                case TRAJECTORY:
+                case PATH_FOLLOWING:
                     mPeriodicIO.schedDeltaDesired = 20;
                     break;
             }
         }
-
         mControlState = newState;
     }
 
@@ -243,7 +248,6 @@ public class Swerve extends Subsystem {
      * @return The angle of the robot (CCW).
      */
     private synchronized Rotation2d getAngle() {
-        // Expects CCW.
         return mPigeon.getYaw();
     }
 
@@ -255,6 +259,15 @@ public class Swerve extends Subsystem {
         return mPeriodicIO.gyro_heading;
     }
 
+    /**
+     * Sets the current robot position on the field.
+     * <p>
+     * @param pose The (x,y,thetha) position.
+     */
+    public synchronized void setRobotPosition(Pose2d pose) {
+        mOdometry.resetPosition(pose, mPigeon.getYaw());
+        mPose = mOdometry.getPose();
+    }
 
     /**
      * Updates the field relative position of the robot.
@@ -269,6 +282,13 @@ public class Swerve extends Subsystem {
 
         mChassisSpeeds = mKinematics.toChassisSpeeds(frontLeft,frontRight, backLeft, backRight);
         mPose = mOdometry.updateWithTime(timestamp, getAngle(), frontLeft, frontRight, backLeft, backRight);
+    }
+
+    public boolean isDoneWithTrajectory() {
+        if (mMotionPlanner == null || mControlState != mControlState.PATH_FOLLOWING) {
+            return false;
+        }
+        return mMotionPlanner.isDone() || mOverrideTrajectory;
     }
 
 
@@ -288,15 +308,8 @@ public class Swerve extends Subsystem {
             mOverrideTrajectory = false;
             mMotionPlanner.reset();
             mMotionPlanner.setTrajectory(trajectory);
-            mControlState = ControlState.TRAJECTORY;
+            mControlState = ControlState.PATH_FOLLOWING;
         }
-    }
-
-    public boolean isDoneWithTrajectory() {
-        if (mMotionPlanner == null || mControlState != ControlState.TRAJECTORY) {
-            return false;
-        }
-        return mMotionPlanner.isDone() || mOverrideTrajectory;
     }
 
     public void overrideTrajectory(boolean value) {
@@ -305,7 +318,7 @@ public class Swerve extends Subsystem {
 
     private void updatePathFollower() {
         // TODO: Implement Trajectory Following
-        if (mControlState == ControlState.TRAJECTORY) {
+        if (mControlState == ControlState.PATH_FOLLOWING) {
             final double now = Timer.getFPGATimestamp();
 
 //            var output = mMotionPlanner.update(now, RobotState.getInstance().getFieldToVehicle(now));
@@ -338,10 +351,9 @@ public class Swerve extends Subsystem {
 
     /** Zeroes the drive motors, and sets the robot's internal position and heading to match that of the fed pose */
     public synchronized void zeroSensors(Pose2d startingPose) {
-        mPigeon.setAngle(startingPose.getRotation().getUnboundedDegrees());
+        setRobotPosition(startingPose);
+//        mPigeon.setAngle(startingPose.getRotation().getUnboundedDegrees());
 //        mModules.forEach((m) -> m.zeroSensors(startingPose));
-//        pose = startingPose;
-//        distanceTraveled = 0;
     }
 
     /**
@@ -365,89 +377,6 @@ public class Swerve extends Subsystem {
         mPeriodicIO.field_relative = field_relative;
         mPeriodicIO.use_heading_controller = use_heading_controller;
     }
-
-
-    private final static double kHighAdjustmentPower = 1.75 + 0.4375;
-    private final static double kLowAdjustmentPower = 1.50;
-    private final static double kMaxSpeed = 1.0;
-    private final static double kHighPowerRotationScalar = 0.8;
-    private final static double kLowPowerScalar = 0.5;
-    private final static double kRotationExponent = 4.0;
-    private final static double kPoleThreshold = 0.0;
-    private final static double kRobotRelativePoleThreshold = Math.toRadians(5);
-    private final static double kDeadband = 0.25;
-    private final static double kRotationDeadband = 0.15;
-
-    // TODO: Consider separate helper class
-    /**
-     * Based on Team 1323's sendInput method to make driving feel better.
-     *
-     * @param forwardInput
-     * @param strafeInput
-     * @param rotationInput
-     * @param low_power
-     * @param field_relative
-     * @param use_heading_controller
-     * @return A ChassisSpeeds object for the inputs
-     */
-    public ChassisSpeeds swerveDriveHelper(double forwardInput, double strafeInput, double rotationInput,
-                                   boolean low_power, boolean field_relative, boolean use_heading_controller) {
-
-        Translation2d translationalInput = new Translation2d(forwardInput, strafeInput);
-        double inputMagnitude = translationalInput.norm();
-
-        // Snap the translational input to its nearest pole, if it is within a certain
-        // threshold of it.
-
-        if (field_relative) {
-            if (Math.abs(translationalInput.direction()
-                    .distance(translationalInput.direction().nearestPole())) < kPoleThreshold) {
-                translationalInput = translationalInput.direction().nearestPole().toTranslation().scale(inputMagnitude);
-            }
-        } else {
-            if (Math.abs(translationalInput.direction()
-                    .distance(translationalInput.direction().nearestPole())) < kRobotRelativePoleThreshold) {
-                translationalInput = translationalInput.direction().nearestPole().toTranslation().scale(inputMagnitude);
-            }
-        }
-
-        if (inputMagnitude < kDeadband) {
-            translationalInput = new Translation2d();
-            inputMagnitude = 0;
-        }
-
-        // Scale x and y by applying a power to the magnitude of the vector they create,
-        // in order to make the controls less sensitive at the lower end.
-        final double power = (low_power) ? kHighAdjustmentPower : kLowAdjustmentPower;
-        Rotation2d direction = translationalInput.direction();
-        double scaledMagnitude = Math.pow(inputMagnitude, power);
-        translationalInput = new Translation2d(direction.cos() * scaledMagnitude, direction.sin() * scaledMagnitude);
-
-        rotationInput = (Math.abs(rotationInput) < kRotationDeadband) ? 0 : rotationInput;
-        if (use_heading_controller) { // current constants are tuned to be put to the power of 1.75, and I don't want to retune right now
-            rotationInput = Math.pow(Math.abs(rotationInput), 1.75) * Math.signum(rotationInput);
-        } else {
-            rotationInput = Math.pow(Math.abs(rotationInput), kRotationExponent) * Math.signum(rotationInput);
-        }
-
-        translationalInput = translationalInput.scale(kMaxSpeed);
-        rotationInput *= kMaxSpeed;
-
-        if (low_power) {
-            translationalInput = translationalInput.scale(kLowPowerScalar);
-            rotationInput *= kLowPowerScalar;
-        } else {
-            rotationInput *= kHighPowerRotationScalar;
-        }
-
-        // Convert the joystick inputs to SI units.
-        ChassisSpeeds chassisSpeeds = new ChassisSpeeds(
-                translationalInput.x() * Constants.kSwerveDriveMaxSpeedInMetersPerSecond,
-                translationalInput.y() * Constants.kSwerveDriveMaxSpeedInMetersPerSecond,
-                rotationInput * Constants.kSwerveRotationMaxSpeedInRadiansPerSecond);
-        return chassisSpeeds;
-    }
-
 
     @Override
     public String getLogHeaders() {
@@ -503,6 +432,7 @@ public class Swerve extends Subsystem {
         double now                   = Timer.getFPGATimestamp();
         mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
         mPeriodicIO.lastSchedStart   = now;
+        mPeriodicIO.gyro_heading     = Rotation2d.fromDegrees(mPigeon.getYaw().getDegrees()).rotateBy(mGyroOffset);
 
         // Read odometry every in every loop
         updateOdometry(now);

@@ -8,6 +8,7 @@ import java.util.Arrays;
 
 import edu.wpi.first.wpilibj.TimedRobot;
 import frc.robot.subsystems.JSticks;
+import frc.robot.subsystems.RobotStateEstimator;
 import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.Swerve;
 import libraries.cheesylib.geometry.Pose2d;
@@ -34,6 +35,7 @@ public class Robot extends TimedRobot {
   private Superstructure   mSuperstructure;
   private JSticks          mJSticks;
   private Swerve           mSwerve;
+  private RobotStateEstimator mRobotStateEstimator;
 
   private final double mLoopPeriod = .005;
   private Looper mSubsystemLooper = new Looper(mLoopPeriod,Thread.NORM_PRIORITY+1);
@@ -46,6 +48,7 @@ public class Robot extends TimedRobot {
     mJSticks = JSticks.getInstance(mClassName);
     mSuperstructure = Superstructure.getInstance(mClassName);
     mSwerve = Swerve.getInstance(mClassName);
+    mRobotStateEstimator = RobotStateEstimator.getInstance(mClassName);
 
     //Create subsystem manager and add all subsystems it will manage
     mSubsystemManager = SubsystemManager.getInstance(mClassName);
@@ -54,7 +57,8 @@ public class Robot extends TimedRobot {
           //List of subsystems
           mJSticks,
           mSuperstructure,
-          mSwerve
+          mSwerve,
+         mRobotStateEstimator
         )
     );
 
