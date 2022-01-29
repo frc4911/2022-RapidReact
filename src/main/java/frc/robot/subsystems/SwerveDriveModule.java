@@ -1,9 +1,6 @@
 package frc.robot.subsystems;
 
-import com.ctre.phoenix.motorcontrol.ControlMode;
-import com.ctre.phoenix.motorcontrol.FeedbackDevice;
-import com.ctre.phoenix.motorcontrol.NeutralMode;
-import com.ctre.phoenix.motorcontrol.StatusFrame;
+import com.ctre.phoenix.motorcontrol.*;
 import com.ctre.phoenix.sensors.CANCoder;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.sensors.CANCoderStatusFrame;
@@ -159,7 +156,6 @@ public class SwerveDriveModule extends Subsystem {
         mCANCoder.setStatusFramePeriod(CANCoderStatusFrame.SensorData, constants.kCANCoderStatusFramePeriodSensorData);
 
         configureMotors();
-        getRawAngle();
     }
 
     /**
@@ -291,10 +287,6 @@ public class SwerveDriveModule extends Subsystem {
         // TODO:  Consider using SwerveModule.optimize() here instead of setReferenceAngle()
         setReferenceAngle(swreveModuleState.angle.getRadians());
 	}
-	
-	private double getRawAngle() {
-		return encUnitsToDegrees(mPeriodicIO.steerPosition);
-	}
 
     /**
      * Sets the reference angle for the steer motor
@@ -354,13 +346,13 @@ public class SwerveDriveModule extends Subsystem {
         return radians * mConstants.kSteerMotorTicksPerRadian;
     }
 
-    private int degreesToEncUnits(double degrees) {
-        return (int) radiansToEncoderUnits(Math.toRadians(degrees));
-    }
-
-    private double encUnitsToDegrees(double encUnits) {
-        return Math.toDegrees(encoderUnitsToRadians(encUnits));
-    }
+//    private int degreesToEncUnits(double degrees) {
+//        return (int) radiansToEncoderUnits(Math.toRadians(degrees));
+//    }
+//
+//    private double encUnitsToDegrees(double encUnits) {
+//        return Math.toDegrees(encoderUnitsToRadians(encUnits));
+//    }
 
     // Drive motor
     private double encoderUnitsToDistance(double ticks) {
@@ -375,13 +367,13 @@ public class SwerveDriveModule extends Subsystem {
         return distanceInMeters / mConstants.kDriveTicksPerUnitDistance;
     }
 
-    private double encUnitsToInches(double encUnits) {
-        return Units.metersToInches(encoderUnitsToDistance(encUnits));
-    }
-
-    private double inchesToEncUnits(double inches) {
-        return distanceToEncoderUnits(Units.inchesToMeters(inches));
-    }
+//    private double encUnitsToInches(double encUnits) {
+//        return Units.metersToInches(encoderUnitsToDistance(encUnits));
+//    }
+//
+//    private double inchesToEncUnits(double inches) {
+//        return distanceToEncoderUnits(Units.inchesToMeters(inches));
+//    }
 
     private double metersPerSecondToEncVelocity(double metersPerSecond) {
         return metersPerSecond / mConstants.kDriveTicksPerUnitVelocity;
@@ -524,7 +516,6 @@ public class SwerveDriveModule extends Subsystem {
         public double driveCurrent;
         public String steerFaults;
         public String driveFaults;
-
 
         //Outputs are in units for the motor controller.
         public ControlMode steerControlMode = ControlMode.PercentOutput;
