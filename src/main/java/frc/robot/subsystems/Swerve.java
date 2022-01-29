@@ -12,7 +12,6 @@ import frc.robot.planners.DriveMotionPlanner;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Pose2dWithCurvature;
 import libraries.cheesylib.geometry.Rotation2d;
-import libraries.cheesylib.geometry.Translation2d;
 import libraries.cheesylib.loops.ILooper;
 import libraries.cheesylib.loops.Loop;
 import libraries.cheesylib.subsystems.Subsystem;
@@ -343,7 +342,7 @@ public class Swerve extends Subsystem {
         }
     }
 
-    /** Puts all rotation and drive motors into open-loop mode */
+    /** Puts all steer and drive motors into open-loop mode */
     public synchronized void disable() {
         mModules.forEach((m) -> m.disable());
         setState(ControlState.DISABLED);
