@@ -6,7 +6,6 @@ import libraries.cheesylib.loops.ILooper;
 import libraries.cheesylib.loops.Loop;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cyberlib.io.CW;
-import libraries.cyberlib.io.LogitechPS4;
 import libraries.cyberlib.io.Xbox;
 
 public class JSticks extends Subsystem{
@@ -26,7 +25,6 @@ public class JSticks extends Subsystem{
     private CW mDriver;
     private CW mOperator;
     private final double mDeadBand = 0.15; // for the turnigy (driver) swerve controls
-    private String mPrevGameState = "";
 	private Superstructure mSuperstructure;
     private Swerve mSwerve;
 

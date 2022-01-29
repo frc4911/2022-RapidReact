@@ -7,7 +7,11 @@ package frc.robot;
 import java.util.Arrays;
 
 import edu.wpi.first.wpilibj.TimedRobot;
+import frc.robot.subsystems.Climber;
+import frc.robot.subsystems.Collector;
+import frc.robot.subsystems.Indexer;
 import frc.robot.subsystems.JSticks;
+import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.Swerve;
 import libraries.cheesylib.geometry.Pose2d;
@@ -34,18 +38,26 @@ public class Robot extends TimedRobot {
   private Superstructure   mSuperstructure;
   private JSticks          mJSticks;
   private Swerve           mSwerve;
+  private Indexer          mIndexer;
+  private Collector        mCollector;
+  private Shooter          mShooter;
+  private Climber          mClimber;
 
   private final double mLoopPeriod = .005;
   private Looper mSubsystemLooper = new Looper(mLoopPeriod,Thread.NORM_PRIORITY+1);
 
   @Override
   public void robotInit() {
-    //Initializing subsystems
     mClassName = this.getClass().getSimpleName();
+    //Initializing subsystems
     mSubsystemManager = SubsystemManager.getInstance(mClassName);
-    mJSticks = JSticks.getInstance(mClassName);
-    mSuperstructure = Superstructure.getInstance(mClassName);
-    mSwerve = Swerve.getInstance(mClassName);
+    mJSticks =          JSticks.getInstance(mClassName);
+    mSuperstructure =   Superstructure.getInstance(mClassName);
+    mSwerve =           Swerve.getInstance(mClassName);
+    mIndexer =          Indexer.getInstance(mClassName);
+    mCollector =        Collector.getInstance(mClassName);
+    mShooter =          Shooter.getInstance(mClassName);
+    mClimber =          Climber.getInstance(mClassName);
 
     //Create subsystem manager and add all subsystems it will manage
     mSubsystemManager = SubsystemManager.getInstance(mClassName);
@@ -54,7 +66,11 @@ public class Robot extends TimedRobot {
           //List of subsystems
           mJSticks,
           mSuperstructure,
-          mSwerve
+          mSwerve,
+          mIndexer,
+          mCollector,
+          mShooter,
+          mClimber
         )
     );
 
@@ -87,13 +103,20 @@ public class Robot extends TimedRobot {
     try {
 			mSubsystemLooper.stop();
 			mSubsystemLooper.start();
-			//teleopConfig();
+			teleopConfig();
 			//robotState.enableXTarget(false);
 		} catch (Throwable t) {
 			CrashTracker.logThrowableCrash(t);
 			throw t;
 		}
   }
+
+	public void teleopConfig() {
+		if (mSwerve != null) {
+			mSwerve.setNominalDriveOutput(0.0);
+			mSwerve.set10VoltRotationMode(false);
+		}
+	}
 
   @Override
   public void teleopPeriodic() {}
