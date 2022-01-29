@@ -34,7 +34,6 @@ public class SwerveModuleState implements Comparable<SwerveModuleState> {
      * @param angle The angle of the module.
      */
     public SwerveModuleState(double speedInMetersPerSecond, Rotation2d angle) {
-        this.speedInMetersPerSecond = speedInMetersPerSecond;
         this.angle = angle;
     }
 

@@ -123,7 +123,7 @@ public class SwerveDriveModule extends Subsystem {
         public double kWheelDiameter = 0.10033; // Probably should tune for each individual wheel maybe
         public double kDriveReduction = (14.0 / 50.0) * (27.0 / 17.0) * (15.0 / 45.0);
 		public double kDriveTicksPerUnitDistance = (1.0 / 2048.0) * kDriveReduction * (Math.PI * kWheelDiameter);
-        public double kDriveTicksPerUnitVelocity = kDriveTicksPerUnitDistance / 10;  // Motor controller unit is ticks per 100 ms
+        public double kDriveTicksPerUnitVelocity = kDriveTicksPerUnitDistance * 10;  // Motor controller unit is ticks per 100 ms
 		public double kDriveDeadband = 0.01;
 
 		// drive current/voltage
@@ -279,7 +279,7 @@ public class SwerveDriveModule extends Subsystem {
     }
 
 	/**
-	 * Returns the current state of the module.
+	 * Gets the current state of the module.
 	 * <p>
 	 * @return The current state of the module.
 	 */
@@ -293,26 +293,17 @@ public class SwerveDriveModule extends Subsystem {
 	/**
 	 * Sets the state for the module.
 	 * <p>
-     * It converts the velocity in SI units (meters per second) to a voltage (as a percentage) for the motor controllers.
-	 * <p>
-	 * @param state Desired state with speed and angle.
+	 * @param swreveModuleState Desired state for the module.
 	 */
-	public void setState(SwerveModuleState state) {
-		// Converts SwerveModuleState speed (m/s) into a percent output
-		setDriveOpenLoop(metersPerSecondToEncVelocity(state.speedInMetersPerSecond));
-        setReferenceAngle(state.angle.getDegrees());
+	public void setState(SwerveModuleState swreveModuleState) {
+        // Converts the velocity in SI units (meters per second) to a
+        // voltage (as a percentage) for the motor controllers.
+		setDriveOpenLoop(metersPerSecondToEncVelocity(swreveModuleState.speedInMetersPerSecond));
+
+        // TODO:  Consider using SwerveModule.optimize() here instead
+        setReferenceAngle(swreveModuleState.angle.getRadians());
 	}
 	
-	@Override
-	public synchronized void stop() {
-		if (mControlState != ControlState.NEUTRAL) {
-			mControlState = ControlState.NEUTRAL;
-		}
-
-		mDriveMotor.set(ControlMode.PercentOutput, 0.0);
-		mRotationMotor.set(ControlMode.PercentOutput, 0.0);
-	}
-
 	private double getRawAngle() {
 		return encUnitsToDegrees(mPeriodicIO.rotationPosition);
 	}
@@ -388,6 +379,10 @@ public class SwerveDriveModule extends Subsystem {
         return ticks * mConstants.kDriveTicksPerUnitDistance;
     }
 
+    private double encoderUnitsToVelocity(double ticks) {
+        return ticks * mConstants.kDriveTicksPerUnitVelocity;
+    }
+
     private double distanceToEncoderUnits(double distanceInMeters) {
         return distanceInMeters / mConstants.kDriveTicksPerUnitDistance;
     }
@@ -401,16 +396,26 @@ public class SwerveDriveModule extends Subsystem {
     }
 
     private double metersPerSecondToEncVelocity(double metersPerSecond) {
-        return metersPerSecond * mConstants.kDriveTicksPerUnitVelocity;
+        return metersPerSecond / mConstants.kDriveTicksPerUnitVelocity;
     }
 
     private double encVelocityToMetersPerSecond(double encUnitsPer100ms) {
-        return encUnitsPer100ms / mConstants.kDriveTicksPerUnitVelocity;
+        return encUnitsPer100ms * mConstants.kDriveTicksPerUnitVelocity;
     }
 
     public synchronized void disable() {
         setDriveOpenLoop(0.0);
         setRotationOpenLoop(0.0);
+    }
+
+    @Override
+    public synchronized void stop() {
+        if (mControlState != ControlState.NEUTRAL) {
+            mControlState = ControlState.NEUTRAL;
+        }
+
+        mDriveMotor.set(ControlMode.PercentOutput, 0.0);
+        mRotationMotor.set(ControlMode.PercentOutput, 0.0);
     }
 
     @Override
