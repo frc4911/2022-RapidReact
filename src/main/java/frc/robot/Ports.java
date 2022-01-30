@@ -25,16 +25,16 @@ public class Ports {
 
     // Collector
     public static final int COLLECTOR        = 20;
-    public static final int COLLECTOR_DEPLOY = 0;
+    public static final int COLLECTOR_DEPLOY = 0; //Solenoid
 
     // Indexer
     public static final int INDEXER             = 30;
-    public static final int ENTRANCE_BEAM_BREAK = 0;
-    public static final int EXIT_BEAM_BREAK     = 1;
+    public static final int ENTRANCE_BEAM_BREAK = 0; //Analog Input
+    public static final int EXIT_BEAM_BREAK     = 1; //Analog Input
 
     // Climbr
     public static final int LEFT_CLIMBER  = 40;
     public static final int RIGHT_CLIMBER = 41;
-    public static final int CLIMBER_STAGE = 1;
+    public static final int CLIMBER_STAGE = 1; //Solenoid
 
 }
