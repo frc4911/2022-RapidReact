@@ -346,13 +346,13 @@ public class SwerveDriveModule extends Subsystem {
         return radians * mConstants.kSteerMotorTicksPerRadian;
     }
 
-//    private int degreesToEncUnits(double degrees) {
-//        return (int) radiansToEncoderUnits(Math.toRadians(degrees));
-//    }
-//
-//    private double encUnitsToDegrees(double encUnits) {
-//        return Math.toDegrees(encoderUnitsToRadians(encUnits));
-//    }
+    private int degreesToEncUnits(double degrees) {
+        return (int) radiansToEncoderUnits(Math.toRadians(degrees));
+    }
+
+    private double encUnitsToDegrees(double encUnits) {
+        return Math.toDegrees(encoderUnitsToRadians(encUnits));
+    }
 
     // Drive motor
     private double encoderUnitsToDistance(double ticks) {
