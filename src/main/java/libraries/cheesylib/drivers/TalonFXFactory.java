@@ -3,6 +3,7 @@ package libraries.cheesylib.drivers;
 import com.ctre.phoenix.ParamEnum;
 import com.ctre.phoenix.motorcontrol.*;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
+import com.ctre.phoenix.sensors.SensorVelocityMeasPeriod;
 
 /**
  * Creates TalonFX objects and configures all the parameters we care about to factory defaults. Closed-loop and sensor
@@ -33,7 +34,7 @@ public class TalonFXFactory {
         public int ANALOG_TEMP_VBAT_STATUS_FRAME_RATE_MS = 1000;
         public int PULSE_WIDTH_STATUS_FRAME_RATE_MS = 1000;
 
-        public VelocityMeasPeriod VELOCITY_MEASUREMENT_PERIOD = VelocityMeasPeriod.Period_100Ms;
+        public SensorVelocityMeasPeriod VELOCITY_MEASUREMENT_PERIOD = SensorVelocityMeasPeriod.Period_100Ms;
         public int VELOCITY_MEASUREMENT_ROLLING_AVERAGE_WINDOW = 64;
 
         public double OPEN_LOOP_RAMP_RATE = 0.0;
@@ -72,6 +73,8 @@ public class TalonFXFactory {
         if (talon.getFirmwareVersion() < 0) {
             return talon;
         }
+
+        talon.configFactoryDefault();
 
         talon.set(ControlMode.PercentOutput, 0.0);
 

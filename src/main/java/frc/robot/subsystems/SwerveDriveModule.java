@@ -6,7 +6,7 @@ import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.sensors.CANCoderStatusFrame;
 import com.ctre.phoenix.sensors.SensorInitializationStrategy;
 
-import edu.wpi.first.math.util.Units;
+import com.ctre.phoenix.sensors.SensorVelocityMeasPeriod;
 import libraries.cheesylib.util.Util;
 import libraries.cyberlib.kinematics.SwerveModuleState;
 import libraries.cyberlib.utils.CheckFaults;
@@ -102,7 +102,7 @@ public class SwerveDriveModule extends Subsystem {
 		// Steer Motor measurement
 		public int kSteerMotorStatusFrame2UpdateRate = 10; // feedback for selected sensor, ms
 		public int kSteerMotorStatusFrame10UpdateRate = 10; // motion magic, ms
-//		public VelocityMeasPeriod kSteerMotorVelocityMeasurementPeriod = VelocityMeasPeriod.Period_100Ms; // dt for velocity measurements, ms
+		public SensorVelocityMeasPeriod kSteerMotorVelocityMeasurementPeriod = SensorVelocityMeasPeriod.Period_100Ms; // dt for velocity measurements, ms
 		public int kSteerMotorVelocityMeasurementWindow = 64; // # of samples in rolling average
 
 		// general drive
@@ -128,7 +128,7 @@ public class SwerveDriveModule extends Subsystem {
 		// drive measurement
 		public int kDriveStatusFrame2UpdateRate = 15; // feedback for selected sensor, ms
 		public int kDriveStatusFrame10UpdateRate = 200; // motion magic, ms
-//		public VelocityMeasPeriod kDriveVelocityMeasurementPeriod = VelocityMeasPeriod.Period_10Ms; // dt for velocity measurements, ms
+        public SensorVelocityMeasPeriod kDriveMotorVelocityMeasurementPeriod = SensorVelocityMeasPeriod.Period_100Ms; // dt for velocity measurements, ms
 		public int kDriveVelocityMeasurementWindow = 32; // # of samples in rolling average
 	}
 
@@ -198,7 +198,7 @@ public class SwerveDriveModule extends Subsystem {
         // TODO: Set these correctly
         mSteerMotor.configMotionAcceleration(Constants.kSwerveRotationMaxSpeed * 12.5, Constants.kLongCANTimeoutMs);
         mSteerMotor.configMotionCruiseVelocity(Constants.kSwerveRotationMaxSpeed, Constants.kLongCANTimeoutMs);
-//        mSteerMotor.configVelocityMeasurementPeriod(mConstants.kSteerMotorVelocityMeasurementPeriod, Constants.kLongCANTimeoutMs);
+        mSteerMotor.configVelocityMeasurementPeriod(mConstants.kSteerMotorVelocityMeasurementPeriod, Constants.kLongCANTimeoutMs);
         mSteerMotor.configVelocityMeasurementWindow(mConstants.kSteerMotorVelocityMeasurementWindow, Constants.kLongCANTimeoutMs);
         mSteerMotor.selectProfileSlot(0, 0);
 
@@ -226,7 +226,7 @@ public class SwerveDriveModule extends Subsystem {
         mDriveMotor.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
         mDriveMotor.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
         mDriveMotor.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, mConstants.kDriveStatusFrame2UpdateRate, Constants.kLongCANTimeoutMs);
-//        mDriveMotor.configVelocityMeasurementPeriod(mConstants.kDriveVelocityMeasurementPeriod, Constants.kLongCANTimeoutMs);
+        mDriveMotor.configVelocityMeasurementPeriod(mConstants.kDriveMotorVelocityMeasurementPeriod, Constants.kLongCANTimeoutMs);
         mDriveMotor.configVelocityMeasurementWindow(mConstants.kDriveVelocityMeasurementWindow, Constants.kLongCANTimeoutMs);
         mDriveMotor.configNominalOutputForward(0.0, Constants.kLongCANTimeoutMs);
         mDriveMotor.configNominalOutputReverse(0.0, Constants.kLongCANTimeoutMs);
