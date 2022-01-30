@@ -1,6 +1,12 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix.motorcontrol.can.TalonFX;
+
+import edu.wpi.first.wpilibj.PneumaticsModuleType;
+import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.Timer;
+import frc.robot.Ports;
+import libraries.cheesylib.drivers.TalonFXFactory;
 import libraries.cheesylib.loops.ILooper;
 import libraries.cheesylib.loops.Loop;
 import libraries.cheesylib.subsystems.Subsystem;
@@ -9,10 +15,27 @@ import libraries.cheesylib.subsystems.SubsystemManager;
 public class Collector extends Subsystem{
 
     //Hardware
+    private final TalonFX mFXCollector;
+    private final Solenoid mSolenoid;
 
     //Subsystem Constants
 
     //Subsystem States
+    public enum SolenoidState {
+        EXTEND(true),
+        RETRACT(false);
+
+        private final boolean state;
+
+        private SolenoidState(boolean state) {
+            this.state = state;
+        }
+
+        public boolean get() {
+            return state;
+        }
+    }
+    
     public enum SystemState {
         HOLDING,
         COLLECTING,
@@ -60,6 +83,14 @@ public class Collector extends Subsystem{
     }
 
     private Collector(String caller){
+        sClassName = this.getClass().getSimpleName();
+        printUsage(caller);
+        mFXCollector = TalonFXFactory.createDefaultTalon(Ports.COLLECTOR);
+        mSolenoid = new Solenoid(PneumaticsModuleType.CTREPCM, Ports.COLLECTOR_DEPLOY);
+        configMotors();
+    }
+
+    private void configMotors(){
 
     }
 

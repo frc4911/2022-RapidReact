@@ -1,6 +1,11 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix.motorcontrol.can.TalonFX;
+
+import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Timer;
+import frc.robot.Ports;
+import libraries.cheesylib.drivers.TalonFXFactory;
 import libraries.cheesylib.loops.ILooper;
 import libraries.cheesylib.loops.Loop;
 import libraries.cheesylib.subsystems.Subsystem;
@@ -9,6 +14,9 @@ import libraries.cheesylib.subsystems.SubsystemManager;
 public class Indexer extends Subsystem{
 
     //Hardware
+    private final TalonFX mFXIndexer;
+    private final AnalogInput mBallEntering;
+    private final AnalogInput mBallExiting;
 
     //Subsystem Constants
 
@@ -16,15 +24,15 @@ public class Indexer extends Subsystem{
     public enum SystemState {
         HOLDING,
         LOADING,
-        BACKING,
-        FEEDING
+        FEEDING,
+        BACKING
     }
 
     public enum WantedState {
         HOLD,
         LOAD,
-        BACK,
-        FEED
+        FEED,
+        BACK        
     }
 
     private SystemState mSystemState;
@@ -62,7 +70,16 @@ public class Indexer extends Subsystem{
     }
 
     private Indexer(String caller){
+        sClassName = this.getClass().getSimpleName();
+        printUsage(caller);
+        mFXIndexer = TalonFXFactory.createDefaultTalon(Ports.INDEXER);
+        mBallEntering = new AnalogInput(Ports.ENTRANCE_BEAM_BREAK);
+        mBallExiting = new AnalogInput(Ports.EXIT_BEAM_BREAK);
+        configMotors();
+    }
 
+    private void configMotors(){
+        
     }
 
     private Loop mLoop = new Loop() {
@@ -86,16 +103,16 @@ public class Indexer extends Subsystem{
                 SystemState newState;
                 switch (mSystemState) {
                 case LOADING:
-                    newState = handleExtending();
-                    break;
-                case BACKING:
-                    newState = handleRetracting();
+                    newState = handleLoading();
                     break;
                 case FEEDING:
-                    newState = handleLeveling();
+                    newState = handleFeeding();
+                    break;
+                case BACKING:
+                    newState = handleBacking();
                     break;
                 default:
-                    newState = handleResting();
+                    newState = handleHolding();
                     break;
                 }
 
@@ -116,19 +133,19 @@ public class Indexer extends Subsystem{
 
     };
 
-    private SystemState handleResting() {
+    private SystemState handleHolding() {
         return defaultStateTransfer();
     }
     
-    private SystemState handleExtending() {
+    private SystemState handleLoading() {
         return defaultStateTransfer();
     }
 
-    private SystemState handleRetracting() {
+    private SystemState handleFeeding() {
         return defaultStateTransfer();
     }
 
-    private SystemState handleLeveling() {
+    private SystemState handleBacking() {
         return defaultStateTransfer();
     }
 
@@ -145,10 +162,10 @@ public class Indexer extends Subsystem{
         switch(mWantedState){
             case LOAD:
                 return SystemState.LOADING;
-            case BACK:
-                return SystemState.BACKING;
             case FEED:
                 return SystemState.FEEDING;
+            case BACK:
+                return SystemState.BACKING;
             default:
                 return SystemState.HOLDING;
         }

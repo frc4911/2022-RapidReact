@@ -23,9 +23,9 @@ public class JSticks extends Subsystem{
     @SuppressWarnings("unused")
     private boolean mStateChanged;
     private CW mDriver;
-    private CW mOperator;
+    // private CW mOperator;
     private final double mDeadBand = 0.15; // for the turnigy (driver) swerve controls
-	private Superstructure mSuperstructure;
+	// private Superstructure mSuperstructure;
     private Swerve mSwerve;
 
     //Logging
@@ -61,10 +61,10 @@ public class JSticks extends Subsystem{
 
     private JSticks(String caller){
         sClassName = this.getClass().getSimpleName();
-        mSuperstructure = Superstructure.getInstance(sClassName);
+        // mSuperstructure = Superstructure.getInstance(sClassName);
         mSwerve = Swerve.getInstance(sClassName);
         mDriver = new Xbox();
-        mOperator = new Xbox();
+        // mOperator = new Xbox();
         printUsage(caller);
     }
 

@@ -188,13 +188,13 @@ public class Swerve extends Subsystem {
             m3 = Constants.kRearRightCancoderStartingPosDegreesCetus;
         }
         frontRight = new SwerveDriveModule(Ports.FRONT_RIGHT_ROTATION, Ports.FRONT_RIGHT_DRIVE,
-                Ports.FRONT_RIGHT_ENC, 0, m0, Constants.kVehicleToModuleZero);
+                Ports.FRONT_RIGHT_CANCODER, 0, m0, Constants.kVehicleToModuleZero);
         frontLeft = new SwerveDriveModule(Ports.FRONT_LEFT_ROTATION, Ports.FRONT_LEFT_DRIVE,
-                Ports.FRONT_LEFT_ENC, 1, m1, Constants.kVehicleToModuleOne);
+                Ports.FRONT_LEFT_CANCODER, 1, m1, Constants.kVehicleToModuleOne);
         rearLeft = new SwerveDriveModule(Ports.REAR_LEFT_ROTATION, Ports.REAR_LEFT_DRIVE,
-                Ports.REAR_LEFT_ENC, 2, m2, Constants.kVehicleToModuleTwo);
+                Ports.REAR_LEFT_CANCODER, 2, m2, Constants.kVehicleToModuleTwo);
         rearRight = new SwerveDriveModule(Ports.REAR_RIGHT_ROTATION, Ports.REAR_RIGHT_DRIVE,
-                Ports.REAR_RIGHT_ENC, 3, m3, Constants.kVehicleToModuleThree);
+                Ports.REAR_RIGHT_CANCODER, 3, m3, Constants.kVehicleToModuleThree);
 
         modules = Arrays.asList(frontRight, frontLeft, rearLeft, rearRight);
         positionModules = Arrays.asList(frontRight, frontLeft, rearLeft, rearRight);

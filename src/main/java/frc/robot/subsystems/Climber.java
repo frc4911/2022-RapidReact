@@ -1,6 +1,12 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix.motorcontrol.can.TalonFX;
+
+import edu.wpi.first.wpilibj.PneumaticsModuleType;
+import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.Timer;
+import frc.robot.Ports;
+import libraries.cheesylib.drivers.TalonFXFactory;
 import libraries.cheesylib.loops.ILooper;
 import libraries.cheesylib.loops.Loop;
 import libraries.cheesylib.subsystems.Subsystem;
@@ -9,6 +15,8 @@ import libraries.cheesylib.subsystems.SubsystemManager;
 public class Climber extends Subsystem{
 
     //Hardware
+    private final TalonFX mFXLeftClimber, mFXRightClimber;
+    private final Solenoid mSolenoid;
 
     //Subsystem Constants
 
@@ -62,7 +70,11 @@ public class Climber extends Subsystem{
     }
 
     private Climber(String caller){
-
+        sClassName = this.getClass().getSimpleName();
+        printUsage(caller);
+        mFXLeftClimber = TalonFXFactory.createDefaultTalon(Ports.LEFT_CLIMBER);
+        mFXRightClimber = TalonFXFactory.createDefaultTalon(Ports.RIGHT_CLIMBER);
+        mSolenoid = new Solenoid(PneumaticsModuleType.CTREPCM, Ports.CLIMBER_STAGE);
     }
 
     private Loop mLoop = new Loop() {

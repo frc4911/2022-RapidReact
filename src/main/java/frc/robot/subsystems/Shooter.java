@@ -1,6 +1,10 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix.motorcontrol.can.TalonFX;
+
 import edu.wpi.first.wpilibj.Timer;
+import frc.robot.Ports;
+import libraries.cheesylib.drivers.TalonFXFactory;
 import libraries.cheesylib.loops.ILooper;
 import libraries.cheesylib.loops.Loop;
 import libraries.cheesylib.subsystems.Subsystem;
@@ -9,6 +13,8 @@ import libraries.cheesylib.subsystems.SubsystemManager;
 public class Shooter extends Subsystem{
 
     //Hardware
+    private final TalonFX mFXLeftFlyWheel, mFXRightFlyWheel;
+    private final TalonFX mFXShooterHood;
 
     //Subsystem Constants
 
@@ -58,11 +64,21 @@ public class Shooter extends Subsystem{
     }
 
     private Shooter(String caller){
+        sClassName = this.getClass().getSimpleName();
+        printUsage(caller);
+        mFXLeftFlyWheel = TalonFXFactory.createDefaultTalon(Ports.LEFT_FLYWHEEL);
+        mFXRightFlyWheel = TalonFXFactory.createDefaultTalon(Ports.RIGHT_FLYWHEEL);
+        mFXShooterHood = TalonFXFactory.createDefaultTalon(Ports.SHOOTER_HOOD);
+        mSubsystemManager = SubsystemManager.getInstance(sClassName);
+        configMotors();
+    }
 
+    private void configMotors(){
+        
     }
 
     private Loop mLoop = new Loop() {
-        
+
         @Override
         public void onStart(Phase phase){
             synchronized (Shooter.this) {
