@@ -27,10 +27,9 @@ public class RobotState {
     private static int sInstanceCount;
     private static RobotState sInstance = null;
 
-    public  static RobotState getInstance(String caller) {
+    public static RobotState getInstance(String caller) {
         if (sInstance == null) {
             sInstance = new RobotState(caller);
-            mSwerve = Swerve.getInstance(sClassName);
         }
         else {
             printUsage(caller);
@@ -109,8 +108,8 @@ public class RobotState {
         sClassName = this.getClass().getSimpleName();
         printUsage(caller);
 
+        mSwerve = Swerve.getInstance(sClassName);
         reset(0, new Pose2d());
-        // mSwerve = Swerve.getInstance(sClassName);
     }
 
     /**
