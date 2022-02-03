@@ -282,7 +282,7 @@ public class SwerveDriveModule extends Subsystem {
 	public synchronized void setState(SwerveModuleState swreveModuleState) {
         // Converts the velocity in SI units (meters per second) to a
         // voltage (as a percentage) for the motor controllers.
-		setDriveOpenLoop(metersPerSecondToEncVelocity(swreveModuleState.speedInMetersPerSecond));
+		setDriveOpenLoop(swreveModuleState.speedInMetersPerSecond/Constants.kSwerveDriveMaxSpeedInMetersPerSecond);
 
         // TODO:  Consider using SwerveModule.optimize() here instead of setReferenceAngle()
         setReferenceAngle(swreveModuleState.angle.getRadians());

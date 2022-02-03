@@ -9,6 +9,7 @@ import libraries.cheesylib.util.LatchedBoolean;
 import libraries.cheesylib.util.TimeDelayedBoolean;
 import libraries.cyberlib.control.SwerveHeadingController;
 import libraries.cyberlib.io.CW;
+import libraries.cyberlib.io.LogitechExtreme;
 import libraries.cyberlib.io.Xbox;
 
 public class JSticks extends Subsystem{
@@ -32,6 +33,7 @@ public class JSticks extends Subsystem{
     private boolean mStateChanged;
     private CW mDriver;
     private CW mOperator;
+    private LogitechExtreme mDriver2;
     private final double mDeadBand = 0.15; // for the turnigy (driver) swerve controls
     private String mPrevGameState = "";
 	private Superstructure mSuperstructure;
@@ -73,6 +75,7 @@ public class JSticks extends Subsystem{
         mSuperstructure = Superstructure.getInstance(sClassName);
         mSwerve = Swerve.getInstance(sClassName);
         mDriver = new Xbox();
+        mDriver2 = new LogitechExtreme();
         mOperator = new Xbox();
         printUsage(caller);
     }
@@ -189,11 +192,18 @@ public class JSticks extends Subsystem{
         schedDeltaActual = now - lastSchedStart;
         lastSchedStart   = now;
 
-        dr_RightStickX_Translate = mDriver.getRaw(Xbox.RIGHT_STICK_X, mDeadBand);
-        dr_RightStickY_Translate = mDriver.getRaw(Xbox.RIGHT_STICK_Y, mDeadBand);
-        dr_LeftStickX_Rotate = mDriver.getRaw(Xbox.LEFT_STICK_X, mDeadBand);
-        dr_YButton_ResetIMU = mDriver.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
-
+        if (mDriver.joystickFound()){
+            dr_RightStickX_Translate = mDriver.getRaw(Xbox.RIGHT_STICK_X, mDeadBand);
+            dr_RightStickY_Translate = mDriver.getRaw(Xbox.RIGHT_STICK_Y, mDeadBand);
+            dr_LeftStickX_Rotate = mDriver.getRaw(Xbox.LEFT_STICK_X, mDeadBand);
+            dr_YButton_ResetIMU = mDriver.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
+        }
+        else{
+            dr_RightStickX_Translate = mDriver2.getRaw(LogitechExtreme.X, mDeadBand);
+            dr_RightStickY_Translate = mDriver2.getRaw(LogitechExtreme.Y, mDeadBand);
+            dr_LeftStickX_Rotate = mDriver2.getRaw(LogitechExtreme.Z, mDeadBand);
+            dr_YButton_ResetIMU = mDriver2.getButton(LogitechExtreme.THUMB_BUTTON, CW.PRESSED_EDGE);
+        }
     }
 
     private SystemState defaultStateTransfer() {

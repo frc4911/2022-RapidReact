@@ -15,6 +15,7 @@ import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.loops.Looper;
 import libraries.cheesylib.subsystems.SubsystemManager;
 import libraries.cheesylib.util.CrashTracker;
+import libraries.cyberlib.utils.RobotName;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -27,6 +28,13 @@ public class Robot extends TimedRobot {
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
    */
+// The constructor for RobotName looks in the deploy directory (home/lvuser/deploy/) on the robot for
+// a file name RobotName.txt. If found it reads the first line of the file and
+// saves what it reads as the robot's name. Note: the name passed into the constructor
+// is the name used if no RobotName.txt file is found.
+// in the src\main\deploy directory of VS is a RobotName.txt file
+// this file is downloaded to the deploy directory with each deploy of the robot jar file
+   RobotName robotName = new RobotName("2022Robot");
 
   private String mClassName;
 

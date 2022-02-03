@@ -9,10 +9,15 @@ import libraries.cheesylib.util.SynchronousPIDF;
  */
 public class SwerveHeadingController {
     private static SwerveHeadingController mInstance;
+    private static Swerve mSwerve = null;
 
     public static SwerveHeadingController getInstance() {
         if (mInstance == null) {
             mInstance = new SwerveHeadingController();
+            // this needs to happen during class creation but
+            // after sInstance is set because Swerve will get an
+            // instance of SwerveHeadingController
+            mSwerve = Swerve.getInstance("SwerveHeadingController");
         }
 
         return mInstance;
@@ -58,7 +63,8 @@ public class SwerveHeadingController {
      */
     public double update() {
         mPIDFController.setSetpoint(mSetpoint);
-        double current_angle = Swerve.getInstance("SwerveHeadingController").getHeading().getDegrees();
+        // double current_angle = Swerve.getInstance("SwerveHeadingController").getHeading().getDegrees();
+        double current_angle = mSwerve.getHeading().getDegrees();
         double current_error = mSetpoint - current_angle;
 
         if (current_error > 180) {
