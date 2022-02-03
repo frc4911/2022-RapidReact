@@ -30,6 +30,12 @@ public class RobotState {
     public static RobotState getInstance(String caller) {
         if (sInstance == null) {
             sInstance = new RobotState(caller);
+            // this needs to happen during class creation but
+            // after sInstance is set because Swerve will get an
+            // instance of RobotState
+            mSwerve = Swerve.getInstance(sClassName);
+            // reset needs mSwerve so it must be called here
+            reset(0, new Pose2d());
         }
         else {
             printUsage(caller);
@@ -49,14 +55,14 @@ public class RobotState {
     private static Swerve mSwerve;
     private static final int kObservationBufferSize = 100;
 
-    private InterpolatingTreeMap<InterpolatingDouble, Pose2d> field_to_vehicle_;
-    private GoalTracker mGoalTracker;
-    private GoalTracker mPowerCellTracker;
+    static private InterpolatingTreeMap<InterpolatingDouble, Pose2d> field_to_vehicle_;
+    static private GoalTracker mGoalTracker;
+    static private GoalTracker mPowerCellTracker;
 
     private List<Translation2d> mCameraToTarget = new ArrayList<>();
 
     private double targetHeight = Constants.kOuterTargetHeight;//Constants.kDiskTargetHeight; // ramiro changed
-    private double distance_driven_;
+    static private double distance_driven_;
 
     public final int minimumTargetQuantity = 1; // ramiro changed (we only have one target)
     private final int primaryTargetIndex = 0; // ramiro changed
@@ -108,14 +114,14 @@ public class RobotState {
         sClassName = this.getClass().getSimpleName();
         printUsage(caller);
 
-        mSwerve = Swerve.getInstance(sClassName);
-        reset(0, new Pose2d());
+        //reset(0, new Pose2d());
+        // mSwerve = Swerve.getInstance(sClassName);
     }
 
     /**
      * Resets the field to robot transform (robot's position on the field)
      */
-    public synchronized void reset(double start_time, Pose2d initial_field_to_vehicle) {
+    static public synchronized void reset(double start_time, Pose2d initial_field_to_vehicle) {
         field_to_vehicle_ = new InterpolatingTreeMap<>(kObservationBufferSize);
         field_to_vehicle_.put(new InterpolatingDouble(start_time), initial_field_to_vehicle);
         mSwerve.setRobotPosition(initial_field_to_vehicle);

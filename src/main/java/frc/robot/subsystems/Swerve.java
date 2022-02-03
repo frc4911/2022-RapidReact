@@ -37,7 +37,7 @@ public class Swerve extends Subsystem {
 
 	// Module declaration
 	private final List<SwerveDriveModule> mModules = new ArrayList<>();
-	private final SwerveDriveModule mFrontRight, mFrontLeft, mBackLeft, mBackRight;
+	private SwerveDriveModule mFrontRight=null, mFrontLeft=null, mBackLeft=null, mBackRight=null;
 
 	double lastUpdateTimestamp = 0;
 
@@ -56,7 +56,7 @@ public class Swerve extends Subsystem {
     private DriveMotionPlanner mMotionPlanner;
     private boolean mOverrideTrajectory = false;
 
-    RobotState robotState;
+    static RobotState robotState;
     private int mListIndex = -1;
 
     private static String sClassName;
@@ -65,6 +65,7 @@ public class Swerve extends Subsystem {
     public  static Swerve getInstance(String caller) {
         if (sInstance == null) {
             sInstance = new Swerve(caller);
+            robotState = RobotState.getInstance(sClassName);
         }
         else {
             printUsage(caller);
@@ -86,35 +87,42 @@ public class Swerve extends Subsystem {
 
         mPigeon = Pigeon.getInstance();
 
-        if (RobotName.name.equals(Constants.kRobot1Name)) {
-            Constants.kFrontLeftModuleConstants.kCANCoderOffsetDegrees = Constants.kFrontLeftCancoderStartingPosDegreesR1;
-            Constants.kFrontRightModuleConstants.kCANCoderOffsetDegrees = Constants.kFrontRightCancoderStartingPosDegreesR1;
-            Constants.kBackLeftModuleConstants.kCANCoderOffsetDegrees = Constants.kRearLeftCancoderStartingPosDegreesR1;
-            Constants.kBackRightModuleConstants.kCANCoderOffsetDegrees = Constants.kRearRightCancoderStartingPosDegreesR1;
-        }
-        else if (RobotName.name.equals(Constants.kRobot2Name)) {
-            Constants.kFrontLeftModuleConstants.kCANCoderOffsetDegrees = Constants.kFrontLeftCancoderStartingPosDegreesR2;
-            Constants.kFrontRightModuleConstants.kCANCoderOffsetDegrees = Constants.kFrontRightCancoderStartingPosDegreesR2;
-            Constants.kBackLeftModuleConstants.kCANCoderOffsetDegrees = Constants.kRearLeftCancoderStartingPosDegreesR2;
-            Constants.kBackRightModuleConstants.kCANCoderOffsetDegrees = Constants.kRearRightCancoderStartingPosDegreesR2;
-        }
-        else if (RobotName.name.equals(Constants.kCetusName)) {
-            Constants.kFrontLeftModuleConstants.kCANCoderOffsetDegrees = Constants.kFrontLeftCancoderStartingPosDegreesCetus;
-            Constants.kFrontRightModuleConstants.kCANCoderOffsetDegrees = Constants.kFrontRightCancoderStartingPosDegreesCetus;
-            Constants.kBackLeftModuleConstants.kCANCoderOffsetDegrees = Constants.kRearLeftCancoderStartingPosDegreesCetus;
-            Constants.kBackRightModuleConstants.kCANCoderOffsetDegrees = Constants.kRearRightCancoderStartingPosDegreesCetus;
-        }
-
-		mModules.add(mFrontLeft = new SwerveDriveModule(Constants.kFrontLeftModuleConstants));
-		mModules.add(mFrontRight = new SwerveDriveModule(Constants.kFrontRightModuleConstants));
-		mModules.add(mBackRight = new SwerveDriveModule(Constants.kBackRightModuleConstants));
-		mModules.add(mBackLeft = new SwerveDriveModule(Constants.kBackLeftModuleConstants));
+        if (RobotName.name.equals(Constants.kJuniorName)) {
+            // Constants.kFrontRightModuleConstants.kCANCoderOffsetDegrees = Constants.kFrontRightCancoderStartingPosDegreesR1;
+            // Constants.kFrontLeftModuleConstants.kCANCoderOffsetDegrees = Constants.kFrontLeftCancoderStartingPosDegreesR1;
+            // Constants.kBackLeftModuleConstants.kCANCoderOffsetDegrees = Constants.kRearLeftCancoderStartingPosDegreesR1;
+            // Constants.kBackRightModuleConstants.kCANCoderOffsetDegrees = Constants.kRearRightCancoderStartingPosDegreesR1;
+            mModules.add(mFrontRight = new SwerveDriveModule(Constants.kFrontRightModuleConstantsJunior));
+            mModules.add(mFrontLeft = new SwerveDriveModule(Constants.kFrontLeftModuleConstantsJunior));
+            mModules.add(mBackLeft = new SwerveDriveModule(Constants.kBackLeftModuleConstantsJunior));
+            mModules.add(mBackRight = new SwerveDriveModule(Constants.kBackRightModuleConstantsJunior));
+            }
+        else if (RobotName.name.equals(Constants.kDeadEyeName)) {
+            // Constants.kFrontLeftModuleConstants.kCANCoderOffsetDegrees = Constants.kFrontLeftCancoderStartingPosDegreesR2;
+            // Constants.kFrontRightModuleConstants.kCANCoderOffsetDegrees = Constants.kFrontRightCancoderStartingPosDegreesR2;
+            // Constants.kBackLeftModuleConstants.kCANCoderOffsetDegrees = Constants.kRearLeftCancoderStartingPosDegreesR2;
+            // Constants.kBackRightModuleConstants.kCANCoderOffsetDegrees = Constants.kRearRightCancoderStartingPosDegreesR2;
+            mModules.add(mFrontRight = new SwerveDriveModule(Constants.kFrontRightModuleConstantsDeadEye));
+            mModules.add(mFrontLeft = new SwerveDriveModule(Constants.kFrontLeftModuleConstantsDeadEye));
+            mModules.add(mBackLeft = new SwerveDriveModule(Constants.kBackLeftModuleConstantsDeadEye));
+            mModules.add(mBackRight = new SwerveDriveModule(Constants.kBackRightModuleConstantsDeadEye));
+            }
+        else if (RobotName.name.equals(Constants.kRobot2022Name)) {
+            // Constants.kFrontLeftModuleConstants.kCANCoderOffsetDegrees = Constants.kFrontLeftCancoderStartingPosDegreesCetus;
+            // Constants.kFrontRightModuleConstants.kCANCoderOffsetDegrees = Constants.kFrontRightCancoderStartingPosDegreesCetus;
+            // Constants.kBackLeftModuleConstants.kCANCoderOffsetDegrees = Constants.kRearLeftCancoderStartingPosDegreesCetus;
+            // Constants.kBackRightModuleConstants.kCANCoderOffsetDegrees = Constants.kRearRightCancoderStartingPosDegreesCetus;
+            mModules.add(mFrontRight = new SwerveDriveModule(Constants.kFrontRightModuleConstantsRobot2022));
+            mModules.add(mFrontLeft = new SwerveDriveModule(Constants.kFrontLeftModuleConstantsRobot2022));
+            mModules.add(mBackLeft = new SwerveDriveModule(Constants.kBackLeftModuleConstantsRobot2022));
+            mModules.add(mBackRight = new SwerveDriveModule(Constants.kBackRightModuleConstantsRobot2022));
+            }
 
 		mOdometry = new SwerveDriveOdometry(mKinematics, mPigeon.getYaw());
         mPose = mOdometry.getPose();
 
         mMotionPlanner = new DriveMotionPlanner();
-        robotState = RobotState.getInstance(sClassName);
+        // robotState = RobotState.getInstance(sClassName);
 //        generator = TrajectoryGenerator.getInstance();
     }
 
@@ -194,7 +202,10 @@ public class Swerve extends Subsystem {
                 mPeriodicIO.forward, mPeriodicIO.strafe, mPeriodicIO.rotation, mPeriodicIO.low_power,
                 mPeriodicIO.field_relative, mPeriodicIO.use_heading_controller);
 
+        // System.out.println("handleManual "+chassisSpeeds.toString());
         // Now calculate the new Swerve Module states using inverse kinematics.
+        // ChassisSpeeds cs = new ChassisSpeeds(.21,0,0);
+        // mPeriodicIO.swerveModuleStates = mKinematics.toSwerveModuleStates(cs);
         mPeriodicIO.swerveModuleStates = mKinematics.toSwerveModuleStates(chassisSpeeds);
 
         // Normalize wheels speeds if any individual speed is above the specified maximum.
@@ -444,7 +455,7 @@ public class Swerve extends Subsystem {
         for (int i = 0; i < mModules.size(); i++) {
             mModules.get(i).setState(mPeriodicIO.swerveModuleStates[i]);
         }
-
+        // System.out.println(mPeriodicIO.swerveModuleStates[0].toString());
         mModules.forEach((m) -> m.writePeriodicOutputs());
     }
 
