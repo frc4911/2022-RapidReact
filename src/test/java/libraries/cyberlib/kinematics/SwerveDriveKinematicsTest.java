@@ -54,6 +54,18 @@ class SwerveDriveKinematicsTest {
   }
 
   @Test
+  void testStraightLineMovingBackwardsForwardKinematics() { // test forward kinematics going in a straight line
+    SwerveModuleState state = new SwerveModuleState(-5.0, Rotation2d.fromDegrees(90.0));
+    var chassisSpeeds = m_kinematics.toChassisSpeeds(state, state, state, state);
+
+    assertAll(
+            () -> assertEquals(0.0, chassisSpeeds.vxInMetersPerSecond, kEpsilon),
+            () -> assertEquals(-5.0, chassisSpeeds.vyInMetersPerSecond, kEpsilon),
+            () -> assertEquals(0.0, chassisSpeeds.omegaInRadiansPerSecond, kEpsilon)
+    );
+  }
+
+  @Test
   void testStraightStrafeInverseKinematics() {
 
     ChassisSpeeds speeds = new ChassisSpeeds(0, 5, 0);
@@ -70,6 +82,26 @@ class SwerveDriveKinematicsTest {
         () -> assertEquals(90.0, moduleStates[3].angle.getDegrees(), kEpsilon)
     );
   }
+
+  @Test
+  void testStraightStrafeBackwardsInverseKinematics() {
+    // Wheels are always drive forward but steering is 180 degrees flipped (reversed)
+    ChassisSpeeds speeds = new ChassisSpeeds(0, -5, 0);
+    var moduleStates = m_kinematics.toSwerveModuleStates(speeds);
+
+    assertAll(
+            () -> assertEquals(5.0, moduleStates[0].speedInMetersPerSecond, kEpsilon),
+            () -> assertEquals(5.0, moduleStates[1].speedInMetersPerSecond, kEpsilon),
+            () -> assertEquals(5.0, moduleStates[2].speedInMetersPerSecond, kEpsilon),
+            () -> assertEquals(5.0, moduleStates[3].speedInMetersPerSecond, kEpsilon),
+            () -> assertEquals(-90.0, moduleStates[0].angle.getDegrees(), kEpsilon),
+            () -> assertEquals(-90.0, moduleStates[1].angle.getDegrees(), kEpsilon),
+            () -> assertEquals(-90.0, moduleStates[2].angle.getDegrees(), kEpsilon),
+            () -> assertEquals(-90.0, moduleStates[3].angle.getDegrees(), kEpsilon)
+    );
+  }
+
+
 
   @Test
   void testStraightStrafeForwardKinematics() {

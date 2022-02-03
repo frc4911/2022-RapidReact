@@ -266,7 +266,8 @@ public class Constants {
     // Max translational velocity in m/s
     public static final double kSwerveDriveMaxSpeedInMetersPerSecond = Units.inchesToMeters(kSwerveMaxSpeedInchesPerSecond) ;
     // Maximum angular velocity in rad/s
-    public static final double kSwerveRotationMaxSpeedInRadiansPerSecond = kSwerveMaxSpeedInchesPerSecond / kRadiusInMeters;
+    public static final double kSwerveRotationMaxSpeedInRadiansPerSecond =
+            Math.min(kSwerveDriveMaxSpeedInMetersPerSecond / kRadiusInMeters, Math.toRadians(270));
     public static final double kRotationMotorTicksPerRadian = 2048.0 / (2 * Math.PI);
 
     // If CW, then right is positive.  If CCW left is positive

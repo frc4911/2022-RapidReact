@@ -82,7 +82,7 @@ public class SwerveDriveHelper {
         // TODO:  Consider using a tuple to return calculated values to remove reference to Constants
 
         // Convert the joystick inputs to SI units.
-        translationalInput.scale(Constants.kSwerveDriveMaxSpeedInMetersPerSecond);
+        translationalInput = translationalInput.scale(Constants.kSwerveDriveMaxSpeedInMetersPerSecond);
         rotationInput *= Constants.kSwerveRotationMaxSpeedInRadiansPerSecond;
 
         ChassisSpeeds chassisSpeeds = new ChassisSpeeds(translationalInput.x(), translationalInput.y(), rotationInput);
