@@ -2,8 +2,12 @@ import edu.wpi.first.gradlerio.deploy.roborio.RoboRIO
 
 plugins {
     id "java"
-    id "idea"    
+    id "idea"
     id "edu.wpi.first.GradleRIO" version "2022.2.1"
+}
+
+test {
+    useJUnitPlatform()
 }
 
 sourceCompatibility = JavaVersion.VERSION_11
@@ -54,7 +58,6 @@ dependencies {
     implementation wpi.java.deps.wpilib()
     implementation wpi.java.vendor.java()
     implementation 'org.junit.jupiter:junit-jupiter:5.8.1'
-    implementation 'org.junit.jupiter:junit-jupiter:5.8.1'
 
     roborioDebug wpi.java.deps.wpilibJniDebug(wpi.platforms.roborio)
     roborioDebug wpi.java.vendor.jniDebug(wpi.platforms.roborio)
@@ -71,7 +74,7 @@ dependencies {
     simulationRelease wpi.sim.enableRelease()
 
 //    testImplementation 'junit:junit:4.12'
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.1")
 
     implementation("gov.nist.math:jama:1.0.3")
 }

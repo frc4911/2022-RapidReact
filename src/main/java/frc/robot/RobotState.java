@@ -27,7 +27,7 @@ public class RobotState {
     private static int sInstanceCount;
     private static RobotState sInstance = null;
 
-    public  static RobotState getInstance(String caller) {
+    public static RobotState getInstance(String caller) {
         if (sInstance == null) {
             sInstance = new RobotState(caller);
             // this needs to happen during class creation but
