@@ -252,7 +252,7 @@ public class Constants {
     public static final double kMK2_WheelDiameter = 0.1016;
     public static final double kMK2_DriveReduction = (15.0 / 32.0) * (27.0 / 17.0) * (15.0 / 45.0);
     public static final boolean kMK2_DriveInverted = true;
-    public static final double kMK2_SteerReduction = (14.0/50.0) * (10.0 / 60.0);
+    public static final double kMK2_SteerReduction = (15.0 / 32.0) * (10.0 / 60.0);
     public static final boolean kMK2_iSteerInverted = true;
 
     // These settings are for an inverted Mk4 L2.  The steering reduction is different:
@@ -302,7 +302,7 @@ public class Constants {
         kFrontRightModuleConstantsJunior.kCANCoderOffsetDegrees = -10;
         kFrontRightModuleConstantsJunior.kCANCoderId = Ports.FRONT_RIGHT_ENC;
         kFrontRightModuleConstantsJunior.kWheelDiameter = kMK2_WheelDiameter;
-        kFrontRightModuleConstantsJunior.kDriveReduction = kMK2_DriveReduction;
+        kFrontRightModuleConstantsJunior.kDriveReduction = (18.0 / 38.0) * (26.0 / 18.0) * (15.0 / 60.0);
         kFrontRightModuleConstantsJunior.kSteerReduction = kMK2_SteerReduction;
         /* ... */
     }
@@ -317,7 +317,7 @@ public class Constants {
         kFrontLeftModuleConstantsJunior.kCANCoderOffsetDegrees = -127;
         kFrontLeftModuleConstantsJunior.kCANCoderId = Ports.FRONT_LEFT_ENC;
         kFrontLeftModuleConstantsJunior.kWheelDiameter = kMK2_WheelDiameter;
-        kFrontLeftModuleConstantsJunior.kDriveReduction = kMK2_DriveReduction;
+        kFrontLeftModuleConstantsJunior.kDriveReduction = (18.0 / 38.0) * (26.0 / 18.0) * (15.0 / 60.0);
         kFrontLeftModuleConstantsJunior.kSteerReduction = kMK2_SteerReduction;
         /* ... */
     }
@@ -332,7 +332,7 @@ public class Constants {
         kBackLeftModuleConstantsJunior.kCANCoderOffsetDegrees = 0;
         kBackLeftModuleConstantsJunior.kCANCoderId = Ports.REAR_LEFT_ENC;
         kBackLeftModuleConstantsJunior.kWheelDiameter = kMK2_WheelDiameter;
-        kBackLeftModuleConstantsJunior.kDriveReduction = kMK2_DriveReduction;
+        kBackLeftModuleConstantsJunior.kDriveReduction = (18.0 / 38.0) * (26.0 / 18.0) * (15.0 / 60.0);
         kBackLeftModuleConstantsJunior.kSteerReduction = kMK2_SteerReduction;
         /* ... */
     }
@@ -347,7 +347,7 @@ public class Constants {
         kBackRightModuleConstantsJunior.kCANCoderId = Ports.REAR_RIGHT_ENC;
         kBackRightModuleConstantsJunior.kCANCoderOffsetDegrees = -119;
         kBackRightModuleConstantsJunior.kWheelDiameter = kMK2_WheelDiameter;
-        kBackRightModuleConstantsJunior.kDriveReduction = kMK2_DriveReduction;
+        kBackRightModuleConstantsJunior.kDriveReduction = (18.0 / 38.0) * (26.0 / 18.0) * (15.0 / 60.0);
         kBackRightModuleConstantsJunior.kSteerReduction = kMK2_SteerReduction;
         /* ... */
     }
@@ -365,7 +365,7 @@ public class Constants {
         kFrontRightModuleConstantsDeadEye.kCANCoderId = Ports.FRONT_RIGHT_ENC;
         kFrontRightModuleConstantsDeadEye.kCANCoderOffsetDegrees = 0;
         kFrontRightModuleConstantsDeadEye.kWheelDiameter = kMK2_WheelDiameter;
-        kFrontRightModuleConstantsDeadEye.kDriveReduction = kMK2_DriveReduction;
+        kFrontRightModuleConstantsDeadEye.kDriveReduction = (16.0 / 40.0) * (26.0 / 18.0) * (15.0 / 60.0);
         kFrontRightModuleConstantsDeadEye.kSteerReduction = kMK2_SteerReduction;
         /* ... */
     }
@@ -380,7 +380,7 @@ public class Constants {
         kFrontLeftModuleConstantsDeadEye.kCANCoderId = Ports.FRONT_LEFT_ENC;
         kFrontLeftModuleConstantsDeadEye.kCANCoderOffsetDegrees = 0;
         kFrontLeftModuleConstantsDeadEye.kWheelDiameter = kMK2_WheelDiameter;
-        kFrontLeftModuleConstantsDeadEye.kDriveReduction = kMK2_DriveReduction;
+        kFrontLeftModuleConstantsDeadEye.kDriveReduction = (16.0 / 40.0) * (26.0 / 18.0) * (15.0 / 60.0);
         kFrontLeftModuleConstantsDeadEye.kSteerReduction = kMK2_SteerReduction;
         /* ... */
     }
@@ -395,7 +395,7 @@ public class Constants {
         kBackLeftModuleConstantsDeadEye.kCANCoderId = Ports.REAR_LEFT_ENC;
         kBackLeftModuleConstantsDeadEye.kCANCoderOffsetDegrees = 0;
         kBackLeftModuleConstantsDeadEye.kWheelDiameter = kMK2_WheelDiameter;
-        kBackLeftModuleConstantsDeadEye.kDriveReduction = kMK2_DriveReduction;
+        kBackLeftModuleConstantsDeadEye.kDriveReduction = (16.0 / 40.0) * (26.0 / 18.0) * (15.0 / 60.0);
         kBackLeftModuleConstantsDeadEye.kSteerReduction = kMK2_SteerReduction;
         /* ... */
     }
@@ -410,7 +410,7 @@ public class Constants {
         kBackRightModuleConstantsDeadEye.kCANCoderId = Ports.REAR_RIGHT_ENC;
         kBackRightModuleConstantsDeadEye.kCANCoderOffsetDegrees = 0;
         kBackRightModuleConstantsDeadEye.kWheelDiameter = kMK4_L2iWheelDiameter;
-        kBackRightModuleConstantsDeadEye.kDriveReduction = kMK4_L2iDriveReduction;
+        kBackRightModuleConstantsDeadEye.kDriveReduction = (16.0 / 40.0) * (26.0 / 18.0) * (15.0 / 60.0);
         kBackRightModuleConstantsDeadEye.kSteerReduction = kMK2_SteerReduction;
         /* ... */
     }
