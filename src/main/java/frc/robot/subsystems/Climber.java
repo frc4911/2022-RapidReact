@@ -1,10 +1,12 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.Timer;
+import frc.robot.Constants;
 import frc.robot.Ports;
 import libraries.cheesylib.drivers.TalonFXFactory;
 import libraries.cheesylib.loops.ILooper;
@@ -75,6 +77,23 @@ public class Climber extends Subsystem{
         mFXLeftClimber = TalonFXFactory.createDefaultTalon(Ports.LEFT_CLIMBER);
         mFXRightClimber = TalonFXFactory.createDefaultTalon(Ports.RIGHT_CLIMBER);
         mSolenoid = new Solenoid(PneumaticsModuleType.CTREPCM, Ports.CLIMBER_STAGE);
+        configMotors();
+    }
+
+    private void configMotors(){
+
+        mFXLeftClimber.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
+        mFXLeftClimber.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
+
+        mFXRightClimber.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
+        mFXRightClimber.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
+
+        mFXLeftClimber.setInverted(false);
+        mFXRightClimber.setInverted(false);
+        
+        mFXLeftClimber.setNeutralMode(NeutralMode.Coast);
+        mFXRightClimber.setNeutralMode(NeutralMode.Coast);
+
     }
 
     private Loop mLoop = new Loop() {

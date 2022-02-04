@@ -1,8 +1,12 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix.motorcontrol.FeedbackDevice;
+import com.ctre.phoenix.motorcontrol.NeutralMode;
+import com.ctre.phoenix.motorcontrol.StatusFrame;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 
 import edu.wpi.first.wpilibj.Timer;
+import frc.robot.Constants;
 import frc.robot.Ports;
 import libraries.cheesylib.drivers.TalonFXFactory;
 import libraries.cheesylib.loops.ILooper;
@@ -74,7 +78,26 @@ public class Shooter extends Subsystem{
     }
 
     private void configMotors(){
-        
+        mFXLeftFlyWheel.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor, 0, Constants.kLongCANTimeoutMs);
+        mFXRightFlyWheel.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor, 0, Constants.kLongCANTimeoutMs);
+
+        // only one encoder is needed
+        mFXLeftFlyWheel.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, 20, Constants.kLongCANTimeoutMs);
+    
+        mFXLeftFlyWheel.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
+        mFXRightFlyWheel.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
+
+        mFXLeftFlyWheel.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
+        mFXRightFlyWheel.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
+
+        mFXLeftFlyWheel.setInverted(true);
+        mFXRightFlyWheel.setInverted(false);
+
+        mFXLeftFlyWheel.setSensorPhase(true);
+        mFXRightFlyWheel.setSensorPhase(false);
+
+        mFXLeftFlyWheel.setNeutralMode(NeutralMode.Coast);
+        mFXRightFlyWheel.setNeutralMode(NeutralMode.Coast);   
     }
 
     private Loop mLoop = new Loop() {
