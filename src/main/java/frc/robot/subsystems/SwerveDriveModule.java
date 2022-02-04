@@ -152,13 +152,13 @@ public class SwerveDriveModule extends Subsystem {
         mModuleName = String.format("%s %d", mConstants.kName, mConstants.kModuleId);
         mPeriodicIO.moduleID = mConstants.kModuleId;
 
-        mDriveMotor = TalonFXFactory.createDefaultTalon(constants.kDriveMotorTalonId);
-        mSteerMotor = TalonFXFactory.createDefaultTalon(constants.kSteerMotorTalonId);
+        mDriveMotor = TalonFXFactory.createDefaultTalon(mConstants.kDriveMotorTalonId);
+        mSteerMotor = TalonFXFactory.createDefaultTalon(mConstants.kSteerMotorTalonId);
 
-        mCANCoder = new CANCoder(constants.kCANCoderId);
-        mCANCoder.configSensorInitializationStrategy(constants.kCANCoderSensorInitializationStrategy, Constants.kLongCANTimeoutMs);
-        mCANCoder.setStatusFramePeriod(CANCoderStatusFrame.VbatAndFaults, constants.kCANCoderStatusFramePeriodVbatAndFaults);
-        mCANCoder.setStatusFramePeriod(CANCoderStatusFrame.SensorData, constants.kCANCoderStatusFramePeriodSensorData);
+        mCANCoder = new CANCoder(mConstants.kCANCoderId);
+        mCANCoder.configSensorInitializationStrategy(mConstants.kCANCoderSensorInitializationStrategy, Constants.kLongCANTimeoutMs);
+        mCANCoder.setStatusFramePeriod(CANCoderStatusFrame.VbatAndFaults, mConstants.kCANCoderStatusFramePeriodVbatAndFaults);
+        mCANCoder.setStatusFramePeriod(CANCoderStatusFrame.SensorData, mConstants.kCANCoderStatusFramePeriodSensorData);
 
         configureMotors();
     }
