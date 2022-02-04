@@ -92,17 +92,28 @@ public class SwerveDriveKinematics {
                                                     Translation2d centerOfRotationInMeters) {
         if (!centerOfRotationInMeters.equals(mPrevCoR)) {
             for (int i = 0; i < mNumModules; i++) {
-                mInverseKinematics.setRow(i * 2 + 0, 0, /* Start Data */ 1, 0,
+                mInverseKinematics.setRow(
+                        i * 2 + 0,
+                        0, /* Start Data */
+                        1,
+                        0,
                         -mModules[i].y() + centerOfRotationInMeters.y());
-                mInverseKinematics.setRow(i * 2 + 1, 0, /* Start Data */ 0, 1,
+                mInverseKinematics.setRow(
+                        i * 2 + 1,
+                        0, /* Start Data */
+                        0,
+                        1,
                         +mModules[i].x() - centerOfRotationInMeters.x());
             }
             mPrevCoR = centerOfRotationInMeters;
         }
 
         var chassisSpeedsVector = new SimpleMatrix(3, 1);
-        chassisSpeedsVector.setColumn(0, 0,
-                chassisSpeeds.vxInMetersPerSecond, chassisSpeeds.vyInMetersPerSecond,
+        chassisSpeedsVector.setColumn(
+                0,
+                0,
+                chassisSpeeds.vxInMetersPerSecond,
+                chassisSpeeds.vyInMetersPerSecond,
                 chassisSpeeds.omegaInRadiansPerSecond);
 
         var moduleStatesMatrix = mInverseKinematics.mult(chassisSpeedsVector);
@@ -161,7 +172,8 @@ public class SwerveDriveKinematics {
         }
 
         var chassisSpeedsVector = mForwardKinematics.mult(moduleStatesMatrix);
-        return new ChassisSpeeds(chassisSpeedsVector.get(0, 0),
+        return new ChassisSpeeds(
+                chassisSpeedsVector.get(0, 0),
                 chassisSpeedsVector.get(1, 0),
                 chassisSpeedsVector.get(2, 0));
     }
