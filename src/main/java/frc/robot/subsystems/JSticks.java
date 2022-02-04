@@ -194,13 +194,13 @@ public class JSticks extends Subsystem{
 
         if (mDriver.joystickFound()){
             dr_RightStickX_Translate = mDriver.getRaw(Xbox.RIGHT_STICK_X, mDeadBand);
-            dr_RightStickY_Translate = mDriver.getRaw(Xbox.RIGHT_STICK_Y, mDeadBand);
+            dr_RightStickY_Translate = -mDriver.getRaw(Xbox.RIGHT_STICK_Y, mDeadBand);
             dr_LeftStickX_Rotate = mDriver.getRaw(Xbox.LEFT_STICK_X, mDeadBand);
             dr_YButton_ResetIMU = mDriver.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
         }
         else{
             dr_RightStickX_Translate = mDriver2.getRaw(LogitechExtreme.X, mDeadBand);
-            dr_RightStickY_Translate = mDriver2.getRaw(LogitechExtreme.Y, mDeadBand);
+            dr_RightStickY_Translate = -mDriver2.getRaw(LogitechExtreme.Y, mDeadBand);
             dr_LeftStickX_Rotate = mDriver2.getRaw(LogitechExtreme.Z, mDeadBand);
             dr_YButton_ResetIMU = mDriver2.getButton(LogitechExtreme.THUMB_BUTTON, CW.PRESSED_EDGE);
         }
