@@ -75,8 +75,10 @@ public class Constants {
     // Rotation2d.fromDegrees(0));
 
     // Swerve Calculations Constants (measurements are in inches)
-    public static final double kWheelbaseLength = 21.0;
-    public static final double kWheelbaseWidth = 21.0;
+    // Distance is the center to center of wheels
+    // Length is front to back, width is left to right
+    public static final double kWheelbaseLength = 24.0;
+    public static final double kWheelbaseWidth = 20.75;
     public static final double kSwerveDiagonal = Math.hypot(kWheelbaseLength, kWheelbaseWidth);
 
     public static double kMaxAngleAimError = 1;
@@ -201,7 +203,7 @@ public class Constants {
 
     //Swerve Odometry Constants
     public static final double kSwerveWheelDiameter = 4.0901; //inches (actual diamter is closer to 3.87, but secondary algorithm prefers 4.0901) 3.76
-    public static final double kSwerveRotationMotorTicksPerRotation = 2048.0 * 18.0; // FX encoder ticks per module rotation
+    public static final double kSwerveRotationMotorTicksPerRotation = 2048.0 * 21.5; // FX encoder ticks per module rotation
     /** The number of rotations the swerve drive encoder undergoes for every rotation of the wheel. */
     public static final double kSwerveDriveTicksPerWheelRev = .85*14178; //brian 1.21 new gear ratio 2048 * 6.923 //SwerveDriveEncoderResolution * kSwerveEncoderToWheelRatio;
     public static final double kSwerveEncUnitsPerInch = kSwerveDriveTicksPerWheelRev / (Math.PI * kSwerveWheelDiameter);
@@ -221,20 +223,20 @@ public class Constants {
     public static final double kSwerveRotationSpeedScalar = ((1.0 / 0.125) - 1.0) / kSwerveMaxSpeedInchesPerSecond;
 
     //Swerve Module Wheel Offsets (cancoder Rotation encoder values in degrees when the wheels are facing 0 degrees), gear bevel on inside, cw rotation from bottom is negative
-    public static final int kFrontRightCancoderStartingPosDegreesCetus = -112;
-    public static final int kFrontLeftCancoderStartingPosDegreesCetus = 92;
-    public static final int kRearLeftCancoderStartingPosDegreesCetus = -13;
-    public static final int kRearRightCancoderStartingPosDegreesCetus = -130;
+    public static final int kFrontRightCancoderStartingPosDegreesCetus = 0;
+    public static final int kFrontLeftCancoderStartingPosDegreesCetus =  0;
+    public static final int kRearLeftCancoderStartingPosDegreesCetus =   0;
+    public static final int kRearRightCancoderStartingPosDegreesCetus =  0;
 
-    public static final int kFrontRightCancoderStartingPosDegreesR1 = 359; //1; //-slight tuning blockparty day 2 //148;
-    public static final int kFrontLeftCancoderStartingPosDegreesR1 = 211; //151; //345;//-wheel was reoriented for repairs (loose falcons) //332;-temp fix //45;
-    public static final int kRearLeftCancoderStartingPosDegreesR1 = 235; //125; //5;
-    public static final int kRearRightCancoderStartingPosDegreesR1 = 250;
+    public static final int kFrontRightCancoderStartingPosDegreesR1 = -178;
+    public static final int kFrontLeftCancoderStartingPosDegreesR1 =  150;
+    public static final int kRearLeftCancoderStartingPosDegreesR1 =   83;
+    public static final int kRearRightCancoderStartingPosDegreesR1 =  64;
 
     public static final int kFrontRightCancoderStartingPosDegreesR2 = 0;
-    public static final int kFrontLeftCancoderStartingPosDegreesR2 = 0;
-    public static final int kRearLeftCancoderStartingPosDegreesR2 = 0;
-    public static final int kRearRightCancoderStartingPosDegreesR2 = 0;
+    public static final int kFrontLeftCancoderStartingPosDegreesR2 =  0;
+    public static final int kRearLeftCancoderStartingPosDegreesR2 =   0;
+    public static final int kRearRightCancoderStartingPosDegreesR2 =  0;
 
     //Swerve Module Positions (relative to the center of the drive base)
     public static final Translation2d kVehicleToModuleZero = new Translation2d(kWheelbaseLength/2, kWheelbaseWidth/2);
