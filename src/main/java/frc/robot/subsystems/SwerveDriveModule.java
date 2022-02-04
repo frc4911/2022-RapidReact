@@ -55,6 +55,11 @@ public class SwerveDriveModule extends Subsystem {
         public double kSteerMotorTicksPerRadianPerSecond = kSteerMotorTicksPerRadian / 10; // for steer motor
 		public double kSteerMotorEncoderHomeOffset = 0;
 
+        // Default steer reduction is Mk4_L2i value
+        public double kSteerReduction = (14.0/50.0) * (10.0 / 60.0);
+        public double kSteerTicksPerUnitDistance = (1.0 / 2048.0) * kSteerReduction * (2.0 * Math.PI);
+        public double kSteerTicksPerUnitVelocity = kSteerTicksPerUnitDistance * 10;  // Motor controller unit is ticks per 100 ms
+
 		// Steer CANCoder
 		public int kCANCoderId = -1;
 		public SensorInitializationStrategy kCANCoderSensorInitializationStrategy = SensorInitializationStrategy.BootToAbsolutePosition;
@@ -268,10 +273,16 @@ public class SwerveDriveModule extends Subsystem {
 	 * @return The current state of the module.
 	 */
 	public synchronized SwerveModuleState getState() {
-        // Convert to encoder readings to SI units.
+        // Convert to encoder readings to SI units
+        double steerAngleInRadians = encoderUnitsToRadians(mPeriodicIO.steerPosition);
+        steerAngleInRadians %= 2.0 * Math.PI;
+        if (steerAngleInRadians < 0.0) {
+            steerAngleInRadians += 2.0 * Math.PI;
+        }
+
 		return new SwerveModuleState(
                 encVelocityToMetersPerSecond(mPeriodicIO.driveDemand),
-				new Rotation2d(encUnitsToDegrees(mPeriodicIO.steerPosition)));
+				Rotation2d.fromRadians(steerAngleInRadians));
 	}
 
 	/**
@@ -282,7 +293,7 @@ public class SwerveDriveModule extends Subsystem {
 	public synchronized void setState(SwerveModuleState swreveModuleState) {
         // Converts the velocity in SI units (meters per second) to a
         // voltage (as a percentage) for the motor controllers.
-		setDriveOpenLoop(swreveModuleState.speedInMetersPerSecond/Constants.kSwerveDriveMaxSpeedInMetersPerSecond);
+		setDriveOpenLoop(swreveModuleState.speedInMetersPerSecond / Constants.kSwerveDriveMaxSpeedInMetersPerSecond);
 
         // TODO:  Consider using SwerveModule.optimize() here instead of setReferenceAngle()
         setReferenceAngle(swreveModuleState.angle.getRadians());
@@ -338,12 +349,12 @@ public class SwerveDriveModule extends Subsystem {
     }
 
     // Steer motor
-    private double encoderUnitsToRadians(double ticks) {
-        return ticks / mConstants.kSteerMotorTicksPerRadian;
+    private double encoderUnitsToRadians(double encUnits) {
+        return encUnits * mConstants.kDriveTicksPerUnitDistance;
     }
 
     private double radiansToEncoderUnits(double radians) {
-        return radians * mConstants.kSteerMotorTicksPerRadian;
+        return radians / mConstants.kDriveTicksPerUnitDistance;
     }
 
     private int degreesToEncUnits(double degrees) {

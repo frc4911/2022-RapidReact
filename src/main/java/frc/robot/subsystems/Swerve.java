@@ -202,10 +202,7 @@ public class Swerve extends Subsystem {
                 mPeriodicIO.forward, mPeriodicIO.strafe, mPeriodicIO.rotation, mPeriodicIO.low_power,
                 mPeriodicIO.field_relative, mPeriodicIO.use_heading_controller);
 
-        // System.out.println("handleManual "+chassisSpeeds.toString());
         // Now calculate the new Swerve Module states using inverse kinematics.
-        // ChassisSpeeds cs = new ChassisSpeeds(.21,0,0);
-        // mPeriodicIO.swerveModuleStates = mKinematics.toSwerveModuleStates(cs);
         mPeriodicIO.swerveModuleStates = mKinematics.toSwerveModuleStates(chassisSpeeds);
 
         // Normalize wheels speeds if any individual speed is above the specified maximum.
