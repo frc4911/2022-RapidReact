@@ -113,9 +113,6 @@ public class RobotState {
     private RobotState(String caller) {
         sClassName = this.getClass().getSimpleName();
         printUsage(caller);
-
-        //reset(0, new Pose2d());
-        // mSwerve = Swerve.getInstance(sClassName);
     }
 
     /**

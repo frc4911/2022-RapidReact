@@ -1,6 +1,5 @@
 package libraries.cyberlib.utils;
 
-import frc.robot.Constants;
 import libraries.cheesylib.geometry.Rotation2d;
 import libraries.cheesylib.geometry.Translation2d;
 import libraries.cyberlib.kinematics.ChassisSpeeds;
@@ -17,6 +16,14 @@ public class SwerveDriveHelper {
     private final static double kDeadband = 0.25;
     private final static double kRotationDeadband = 0.15;
 
+    private final double mMaxSpeedInMetersPerSecond;
+    private final double mMaxSpeedInRadiansPerSecond;
+
+    public SwerveDriveHelper(double maxSpeedInMetersPerSecond, double maxSpeedInRadiansPerSecond) {
+        mMaxSpeedInMetersPerSecond = maxSpeedInMetersPerSecond;
+        mMaxSpeedInRadiansPerSecond = maxSpeedInRadiansPerSecond;
+    }
+
     /**
      * Based on Team 1323's sendInput method to make driving feel better.
      *
@@ -28,7 +35,7 @@ public class SwerveDriveHelper {
      * @param use_heading_controller whether heading controller is used or not.
      * @return A ChassisSpeeds object for the inputs
      */
-    public static ChassisSpeeds calculateChassisSpeeds(
+    public ChassisSpeeds calculateChassisSpeeds(
             double forwardInput, double strafeInput, double rotationInput, boolean low_power,
             boolean field_relative, boolean use_heading_controller) {
 
@@ -82,8 +89,8 @@ public class SwerveDriveHelper {
         // TODO:  Consider using a tuple to return calculated values to remove reference to Constants
 
         // Convert the joystick inputs to SI units.
-        translationalInput = translationalInput.scale(Constants.kSwerveDriveMaxSpeedInMetersPerSecond);
-        rotationInput *= Constants.kSwerveRotationMaxSpeedInRadiansPerSecond;
+        translationalInput = translationalInput.scale(mMaxSpeedInMetersPerSecond);
+        rotationInput *= mMaxSpeedInRadiansPerSecond;
 
         ChassisSpeeds chassisSpeeds = new ChassisSpeeds(translationalInput.x(), translationalInput.y(), rotationInput);
         return chassisSpeeds;

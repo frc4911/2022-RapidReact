@@ -5,6 +5,8 @@ import java.util.List;
 
 import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.LimeLights.LimeLight;
+import frc.robot.subsystems.Swerve;
+import frc.robot.subsystems.SwerveConfiguration;
 import frc.robot.subsystems.SwerveDriveModule;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Rotation2d;
@@ -201,10 +203,10 @@ public class Constants {
 
     //Swerve Odometry Constants
     public static final double kSwerveWheelDiameter = 4.0901; //inches (actual diamter is closer to 3.87, but secondary algorithm prefers 4.0901) 3.76
-    public static final double kSwerveRotationMotorTicksPerRotation = 2048.0 * 18.0; // FX encoder ticks per module rotation
+//    public static final double kSwerveRotationMotorTicksPerRotation = 2048.0 * 18.0; // FX encoder ticks per module rotation
     /** The number of rotations the swerve drive encoder undergoes for every rotation of the wheel. */
-    public static final double kSwerveDriveTicksPerWheelRev = .85*14178; //brian 1.21 new gear ratio 2048 * 6.923 //SwerveDriveEncoderResolution * kSwerveEncoderToWheelRatio;
-    public static final double kSwerveEncUnitsPerInch = kSwerveDriveTicksPerWheelRev / (Math.PI * kSwerveWheelDiameter);
+//    public static final double kSwerveDriveTicksPerWheelRev = .85*14178; //brian 1.21 new gear ratio 2048 * 6.923 //SwerveDriveEncoderResolution * kSwerveEncoderToWheelRatio;
+//    public static final double kSwerveEncUnitsPerInch = kSwerveDriveTicksPerWheelRev / (Math.PI * kSwerveWheelDiameter);
 
     //Swerve Speed Constants
     //max ticks/100ms; 2048 ticks/shaft rev * 106 max rev/sec=21777.1
@@ -215,11 +217,11 @@ public class Constants {
     //max ticks/100ms; 2048 ticks/shaft rev * 106 max rev/sec=21777.1
     // setting slightly below to assure it is reachable
     public static final double kSwerveRotationMaxSpeed = 21000.0; // rotation motor ticks/100ms
-    public static final double kSwerveRotation10VoltMaxSpeed = 1350.0; // TODO: tune this!!!
+//    public static final double kSwerveRotation10VoltMaxSpeed = 1350.0; // TODO: tune this!!!
 
 
     // 7/190 = .037
-    public static final double kSwerveRotationSpeedScalar = ((1.0 / 0.125) - 1.0) / kSwerveMaxSpeedInchesPerSecond;
+//    public static final double kSwerveRotationSpeedScalar = ((1.0 / 0.125) - 1.0) / kSwerveMaxSpeedInchesPerSecond;
 
     //Swerve Module Wheel Offsets (cancoder Rotation encoder values in degrees when the wheels are facing 0 degrees), gear bevel on inside, cw rotation from bottom is negative
 //     public static final int kFrontRightCancoderStartingPosDegreesCetus = -112;
@@ -238,13 +240,13 @@ public class Constants {
 //     public static final int kRearRightCancoderStartingPosDegreesR2 = 0;
 
     //Swerve Module Positions (relative to the center of the drive base)
-    public static final Translation2d kVehicleToModuleZero = new Translation2d(kWheelbaseLength/2, kWheelbaseWidth/2);
-    public static final Translation2d kVehicleToModuleOne = new Translation2d(kWheelbaseLength/2, -kWheelbaseWidth/2);
-    public static final Translation2d kVehicleToModuleTwo = new Translation2d(-kWheelbaseLength/2, -kWheelbaseWidth/2);
-    public static final Translation2d kVehicleToModuleThree = new Translation2d(-kWheelbaseLength/2, kWheelbaseWidth/2);
-
-    public static final List<Translation2d> kModulePositions = Arrays.asList(kVehicleToModuleZero,
-            kVehicleToModuleOne, kVehicleToModuleTwo, kVehicleToModuleThree);
+//    public static final Translation2d kVehicleToModuleZero = new Translation2d(kWheelbaseLength/2, kWheelbaseWidth/2);
+//    public static final Translation2d kVehicleToModuleOne = new Translation2d(kWheelbaseLength/2, -kWheelbaseWidth/2);
+//    public static final Translation2d kVehicleToModuleTwo = new Translation2d(-kWheelbaseLength/2, -kWheelbaseWidth/2);
+//    public static final Translation2d kVehicleToModuleThree = new Translation2d(-kWheelbaseLength/2, kWheelbaseWidth/2);
+//
+//    public static final List<Translation2d> kModulePositions = Arrays.asList(kVehicleToModuleZero,
+//            kVehicleToModuleOne, kVehicleToModuleTwo, kVehicleToModuleThree);
 
     // NEW SWERVE
     // TODO: use SDS MK4 module configurations file.
@@ -264,27 +266,26 @@ public class Constants {
     public static final boolean kMK4_L2iSteerInverted = true;
 
     // New Swerve requires SI units
-    public static final double kWheelbaseLengthInMeters = Units.inchesToMeters(kWheelbaseLength);
-    public static final double kWheelbaseWidthInMeters = Units.inchesToMeters(kWheelbaseWidth);
+//    public static final double kWheelbaseLengthInMeters = Units.inchesToMeters(kWheelbaseLength);
+//    public static final double kWheelbaseWidthInMeters = Units.inchesToMeters(kWheelbaseWidth);
 
-    public static final double kSwerveDiagonal = Math.hypot(kWheelbaseLength, kWheelbaseWidth);
-    final static double kRadiusInMeters = Math.hypot(kWheelbaseWidthInMeters / 2, kWheelbaseLengthInMeters / 2);
+//    public static final double kSwerveDiagonal = Math.hypot(kWheelbaseLength, kWheelbaseWidth);
+//    final static double kRadiusInMeters = Math.hypot(kWheelbaseWidthInMeters / 2, kWheelbaseLengthInMeters / 2);
 
     // Max translational velocity in m/s
-    public static final double kSwerveDriveMaxSpeedInMetersPerSecond = Units.inchesToMeters(kSwerveMaxSpeedInchesPerSecond) ;
+//    public static final double kSwerveDriveMaxSpeedInMetersPerSecond = Units.inchesToMeters(kSwerveMaxSpeedInchesPerSecond) ;
     // Maximum angular velocity in rad/s
-    public static final double kSwerveRotationMaxSpeedInRadiansPerSecond = Math.min(
-            kSwerveDriveMaxSpeedInMetersPerSecond / kRadiusInMeters, Math.toRadians(270));
-    public static final double kRotationMotorTicksPerRadian = 2048.0 / (2 * Math.PI);
+//    public static final double kSwerveRotationMaxSpeedInRadiansPerSecond = Math.min(
+//            kSwerveDriveMaxSpeedInMetersPerSecond / kRadiusInMeters, Math.toRadians(270));
 
     // If CW, then right is positive.  If CCW left is positive
-    public static final Translation2d kFrontRightModuleLocation = new Translation2d(kWheelbaseLengthInMeters / 2, kWheelbaseWidthInMeters / 2);
-    public static final Translation2d kFrontLeftModuleLocation = new Translation2d(kWheelbaseLengthInMeters / 2, -kWheelbaseWidthInMeters / 2);
-    public static final Translation2d kBackLeftModuleLocation = new Translation2d(-kWheelbaseLengthInMeters / 2, -kWheelbaseWidthInMeters / 2);
-    public static final Translation2d kBackRightModuleLocation = new Translation2d(-kWheelbaseLengthInMeters / 2, kWheelbaseWidthInMeters / 2);
+//    public static final Translation2d kFrontRightModuleLocation = new Translation2d(kWheelbaseLengthInMeters / 2, kWheelbaseWidthInMeters / 2);
+//    public static final Translation2d kFrontLeftModuleLocation = new Translation2d(kWheelbaseLengthInMeters / 2, -kWheelbaseWidthInMeters / 2);
+//    public static final Translation2d kBackLeftModuleLocation = new Translation2d(-kWheelbaseLengthInMeters / 2, -kWheelbaseWidthInMeters / 2);
+//    public static final Translation2d kBackRightModuleLocation = new Translation2d(-kWheelbaseLengthInMeters / 2, kWheelbaseWidthInMeters / 2);
 
-    public static final List<Translation2d> kModuleLocations = Arrays.asList(kFrontRightModuleLocation,
-            kFrontLeftModuleLocation, kBackLeftModuleLocation, kBackRightModuleLocation);
+//    public static final List<Translation2d> kModuleLocations = Arrays.asList(kFrontRightModuleLocation,
+//            kFrontLeftModuleLocation, kBackLeftModuleLocation, kBackRightModuleLocation);
 
     public static final double kDriveDeadband = 0.05;
 
@@ -292,6 +293,14 @@ public class Constants {
     // Junior //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // swerve modules
     // zero - bezel to the left
+
+    public static final SwerveConfiguration kSwerveConfigurationJunior = new SwerveConfiguration(
+            Units.inchesToMeters(21.0),
+            Units.inchesToMeters(21.0),
+            Units.feetToMeters(14.2),
+            Math.toRadians(270)
+    );
+
     public static final SwerveDriveModule.SwerveModuleConstants kFrontRightModuleConstantsJunior = new SwerveDriveModule.SwerveModuleConstants();
 
     static {
@@ -299,11 +308,12 @@ public class Constants {
         kFrontRightModuleConstantsJunior.kDriveMotorTalonId = Ports.FRONT_RIGHT_DRIVE;
         kFrontRightModuleConstantsJunior.kSteerMotorTalonId = Ports.FRONT_RIGHT_ROTATION;
         kFrontRightModuleConstantsJunior.kSteerMotorEncoderHomeOffset = 883.0;
-        kFrontRightModuleConstantsJunior.kCANCoderOffsetDegrees = -10;
+        kFrontRightModuleConstantsJunior.kCANCoderOffsetDegrees = 80;
         kFrontRightModuleConstantsJunior.kCANCoderId = Ports.FRONT_RIGHT_ENC;
         kFrontRightModuleConstantsJunior.kWheelDiameter = kMK2_WheelDiameter;
         kFrontRightModuleConstantsJunior.kDriveReduction = (18.0 / 38.0) * (26.0 / 18.0) * (15.0 / 60.0);
         kFrontRightModuleConstantsJunior.kSteerReduction = kMK2_SteerReduction;
+
         /* ... */
     }
 
@@ -314,7 +324,7 @@ public class Constants {
         kFrontLeftModuleConstantsJunior.kDriveMotorTalonId = Ports.FRONT_LEFT_DRIVE;
         kFrontLeftModuleConstantsJunior.kSteerMotorTalonId = Ports.FRONT_LEFT_ROTATION;
         kFrontLeftModuleConstantsJunior.kSteerMotorEncoderHomeOffset = 1683.0;
-        kFrontLeftModuleConstantsJunior.kCANCoderOffsetDegrees = -127;
+        kFrontLeftModuleConstantsJunior.kCANCoderOffsetDegrees = -28;
         kFrontLeftModuleConstantsJunior.kCANCoderId = Ports.FRONT_LEFT_ENC;
         kFrontLeftModuleConstantsJunior.kWheelDiameter = kMK2_WheelDiameter;
         kFrontLeftModuleConstantsJunior.kDriveReduction = (18.0 / 38.0) * (26.0 / 18.0) * (15.0 / 60.0);
@@ -329,7 +339,7 @@ public class Constants {
         kBackLeftModuleConstantsJunior.kDriveMotorTalonId = Ports.REAR_LEFT_DRIVE;
         kBackLeftModuleConstantsJunior.kSteerMotorTalonId = Ports.REAR_LEFT_ROTATION;
         kBackLeftModuleConstantsJunior.kSteerMotorEncoderHomeOffset = 3451.0;
-        kBackLeftModuleConstantsJunior.kCANCoderOffsetDegrees = 0;
+        kBackLeftModuleConstantsJunior.kCANCoderOffsetDegrees = 146;
         kBackLeftModuleConstantsJunior.kCANCoderId = Ports.REAR_LEFT_ENC;
         kBackLeftModuleConstantsJunior.kWheelDiameter = kMK2_WheelDiameter;
         kBackLeftModuleConstantsJunior.kDriveReduction = (18.0 / 38.0) * (26.0 / 18.0) * (15.0 / 60.0);
@@ -345,7 +355,7 @@ public class Constants {
         kBackRightModuleConstantsJunior.kSteerMotorTalonId = Ports.REAR_RIGHT_ROTATION;
         kBackRightModuleConstantsJunior.kSteerMotorEncoderHomeOffset = -327.0;
         kBackRightModuleConstantsJunior.kCANCoderId = Ports.REAR_RIGHT_ENC;
-        kBackRightModuleConstantsJunior.kCANCoderOffsetDegrees = -119;
+        kBackRightModuleConstantsJunior.kCANCoderOffsetDegrees = -24;
         kBackRightModuleConstantsJunior.kWheelDiameter = kMK2_WheelDiameter;
         kBackRightModuleConstantsJunior.kDriveReduction = (18.0 / 38.0) * (26.0 / 18.0) * (15.0 / 60.0);
         kBackRightModuleConstantsJunior.kSteerReduction = kMK2_SteerReduction;
@@ -355,6 +365,15 @@ public class Constants {
     // DeadEye //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // swerve modules
     // zero - bezel to the left
+
+    public static final SwerveConfiguration kSwerveConfigurationDeadEye = new SwerveConfiguration(
+            Units.inchesToMeters(21.0),
+            Units.inchesToMeters(21.0),
+            Units.feetToMeters(14.2),
+            Math.toRadians(270)
+    );
+
+
     public static final SwerveDriveModule.SwerveModuleConstants kFrontRightModuleConstantsDeadEye = new SwerveDriveModule.SwerveModuleConstants();
 
     static {
@@ -418,6 +437,13 @@ public class Constants {
     // Robot2022 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // swerve modules
     // zero - bezel to the left
+    public static final SwerveConfiguration kSwerveConfigurationRobot2022 = new SwerveConfiguration(
+            Units.inchesToMeters(23.75),
+            Units.inchesToMeters(20.75),
+            Units.feetToMeters(14.2),
+            Math.toRadians(270)
+    );
+
     public static final SwerveDriveModule.SwerveModuleConstants kFrontRightModuleConstantsRobot2022 = new SwerveDriveModule.SwerveModuleConstants();
 
     static {

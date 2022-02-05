@@ -1,58 +1,62 @@
 package libraries.cyberlib.utils;
 
-import frc.robot.Constants;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class SwerveDriveHelperTest {
+    private static final double SWERVE_DRIVE_MAX_SPEED_IN_METERS_PER_SECOND = 5.0;
+    private static final double SWERVE_ROTATION_MAX_SPEED_IN_RADIANS_PER_SECOND = Math.toRadians(270);
 
     @Test
     void calculateChassisSpeeds() {
-        var chassisSpeeds = SwerveDriveHelper.calculateChassisSpeeds(
+        SwerveDriveHelper swerveDriveHelper = new SwerveDriveHelper(
+                SWERVE_DRIVE_MAX_SPEED_IN_METERS_PER_SECOND, SWERVE_ROTATION_MAX_SPEED_IN_RADIANS_PER_SECOND);
+
+        var chassisSpeeds = swerveDriveHelper.calculateChassisSpeeds(
                 0.0, 0.0, 0.0, false, false, false);
         assertEquals(0.0, chassisSpeeds.vxInMetersPerSecond);
         assertEquals(0.0, chassisSpeeds.vyInMetersPerSecond);
         assertEquals(0.0, chassisSpeeds.omegaInRadiansPerSecond);
 
-        chassisSpeeds = SwerveDriveHelper.calculateChassisSpeeds(
+        chassisSpeeds = swerveDriveHelper.calculateChassisSpeeds(
                 1.0, 0, 0, false, false, false);
-        assertEquals(Constants.kSwerveDriveMaxSpeedInMetersPerSecond, chassisSpeeds.vxInMetersPerSecond);
+        assertEquals(SWERVE_DRIVE_MAX_SPEED_IN_METERS_PER_SECOND, chassisSpeeds.vxInMetersPerSecond);
         assertEquals(0.0, chassisSpeeds.vyInMetersPerSecond);
         assertEquals(0.0, chassisSpeeds.omegaInRadiansPerSecond);
 
-        chassisSpeeds = SwerveDriveHelper.calculateChassisSpeeds(
+        chassisSpeeds = swerveDriveHelper.calculateChassisSpeeds(
                 -1.0, 0, 0, false, false, false);
-        assertEquals(-Constants.kSwerveDriveMaxSpeedInMetersPerSecond, chassisSpeeds.vxInMetersPerSecond);
+        assertEquals(-SWERVE_DRIVE_MAX_SPEED_IN_METERS_PER_SECOND, chassisSpeeds.vxInMetersPerSecond);
         assertEquals(0.0, chassisSpeeds.vyInMetersPerSecond);
         assertEquals(0.0, chassisSpeeds.omegaInRadiansPerSecond);
 
-        chassisSpeeds = SwerveDriveHelper.calculateChassisSpeeds(
+        chassisSpeeds = swerveDriveHelper.calculateChassisSpeeds(
                 0.0, 1.0, 0, false, false, false);
         assertEquals(0.0, chassisSpeeds.vxInMetersPerSecond);
-        assertEquals(Constants.kSwerveDriveMaxSpeedInMetersPerSecond, chassisSpeeds.vyInMetersPerSecond);
+        assertEquals(SWERVE_DRIVE_MAX_SPEED_IN_METERS_PER_SECOND, chassisSpeeds.vyInMetersPerSecond);
         assertEquals(0.0, chassisSpeeds.omegaInRadiansPerSecond);
 
-        chassisSpeeds = SwerveDriveHelper.calculateChassisSpeeds(
+        chassisSpeeds = swerveDriveHelper.calculateChassisSpeeds(
                 0.0, -1.0, 0, false, false, false);
         assertEquals(0.0, chassisSpeeds.vxInMetersPerSecond);
-        assertEquals(-Constants.kSwerveDriveMaxSpeedInMetersPerSecond, chassisSpeeds.vyInMetersPerSecond);
+        assertEquals(-SWERVE_DRIVE_MAX_SPEED_IN_METERS_PER_SECOND, chassisSpeeds.vyInMetersPerSecond);
         assertEquals(0.0, chassisSpeeds.omegaInRadiansPerSecond);
 
-        chassisSpeeds = SwerveDriveHelper.calculateChassisSpeeds(
+        chassisSpeeds = swerveDriveHelper.calculateChassisSpeeds(
                 0.0, 0.0, 1.0, false, false, false);
         assertEquals(0.0, chassisSpeeds.vxInMetersPerSecond);
         assertEquals(0.0, chassisSpeeds.vyInMetersPerSecond);
 
-        var maxSpeed = Constants.kSwerveRotationMaxSpeedInRadiansPerSecond * 0.8; //SwerveDriveHelper's kHighPowerRotationScalar
+        var maxSpeed = SWERVE_ROTATION_MAX_SPEED_IN_RADIANS_PER_SECOND * 0.8; //SwerveDriveHelper's kHighPowerRotationScalar
         assertEquals(maxSpeed, chassisSpeeds.omegaInRadiansPerSecond);
 
-        chassisSpeeds = SwerveDriveHelper.calculateChassisSpeeds(
+        chassisSpeeds = swerveDriveHelper.calculateChassisSpeeds(
                 0.0, 0.0, 1.0, true, false, false);
         assertEquals(0.0, chassisSpeeds.vxInMetersPerSecond);
         assertEquals(0.0, chassisSpeeds.vyInMetersPerSecond);
 
-        maxSpeed = Constants.kSwerveRotationMaxSpeedInRadiansPerSecond * 0.5; //SwerveDriveHelper's kHighPowerRotationScalar
+        maxSpeed = SWERVE_ROTATION_MAX_SPEED_IN_RADIANS_PER_SECOND * 0.5; //SwerveDriveHelper's kHighPowerRotationScalar
         assertEquals(maxSpeed, chassisSpeeds.omegaInRadiansPerSecond);
     }
 }

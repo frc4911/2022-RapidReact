@@ -7,7 +7,6 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
-import frc.robot.RobotState;
 import frc.robot.planners.DriveMotionPlanner;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Pose2dWithCurvature;
@@ -32,6 +31,8 @@ public class Swerve extends Subsystem {
 
     private ControlState mControlState = ControlState.NEUTRAL;
 
+    public SwerveConfiguration mSwerveConfiguration;
+
     PeriodicIO mPeriodicIO = new PeriodicIO();
     private int mDefaultSchedDelta = 20;
 
@@ -46,17 +47,18 @@ public class Swerve extends Subsystem {
 	private Rotation2d mGyroOffset = Rotation2d.identity();
 
 	private final SwerveDriveOdometry mOdometry;
-	private final SwerveDriveKinematics mKinematics = new SwerveDriveKinematics(Constants.kModuleLocations);
+	private final SwerveDriveKinematics mKinematics;
 	private ChassisSpeeds mChassisSpeeds;
 
     // Updated as part of periodic odometry
     private Pose2d mPose = Pose2d.identity();
 
+    private SwerveDriveHelper mSwerveDriveHelper;
+
     // Trajectory following
     private DriveMotionPlanner mMotionPlanner;
     private boolean mOverrideTrajectory = false;
 
-    static RobotState robotState;
     private int mListIndex = -1;
 
     private static String sClassName;
@@ -65,7 +67,6 @@ public class Swerve extends Subsystem {
     public  static Swerve getInstance(String caller) {
         if (sInstance == null) {
             sInstance = new Swerve(caller);
-            robotState = RobotState.getInstance(sClassName);
         }
         else {
             printUsage(caller);
@@ -92,37 +93,43 @@ public class Swerve extends Subsystem {
             // Constants.kFrontLeftModuleConstants.kCANCoderOffsetDegrees = Constants.kFrontLeftCancoderStartingPosDegreesR1;
             // Constants.kBackLeftModuleConstants.kCANCoderOffsetDegrees = Constants.kRearLeftCancoderStartingPosDegreesR1;
             // Constants.kBackRightModuleConstants.kCANCoderOffsetDegrees = Constants.kRearRightCancoderStartingPosDegreesR1;
-            mModules.add(mFrontRight = new SwerveDriveModule(Constants.kFrontRightModuleConstantsJunior));
-            mModules.add(mFrontLeft = new SwerveDriveModule(Constants.kFrontLeftModuleConstantsJunior));
-            mModules.add(mBackLeft = new SwerveDriveModule(Constants.kBackLeftModuleConstantsJunior));
-            mModules.add(mBackRight = new SwerveDriveModule(Constants.kBackRightModuleConstantsJunior));
-            }
+            mSwerveConfiguration = Constants.kSwerveConfigurationJunior;
+            mModules.add(mFrontRight = new SwerveDriveModule(Constants.kFrontRightModuleConstantsJunior, mSwerveConfiguration.maxSpeedInMetersPerSecond));
+            mModules.add(mFrontLeft = new SwerveDriveModule(Constants.kFrontLeftModuleConstantsJunior, mSwerveConfiguration.maxSpeedInMetersPerSecond));
+            mModules.add(mBackLeft = new SwerveDriveModule(Constants.kBackLeftModuleConstantsJunior, mSwerveConfiguration.maxSpeedInMetersPerSecond));
+            mModules.add(mBackRight = new SwerveDriveModule(Constants.kBackRightModuleConstantsJunior, mSwerveConfiguration.maxSpeedInMetersPerSecond));
+        }
         else if (RobotName.name.equals(Constants.kDeadEyeName)) {
             // Constants.kFrontLeftModuleConstants.kCANCoderOffsetDegrees = Constants.kFrontLeftCancoderStartingPosDegreesR2;
             // Constants.kFrontRightModuleConstants.kCANCoderOffsetDegrees = Constants.kFrontRightCancoderStartingPosDegreesR2;
             // Constants.kBackLeftModuleConstants.kCANCoderOffsetDegrees = Constants.kRearLeftCancoderStartingPosDegreesR2;
             // Constants.kBackRightModuleConstants.kCANCoderOffsetDegrees = Constants.kRearRightCancoderStartingPosDegreesR2;
-            mModules.add(mFrontRight = new SwerveDriveModule(Constants.kFrontRightModuleConstantsDeadEye));
-            mModules.add(mFrontLeft = new SwerveDriveModule(Constants.kFrontLeftModuleConstantsDeadEye));
-            mModules.add(mBackLeft = new SwerveDriveModule(Constants.kBackLeftModuleConstantsDeadEye));
-            mModules.add(mBackRight = new SwerveDriveModule(Constants.kBackRightModuleConstantsDeadEye));
-            }
+            mSwerveConfiguration = Constants.kSwerveConfigurationDeadEye;
+            mModules.add(mFrontRight = new SwerveDriveModule(Constants.kFrontRightModuleConstantsDeadEye, mSwerveConfiguration.maxSpeedInMetersPerSecond));
+            mModules.add(mFrontLeft = new SwerveDriveModule(Constants.kFrontLeftModuleConstantsDeadEye, mSwerveConfiguration.maxSpeedInMetersPerSecond));
+            mModules.add(mBackLeft = new SwerveDriveModule(Constants.kBackLeftModuleConstantsDeadEye, mSwerveConfiguration.maxSpeedInMetersPerSecond));
+            mModules.add(mBackRight = new SwerveDriveModule(Constants.kBackRightModuleConstantsDeadEye, mSwerveConfiguration.maxSpeedInMetersPerSecond));
+        }
         else if (RobotName.name.equals(Constants.kRobot2022Name)) {
             // Constants.kFrontLeftModuleConstants.kCANCoderOffsetDegrees = Constants.kFrontLeftCancoderStartingPosDegreesCetus;
             // Constants.kFrontRightModuleConstants.kCANCoderOffsetDegrees = Constants.kFrontRightCancoderStartingPosDegreesCetus;
             // Constants.kBackLeftModuleConstants.kCANCoderOffsetDegrees = Constants.kRearLeftCancoderStartingPosDegreesCetus;
             // Constants.kBackRightModuleConstants.kCANCoderOffsetDegrees = Constants.kRearRightCancoderStartingPosDegreesCetus;
-            mModules.add(mFrontRight = new SwerveDriveModule(Constants.kFrontRightModuleConstantsRobot2022));
-            mModules.add(mFrontLeft = new SwerveDriveModule(Constants.kFrontLeftModuleConstantsRobot2022));
-            mModules.add(mBackLeft = new SwerveDriveModule(Constants.kBackLeftModuleConstantsRobot2022));
-            mModules.add(mBackRight = new SwerveDriveModule(Constants.kBackRightModuleConstantsRobot2022));
-            }
+            mSwerveConfiguration = Constants.kSwerveConfigurationRobot2022;
+            mModules.add(mFrontRight = new SwerveDriveModule(Constants.kFrontRightModuleConstantsRobot2022, mSwerveConfiguration.maxSpeedInMetersPerSecond));
+            mModules.add(mFrontLeft = new SwerveDriveModule(Constants.kFrontLeftModuleConstantsRobot2022, mSwerveConfiguration.maxSpeedInMetersPerSecond));
+            mModules.add(mBackLeft = new SwerveDriveModule(Constants.kBackLeftModuleConstantsRobot2022, mSwerveConfiguration.maxSpeedInMetersPerSecond));
+            mModules.add(mBackRight = new SwerveDriveModule(Constants.kBackRightModuleConstantsRobot2022, mSwerveConfiguration.maxSpeedInMetersPerSecond));
+        }
 
+        mSwerveDriveHelper = new SwerveDriveHelper(mSwerveConfiguration.maxSpeedInMetersPerSecond,
+                mSwerveConfiguration.maxSpeedInRadiansPerSecond);
+
+        mKinematics = new SwerveDriveKinematics(mSwerveConfiguration.moduleLocations);
 		mOdometry = new SwerveDriveOdometry(mKinematics, mPigeon.getYaw());
         mPose = mOdometry.getPose();
 
         mMotionPlanner = new DriveMotionPlanner();
-        // robotState = RobotState.getInstance(sClassName);
 //        generator = TrajectoryGenerator.getInstance();
     }
 
@@ -147,6 +154,9 @@ public class Swerve extends Subsystem {
         public void onLoop(double timestamp) {
             synchronized(Swerve.this) {
                 lastUpdateTimestamp = timestamp;
+
+                // Update odometry in every loop before any other actions.
+                updateOdometry(lastUpdateTimestamp);
 
                 switch (mControlState) {
                     case MANUAL:
@@ -198,7 +208,7 @@ public class Swerve extends Subsystem {
      */
     private void handleManual() {
         // Helper to make driving feel better
-        var chassisSpeeds = SwerveDriveHelper.calculateChassisSpeeds(
+        var chassisSpeeds = mSwerveDriveHelper.calculateChassisSpeeds(
                 mPeriodicIO.forward, mPeriodicIO.strafe, mPeriodicIO.rotation, mPeriodicIO.low_power,
                 mPeriodicIO.field_relative, mPeriodicIO.use_heading_controller);
 
@@ -207,7 +217,7 @@ public class Swerve extends Subsystem {
 
         // Normalize wheels speeds if any individual speed is above the specified maximum.
         SwerveDriveKinematics.desaturateWheelSpeeds(
-                mPeriodicIO.swerveModuleStates, Constants.kSwerveDriveMaxSpeedInMetersPerSecond);
+                mPeriodicIO.swerveModuleStates, mSwerveConfiguration.maxSpeedInMetersPerSecond);
     }
 
 
@@ -328,7 +338,7 @@ public class Swerve extends Subsystem {
         if (mControlState == ControlState.PATH_FOLLOWING) {
             final double now = Timer.getFPGATimestamp();
 
-//            var output = mMotionPlanner.update(now, RobotState.getInstance().getFieldToVehicle(now));
+//            var output = mMotionPlanner.update(now, RobotState.getInstance(sClassName).getFieldToVehicle(now));
 //
 //            // DriveSignal signal = new DriveSignal(demand.left_feedforward_voltage / 12.0, demand.right_feedforward_voltage / 12.0);
 //
@@ -441,8 +451,8 @@ public class Swerve extends Subsystem {
         mPeriodicIO.lastSchedStart   = now;
         mPeriodicIO.gyro_heading     = Rotation2d.fromDegrees(mPigeon.getYaw().getDegrees()).rotateBy(mGyroOffset);
 
-        // Read odometry every in every loop
-        updateOdometry(now);
+        // read modules
+        mModules.forEach((m) -> m.readPeriodicInputs());
     }
 
     @Override
