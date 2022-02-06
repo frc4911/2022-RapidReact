@@ -22,25 +22,13 @@ public class JSticks extends Subsystem{
     private WantedState mWantedState = WantedState.READBUTTONS;
     @SuppressWarnings("unused")
     private boolean mStateChanged;
+    private PeriodicIO mPeriodicIO;
+
     private CW mDriver;
     // private CW mOperator;
     private final double mDeadBand = 0.15; // for the turnigy (driver) swerve controls
 	// private Superstructure mSuperstructure;
     private Swerve mSwerve;
-
-    //Logging
-    private final int mDefaultSchedDelta = 100; // axis updated every 100 msec
-    public  int    schedDeltaDesired;
-    public  double schedDeltaActual;
-    public  double schedDuration;
-    private double lastSchedStart;
-
-    //Joystick Inputs
-    public double  dr_RightStickX_Translate; // drive
-    public double  dr_RightStickY_Translate; // drive
-    public double  dr_LeftStickX_Rotate;     // drive
-    public boolean dr_YButton_ResetIMU = false;      // reset direction
-    public boolean dr_LeftToggleDown_RobotOrient = false; // field/robot oriented
 
     private static String sClassName;
     private static int sInstanceCount;
@@ -80,10 +68,10 @@ public class JSticks extends Subsystem{
                 switch (phase) {
                     case DISABLED:
                     case AUTONOMOUS: 
-                        schedDeltaDesired = 0; // goto sleep
+                        mPeriodicIO.schedDeltaDesired = 0; // goto sleep
                         break;
                     default:
-                        schedDeltaDesired = mDefaultSchedDelta;
+                        mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
                         break;
                 }
             }
@@ -131,13 +119,13 @@ public class JSticks extends Subsystem{
 
     public void teleopRoutines() {
         //Swerve control
-		double swerveYInput = dr_RightStickX_Translate;
-		double swerveXInput = dr_RightStickY_Translate;
-		double swerveRotationInput = dr_LeftStickX_Rotate;
+		double swerveYInput = mPeriodicIO.dr_RightStickX_Translate;
+		double swerveXInput = mPeriodicIO.dr_RightStickY_Translate;
+		double swerveRotationInput = mPeriodicIO.dr_LeftStickX_Rotate;
 
-        mSwerve.sendInput(swerveXInput, swerveYInput, swerveRotationInput, dr_LeftToggleDown_RobotOrient, false);
+        mSwerve.sendInput(swerveXInput, swerveYInput, swerveRotationInput, mPeriodicIO.dr_LeftToggleDown_RobotOrient, false);
 
-		if (dr_YButton_ResetIMU) {
+		if (mPeriodicIO.dr_YButton_ResetIMU) {
 			mSwerve.temporarilyDisableHeadingController();
 			mSwerve.zeroSensors(Constants.kRobotStartingPose);
 			mSwerve.resetAveragedDirection();
@@ -148,13 +136,13 @@ public class JSticks extends Subsystem{
     @Override
     public void readPeriodicInputs() {
         double now       = Timer.getFPGATimestamp();
-        schedDeltaActual = now - lastSchedStart;
-        lastSchedStart   = now;
+        mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
+        mPeriodicIO.lastSchedStart   = now;
 
-        dr_RightStickX_Translate = mDriver.getRaw(Xbox.RIGHT_STICK_X, mDeadBand);
-        dr_RightStickY_Translate = mDriver.getRaw(Xbox.RIGHT_STICK_Y, mDeadBand);
-        dr_LeftStickX_Rotate = mDriver.getRaw(Xbox.LEFT_STICK_X, mDeadBand);
-        dr_YButton_ResetIMU = mDriver.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
+        mPeriodicIO.dr_RightStickX_Translate = mDriver.getRaw(Xbox.RIGHT_STICK_X, mDeadBand);
+        mPeriodicIO.dr_RightStickY_Translate = mDriver.getRaw(Xbox.RIGHT_STICK_Y, mDeadBand);
+        mPeriodicIO.dr_LeftStickX_Rotate = mDriver.getRaw(Xbox.LEFT_STICK_X, mDeadBand);
+        mPeriodicIO.dr_YButton_ResetIMU = mDriver.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
 
     }
 
@@ -191,6 +179,22 @@ public class JSticks extends Subsystem{
 
     @Override
     public int whenRunAgain () {
-        return schedDeltaDesired;
+        return mPeriodicIO.schedDeltaDesired;
+    }
+
+    public static class PeriodicIO{
+        //Logging
+        private final int mDefaultSchedDelta = 100; // axis updated every 100 msec
+        public  int    schedDeltaDesired;
+        public  double schedDeltaActual;
+        public  double schedDuration;
+        private double lastSchedStart;
+
+        //Joystick Inputs
+        public double  dr_RightStickX_Translate; // drive
+        public double  dr_RightStickY_Translate; // drive
+        public double  dr_LeftStickX_Rotate;     // drive
+        public boolean dr_YButton_ResetIMU = false;      // reset direction
+        public boolean dr_LeftToggleDown_RobotOrient = false; // field/robot oriented
     }
 }
