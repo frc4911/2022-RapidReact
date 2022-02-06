@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
@@ -18,10 +19,15 @@ public class Indexer extends Subsystem{
 
     //Hardware
     private final TalonFX mFXIndexer;
-    private final AnalogInput mBallEntering;
-    private final AnalogInput mBallExiting;
+    private final AnalogInput mAIBallEntering;
+    private final AnalogInput mAIBallExiting;
 
     //Subsystem Constants
+    private final double kFeedSpeed = 0.70;
+    private final double kLoadSpeed = 0.25;
+    private final double kBackSpeed = 0.60; //Speed is kept as a magnitude; must make negative for backward
+
+    private final double kBeamBreakThreshold = 3.0;
 
     //Subsystem States
     public enum SystemState {
@@ -69,8 +75,8 @@ public class Indexer extends Subsystem{
         sClassName = this.getClass().getSimpleName();
         printUsage(caller);
         mFXIndexer = TalonFXFactory.createDefaultTalon(Ports.INDEXER);
-        mBallEntering = new AnalogInput(Ports.ENTRANCE_BEAM_BREAK);
-        mBallExiting = new AnalogInput(Ports.EXIT_BEAM_BREAK);
+        mAIBallEntering = new AnalogInput(Ports.ENTRANCE_BEAM_BREAK);
+        mAIBallExiting = new AnalogInput(Ports.EXIT_BEAM_BREAK);
         configMotors();
     }
 
@@ -138,18 +144,34 @@ public class Indexer extends Subsystem{
     };
 
     private SystemState handleHolding() {
+        if(mStateChanged){
+            mPeriodicIO.indexerDemand = 0.0;
+        }
+
         return defaultStateTransfer();
     }
     
     private SystemState handleLoading() {
+        if(mStateChanged){
+            mPeriodicIO.indexerDemand = kLoadSpeed;
+        }
+
         return defaultStateTransfer();
     }
 
     private SystemState handleFeeding() {
+        if(mStateChanged){
+            mPeriodicIO.indexerDemand = kFeedSpeed;
+        }
+
         return defaultStateTransfer();
     }
 
     private SystemState handleBacking() {
+        if(mStateChanged){
+            mPeriodicIO.indexerDemand = -kBackSpeed;
+        }
+
         return defaultStateTransfer();
     }
 
@@ -175,6 +197,15 @@ public class Indexer extends Subsystem{
         }
     }
 
+    //Called in superstructure to manage loading balls
+    public boolean isBallEntering(){
+        return mAIBallEntering.getVoltage() < kBeamBreakThreshold;
+    }
+
+    public boolean isFullyLoaded(){
+        return mAIBallExiting.getVoltage() < kBeamBreakThreshold;
+    }
+
     @Override
     public void readPeriodicInputs() {
         double now       = Timer.getFPGATimestamp();
@@ -184,14 +215,15 @@ public class Indexer extends Subsystem{
 
     @Override
     public void writePeriodicOutputs() {
-
+        mFXIndexer.set(ControlMode.PercentOutput, mPeriodicIO.indexerDemand);
     }
 
 
     @Override
     public void stop() {
-        // TODO Auto-generated method stub
-        
+        mFXIndexer.set(ControlMode.PercentOutput, 0.0);
+
+        mPeriodicIO.indexerDemand = 0.0;
     }
 
     @Override
@@ -234,6 +266,11 @@ public class Indexer extends Subsystem{
         public  double schedDeltaActual;
         public  double schedDuration;
         private double lastSchedStart;
+
+        //Inputs
+
+        //Outputs
+        private double indexerDemand;
     }
 
 }
