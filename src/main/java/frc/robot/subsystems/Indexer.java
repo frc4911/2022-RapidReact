@@ -41,14 +41,7 @@ public class Indexer extends Subsystem{
     private SystemState mSystemState;
     private WantedState mWantedState;
     private boolean mStateChanged;
-
-    //Logging
-    @SuppressWarnings("unused")
-    private final int mDefaultSchedDelta = 100; // axis updated every 100 msec
-    private int    schedDeltaDesired;
-    public  double schedDeltaActual;
-    public  double schedDuration;
-    private double lastSchedStart;
+    private PeriodicIO mPeriodicIO;
 
     //Other
     private SubsystemManager mSubsystemManager;
@@ -103,7 +96,7 @@ public class Indexer extends Subsystem{
                 mStateChanged = true;
                 System.out.println(sClassName + " state " + mSystemState);
                 // this subsystem is "on demand" so
-                schedDeltaDesired = 0;
+                mPeriodicIO.schedDeltaDesired = 0;
                 stop(); // put into a known state
             }
         }
@@ -185,8 +178,8 @@ public class Indexer extends Subsystem{
     @Override
     public void readPeriodicInputs() {
         double now       = Timer.getFPGATimestamp();
-        schedDeltaActual = now - lastSchedStart;
-        lastSchedStart   = now;
+        mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
+        mPeriodicIO.lastSchedStart   = now;
     }
 
     @Override
@@ -208,11 +201,11 @@ public class Indexer extends Subsystem{
 
     @Override
     public int whenRunAgain () {
-        if (mStateChanged && schedDeltaDesired == 0){
+        if (mStateChanged && mPeriodicIO.schedDeltaDesired == 0){
             return 1; // one more loop before going to sleep
         }
 
-        return schedDeltaDesired;
+        return mPeriodicIO.schedDeltaDesired;
     }
 
     @Override
@@ -231,6 +224,16 @@ public class Indexer extends Subsystem{
     public void outputTelemetry() {
         // TODO Auto-generated method stub
         
+    }
+
+    public static class PeriodicIO{
+            //Logging
+        @SuppressWarnings("unused")
+        private final int mDefaultSchedDelta = 100; // axis updated every 100 msec
+        private int    schedDeltaDesired;
+        public  double schedDeltaActual;
+        public  double schedDuration;
+        private double lastSchedStart;
     }
 
 }
