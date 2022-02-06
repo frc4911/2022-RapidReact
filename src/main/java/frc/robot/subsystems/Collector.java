@@ -1,7 +1,5 @@
 package frc.robot.subsystems;
 
-import java.time.Period;
-
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
@@ -24,6 +22,7 @@ public class Collector extends Subsystem{
     private final Solenoid mSolenoid;
 
     //Subsystem Constants
+    private final double kCollectSpeed = 0.5;
 
     //Subsystem States
     public enum SolenoidState {
@@ -57,6 +56,7 @@ public class Collector extends Subsystem{
     private WantedState mWantedState;
     private boolean mStateChanged;
     private PeriodicIO mPeriodicIO;
+    private SolenoidState mSolenoidState;
 
     //Other
     private SubsystemManager mSubsystemManager;
@@ -186,14 +186,21 @@ public class Collector extends Subsystem{
 
     @Override
     public void writePeriodicOutputs() {
-
+        mFXCollector.set(ControlMode.PercentOutput, mPeriodicIO.collectorDemand);
+        if(mSolenoidState != mPeriodicIO.solenoidDemand){
+            mSolenoidState = mPeriodicIO.solenoidDemand;
+        }
+        mSolenoid.set(mPeriodicIO.solenoidDemand.get());
     }
 
 
     @Override
     public void stop() {
         mFXCollector.set(ControlMode.PercentOutput, 0.0);
-        mSolenoid.set(SolenoidState.RETRACT.get());        
+        mSolenoid.set(SolenoidState.RETRACT.get());   
+
+        mPeriodicIO.collectorDemand = 0.0;
+        mSolenoidState = SolenoidState.RETRACT;
     }
 
     @Override
@@ -236,6 +243,12 @@ public class Collector extends Subsystem{
         public  double schedDeltaActual;
         public  double schedDuration;
         private double lastSchedStart;
+
+        //Inputs
+
+        //Outputs
+        private double collectorDemand;
+        private SolenoidState solenoidDemand;
     }
 
 }
