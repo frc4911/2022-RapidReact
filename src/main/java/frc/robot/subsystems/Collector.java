@@ -144,19 +144,7 @@ public class Collector extends Subsystem{
         }
 
     };
-
-    private SystemState handleHolding() {
-        return defaultStateTransfer();
-    }
     
-    private SystemState handleCollecting() {
-        return defaultStateTransfer();
-    }
-
-    private SystemState handleBacking() {
-        return defaultStateTransfer();
-    }
-
     public synchronized void setWantedState(WantedState state) {
         if (state != mWantedState) {
             mSubsystemManager.scheduleMe(mListIndex, 1, false);
@@ -164,6 +152,33 @@ public class Collector extends Subsystem{
         }
 
         mWantedState = state;
+    }
+
+    private SystemState handleHolding() {
+        if(mStateChanged) {
+            mPeriodicIO.collectorDemand = 0.0;
+            mPeriodicIO.solenoidDemand = SolenoidState.RETRACT;
+        }
+
+        return defaultStateTransfer();
+    }
+    
+    private SystemState handleCollecting() {
+        if(mStateChanged) {
+            mPeriodicIO.collectorDemand = kCollectSpeed;
+            mPeriodicIO.solenoidDemand = SolenoidState.EXTEND;
+        }
+
+        return defaultStateTransfer();
+    }
+
+    private SystemState handleBacking() {
+        if(mStateChanged) {
+            mPeriodicIO.collectorDemand = -kCollectSpeed;
+            mPeriodicIO.solenoidDemand = SolenoidState.EXTEND;
+        }
+
+        return defaultStateTransfer();
     }
 
     private SystemState defaultStateTransfer(){
