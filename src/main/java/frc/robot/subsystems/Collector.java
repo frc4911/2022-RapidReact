@@ -85,6 +85,7 @@ public class Collector extends Subsystem{
         printUsage(caller);
         mFXCollector = TalonFXFactory.createDefaultTalon(Ports.COLLECTOR);
         mSolenoid = new Solenoid(PneumaticsModuleType.CTREPCM, Ports.COLLECTOR_DEPLOY);
+        mSubsystemManager = SubsystemManager.getInstance(sClassName);
         configMotors();
     }
 
@@ -123,6 +124,7 @@ public class Collector extends Subsystem{
                 case BACKING:
                     newState = handleBacking();
                     break;
+                case HOLDING:
                 default:
                     newState = handleHolding();
                     break;
@@ -187,6 +189,7 @@ public class Collector extends Subsystem{
                 return SystemState.COLLECTING;
             case BACK:
                 return SystemState.BACKING;
+            case HOLD:
             default:
                 return SystemState.HOLDING;
         }

@@ -1,7 +1,5 @@
 package frc.robot.subsystems;
 
-import java.time.Period;
-
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 
@@ -72,6 +70,7 @@ public class Climber extends Subsystem{
         mFXLeftClimber = TalonFXFactory.createDefaultTalon(Ports.LEFT_CLIMBER);
         mFXRightClimber = TalonFXFactory.createDefaultTalon(Ports.RIGHT_CLIMBER);
         mSolenoid = new Solenoid(PneumaticsModuleType.CTREPCM, Ports.CLIMBER_STAGE);
+        mSubsystemManager = SubsystemManager.getInstance(sClassName);
         configMotors();
     }
 
@@ -120,8 +119,9 @@ public class Climber extends Subsystem{
                 case LEVELING:
                     newState = handleFeeding();
                     break;
+                case RESTING:
                 default:
-                    newState = handleHolding();
+                    newState = handleResting();
                     break;
                 }
 
@@ -142,7 +142,7 @@ public class Climber extends Subsystem{
 
     };
 
-    private SystemState handleHolding() {
+    private SystemState handleResting() {
         return defaultStateTransfer();
     }
     
@@ -175,6 +175,7 @@ public class Climber extends Subsystem{
                 return SystemState.RETRACTING;
             case LEVEL:
                 return SystemState.LEVELING;
+            case REST:
             default:
                 return SystemState.RESTING;
         }

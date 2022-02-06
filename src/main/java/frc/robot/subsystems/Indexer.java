@@ -77,6 +77,7 @@ public class Indexer extends Subsystem{
         mFXIndexer = TalonFXFactory.createDefaultTalon(Ports.INDEXER);
         mAIBallEntering = new AnalogInput(Ports.ENTRANCE_BEAM_BREAK);
         mAIBallExiting = new AnalogInput(Ports.EXIT_BEAM_BREAK);
+        mSubsystemManager = SubsystemManager.getInstance(sClassName);
         configMotors();
     }
 
@@ -121,6 +122,7 @@ public class Indexer extends Subsystem{
                 case BACKING:
                     newState = handleBacking();
                     break;
+                case HOLDING:
                 default:
                     newState = handleHolding();
                     break;
@@ -192,6 +194,7 @@ public class Indexer extends Subsystem{
                 return SystemState.FEEDING;
             case BACK:
                 return SystemState.BACKING;
+            case HOLD:
             default:
                 return SystemState.HOLDING;
         }

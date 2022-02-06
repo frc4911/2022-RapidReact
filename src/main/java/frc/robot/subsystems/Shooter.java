@@ -114,10 +114,11 @@ public class Shooter extends Subsystem{
                 SystemState newState;
                 switch (mSystemState) {
                 case SHOOTING:
-                    newState = handleCollecting();
+                    newState = handleShooting();
                     break;
+                case RESTING:
                 default:
-                    newState = handleHolding();
+                    newState = handleResting();
                     break;
                 }
 
@@ -138,11 +139,11 @@ public class Shooter extends Subsystem{
 
     };
 
-    private SystemState handleHolding() {
+    private SystemState handleResting() {
         return defaultStateTransfer();
     }
     
-    private SystemState handleCollecting() {
+    private SystemState handleShooting() {
         return defaultStateTransfer();
     }
 
@@ -159,6 +160,7 @@ public class Shooter extends Subsystem{
         switch(mWantedState){
             case SHOOT:
                 return SystemState.SHOOTING;
+            case REST:
             default:
                 return SystemState.RESTING;
         }
