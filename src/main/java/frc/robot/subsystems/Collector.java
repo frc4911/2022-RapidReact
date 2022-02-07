@@ -1,10 +1,13 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.Timer;
+import frc.robot.Constants;
 import frc.robot.Ports;
 import libraries.cheesylib.drivers.TalonFXFactory;
 import libraries.cheesylib.loops.ILooper;
@@ -91,7 +94,12 @@ public class Collector extends Subsystem{
     }
 
     private void configMotors(){
+        mFXCollector.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
+        mFXCollector.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
 
+        mFXCollector.setInverted(false);
+
+        mFXCollector.setNeutralMode(NeutralMode.Coast);
     }
 
     private Loop mLoop = new Loop() {
@@ -189,8 +197,8 @@ public class Collector extends Subsystem{
 
     @Override
     public void stop() {
-        // TODO Auto-generated method stub
-        
+        mFXCollector.set(ControlMode.PercentOutput, 0.0);
+        mSolenoid.set(SolenoidState.RETRACT.get());        
     }
 
     @Override

@@ -5,7 +5,7 @@ import java.io.FileNotFoundException;
 import java.util.Scanner;
 
 public class RobotName {
-    public static String name = "unknown";
+    public static String name = "Robot1";
 
     public RobotName(String defaultName) {
 		Scanner scn = null;

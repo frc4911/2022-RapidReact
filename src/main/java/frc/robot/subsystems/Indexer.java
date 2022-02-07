@@ -1,9 +1,12 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix.motorcontrol.FeedbackDevice;
+import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Timer;
+import frc.robot.Constants;
 import frc.robot.Ports;
 import libraries.cheesylib.drivers.TalonFXFactory;
 import libraries.cheesylib.loops.ILooper;
@@ -79,7 +82,15 @@ public class Indexer extends Subsystem{
     }
 
     private void configMotors(){
-        
+        mFXIndexer.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor, 0, Constants.kLongCANTimeoutMs);
+
+        mFXIndexer.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
+        mFXIndexer.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
+
+        mFXIndexer.setInverted(false);
+        mFXIndexer.setSensorPhase(false);
+
+        mFXIndexer.setNeutralMode(NeutralMode.Coast);
     }
 
     private Loop mLoop = new Loop() {
