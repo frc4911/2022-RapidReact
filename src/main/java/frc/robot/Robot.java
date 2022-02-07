@@ -111,10 +111,10 @@ public class Robot extends TimedRobot {
   }
 
 	public void teleopConfig() {
-		if (mSwerve != null) {
-			mSwerve.setNominalDriveOutput(0.0);
-			mSwerve.set10VoltRotationMode(false);
-		}
+		// if (mSwerve != null) {
+		// 	mSwerve.setNominalDriveOutput(0.0);
+		// 	mSwerve.set10VoltRotationMode(false);
+		// }
 	}
 
   @Override
