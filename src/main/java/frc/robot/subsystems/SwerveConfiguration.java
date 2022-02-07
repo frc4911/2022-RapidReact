@@ -36,11 +36,11 @@ public class SwerveConfiguration {
                 Math.min((this.maxSpeedInMetersPerSecond / radiusInMeters), maxSpeedInRadiansPerSecondLimit) :
                 (this.maxSpeedInMetersPerSecond / radiusInMeters);
 
-        // If CW, then right is positive.  If CCW left is positive
-        Translation2d kFrontRightModuleLocation = new Translation2d(wheelbaseLengthInMeters / 2, wheelbaseWidthInMeters / 2);
-        Translation2d kFrontLeftModuleLocation = new Translation2d(wheelbaseLengthInMeters / 2, -wheelbaseWidthInMeters / 2);
-        Translation2d kBackLeftModuleLocation = new Translation2d(-wheelbaseLengthInMeters / 2, -wheelbaseWidthInMeters / 2);
-        Translation2d kBackRightModuleLocation = new Translation2d(-wheelbaseLengthInMeters / 2, wheelbaseWidthInMeters / 2);
+        // CCW:  left positive, right negative, front positive, back negative
+        Translation2d kFrontRightModuleLocation = new Translation2d(wheelbaseLengthInMeters / 2, -wheelbaseWidthInMeters / 2);
+        Translation2d kFrontLeftModuleLocation = new Translation2d(wheelbaseLengthInMeters / 2, wheelbaseWidthInMeters / 2);
+        Translation2d kBackLeftModuleLocation = new Translation2d(-wheelbaseLengthInMeters / 2, wheelbaseWidthInMeters / 2);
+        Translation2d kBackRightModuleLocation = new Translation2d(-wheelbaseLengthInMeters / 2, -wheelbaseWidthInMeters / 2);
 
         moduleLocations = Arrays.asList(
                 kFrontRightModuleLocation, kFrontLeftModuleLocation, kBackLeftModuleLocation, kBackRightModuleLocation);
