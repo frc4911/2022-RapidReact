@@ -48,13 +48,13 @@ public class SwerveDriveModule extends Subsystem {
 		public boolean kInvertSteerMotor = false;
 		public boolean kInvertSteerMotorSensorPhase = true;
 		public NeutralMode kSteerMotorInitNeutralMode = NeutralMode.Coast; // neutral mode could change
-        public double kSteerMotorTicksPerRadian = 2048.0 * 18 / (2 * Math.PI); // for steer motor
+        public double kSteerMotorTicksPerRadian = (2048.0 * 18)/(2.0 * Math.PI); // for steer motor
         public double kSteerMotorTicksPerRadianPerSecond = kSteerMotorTicksPerRadian / 10; // for steer motor
 		public double kSteerMotorEncoderHomeOffset = 0;
 
         // Default steer reduction is Mk4_L2i value
-        public double kSteerReduction = (14.0 / 50.0) * (10.0 / 60.0);
-        public double kSteerTicksPerUnitDistance = (1.0 / 2048.0) * kSteerReduction * (2.0 * Math.PI);
+        public double kSteerReduction = (14.0 / 50.0) * (10.0 / 60.0); // 1/21.43
+        public double kSteerTicksPerUnitDistance = (1.0 / 2048.0) * kSteerReduction * (2.0 * Math.PI); 
         public double kSteerTicksPerUnitVelocity = kSteerTicksPerUnitDistance * 10;  // Motor controller unit is ticks per 100 ms
 
 		// Steer CANCoder
@@ -74,20 +74,22 @@ public class SwerveDriveModule extends Subsystem {
 //		public int kCANCoderSteerMotorAcceleration = 20379; // 12 * kSteerMotorCruiseVelocity
 //		public int kCANCoderSteerMotorClosedLoopAllowableError = 5;
 
+        // brian needs tuning
 		// Steer Motor motion
-		public double kSteerMotorSlot0Kp = 0.07;
+		public double kSteerMotorSlot0Kp = 0.4;
 		public double kSteerMotorSlot0Ki = 0.0;
-		public double kSteerMotorSlot0Kd = 0.84;
-		public double kSteerMotorSlot0Kf = 0.025;
+		public double kSteerMotorSlot0Kd = 0.0;
+		public double kSteerMotorSlot0Kf = 0.0;
 		public int kSteerMotorSlot0IZone = 25;
 		public int kSteerMotorSlot0CruiseVelocity = 1698;
 		public int kSteerMotorSlot0Acceleration = 20379; // 12 * kSteerMotorCruiseVelocity
 		public int kSteerMotorClosedLoopAllowableError = 5;
 
-		public double kSteerMotorSlot1Kp = 0.07;
+        // brian needs tuning (if used)
+		public double kSteerMotorSlot1Kp = 0.0;
 		public double kSteerMotorSlot1Ki = 0.0;
-		public double kSteerMotorSlot1Kd = 0.84;
-		public double kSteerMotorSlot1Kf = 0.025;
+		public double kSteerMotorSlot1Kd = 0.0;
+		public double kSteerMotorSlot1Kf = 0.0;
 		public int kSteerMotorSlot1IZone = 25;
 		public int kSteerMotorSlot1CruiseVelocity = 1698;
 		public int kSteerMotorSlot1Acceleration = 20379; // 12 * kSteerMotorCruiseVelocity
@@ -156,17 +158,17 @@ public class SwerveDriveModule extends Subsystem {
         mSteerMotor = TalonFXFactory.createDefaultTalon(mConstants.kSteerMotorTalonId);
 
         CANCoderConfiguration config = new CANCoderConfiguration();
-//        config.initializationStrategy = mConstants.kCANCoderSensorInitializationStrategy;
+        config.initializationStrategy = mConstants.kCANCoderSensorInitializationStrategy;
         config.absoluteSensorRange = AbsoluteSensorRange.Unsigned_0_to_360;
-        config.magnetOffsetDegrees = Math.toDegrees(constants.kCANCoderOffsetDegrees);
-        config.sensorDirection = false;  // CCW
+        config.magnetOffsetDegrees = constants.kCANCoderOffsetDegrees;
+        config.sensorDirection = true;
 
-        CANCoder mCANCoder = new CANCoder(constants.kCANCoderId);
+        mCANCoder = new CANCoder(constants.kCANCoderId);
         mCANCoder.configAllSettings(config, Constants.kLongCANTimeoutMs);
 
         mCANCoder.setStatusFramePeriod(CANCoderStatusFrame.VbatAndFaults, mConstants.kCANCoderStatusFramePeriodVbatAndFaults);
         mCANCoder.setStatusFramePeriod(CANCoderStatusFrame.SensorData, mConstants.kCANCoderStatusFramePeriodSensorData);
-
+        
         configureMotors();
     }
 
@@ -181,27 +183,22 @@ public class SwerveDriveModule extends Subsystem {
         mSteerMotor.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
 
         // multiple (usually 2) sets were needed to set new encoder value
-        double fxCurrentEnc = mSteerMotor.getSelectedSensorPosition(0);
-        System.out.println(mConstants.kName + " current fx encoder ticks: " + fxCurrentEnc);
+        double fxTicksBefore = mSteerMotor.getSelectedSensorPosition();
+        double cancoderDegrees = mCANCoder.getAbsolutePosition();
+        double fxTicksTarget = degreesToEncUnits(cancoderDegrees);
+        double fxTicksNow = fxTicksBefore;
+        int loops = 0;
+        final double acceptableTickErr = 10;
 
-        double angle = Math.toRadians(mCANCoder.getAbsolutePosition());
-        angle %= 2.0 * Math.PI;
-        if (angle < 0.0) {
-            angle += 2.0 * Math.PI;
-        }
-
-        int startEncoderValue = degreesToEncUnits(angle);
-//        mSteerMotor.setSelectedSensorPosition(startEncoderValue, 0, Constants.kLongCANTimeoutMs);
-
-        int count = 0;
-        while (Math.abs(fxCurrentEnc-startEncoderValue) > 10 && count < 5) {
-            count++;
-            mSteerMotor.setSelectedSensorPosition(startEncoderValue, 0, Constants.kLongCANTimeoutMs);
+        while (Math.abs(fxTicksNow-fxTicksTarget) > acceptableTickErr && loops < 5) {
+            mSteerMotor.setSelectedSensorPosition(fxTicksTarget, 0, 0);
             Timer.delay(.1);
-            fxCurrentEnc = mSteerMotor.getSelectedSensorPosition();
+            fxTicksNow = mSteerMotor.getSelectedSensorPosition();
+            loops++;
         }
 
-        System.out.println(mConstants.kName + " loops needed to set fx encoder: " + count);
+        System.out.println(mConstants.kName+" cancoder degrees: "+cancoderDegrees+
+                        ",  fx encoder ticks (before, target, adjusted): (" +fxTicksBefore+","+fxTicksTarget+","+fxTicksNow+") loops:"+loops);
 
         mSteerMotor.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, mConstants.kSteerMotorStatusFrame2UpdateRate, Constants.kLongCANTimeoutMs);
         mSteerMotor.setStatusFramePeriod(StatusFrame.Status_10_MotionMagic, mConstants.kSteerMotorStatusFrame10UpdateRate, Constants.kLongCANTimeoutMs);
@@ -336,7 +333,11 @@ public class SwerveDriveModule extends Subsystem {
 
         // TODO:  Consider using SwerveModule.optimize() here instead of setReferenceAngle()
         setReferenceAngle(swreveModuleState.angle.getRadians());
-	}
+        // brian temp debug
+        // if(throttlePrints%printFreq==0 && mConstants.kModuleId==0){
+        //     System.out.println("0? sdm setState (swreveModuleState) ("+swreveModuleState.toString()+")");
+        // }
+    }
 
     /**
      * Sets the reference angle for the steer motor
@@ -360,7 +361,16 @@ public class SwerveDriveModule extends Subsystem {
         }
 
         mPeriodicIO.steerControlMode = ControlMode.MotionMagic;
-        mPeriodicIO.steerDemand = radiansToEncoderUnits(adjustedReferenceAngleRadians);
+        // brian check this code again may want to switch back to adjustedReference...
+        // mPeriodicIO.steerDemand = radiansToEncoderUnits(adjustedReferenceAngleRadians);
+        mPeriodicIO.steerDemand = radiansToEncoderUnits(referenceAngleRadians);
+        // brian temp debug
+        // if(mConstants.kModuleId==0){
+        //     if(throttlePrints%printFreq==0){
+        //         System.out.println("0? sdm setReferenceAngle (mPeriodicIO.steerDemand) ("+mPeriodicIO.steerDemand+")");
+        //     }
+        // }
+
     }
 
     /**
@@ -389,11 +399,11 @@ public class SwerveDriveModule extends Subsystem {
 
     // Steer motor
     private double encoderUnitsToRadians(double encUnits) {
-        return encUnits / mConstants.kSteerTicksPerUnitDistance;
+        return encUnits / mConstants.kSteerMotorTicksPerRadian;
     }
 
     private double radiansToEncoderUnits(double radians) {
-        return radians * mConstants.kSteerTicksPerUnitDistance;
+        return radians * mConstants.kSteerMotorTicksPerRadian;
     }
 
     private int degreesToEncUnits(double degrees) {
@@ -528,6 +538,11 @@ public class SwerveDriveModule extends Subsystem {
                 } else {
                     mSteerMotor.set(mPeriodicIO.steerControlMode, mPeriodicIO.steerDemand);
                     mDriveMotor.set(mPeriodicIO.driveControlMode, mPeriodicIO.driveDemand);
+                    // brian temp debug
+                    // if(++throttlePrints%printFreq==0 && mConstants.kModuleId == 0){
+                    //     System.out.println("00 sdm writePeriodicOutputs (steerDemand, driveDemand) ("+mPeriodicIO.steerDemand+","+mPeriodicIO.driveDemand+")");
+                    // }
+           
                 }
                 break;
             case NEUTRAL:
@@ -536,6 +551,9 @@ public class SwerveDriveModule extends Subsystem {
         }
     }
 
+    // brian temp debug
+    // int throttlePrints = 0;
+    // final int printFreq = 10;
     @Override
     public void outputTelemetry() {
         // SmartDashboard.putNumber(mModuleName + "Angle", getModuleAngle().getDegrees());
@@ -543,7 +561,10 @@ public class SwerveDriveModule extends Subsystem {
         // SmartDashboard.putNumber(mModuleName + "Steer", periodicIO.steerPosition);
         // SmartDashboard.putNumber(mModuleName + "Steer velocity", mSteerMotor.getSelectedSensorVelocity(0));
         // SmartDashboard.putNumber(mModuleName + "Steer (cancoder)", enc.getAbsolutePosition()-cancoderOffsetDegrees);
-        SmartDashboard.putNumber(mModuleName + "Steer (cancoder)", mCANCoder.getAbsolutePosition());
+        SmartDashboard.putNumber(mModuleName + " cancoder", mCANCoder.getAbsolutePosition());
+        SmartDashboard.putNumber(mModuleName + " steerDemand", mPeriodicIO.steerDemand);
+        SmartDashboard.putNumber(mModuleName + " steerPosition", mPeriodicIO.steerPosition);
+        SmartDashboard.putNumber(mModuleName + " driveDemand", mPeriodicIO.driveDemand);
         // SmartDashboard.putNumber(mModuleName + "Steer", periodicIO.drivePosition);
         // SmartDashboard.putNumber(mModuleName + "Velocity", mDriveMotor.getSelectedSensorVelocity(0));
         //SmartDashboard.putNumber(mModuleName + "Velocity", encVelocityToInchesPerSecond(periodicIO.velocity));

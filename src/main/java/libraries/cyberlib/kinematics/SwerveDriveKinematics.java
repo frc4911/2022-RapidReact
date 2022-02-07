@@ -128,7 +128,44 @@ public class SwerveDriveKinematics {
 
             moduleStates[i] = new SwerveModuleState(speed, angle);
         }
+        // brian temp debug
+        // if(++throttlePrints%printFreq==0){
+        //     System.out.println("00 sdk toSwerveModuleStates (moduleStates[0]) ("+moduleStates[0].toString()+")");
+        //     System.out.println("00 sdk toSwerveModuleStates (moduleStates[1]) ("+moduleStates[1].toString()+")");
+        //     System.out.println("00 sdk toSwerveModuleStates (moduleStates[2]) ("+moduleStates[2].toString()+")");
+        //     System.out.println("00 sdk toSwerveModuleStates (moduleStates[3]) ("+moduleStates[3].toString()+")");
+        // }
+        return moduleStates;
+    }
 
+    
+    // brian temp debug
+    int throttlePrints = 0;
+    final int printFreq = 10;
+    final double[] fixedAngles = {Math.toRadians(45),Math.toRadians(135),Math.toRadians(-135),Math.toRadians(-45)};
+
+    // brian the rntire method is temp debug
+    public SwerveModuleState[] toSwerveModuleStates2(ChassisSpeeds chassisSpeeds, Translation2d unused) {
+
+        double xVel = chassisSpeeds.vxInMetersPerSecond;
+        double yVel = chassisSpeeds.vyInMetersPerSecond;
+        double rot = chassisSpeeds.omegaInRadiansPerSecond;
+
+        SwerveModuleState[] moduleStates = new SwerveModuleState[mNumModules];
+
+        for (int i = 0; i < mNumModules; i++) {
+            
+            double xV = xVel+Math.cos(fixedAngles[i])*rot;
+            double yV = yVel+Math.sin(fixedAngles[i])*rot;
+            moduleStates[i] = new SwerveModuleState(Math.hypot(xV, yV), new Rotation2d(xV,yV,true));
+        }
+
+        // if(++throttlePrints%printFreq==0){
+        //     System.out.println("00 sdk toSwerveModuleStates (moduleStates[0]) ("+moduleStates[0].toString()+")");
+        //     System.out.println("00 sdk toSwerveModuleStates (moduleStates[1]) ("+moduleStates[1].toString()+")");
+        //     System.out.println("00 sdk toSwerveModuleStates (moduleStates[2]) ("+moduleStates[2].toString()+")");
+        //     System.out.println("00 sdk toSwerveModuleStates (moduleStates[3]) ("+moduleStates[3].toString()+")");
+        // }
         return moduleStates;
     }
 
@@ -140,7 +177,8 @@ public class SwerveDriveKinematics {
      * @return An array containing the module states.
      */
     public SwerveModuleState[] toSwerveModuleStates(ChassisSpeeds chassisSpeeds) {
-        return toSwerveModuleStates(chassisSpeeds, new Translation2d());
+        // brian temp debug should be toSwerveModuleStates
+        return toSwerveModuleStates2(chassisSpeeds, new Translation2d());
     }
 
     /**
