@@ -93,6 +93,15 @@ public class SwerveDriveHelper {
         rotationInput *= mMaxSpeedInRadiansPerSecond;
 
         ChassisSpeeds chassisSpeeds = new ChassisSpeeds(translationalInput.x(), translationalInput.y(), rotationInput);
+
+        // brian temp debug
+        // if(++throttlePrints%printFreq==0){
+        //     System.out.println("00 sdh calculateChassisSpeeds (chassisSpeeds) ("+chassisSpeeds.toString()+")");
+        // }
+
         return chassisSpeeds;
     }
+    // brian temp debug
+    // int throttlePrints;
+    // final int printFreq=10;
 }

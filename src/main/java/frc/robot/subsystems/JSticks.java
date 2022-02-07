@@ -150,7 +150,8 @@ public class JSticks extends Subsystem{
 		double swerveYInput = dr_RightStickX_Translate;
 		double swerveXInput = dr_RightStickY_Translate;
 		double swerveRotationInput = dr_LeftStickX_Rotate;
-
+        // brian temp debug code
+        // mSwerve.passThru(swerveXInput, swerveYInput, swerveRotationInput);
 //        mSwerve.sendInput(swerveXInput, swerveYInput, swerveRotationInput, dr_LeftToggleDown_RobotOrient, false);
 
         // NEW SWERVE
@@ -167,24 +168,29 @@ public class JSticks extends Subsystem{
             mHeadingController.setGoal(mSwerve.getHeading().getDegrees());
         }
 
+        // brian field oriented driving is not working
         if (mHeadingController.getHeadingControllerState() != SwerveHeadingController.HeadingControllerState.OFF) {
             mSwerve.setTeleopInputs(swerveXInput, swerveYInput, mHeadingController.update(),
-                    false, dr_LeftToggleDown_RobotOrient, true);
+                    false, !dr_LeftToggleDown_RobotOrient, true);
         } else {
             mSwerve.setTeleopInputs(swerveXInput, swerveYInput,swerveRotationInput,
-                    false, dr_LeftToggleDown_RobotOrient, false);
+                    false, !dr_LeftToggleDown_RobotOrient, false);
         }
 
 		if (dr_YButton_ResetIMU) {
             // Seems safest to disable heading controller if were resetting IMU.
-            if (mHeadingController.getHeadingControllerState() != SwerveHeadingController.HeadingControllerState.OFF) {
-                mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.OFF);
-            }
-
+            mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.OFF);
             mSwerve.zeroSensors(Constants.kRobotStartingPose);
 		}
+        // brian temp debug
+        // if(throttlePrints%printFreq==0){
+        //     System.out.println("01 js teleopRoutines (x,y,z) ("+swerveXInput+","+swerveYInput+","+swerveRotationInput+")");
+        // }
         // END NEW SWERVE
 	}
+        // brian temp debug
+    // int throttlePrints;
+    // final int printFreq = 10;
 
     @Override
     public void readPeriodicInputs() {
@@ -201,9 +207,22 @@ public class JSticks extends Subsystem{
         else {
             dr_RightStickX_Translate = -mDriver2.getRaw(LogitechExtreme.X, mDeadBand);
             dr_RightStickY_Translate = -mDriver2.getRaw(LogitechExtreme.Y, mDeadBand);
-            dr_LeftStickX_Rotate = mDriver2.getRaw(LogitechExtreme.Z, mDeadBand);
+            // brian make it easier to drive w/o rotate
+            if (mDriver2.getButton(LogitechExtreme.TOP_THREE, CW.PRESSED_LEVEL)){
+                dr_LeftStickX_Rotate = 0;    
+            }
+            else{
+                dr_LeftStickX_Rotate = -mDriver2.getRaw(LogitechExtreme.Z, mDeadBand)/2.0;
+            }
             dr_YButton_ResetIMU = mDriver2.getButton(LogitechExtreme.THUMB_BUTTON, CW.PRESSED_EDGE);
+            // brian this should switch to robot oriented
+            dr_LeftToggleDown_RobotOrient = mDriver2.getButton(LogitechExtreme.TRIGGER, CW.PRESSED_LEVEL);
         }
+
+        // brian temp debug
+        // if(++throttlePrints%printFreq==0){
+        //     System.out.println("00 js readPeriodicInputs (x,y,z) ("+dr_RightStickX_Translate+","+dr_RightStickY_Translate+","+dr_LeftStickX_Rotate+")");
+        // }
     }
 
     private SystemState defaultStateTransfer() {

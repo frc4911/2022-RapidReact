@@ -223,10 +223,20 @@ public class Swerve extends Subsystem {
 
         // Now calculate the new Swerve Module states using inverse kinematics.
         mPeriodicIO.swerveModuleStates = mKinematics.toSwerveModuleStates(chassisSpeeds);
-
+        // brian temp debug
+        // System.out.println(mPeriodicIO.swerveModuleStates[0].toString());
+        // System.out.println(mPeriodicIO.swerveModuleStates[1].toString());
+        // System.out.println(mPeriodicIO.swerveModuleStates[2].toString());
+        // System.out.println(mPeriodicIO.swerveModuleStates[3].toString());
         // Normalize wheels speeds if any individual speed is above the specified maximum.
         SwerveDriveKinematics.desaturateWheelSpeeds(
                 mPeriodicIO.swerveModuleStates, mSwerveConfiguration.maxSpeedInMetersPerSecond);
+
+        // brian temp debug
+        // if(++throttlePrints%printFreq==0){
+        //     System.out.println("01 s handleManual (mPeriodicIO.swerveModuleStates[0]) ("+mPeriodicIO.swerveModuleStates[0].toString()+")");
+        // }
+        
     }
 
 
@@ -378,8 +388,8 @@ public class Swerve extends Subsystem {
     /** Zeroes the drive motors, and sets the robot's internal position and heading to match that of the fed pose */
     public synchronized void zeroSensors(Pose2d startingPose) {
         setRobotPosition(startingPose);
-//        mPigeon.setAngle(startingPose.getRotation().getUnboundedDegrees());
-//        mModules.forEach((m) -> m.zeroSensors(startingPose));
+        mPigeon.setAngle(startingPose.getRotation().getUnboundedDegrees());
+        // mModules.forEach((m) -> m.zeroSensors(startingPose));
     }
 
     /**
@@ -402,7 +412,16 @@ public class Swerve extends Subsystem {
         mPeriodicIO.low_power = low_power;
         mPeriodicIO.field_relative = field_relative;
         mPeriodicIO.use_heading_controller = use_heading_controller;
+        // brian temp debug
+        // if(++throttlePrints%printFreq==0){
+        //     System.out.println("00 s setTeleopInputs (forward,strafe,rotation) ("+mPeriodicIO.forward+","+mPeriodicIO.strafe+","+mPeriodicIO.rotation+")");
+        // }
     }
+
+    // brian temp debug
+    // int throttlePrints;
+    // final int printFreq = 10;
+
 
     @Override
     public String getLogHeaders() {
@@ -515,7 +534,12 @@ public class Swerve extends Subsystem {
 //        if (!hasFinishedPath() && hasStartedFollowing) {
 //            double currentTime = Timer.getFPGATimestamp();
 //            SmartDashboard.putNumber("Autopath Timer", currentTime - trajectoryStartTime);
-//        }
+//        }   
+    // }
+
+        // brian temp debug
+        // public void passThru(double x, double y, double z){
+        // mModules.forEach((m) -> m.passThru(x,y,z));
     }
 
     public static class PeriodicIO {

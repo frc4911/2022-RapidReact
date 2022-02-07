@@ -77,9 +77,10 @@ public class Constants {
     // Translation2d(48.0 + kRobotHalfLength, 75.25 + kRobotHalfWidth),
     // Rotation2d.fromDegrees(0));
 
+    // brian these numbers are for junior
     // Swerve Calculations Constants (measurements are in inches)
-    public static final double kWheelbaseLength = 21.0;
-    public static final double kWheelbaseWidth = 21.0;
+    public static final double kWheelbaseLength = 14.5;
+    public static final double kWheelbaseWidth = 14.5;
 
     public static double kMaxAngleAimError = 1;
     public static final double kMaxAimTurningVelocity = 0.1;
@@ -293,10 +294,10 @@ public class Constants {
     // Junior //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // swerve modules
     // zero - bezel to the left
-
+    // brian these numbers are for junior
     public static final SwerveConfiguration kSwerveConfigurationJunior = new SwerveConfiguration(
-            Units.inchesToMeters(21.0),
-            Units.inchesToMeters(21.0),
+            Units.inchesToMeters(14.5),
+            Units.inchesToMeters(14.5),
             Units.feetToMeters(14.2),
             Math.toRadians(270)
     );
@@ -313,6 +314,7 @@ public class Constants {
         kFrontRightModuleConstantsJunior.kWheelDiameter = kMK2_WheelDiameter;
         kFrontRightModuleConstantsJunior.kDriveReduction = (18.0 / 38.0) * (26.0 / 18.0) * (15.0 / 60.0);
         kFrontRightModuleConstantsJunior.kSteerReduction = kMK2_SteerReduction;
+        kFrontRightModuleConstantsJunior.kModuleId = 0;
 
         /* ... */
     }
@@ -329,6 +331,7 @@ public class Constants {
         kFrontLeftModuleConstantsJunior.kWheelDiameter = kMK2_WheelDiameter;
         kFrontLeftModuleConstantsJunior.kDriveReduction = (18.0 / 38.0) * (26.0 / 18.0) * (15.0 / 60.0);
         kFrontLeftModuleConstantsJunior.kSteerReduction = kMK2_SteerReduction;
+        kFrontLeftModuleConstantsJunior.kModuleId = 1;
         /* ... */
     }
 
@@ -344,6 +347,7 @@ public class Constants {
         kBackLeftModuleConstantsJunior.kWheelDiameter = kMK2_WheelDiameter;
         kBackLeftModuleConstantsJunior.kDriveReduction = (18.0 / 38.0) * (26.0 / 18.0) * (15.0 / 60.0);
         kBackLeftModuleConstantsJunior.kSteerReduction = kMK2_SteerReduction;
+        kBackLeftModuleConstantsJunior.kModuleId = 2;
         /* ... */
     }
 
@@ -359,6 +363,7 @@ public class Constants {
         kBackRightModuleConstantsJunior.kWheelDiameter = kMK2_WheelDiameter;
         kBackRightModuleConstantsJunior.kDriveReduction = (18.0 / 38.0) * (26.0 / 18.0) * (15.0 / 60.0);
         kBackRightModuleConstantsJunior.kSteerReduction = kMK2_SteerReduction;
+        kBackRightModuleConstantsJunior.kModuleId = 3;
         /* ... */
     }
 
@@ -507,15 +512,16 @@ public class Constants {
     // Swerve Heading Controller
     public static final double kSwerveHeadingControllerErrorTolerance = 1.0; // degrees
 
+    // brian needs tuning
     // good for snapping (dpad)
-    public static final double kSnapSwerveHeadingKp = 0.031;
+    public static final double kSnapSwerveHeadingKp = 0.01;//0.031;
     public static final double kSnapSwerveHeadingKi = 0.0;
-    public static final double kSnapSwerveHeadingKd = 0.003;
+    public static final double kSnapSwerveHeadingKd = 0;//0.003;
 
     // good for maintaining heading
-    public static final double kMaintainSwerveHeadingKp = 0.020;
+    public static final double kMaintainSwerveHeadingKp = 0.01;//0.020;
     public static final double kMaintainSwerveHeadingKi = 0.0;
-    public static final double kMaintainSwerveHeadingKd = 0.002;
+    public static final double kMaintainSwerveHeadingKd = 0;//0.002;
 
 
     // END NEW SWERVE
