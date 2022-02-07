@@ -38,12 +38,7 @@ public class Superstructure extends Subsystem{
     private SystemState mSystemState;
     private WantedState mWantedState;
     private boolean     mStateChanged;
-
-    //Logging
-    private int schedDeltaDesired;
-    public  double schedDeltaActual;
-    public  double schedDuration;
-    private double lastSchedStart;
+    private PeriodicIO  mPeriodicIO;
 
     private static String sClassName;
     private static int sInstanceCount;
@@ -84,10 +79,10 @@ public class Superstructure extends Subsystem{
                 System.out.println(sClassName + " state " + mSystemState);
                 switch (phase) {
                     case DISABLED:
-                        schedDeltaDesired = 0; // goto sleep
+                        mPeriodicIO.schedDeltaDesired = 0; // goto sleep
                         break;
                     default:
-                        schedDeltaDesired = 100;
+                        mPeriodicIO.schedDeltaDesired = 100;
                         break;
                 }
                 stop();
@@ -210,7 +205,7 @@ public class Superstructure extends Subsystem{
     public synchronized void setWantedState(WantedState state) {
         if (mWantedState != state){
             System.out.println(state);
-            schedDeltaDesired = 2;
+            mPeriodicIO.schedDeltaDesired = 2;
         }
         mWantedState = state;
     }
@@ -221,10 +216,10 @@ public class Superstructure extends Subsystem{
 
     @Override
     public int whenRunAgain () {
-        if (mStateChanged && schedDeltaDesired == 0){
+        if (mStateChanged && mPeriodicIO.schedDeltaDesired == 0){
             return 1; // one more loop before going to sleep
         }
-        return schedDeltaDesired;
+        return mPeriodicIO.schedDeltaDesired;
     }
 
     @Override
@@ -236,8 +231,8 @@ public class Superstructure extends Subsystem{
     @Override
     public void readPeriodicInputs() {
         double now = Timer.getFPGATimestamp();
-        schedDeltaActual = now - lastSchedStart;
-        lastSchedStart = now;
+        mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
+        mPeriodicIO.lastSchedStart = now;
     }
 
     @Override
@@ -261,6 +256,14 @@ public class Superstructure extends Subsystem{
     public void outputTelemetry() {
         // TODO Auto-generated method stub
         
+    }
+
+    public static class PeriodicIO{
+        //Logging
+        private int schedDeltaDesired;
+        public  double schedDeltaActual;
+        public  double schedDuration;
+        private double lastSchedStart;
     }
 
 }
