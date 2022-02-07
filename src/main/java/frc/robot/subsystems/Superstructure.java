@@ -9,10 +9,6 @@ public class Superstructure extends Subsystem{
     
     //Subsystem Instances
     private Swerve    mSwerve;
-    private Indexer   mIndexer;
-    private Collector mCollector;
-    private Shooter   mShooter;
-    private Climber   mClimber;
 
     //Superstructure States
     public enum SystemState{
@@ -66,10 +62,6 @@ public class Superstructure extends Subsystem{
         sClassName = this.getClass().getSimpleName();
         printUsage(caller);
         mSwerve =    Swerve.getInstance(sClassName);
-        mIndexer =   Indexer.getInstance(sClassName);
-        mCollector = Collector.getInstance(sClassName);
-        mShooter =   Shooter.getInstance(sClassName);
-        mClimber =   Climber.getInstance(sClassName);
     }
 
     // Looping methods for subsystem

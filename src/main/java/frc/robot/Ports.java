@@ -11,10 +11,10 @@ public class Ports {
     public static final int REAR_RIGHT_DRIVE     = 4;
     public static final int REAR_RIGHT_ROTATION  = 8;
 
-    public static final int FRONT_RIGHT_CANCODER = 0;
-    public static final int FRONT_LEFT_CANCODER  = 1;
-    public static final int REAR_LEFT_CANCODER   = 2;
-    public static final int REAR_RIGHT_CANCODER  = 3;
+    public static final int FRONT_RIGHT_ENC = 0;
+    public static final int FRONT_LEFT_ENC  = 1;
+    public static final int REAR_LEFT_ENC   = 2;
+    public static final int REAR_RIGHT_ENC  = 3;
 
     public static final int PIGEON = 0;
 
