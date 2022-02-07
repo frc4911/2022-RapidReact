@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Scanner;
 
+import edu.wpi.first.wpilibj.Filesystem;
+
 public class RobotName {
     public static String name = "Robot1";
 
@@ -11,7 +13,9 @@ public class RobotName {
 		Scanner scn = null;
 		name = defaultName;
 		try {
-			File f = new File("/home/lvuser/RobotName.txt");
+
+			File path = Filesystem.getDeployDirectory();
+			File f = new File(path.toPath()+"/RobotName.txt");
 			
 			if (f.exists()) {
 				scn = new Scanner(f);

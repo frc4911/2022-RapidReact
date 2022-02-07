@@ -5,10 +5,19 @@ import frc.robot.Constants;
 import libraries.cheesylib.loops.ILooper;
 import libraries.cheesylib.loops.Loop;
 import libraries.cheesylib.subsystems.Subsystem;
+import libraries.cheesylib.util.LatchedBoolean;
+import libraries.cheesylib.util.TimeDelayedBoolean;
+import libraries.cyberlib.control.SwerveHeadingController;
 import libraries.cyberlib.io.CW;
+import libraries.cyberlib.io.LogitechExtreme;
 import libraries.cyberlib.io.Xbox;
 
 public class JSticks extends Subsystem{
+
+    // Heading controller methods
+    private final SwerveHeadingController mHeadingController = SwerveHeadingController.getInstance();
+    private final LatchedBoolean shouldChangeHeadingSetpoint = new LatchedBoolean();
+    private final TimeDelayedBoolean mShouldMaintainHeading = new TimeDelayedBoolean();
 
     public enum SystemState {
         READINGBUTTONS,
@@ -23,7 +32,9 @@ public class JSticks extends Subsystem{
     @SuppressWarnings("unused")
     private boolean mStateChanged;
     private CW mDriver;
-    // private CW mOperator;
+    private CW mOperator;
+    private LogitechExtreme mDriver2;
+
     private final double mDeadBand = 0.15; // for the turnigy (driver) swerve controls
 	// private Superstructure mSuperstructure;
     private Swerve mSwerve;
@@ -64,7 +75,9 @@ public class JSticks extends Subsystem{
         // mSuperstructure = Superstructure.getInstance(sClassName);
         mSwerve = Swerve.getInstance(sClassName);
         mDriver = new Xbox();
-        // mOperator = new Xbox();
+        mDriver2 = new LogitechExtreme();
+        mOperator = new Xbox();
+
         printUsage(caller);
     }
 
@@ -76,6 +89,10 @@ public class JSticks extends Subsystem{
                 mSystemState = SystemState.READINGBUTTONS;
                 mWantedState = WantedState.READBUTTONS;
                 mStateChanged = true;
+
+                // Force true on first iteration of teleop periodic
+                shouldChangeHeadingSetpoint.update(false);
+
                 System.out.println(sClassName + " state " + mSystemState);
                 switch (phase) {
                     case DISABLED:
@@ -134,16 +151,47 @@ public class JSticks extends Subsystem{
 		double swerveYInput = dr_RightStickX_Translate;
 		double swerveXInput = dr_RightStickY_Translate;
 		double swerveRotationInput = dr_LeftStickX_Rotate;
+        // brian temp debug code
+        // mSwerve.passThru(swerveXInput, swerveYInput, swerveRotationInput);
+//        mSwerve.sendInput(swerveXInput, swerveYInput, swerveRotationInput, dr_LeftToggleDown_RobotOrient, false);
 
-        mSwerve.sendInput(swerveXInput, swerveYInput, swerveRotationInput, dr_LeftToggleDown_RobotOrient, false);
+        // NEW SWERVE
+        boolean maintainHeading = mShouldMaintainHeading.update(swerveRotationInput == 0, 0.2);
+        boolean changeHeadingSetpoint = shouldChangeHeadingSetpoint.update(maintainHeading);
+
+        if (!maintainHeading) {
+            mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.OFF);
+        } else if ((mHeadingController
+                .getHeadingControllerState() == SwerveHeadingController.HeadingControllerState.SNAP
+                && mHeadingController.isAtGoal()) || changeHeadingSetpoint) {
+            mHeadingController
+                    .setHeadingControllerState(SwerveHeadingController.HeadingControllerState.MAINTAIN);
+            mHeadingController.setGoal(mSwerve.getHeading().getDegrees());
+        }
+
+        // brian field oriented driving is not working
+        if (mHeadingController.getHeadingControllerState() != SwerveHeadingController.HeadingControllerState.OFF) {
+            mSwerve.setTeleopInputs(swerveXInput, swerveYInput, mHeadingController.update(),
+                    false, !dr_LeftToggleDown_RobotOrient, true);
+        } else {
+            mSwerve.setTeleopInputs(swerveXInput, swerveYInput,swerveRotationInput,
+                    false, !dr_LeftToggleDown_RobotOrient, false);
+        }
 
 		if (dr_YButton_ResetIMU) {
-			mSwerve.temporarilyDisableHeadingController();
-			mSwerve.zeroSensors(Constants.kRobotStartingPose);
-			mSwerve.resetAveragedDirection();
+            // Seems safest to disable heading controller if were resetting IMU.
+            mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.OFF);
+            mSwerve.zeroSensors(Constants.kRobotStartingPose);
 		}
-
+        // brian temp debug
+        // if(throttlePrints%printFreq==0){
+        //     System.out.println("01 js teleopRoutines (x,y,z) ("+swerveXInput+","+swerveYInput+","+swerveRotationInput+")");
+        // }
+        // END NEW SWERVE
 	}
+        // brian temp debug
+    // int throttlePrints;
+    // final int printFreq = 10;
 
     @Override
     public void readPeriodicInputs() {
@@ -151,11 +199,31 @@ public class JSticks extends Subsystem{
         schedDeltaActual = now - lastSchedStart;
         lastSchedStart   = now;
 
-        dr_RightStickX_Translate = mDriver.getRaw(Xbox.RIGHT_STICK_X, mDeadBand);
-        dr_RightStickY_Translate = mDriver.getRaw(Xbox.RIGHT_STICK_Y, mDeadBand);
-        dr_LeftStickX_Rotate = mDriver.getRaw(Xbox.LEFT_STICK_X, mDeadBand);
-        dr_YButton_ResetIMU = mDriver.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
+        if (mDriver.joystickFound()) {
+            dr_RightStickX_Translate = -mDriver.getRaw(Xbox.RIGHT_STICK_X, mDeadBand);
+            dr_RightStickY_Translate = -mDriver.getRaw(Xbox.RIGHT_STICK_Y, mDeadBand);
+            dr_LeftStickX_Rotate = mDriver.getRaw(Xbox.LEFT_STICK_X, mDeadBand);
+            dr_YButton_ResetIMU = mDriver.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
+        }
+        else {
+            dr_RightStickX_Translate = -mDriver2.getRaw(LogitechExtreme.X, mDeadBand);
+            dr_RightStickY_Translate = -mDriver2.getRaw(LogitechExtreme.Y, mDeadBand);
+            // brian make it easier to drive w/o rotate
+            if (mDriver2.getButton(LogitechExtreme.TOP_THREE, CW.PRESSED_LEVEL)){
+                dr_LeftStickX_Rotate = 0;    
+            }
+            else{
+                dr_LeftStickX_Rotate = -mDriver2.getRaw(LogitechExtreme.Z, mDeadBand)/2.0;
+            }
+            dr_YButton_ResetIMU = mDriver2.getButton(LogitechExtreme.THUMB_BUTTON, CW.PRESSED_EDGE);
+            // brian this should switch to robot oriented
+            dr_LeftToggleDown_RobotOrient = mDriver2.getButton(LogitechExtreme.TRIGGER, CW.PRESSED_LEVEL);
+        }
 
+        // brian temp debug
+        // if(++throttlePrints%printFreq==0){
+        //     System.out.println("00 js readPeriodicInputs (x,y,z) ("+dr_RightStickX_Translate+","+dr_RightStickY_Translate+","+dr_LeftStickX_Rotate+")");
+        // }
     }
 
     private SystemState defaultStateTransfer() {

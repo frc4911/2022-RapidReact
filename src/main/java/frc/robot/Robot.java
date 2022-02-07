@@ -11,13 +11,14 @@ import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Collector;
 import frc.robot.subsystems.Indexer;
 import frc.robot.subsystems.JSticks;
-import frc.robot.subsystems.Shooter;
+import frc.robot.subsystems.RobotStateEstimator;
 import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.Swerve;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.loops.Looper;
 import libraries.cheesylib.subsystems.SubsystemManager;
 import libraries.cheesylib.util.CrashTracker;
+import libraries.cyberlib.utils.RobotName;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -30,6 +31,13 @@ public class Robot extends TimedRobot {
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
    */
+// The constructor for RobotName looks in the deploy directory (home/lvuser/deploy/) on the robot for
+// a file name RobotName.txt. If found it reads the first line of the file and
+// saves what it reads as the robot's name. Note: the name passed into the constructor
+// is the name used if no RobotName.txt file is found.
+// in the src\main\deploy directory of VS is a RobotName.txt file
+// this file is downloaded to the deploy directory with each deploy of the robot jar file
+   RobotName robotName = new RobotName("2022Robot");
 
   private String mClassName;
 
@@ -38,10 +46,7 @@ public class Robot extends TimedRobot {
   private Superstructure   mSuperstructure;
   private JSticks          mJSticks;
   private Swerve           mSwerve;
-  private Indexer          mIndexer;
-  private Collector        mCollector;
-  private Shooter          mShooter;
-  private Climber          mClimber;
+  private RobotStateEstimator mRobotStateEstimator;
 
   private final double mLoopPeriod = .005;
   private Looper mSubsystemLooper = new Looper(mLoopPeriod,Thread.NORM_PRIORITY+1);
@@ -51,13 +56,10 @@ public class Robot extends TimedRobot {
     mClassName = this.getClass().getSimpleName();
     //Initializing subsystems
     mSubsystemManager = SubsystemManager.getInstance(mClassName);
-    mJSticks =          JSticks.getInstance(mClassName);
-    mSuperstructure =   Superstructure.getInstance(mClassName);
-    mSwerve =           Swerve.getInstance(mClassName);
-    mIndexer =          Indexer.getInstance(mClassName);
-    mCollector =        Collector.getInstance(mClassName);
-    mShooter =          Shooter.getInstance(mClassName);
-    mClimber =          Climber.getInstance(mClassName);
+    mJSticks = JSticks.getInstance(mClassName);
+    mSuperstructure = Superstructure.getInstance(mClassName);
+    mSwerve = Swerve.getInstance(mClassName);
+    mRobotStateEstimator = RobotStateEstimator.getInstance(mClassName);
 
     //Create subsystem manager and add all subsystems it will manage
     mSubsystemManager = SubsystemManager.getInstance(mClassName);
@@ -67,10 +69,7 @@ public class Robot extends TimedRobot {
           mJSticks,
           mSuperstructure,
           mSwerve,
-          mIndexer,
-          mCollector,
-          mShooter,
-          mClimber
+         mRobotStateEstimator
         )
     );
 

@@ -27,10 +27,15 @@ public class RobotState {
     private static int sInstanceCount;
     private static RobotState sInstance = null;
 
-    public  static RobotState getInstance(String caller) {
-        if(sInstance == null) {
+    public static RobotState getInstance(String caller) {
+        if (sInstance == null) {
             sInstance = new RobotState(caller);
+            // this needs to happen during class creation but
+            // after sInstance is set because Swerve will get an
+            // instance of RobotState
             mSwerve = Swerve.getInstance(sClassName);
+            // reset needs mSwerve so it must be called here
+            reset(0, new Pose2d());
         }
         else {
             printUsage(caller);
@@ -50,14 +55,14 @@ public class RobotState {
     private static Swerve mSwerve;
     private static final int kObservationBufferSize = 100;
 
-    private InterpolatingTreeMap<InterpolatingDouble, Pose2d> field_to_vehicle_;
-    private GoalTracker mGoalTracker;
-    private GoalTracker mPowerCellTracker;
+    static private InterpolatingTreeMap<InterpolatingDouble, Pose2d> field_to_vehicle_;
+    static private GoalTracker mGoalTracker;
+    static private GoalTracker mPowerCellTracker;
 
     private List<Translation2d> mCameraToTarget = new ArrayList<>();
 
     private double targetHeight = Constants.kOuterTargetHeight;//Constants.kDiskTargetHeight; // ramiro changed
-    private double distance_driven_;
+    static private double distance_driven_;
 
     public final int minimumTargetQuantity = 1; // ramiro changed (we only have one target)
     private final int primaryTargetIndex = 0; // ramiro changed
@@ -98,7 +103,7 @@ public class RobotState {
 
     // public Translation2d getCubePosition(){
     // 	List<GoalTracker.TrackReport> reports = goal_tracker_.getTracks();
-    // 	if(!reports.isEmpty())
+    // 	if (!reports.isEmpty())
     // 		return goal_tracker_.getTracks().get(0).field_to_target.getTranslation();
     // 	else
     // 		return new Translation2d();
@@ -108,17 +113,15 @@ public class RobotState {
     private RobotState(String caller) {
         sClassName = this.getClass().getSimpleName();
         printUsage(caller);
-
-        reset(0, new Pose2d());
-        // mSwerve = Swerve.getInstance(sClassName);
     }
 
     /**
      * Resets the field to robot transform (robot's position on the field)
      */
-    public synchronized void reset(double start_time, Pose2d initial_field_to_vehicle) {
+    static public synchronized void reset(double start_time, Pose2d initial_field_to_vehicle) {
         field_to_vehicle_ = new InterpolatingTreeMap<>(kObservationBufferSize);
         field_to_vehicle_.put(new InterpolatingDouble(start_time), initial_field_to_vehicle);
+        mSwerve.setRobotPosition(initial_field_to_vehicle);
         mGoalTracker = new GoalTracker();
         mPowerCellTracker = new GoalTracker();
         distance_driven_ = 0.0;
@@ -361,7 +364,7 @@ public class RobotState {
 
     // public synchronized Optional<Pose2d> getRobotScoringPosition(Optional<AimingParameters> aimingParameters, Rotation2d orientation, Translation2d endTranslation){
     //     List<Pose2d> targetPositions = getCaptureTimeFieldToGoal();
-    // 	if(targetPositions.size() >= minimumTargetQuantity && aimingParameters.isPresent()){
+    // 	if (targetPositions.size() >= minimumTargetQuantity && aimingParameters.isPresent()){
     //         Translation2d targetPosition = targetPositions.get(primaryTargetIndex).getTranslation();
     //         SmartDashboard.putNumberArray("Path Pose", new double[]{targetPosition.x(), targetPosition.y(), aimingParameters.get().getTargetOrientation().getDegrees(), 0.0});
     // 		Pose2d orientedTargetPosition = new Pose2d(targetPosition, orientation).transformBy(Pose2d.fromTranslation(new Translation2d(-Constants.kRobotHalfLength, 0.0)));
@@ -377,7 +380,7 @@ public class RobotState {
 
     // public synchronized Optional<Pose2d> getOrientedTargetPosition(Optional<AimingParameters> aimingParameters){
     //     List<Pose2d> targetPositions = getCaptureTimeFieldToGoal();
-    // 	if(targetPositions.size() >= minimumTargetQuantity && aimingParameters.isPresent()){
+    // 	if (targetPositions.size() >= minimumTargetQuantity && aimingParameters.isPresent()){
     //         Translation2d targetPosition = targetPositions.get(primaryTargetIndex).getTranslation();
     //         SmartDashboard.putNumberArray("Path Pose", new double[]{targetPosition.x(), targetPosition.y(), aimingParameters.get().getTargetOrientation().getDegrees(), 0.0});
     // 		Pose2d orientedTargetPosition = new Pose2d(targetPosition, aimingParameters.get().getTargetOrientation());
@@ -387,23 +390,21 @@ public class RobotState {
     //     return Optional.empty();
     // }
 
-
-
-    public synchronized void resetRobotPosition(Translation2d targetPosition){
-        List<GoalTracker.TrackReport> reports = mGoalTracker.getTracks();
-        if (reports.size() >= minimumTargetQuantity) {
-            GoalTracker.TrackReport report = reports.get(primaryTargetIndex);
-            Translation2d robotFrameToFieldFrame = report.field_to_target.getTranslation().inverse().translateBy(targetPosition);
-            if(robotFrameToFieldFrame.norm() <= 5.0){
-                mSwerve.resetPosition(new Pose2d(mSwerve.getPose().getTranslation().translateBy(robotFrameToFieldFrame), mSwerve.getPose().getRotation()));
-                System.out.println("Coordinates corrected by " + robotFrameToFieldFrame.norm() + " inches");
-            }else{
-                System.out.println("Coordinate correction too large: " + robotFrameToFieldFrame.norm());
-            }
-        }else{
-            System.out.println("Vision did not detect target");
-        }
-    }
+//    public synchronized void resetRobotPosition(Translation2d targetPosition){
+//        List<GoalTracker.TrackReport> reports = mGoalTracker.getTracks();
+//        if (reports.size() >= minimumTargetQuantity) {
+//            GoalTracker.TrackReport report = reports.get(primaryTargetIndex);
+//            Translation2d robotFrameToFieldFrame = report.field_to_target.getTranslation().inverse().translateBy(targetPosition);
+//            if (robotFrameToFieldFrame.norm() <= 5.0){
+//                mSwerve.resetPosition(new Pose2d(mSwerve.getPose().getTranslation().translateBy(robotFrameToFieldFrame), mSwerve.getPose().getRotation()));
+//                System.out.println("Coordinates corrected by " + robotFrameToFieldFrame.norm() + " inches");
+//            }else{
+//                System.out.println("Coordinate correction too large: " + robotFrameToFieldFrame.norm());
+//            }
+//        }else{
+//            System.out.println("Vision did not detect target");
+//        }
+//    }
 
 
 
@@ -455,7 +456,7 @@ public class RobotState {
         SmartDashboard.putBoolean("Sees Target", seesTarget);
 
         /*List<Pose2d> targets = getCaptureTimeFieldToGoal();
-        if(targets.size() >= minimumTargetQuantity){
+        if (targets.size() >= minimumTargetQuantity){
             Translation2d targetPosition = targets.get(primaryTargetIndex).getTranslation();
             SmartDashboard.putNumberArray("Path Pose", new double[]{targetPosition.x(), targetPosition.y(), 0.0, 0.0});
         }*/
@@ -467,7 +468,7 @@ public class RobotState {
                 SmartDashboard.putNumber("goal_range", 0.0);
             }*/
 
-        if(Constants.kDebuggingOutput){
+        if (Constants.kDebuggingOutput){
 
             // ramiro deems theqe unclean
 
