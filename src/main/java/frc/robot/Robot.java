@@ -7,6 +7,9 @@ package frc.robot;
 import java.util.Arrays;
 
 import edu.wpi.first.wpilibj.TimedRobot;
+import frc.robot.subsystems.Climber;
+import frc.robot.subsystems.Collector;
+import frc.robot.subsystems.Indexer;
 import frc.robot.subsystems.JSticks;
 import frc.robot.subsystems.RobotStateEstimator;
 import frc.robot.subsystems.Superstructure;
@@ -50,8 +53,8 @@ public class Robot extends TimedRobot {
 
   @Override
   public void robotInit() {
-    //Initializing subsystems
     mClassName = this.getClass().getSimpleName();
+    //Initializing subsystems
     mSubsystemManager = SubsystemManager.getInstance(mClassName);
     mJSticks = JSticks.getInstance(mClassName);
     mSuperstructure = Superstructure.getInstance(mClassName);
@@ -99,13 +102,20 @@ public class Robot extends TimedRobot {
     try {
 			mSubsystemLooper.stop();
 			mSubsystemLooper.start();
-			//teleopConfig();
+			teleopConfig();
 			//robotState.enableXTarget(false);
 		} catch (Throwable t) {
 			CrashTracker.logThrowableCrash(t);
 			throw t;
 		}
   }
+
+	public void teleopConfig() {
+		if (mSwerve != null) {
+			mSwerve.setNominalDriveOutput(0.0);
+			mSwerve.set10VoltRotationMode(false);
+		}
+	}
 
   @Override
   public void teleopPeriodic() {}

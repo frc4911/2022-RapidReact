@@ -7,7 +7,7 @@ import java.util.Scanner;
 import edu.wpi.first.wpilibj.Filesystem;
 
 public class RobotName {
-    public static String name = "unknown";
+    public static String name = "Robot1";
 
     public RobotName(String defaultName) {
 		Scanner scn = null;

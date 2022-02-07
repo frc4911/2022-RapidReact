@@ -79,8 +79,11 @@ public class Constants {
 
     // brian these numbers are for junior
     // Swerve Calculations Constants (measurements are in inches)
+    // Distance is the center to center of wheels
+    // Length is front to back, width is left to right
     public static final double kWheelbaseLength = 14.5;
     public static final double kWheelbaseWidth = 14.5;
+    public static final double kSwerveDiagonal = Math.hypot(kWheelbaseLength, kWheelbaseWidth);
 
     public static double kMaxAngleAimError = 1;
     public static final double kMaxAimTurningVelocity = 0.1;
@@ -204,8 +207,9 @@ public class Constants {
 
     //Swerve Odometry Constants
     public static final double kSwerveWheelDiameter = 4.0901; //inches (actual diamter is closer to 3.87, but secondary algorithm prefers 4.0901) 3.76
-//    public static final double kSwerveRotationMotorTicksPerRotation = 2048.0 * 18.0; // FX encoder ticks per module rotation
-    /** The number of rotations the swerve drive encoder undergoes for every rotation of the wheel. */
+    // public static final double kSwerveRotationMotorTicksPerRotation = 2048.0 * 21.5; // FX encoder ticks per module rotation
+
+  /** The number of rotations the swerve drive encoder undergoes for every rotation of the wheel. */
 //    public static final double kSwerveDriveTicksPerWheelRev = .85*14178; //brian 1.21 new gear ratio 2048 * 6.923 //SwerveDriveEncoderResolution * kSwerveEncoderToWheelRatio;
 //    public static final double kSwerveEncUnitsPerInch = kSwerveDriveTicksPerWheelRev / (Math.PI * kSwerveWheelDiameter);
 
@@ -225,6 +229,7 @@ public class Constants {
 //    public static final double kSwerveRotationSpeedScalar = ((1.0 / 0.125) - 1.0) / kSwerveMaxSpeedInchesPerSecond;
 
     //Swerve Module Wheel Offsets (cancoder Rotation encoder values in degrees when the wheels are facing 0 degrees), gear bevel on inside, cw rotation from bottom is negative
+
 //     public static final int kFrontRightCancoderStartingPosDegreesCetus = -112;
 //     public static final int kFrontLeftCancoderStartingPosDegreesCetus = 92;
 //     public static final int kRearLeftCancoderStartingPosDegreesCetus = -13;

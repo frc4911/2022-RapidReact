@@ -87,6 +87,7 @@ public class Swerve extends Subsystem {
         int m2 = 0;
         int m3 = 0;
 
+
         mPigeon = Pigeon.getInstance();
 
         if (RobotName.name.equals(Constants.kJuniorName)) {
@@ -131,6 +132,7 @@ public class Swerve extends Subsystem {
         mPose = mOdometry.getPose();
 
         mMotionPlanner = new DriveMotionPlanner();
+
 //        generator = TrajectoryGenerator.getInstance();
     }
 

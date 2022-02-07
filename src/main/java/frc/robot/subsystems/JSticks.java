@@ -34,9 +34,9 @@ public class JSticks extends Subsystem{
     private CW mDriver;
     private CW mOperator;
     private LogitechExtreme mDriver2;
+
     private final double mDeadBand = 0.15; // for the turnigy (driver) swerve controls
-    private String mPrevGameState = "";
-	private Superstructure mSuperstructure;
+	// private Superstructure mSuperstructure;
     private Swerve mSwerve;
 
     //Logging
@@ -72,11 +72,12 @@ public class JSticks extends Subsystem{
 
     private JSticks(String caller){
         sClassName = this.getClass().getSimpleName();
-        mSuperstructure = Superstructure.getInstance(sClassName);
+        // mSuperstructure = Superstructure.getInstance(sClassName);
         mSwerve = Swerve.getInstance(sClassName);
         mDriver = new Xbox();
         mDriver2 = new LogitechExtreme();
         mOperator = new Xbox();
+
         printUsage(caller);
     }
 
