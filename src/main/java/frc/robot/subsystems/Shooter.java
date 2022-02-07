@@ -139,14 +139,6 @@ public class Shooter extends Subsystem{
 
     };
 
-    private SystemState handleResting() {
-        return defaultStateTransfer();
-    }
-    
-    private SystemState handleShooting() {
-        return defaultStateTransfer();
-    }
-
     public synchronized void setWantedState(WantedState state) {
         if (state != mWantedState) {
             mSubsystemManager.scheduleMe(mListIndex, 1, false);
@@ -154,6 +146,14 @@ public class Shooter extends Subsystem{
         }
 
         mWantedState = state;
+    }
+
+    private SystemState handleResting() {
+        return defaultStateTransfer();
+    }
+    
+    private SystemState handleShooting() {
+        return defaultStateTransfer();
     }
 
     private SystemState defaultStateTransfer(){

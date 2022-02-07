@@ -145,6 +145,15 @@ public class Indexer extends Subsystem{
 
     };
 
+    public synchronized void setWantedState(WantedState state) {
+        if (state != mWantedState) {
+            mSubsystemManager.scheduleMe(mListIndex, 1, false);
+            System.out.println("waking " + sClassName);
+        }
+
+        mWantedState = state;
+    }
+
     private SystemState handleHolding() {
         if(mStateChanged){
             mPeriodicIO.indexerDemand = 0.0;
@@ -175,15 +184,6 @@ public class Indexer extends Subsystem{
         }
 
         return defaultStateTransfer();
-    }
-
-    public synchronized void setWantedState(WantedState state) {
-        if (state != mWantedState) {
-            mSubsystemManager.scheduleMe(mListIndex, 1, false);
-            System.out.println("waking " + sClassName);
-        }
-
-        mWantedState = state;
     }
 
     private SystemState defaultStateTransfer(){
