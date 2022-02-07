@@ -11,6 +11,7 @@ import frc.robot.planners.DriveMotionPlanner;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Pose2dWithCurvature;
 import libraries.cheesylib.geometry.Rotation2d;
+import libraries.cheesylib.geometry.Translation2d;
 import libraries.cheesylib.loops.ILooper;
 import libraries.cheesylib.loops.Loop;
 import libraries.cheesylib.subsystems.Subsystem;
@@ -211,6 +212,14 @@ public class Swerve extends Subsystem {
         var chassisSpeeds = mSwerveDriveHelper.calculateChassisSpeeds(
                 mPeriodicIO.forward, mPeriodicIO.strafe, mPeriodicIO.rotation, mPeriodicIO.low_power,
                 mPeriodicIO.field_relative, mPeriodicIO.use_heading_controller);
+
+        if (mPeriodicIO.field_relative) {
+            var translationInput = new Translation2d(
+                    chassisSpeeds.vxInMetersPerSecond, chassisSpeeds.vyInMetersPerSecond).
+                    rotateBy(getPose().getRotation().inverse());
+            chassisSpeeds = new ChassisSpeeds(
+                    translationInput.x(), translationInput.y(), chassisSpeeds.omegaInRadiansPerSecond);
+        }
 
         // Now calculate the new Swerve Module states using inverse kinematics.
         mPeriodicIO.swerveModuleStates = mKinematics.toSwerveModuleStates(chassisSpeeds);
