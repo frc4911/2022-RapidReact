@@ -209,9 +209,11 @@ public class Swerve extends Subsystem {
      */
     private void handleManual() {
         // Helper to make driving feel better
-        var chassisSpeeds = mSwerveDriveHelper.calculateChassisSpeeds(
-                mPeriodicIO.forward, mPeriodicIO.strafe, mPeriodicIO.rotation, mPeriodicIO.low_power,
-                mPeriodicIO.field_relative, mPeriodicIO.use_heading_controller);
+        // var chassisSpeeds = mSwerveDriveHelper.calculateChassisSpeeds(
+        //         mPeriodicIO.forward, mPeriodicIO.strafe, mPeriodicIO.rotation, mPeriodicIO.low_power,
+        //         mPeriodicIO.field_relative, mPeriodicIO.use_heading_controller);
+
+        var chassisSpeeds = new ChassisSpeeds(mPeriodicIO.forward, mPeriodicIO.strafe, mPeriodicIO.rotation);
 
         if (mPeriodicIO.field_relative) {
             var translationInput = new Translation2d(
@@ -311,12 +313,14 @@ public class Swerve extends Subsystem {
      * @param timestamp The current time
      */
     private void updateOdometry(double timestamp) {
-        var frontLeft = mFrontLeft.getState();
+
         var frontRight = mFrontRight.getState();
+        var frontLeft = mFrontLeft.getState();
         var backLeft = mBackLeft.getState();
         var backRight = mBackRight.getState();
 
-        mChassisSpeeds = mKinematics.toChassisSpeeds(frontLeft,frontRight, backLeft, backRight);
+        // brian it would be nice to order the modules CCW like the rest of the code
+        mChassisSpeeds = mKinematics.toChassisSpeeds(frontLeft, frontRight, backLeft, backRight);
         mPose = mOdometry.updateWithTime(timestamp, getAngle(), frontLeft, frontRight, backLeft, backRight);
     }
 

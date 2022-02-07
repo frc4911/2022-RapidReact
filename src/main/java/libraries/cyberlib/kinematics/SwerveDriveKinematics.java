@@ -177,8 +177,7 @@ public class SwerveDriveKinematics {
      * @return An array containing the module states.
      */
     public SwerveModuleState[] toSwerveModuleStates(ChassisSpeeds chassisSpeeds) {
-        // brian temp debug should be toSwerveModuleStates
-        return toSwerveModuleStates2(chassisSpeeds, new Translation2d());
+        return toSwerveModuleStates(chassisSpeeds, new Translation2d());
     }
 
     /**
