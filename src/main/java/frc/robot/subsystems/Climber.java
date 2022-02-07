@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 
@@ -18,29 +19,42 @@ public class Climber extends Subsystem{
 
     //Hardware
     private final TalonFX mFXLeftClimber, mFXRightClimber;
-    private final Solenoid mSolenoid;
+    private final Solenoid mSlapSticks;
 
     //Subsystem Constants
 
     //Subsystem States
+    public enum SolenoidState {
+        EXTEND(true),
+        RETRACT(false);
+
+        private final boolean state;
+
+        private SolenoidState(boolean state) {
+            this.state = state;
+        }
+
+        public boolean get() {
+            return state;
+        }
+    }
+
     public enum SystemState {
         RESTING,
-        EXTENDING,
-        RETRACTING,
-        LEVELING
+        CLIMBING
     }
 
     public enum WantedState {
         REST,
-        EXTEND,
-        RETRACT,
-        LEVEL
+        CLIMB
     }
 
     private SystemState mSystemState;
     private WantedState mWantedState;
     private boolean mStateChanged;
     private PeriodicIO mPeriodicIO;
+    private SolenoidState mSolenoidState;
+    private int        mDefaultSchedDelta = 20;
 
     //Other
     private SubsystemManager mSubsystemManager;
@@ -69,7 +83,7 @@ public class Climber extends Subsystem{
         printUsage(caller);
         mFXLeftClimber = TalonFXFactory.createDefaultTalon(Ports.LEFT_CLIMBER);
         mFXRightClimber = TalonFXFactory.createDefaultTalon(Ports.RIGHT_CLIMBER);
-        mSolenoid = new Solenoid(PneumaticsModuleType.CTREPCM, Ports.CLIMBER_STAGE);
+        mSlapSticks = new Solenoid(PneumaticsModuleType.CTREPCM, Ports.CLIMBER_STAGE);
         mSubsystemManager = SubsystemManager.getInstance(sClassName);
         configMotors();
     }
@@ -110,14 +124,8 @@ public class Climber extends Subsystem{
             synchronized (Climber.this) {
                 SystemState newState;
                 switch (mSystemState) {
-                case EXTENDING:
-                    newState = handleLoading();
-                    break;
-                case RETRACTING:
-                    newState = handleBacking();
-                    break;
-                case LEVELING:
-                    newState = handleFeeding();
+                case CLIMBING:
+                    newState = handleClimbing();
                     break;
                 case RESTING:
                 default:
@@ -142,22 +150,6 @@ public class Climber extends Subsystem{
 
     };
 
-    private SystemState handleResting() {
-        return defaultStateTransfer();
-    }
-    
-    private SystemState handleLoading() {
-        return defaultStateTransfer();
-    }
-
-    private SystemState handleBacking() {
-        return defaultStateTransfer();
-    }
-
-    private SystemState handleFeeding() {
-        return defaultStateTransfer();
-    }
-
     public synchronized void setWantedState(WantedState state) {
         if (state != mWantedState) {
             mSubsystemManager.scheduleMe(mListIndex, 1, false);
@@ -167,18 +159,41 @@ public class Climber extends Subsystem{
         mWantedState = state;
     }
 
+    private SystemState handleResting() {
+        if(mStateChanged){
+            mPeriodicIO.climberDemand = 0.0;
+            mPeriodicIO.levelDemand = SolenoidState.RETRACT;
+        }
+
+        return defaultStateTransfer();
+    }
+    
+    private SystemState handleClimbing() {
+        if(mStateChanged){
+            mPeriodicIO.climberDemand = 0.0;
+            mPeriodicIO.levelDemand = SolenoidState.RETRACT;
+            mPeriodicIO.schedDeltaDesired = mDefaultSchedDelta; // stay awake
+        }
+
+        return defaultStateTransfer();
+    }
+
     private SystemState defaultStateTransfer(){
         switch(mWantedState){
-            case EXTEND:
-                return SystemState.EXTENDING;
-            case RETRACT:
-                return SystemState.RETRACTING;
-            case LEVEL:
-                return SystemState.LEVELING;
+            case CLIMB:
+                return SystemState.CLIMBING;
             case REST:
             default:
                 return SystemState.RESTING;
         }
+    }
+
+    public void setClimbSpeed(double speed){
+        mPeriodicIO.climberDemand = speed;
+    }
+
+    public void setSlapStickState(SolenoidState state){
+        mPeriodicIO.levelDemand = state;
     }
 
     @Override
@@ -190,7 +205,17 @@ public class Climber extends Subsystem{
 
     @Override
     public void writePeriodicOutputs() {
+        if(mSystemState == SystemState.CLIMBING){
+            mFXLeftClimber.set(ControlMode.PercentOutput, mPeriodicIO.climberDemand);
+            mFXRightClimber.set(ControlMode.PercentOutput, mPeriodicIO.climberDemand);
+        }else{
+            //Use pid to keep climber in place
+        }
 
+        if(mSolenoidState != mPeriodicIO.levelDemand){
+            mSolenoidState = mPeriodicIO.levelDemand;
+            mSlapSticks.set(mPeriodicIO.levelDemand.get());
+        }
     }
 
 
@@ -240,6 +265,9 @@ public class Climber extends Subsystem{
         public  double schedDeltaActual;
         public  double schedDuration;
         private double lastSchedStart;
+
+        private double climberDemand;
+        private SolenoidState levelDemand;
     }
 
 }
