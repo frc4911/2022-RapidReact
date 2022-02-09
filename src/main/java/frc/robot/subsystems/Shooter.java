@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.StatusFrame;
@@ -18,7 +19,7 @@ public class Shooter extends Subsystem{
 
     //Hardware
     private final TalonFX mFXLeftFlyWheel, mFXRightFlyWheel;
-    private final TalonFX mFXShooterHood;
+    private final TalonFX mFXShooterHood; //TO-DO: Decide if hood adjustment will be controlled by SHOOTING state or by superstructure
 
     //Subsystem Constants
 
@@ -37,6 +38,10 @@ public class Shooter extends Subsystem{
     private WantedState mWantedState;
     private boolean mStateChanged;
     private PeriodicIO mPeriodicIO;
+
+    private final double kSpeedTolerance = 250.0;
+    private double mDistance;
+    private double mHoldSpeed;
 
     //Other
     private SubsystemManager mSubsystemManager;
@@ -149,10 +154,14 @@ public class Shooter extends Subsystem{
     }
 
     private SystemState handleResting() {
+        mPeriodicIO.flywheelPercentDemand = mHoldSpeed;
+
         return defaultStateTransfer();
     }
     
     private SystemState handleShooting() {
+        //TO-DO: change mPeriodicIO.flywheelVelocityDemand based on distance
+
         return defaultStateTransfer();
     }
 
@@ -166,6 +175,46 @@ public class Shooter extends Subsystem{
         }
     }
 
+    // TO-DO: Add needed constants
+    public synchronized boolean readyToShoot() {
+        return mSystemState == SystemState.SHOOTING && mPeriodicIO.reachedDesiredSpeed && mPeriodicIO.flywheelRPM > kSpeedTolerance;
+    }
+
+    // TO-DO: Add kShootDistance constants
+    public synchronized void setShootDistance(double distance) {
+        if (mSystemState != SystemState.SHOOTING) {
+            mWantedState = WantedState.SHOOT;
+        }
+        if (mSystemState != SystemState.SHOOTING || distance != mDistance) {
+            mSubsystemManager.scheduleMe(mListIndex, 1, false);
+            System.out.println("waking " + sClassName);
+        }
+
+        //mDistance = Math.max(kMinShootDistance, Math.min(distance, 35.0));
+    }
+
+    public synchronized void setHoldSpeed(double speed) {
+        if (speed != mHoldSpeed && mSystemState == SystemState.RESTING) {
+            mSubsystemManager.scheduleMe(mListIndex, 1, false);
+            System.out.println("waking " + sClassName);
+        }
+
+        mHoldSpeed = speed;
+    }
+
+    private double ticksPer100MsToRPM(double speed) {
+        return speed / 1365.0 * 1000.0 / 100.0 * 60.0; //TO-DO: 1365.0 conversion rate needs to be changed
+    }
+
+    private double rpmToTicksPer100Ms(double speed) {
+        return speed * 1365.0 / 1000.0 * 100.0 / 60.0; //TO-DO: 1365.0 conversion rate needs to be changed
+    }
+
+    // TO-DO: Calculate and add kShootDistance constants to ensure calculations are correct for proper rpm
+    // private double getDistanceToVelocityRPM(double distance) {
+    //     return mShootRate * Math.abs(distance - kMidShootDistance) + kMinShootSpeed;
+    // }
+
     @Override
     public void readPeriodicInputs() {
         double now       = Timer.getFPGATimestamp();
@@ -175,14 +224,23 @@ public class Shooter extends Subsystem{
 
     @Override
     public void writePeriodicOutputs() {
-
+        if(mSystemState == SystemState.SHOOTING){
+            mFXLeftFlyWheel.set(ControlMode.Velocity, mPeriodicIO.flywheelVelocityDemand);
+            mFXRightFlyWheel.set(ControlMode.Velocity, mPeriodicIO.flywheelVelocityDemand);
+        } else {
+            mFXLeftFlyWheel.set(ControlMode.PercentOutput, mPeriodicIO.flywheelPercentDemand);
+            mFXRightFlyWheel.set(ControlMode.PercentOutput, mPeriodicIO.flywheelPercentDemand);
+        }
     }
 
 
     @Override
     public void stop() {
-        // TODO Auto-generated method stub
-        
+        mFXLeftFlyWheel.set(ControlMode.PercentOutput, 0.0);
+        mFXRightFlyWheel.set(ControlMode.PercentOutput, 0.0);
+
+        mPeriodicIO.flywheelVelocityDemand = 0.0;
+        mPeriodicIO.flywheelPercentDemand = 0.0;
     }
 
     @Override
@@ -225,6 +283,14 @@ public class Shooter extends Subsystem{
         public  double schedDeltaActual;
         public  double schedDuration;
         private double lastSchedStart;
+
+        //Inputs
+        private boolean reachedDesiredSpeed;
+        private double flywheelRPM;
+
+        //Outputs
+        private double flywheelVelocityDemand;
+        private double flywheelPercentDemand;
     }
 
 }
