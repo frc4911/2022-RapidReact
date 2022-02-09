@@ -120,8 +120,8 @@ public class Swerve extends Subsystem {
             mModules.add(mBackRight = new SwerveDriveModule(Constants.kBackRightModuleConstantsRobot2022, mSwerveConfiguration.maxSpeedInMetersPerSecond));
         }
 
-//        mSwerveDriveHelper = new SwerveDriveHelper(mSwerveConfiguration.maxSpeedInMetersPerSecond,
-//                mSwerveConfiguration.maxSpeedInRadiansPerSecond);
+        mSwerveDriveHelper = new SwerveDriveHelper(mSwerveConfiguration.maxSpeedInMetersPerSecond,
+                mSwerveConfiguration.maxSpeedInRadiansPerSecond);
 
         mKinematics = new SwerveDriveKinematics(mSwerveConfiguration.moduleLocations);
 		mOdometry = new SwerveDriveOdometry(mKinematics, mPigeon.getYaw());

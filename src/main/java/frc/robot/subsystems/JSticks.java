@@ -161,11 +161,9 @@ public class JSticks extends Subsystem{
 
         if (!maintainHeading) {
             mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.OFF);
-        } else if ((mHeadingController
-                .getHeadingControllerState() == SwerveHeadingController.HeadingControllerState.SNAP
-                && mHeadingController.isAtGoal()) || changeHeadingSetpoint) {
-            mHeadingController
-                    .setHeadingControllerState(SwerveHeadingController.HeadingControllerState.MAINTAIN);
+    // brian, i do not see where the code sets the SNAP state
+        } else if ((mHeadingController.getHeadingControllerState() == SwerveHeadingController.HeadingControllerState.SNAP && mHeadingController.isAtGoal()) || changeHeadingSetpoint) {
+            mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.MAINTAIN);
             mHeadingController.setGoal(mSwerve.getHeading().getDegrees());
         }
 
@@ -215,10 +213,10 @@ public class JSticks extends Subsystem{
                 dr_LeftStickX_Rotate = 0;    
             }
             else{
-                dr_LeftStickX_Rotate = -mDriver2.getRaw(LogitechExtreme.Z, mDeadBand)/2.0;
+                dr_LeftStickX_Rotate = -mDriver2.getRaw(LogitechExtreme.Z, mDeadBand);
             }
             dr_YButton_ResetIMU = mDriver2.getButton(LogitechExtreme.THUMB_BUTTON, CW.PRESSED_EDGE);
-            // brian this should switch to robot oriented
+            // hold trigger to switch to robot oriented
             dr_LeftToggleDown_RobotOrient = mDriver2.getButton(LogitechExtreme.TRIGGER, CW.PRESSED_LEVEL);
         }
 

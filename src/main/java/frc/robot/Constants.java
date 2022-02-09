@@ -258,15 +258,19 @@ public class Constants {
 
     static {
         kFrontRightModuleConstantsJunior.kName = "Front Right";
+        kFrontRightModuleConstantsJunior.kModuleId = 0;
         kFrontRightModuleConstantsJunior.kDriveMotorTalonId = Ports.FRONT_RIGHT_DRIVE;
-        kFrontRightModuleConstantsJunior.kSteerMotorTalonId = Ports.FRONT_RIGHT_ROTATION;
+        kFrontRightModuleConstantsJunior.kSteerMotorTalonId = Ports.FRONT_RIGHT_STEER;
         kFrontRightModuleConstantsJunior.kSteerMotorEncoderHomeOffset = 883.0;
         kFrontRightModuleConstantsJunior.kCANCoderOffsetDegrees = 80;
-        kFrontRightModuleConstantsJunior.kCANCoderId = Ports.FRONT_RIGHT_ENC;
+        kFrontRightModuleConstantsJunior.kCANCoderId = Ports.FRONT_RIGHT_CANCODER;
         kFrontRightModuleConstantsJunior.kWheelDiameter = kMK2_WheelDiameter;
         kFrontRightModuleConstantsJunior.kDriveReduction = (18.0 / 38.0) * (26.0 / 18.0) * (15.0 / 60.0);
         kFrontRightModuleConstantsJunior.kSteerReduction = kMK2_SteerReduction;
-        kFrontRightModuleConstantsJunior.kModuleId = 0;
+        kFrontRightModuleConstantsJunior.kSteerMotorSlot0Kp = 0.4;
+		kFrontRightModuleConstantsJunior.kSteerMotorSlot0Ki = 0.0;
+		kFrontRightModuleConstantsJunior.kSteerMotorSlot0Kd = 0.0;
+		kFrontRightModuleConstantsJunior.kSteerMotorSlot0Kf = 0.0;
 
         /* ... */
     }
@@ -275,15 +279,19 @@ public class Constants {
 
     static {
         kFrontLeftModuleConstantsJunior.kName = "Front Left";
+        kFrontLeftModuleConstantsJunior.kModuleId = 1;
         kFrontLeftModuleConstantsJunior.kDriveMotorTalonId = Ports.FRONT_LEFT_DRIVE;
-        kFrontLeftModuleConstantsJunior.kSteerMotorTalonId = Ports.FRONT_LEFT_ROTATION;
+        kFrontLeftModuleConstantsJunior.kSteerMotorTalonId = Ports.FRONT_LEFT_STEER;
         kFrontLeftModuleConstantsJunior.kSteerMotorEncoderHomeOffset = 1683.0;
         kFrontLeftModuleConstantsJunior.kCANCoderOffsetDegrees = -28;
-        kFrontLeftModuleConstantsJunior.kCANCoderId = Ports.FRONT_LEFT_ENC;
+        kFrontLeftModuleConstantsJunior.kCANCoderId = Ports.FRONT_LEFT_CANCODER;
         kFrontLeftModuleConstantsJunior.kWheelDiameter = kMK2_WheelDiameter;
         kFrontLeftModuleConstantsJunior.kDriveReduction = (18.0 / 38.0) * (26.0 / 18.0) * (15.0 / 60.0);
         kFrontLeftModuleConstantsJunior.kSteerReduction = kMK2_SteerReduction;
-        kFrontLeftModuleConstantsJunior.kModuleId = 1;
+        kFrontLeftModuleConstantsJunior.kSteerMotorSlot0Kp = 0.4;
+		kFrontLeftModuleConstantsJunior.kSteerMotorSlot0Ki = 0.0;
+		kFrontLeftModuleConstantsJunior.kSteerMotorSlot0Kd = 0.0;
+		kFrontLeftModuleConstantsJunior.kSteerMotorSlot0Kf = 0.0;
         /* ... */
     }
 
@@ -291,15 +299,19 @@ public class Constants {
 
     static {
         kBackLeftModuleConstantsJunior.kName = "Back Left";
-        kBackLeftModuleConstantsJunior.kDriveMotorTalonId = Ports.REAR_LEFT_DRIVE;
-        kBackLeftModuleConstantsJunior.kSteerMotorTalonId = Ports.REAR_LEFT_ROTATION;
+        kBackLeftModuleConstantsJunior.kModuleId = 2;
+        kBackLeftModuleConstantsJunior.kDriveMotorTalonId = Ports.BACK_LEFT_DRIVE;
+        kBackLeftModuleConstantsJunior.kSteerMotorTalonId = Ports.BACK_LEFT_STEER;
         kBackLeftModuleConstantsJunior.kSteerMotorEncoderHomeOffset = 3451.0;
         kBackLeftModuleConstantsJunior.kCANCoderOffsetDegrees = 146;
-        kBackLeftModuleConstantsJunior.kCANCoderId = Ports.REAR_LEFT_ENC;
+        kBackLeftModuleConstantsJunior.kCANCoderId = Ports.BACK_LEFT_CANCODER;
         kBackLeftModuleConstantsJunior.kWheelDiameter = kMK2_WheelDiameter;
         kBackLeftModuleConstantsJunior.kDriveReduction = (18.0 / 38.0) * (26.0 / 18.0) * (15.0 / 60.0);
         kBackLeftModuleConstantsJunior.kSteerReduction = kMK2_SteerReduction;
-        kBackLeftModuleConstantsJunior.kModuleId = 2;
+        kBackLeftModuleConstantsJunior.kSteerMotorSlot0Kp = 0.4;
+		kBackLeftModuleConstantsJunior.kSteerMotorSlot0Ki = 0.0;
+		kBackLeftModuleConstantsJunior.kSteerMotorSlot0Kd = 0.0;
+		kBackLeftModuleConstantsJunior.kSteerMotorSlot0Kf = 0.0;
         /* ... */
     }
 
@@ -307,15 +319,19 @@ public class Constants {
 
     static {
         kBackRightModuleConstantsJunior.kName = "Back Right";
-        kBackRightModuleConstantsJunior.kDriveMotorTalonId = Ports.REAR_RIGHT_DRIVE;
-        kBackRightModuleConstantsJunior.kSteerMotorTalonId = Ports.REAR_RIGHT_ROTATION;
+        kBackRightModuleConstantsJunior.kModuleId = 3;
+        kBackRightModuleConstantsJunior.kDriveMotorTalonId = Ports.BACK_RIGHT_DRIVE;
+        kBackRightModuleConstantsJunior.kSteerMotorTalonId = Ports.BACK_RIGHT_STEER;
         kBackRightModuleConstantsJunior.kSteerMotorEncoderHomeOffset = -327.0;
-        kBackRightModuleConstantsJunior.kCANCoderId = Ports.REAR_RIGHT_ENC;
+        kBackRightModuleConstantsJunior.kCANCoderId = Ports.BACK_RIGHT_CANCODER;
         kBackRightModuleConstantsJunior.kCANCoderOffsetDegrees = -24;
         kBackRightModuleConstantsJunior.kWheelDiameter = kMK2_WheelDiameter;
         kBackRightModuleConstantsJunior.kDriveReduction = (18.0 / 38.0) * (26.0 / 18.0) * (15.0 / 60.0);
         kBackRightModuleConstantsJunior.kSteerReduction = kMK2_SteerReduction;
-        kBackRightModuleConstantsJunior.kModuleId = 3;
+        kBackRightModuleConstantsJunior.kSteerMotorSlot0Kp = 0.4;
+		kBackRightModuleConstantsJunior.kSteerMotorSlot0Ki = 0.0;
+		kBackRightModuleConstantsJunior.kSteerMotorSlot0Kd = 0.0;
+		kBackRightModuleConstantsJunior.kSteerMotorSlot0Kf = 0.0;
         /* ... */
     }
 
@@ -335,9 +351,9 @@ public class Constants {
     static {
         kFrontRightModuleConstantsDeadEye.kName = "Front Right";
         kFrontRightModuleConstantsDeadEye.kDriveMotorTalonId = Ports.FRONT_RIGHT_DRIVE;
-        kFrontRightModuleConstantsDeadEye.kSteerMotorTalonId = Ports.FRONT_RIGHT_ROTATION;
+        kFrontRightModuleConstantsDeadEye.kSteerMotorTalonId = Ports.FRONT_RIGHT_STEER;
         kFrontRightModuleConstantsDeadEye.kSteerMotorEncoderHomeOffset = 883.0;
-        kFrontRightModuleConstantsDeadEye.kCANCoderId = Ports.FRONT_RIGHT_ENC;
+        kFrontRightModuleConstantsDeadEye.kCANCoderId = Ports.FRONT_RIGHT_CANCODER;
         kFrontRightModuleConstantsDeadEye.kCANCoderOffsetDegrees = 0;
         kFrontRightModuleConstantsDeadEye.kWheelDiameter = kMK2_WheelDiameter;
         kFrontRightModuleConstantsDeadEye.kDriveReduction = (16.0 / 40.0) * (26.0 / 18.0) * (15.0 / 60.0);
@@ -350,9 +366,9 @@ public class Constants {
     static {
         kFrontLeftModuleConstantsDeadEye.kName = "Front Left";
         kFrontLeftModuleConstantsDeadEye.kDriveMotorTalonId = Ports.FRONT_LEFT_DRIVE;
-        kFrontLeftModuleConstantsDeadEye.kSteerMotorTalonId = Ports.FRONT_LEFT_ROTATION;
+        kFrontLeftModuleConstantsDeadEye.kSteerMotorTalonId = Ports.FRONT_LEFT_STEER;
         kFrontLeftModuleConstantsDeadEye.kSteerMotorEncoderHomeOffset = 1683.0;
-        kFrontLeftModuleConstantsDeadEye.kCANCoderId = Ports.FRONT_LEFT_ENC;
+        kFrontLeftModuleConstantsDeadEye.kCANCoderId = Ports.FRONT_LEFT_CANCODER;
         kFrontLeftModuleConstantsDeadEye.kCANCoderOffsetDegrees = 0;
         kFrontLeftModuleConstantsDeadEye.kWheelDiameter = kMK2_WheelDiameter;
         kFrontLeftModuleConstantsDeadEye.kDriveReduction = (16.0 / 40.0) * (26.0 / 18.0) * (15.0 / 60.0);
@@ -364,10 +380,10 @@ public class Constants {
 
     static {
         kBackLeftModuleConstantsDeadEye.kName = "Back Left";
-        kBackLeftModuleConstantsDeadEye.kDriveMotorTalonId = Ports.REAR_LEFT_DRIVE;
-        kBackLeftModuleConstantsDeadEye.kSteerMotorTalonId = Ports.REAR_LEFT_ROTATION;
+        kBackLeftModuleConstantsDeadEye.kDriveMotorTalonId = Ports.BACK_LEFT_DRIVE;
+        kBackLeftModuleConstantsDeadEye.kSteerMotorTalonId = Ports.BACK_LEFT_STEER;
         kBackLeftModuleConstantsDeadEye.kSteerMotorEncoderHomeOffset = 3451.0;
-        kBackLeftModuleConstantsDeadEye.kCANCoderId = Ports.REAR_LEFT_ENC;
+        kBackLeftModuleConstantsDeadEye.kCANCoderId = Ports.BACK_LEFT_CANCODER;
         kBackLeftModuleConstantsDeadEye.kCANCoderOffsetDegrees = 0;
         kBackLeftModuleConstantsDeadEye.kWheelDiameter = kMK2_WheelDiameter;
         kBackLeftModuleConstantsDeadEye.kDriveReduction = (16.0 / 40.0) * (26.0 / 18.0) * (15.0 / 60.0);
@@ -379,10 +395,10 @@ public class Constants {
 
     static {
         kBackRightModuleConstantsDeadEye.kName = "Back Right";
-        kBackRightModuleConstantsDeadEye.kDriveMotorTalonId = Ports.REAR_RIGHT_DRIVE;
-        kBackRightModuleConstantsDeadEye.kSteerMotorTalonId = Ports.REAR_RIGHT_ROTATION;
+        kBackRightModuleConstantsDeadEye.kDriveMotorTalonId = Ports.BACK_RIGHT_DRIVE;
+        kBackRightModuleConstantsDeadEye.kSteerMotorTalonId = Ports.BACK_RIGHT_STEER;
         kBackRightModuleConstantsDeadEye.kSteerMotorEncoderHomeOffset = -327.0;
-        kBackRightModuleConstantsDeadEye.kCANCoderId = Ports.REAR_RIGHT_ENC;
+        kBackRightModuleConstantsDeadEye.kCANCoderId = Ports.BACK_RIGHT_CANCODER;
         kBackRightModuleConstantsDeadEye.kCANCoderOffsetDegrees = 0;
         kBackRightModuleConstantsDeadEye.kWheelDiameter = kMK2_WheelDiameter;
         kBackRightModuleConstantsDeadEye.kDriveReduction = (16.0 / 40.0) * (26.0 / 18.0) * (15.0 / 60.0);
@@ -405,9 +421,9 @@ public class Constants {
     static {
         kFrontRightModuleConstantsRobot2022.kName = "Front Right";
         kFrontRightModuleConstantsRobot2022.kDriveMotorTalonId = Ports.FRONT_RIGHT_DRIVE;
-        kFrontRightModuleConstantsRobot2022.kSteerMotorTalonId = Ports.FRONT_RIGHT_ROTATION;
+        kFrontRightModuleConstantsRobot2022.kSteerMotorTalonId = Ports.FRONT_RIGHT_STEER;
         kFrontRightModuleConstantsRobot2022.kSteerMotorEncoderHomeOffset = 883.0;
-        kFrontRightModuleConstantsRobot2022.kCANCoderId = Ports.FRONT_RIGHT_ENC;
+        kFrontRightModuleConstantsRobot2022.kCANCoderId = Ports.FRONT_RIGHT_CANCODER;
         kFrontRightModuleConstantsRobot2022.kCANCoderOffsetDegrees = 0;
         kFrontRightModuleConstantsRobot2022.kWheelDiameter = kMK4_L2iWheelDiameter;
         kFrontRightModuleConstantsRobot2022.kDriveReduction = kMK4_L2iDriveReduction;
@@ -420,9 +436,9 @@ public class Constants {
     static {
         kFrontLeftModuleConstantsRobot2022.kName = "Front Left";
         kFrontLeftModuleConstantsRobot2022.kDriveMotorTalonId = Ports.FRONT_LEFT_DRIVE;
-        kFrontLeftModuleConstantsRobot2022.kSteerMotorTalonId = Ports.FRONT_LEFT_ROTATION;
+        kFrontLeftModuleConstantsRobot2022.kSteerMotorTalonId = Ports.FRONT_LEFT_STEER;
         kFrontLeftModuleConstantsRobot2022.kSteerMotorEncoderHomeOffset = 1683.0;
-        kFrontLeftModuleConstantsRobot2022.kCANCoderId = Ports.FRONT_LEFT_ENC;
+        kFrontLeftModuleConstantsRobot2022.kCANCoderId = Ports.FRONT_LEFT_CANCODER;
         kFrontLeftModuleConstantsRobot2022.kCANCoderOffsetDegrees = 0;
         kFrontLeftModuleConstantsRobot2022.kWheelDiameter = kMK4_L2iWheelDiameter;
         kFrontLeftModuleConstantsRobot2022.kDriveReduction = kMK4_L2iDriveReduction;
@@ -434,10 +450,10 @@ public class Constants {
 
     static {
         kBackLeftModuleConstantsRobot2022.kName = "Back Left";
-        kBackLeftModuleConstantsRobot2022.kDriveMotorTalonId = Ports.REAR_LEFT_DRIVE;
-        kBackLeftModuleConstantsRobot2022.kSteerMotorTalonId = Ports.REAR_LEFT_ROTATION;
+        kBackLeftModuleConstantsRobot2022.kDriveMotorTalonId = Ports.BACK_LEFT_DRIVE;
+        kBackLeftModuleConstantsRobot2022.kSteerMotorTalonId = Ports.BACK_LEFT_STEER;
         kBackLeftModuleConstantsRobot2022.kSteerMotorEncoderHomeOffset = 3451.0;
-        kBackLeftModuleConstantsRobot2022.kCANCoderId = Ports.REAR_LEFT_ENC;
+        kBackLeftModuleConstantsRobot2022.kCANCoderId = Ports.BACK_LEFT_CANCODER;
         kBackLeftModuleConstantsRobot2022.kCANCoderOffsetDegrees = 0;
         kBackLeftModuleConstantsRobot2022.kWheelDiameter = kMK4_L2iWheelDiameter;
         kBackLeftModuleConstantsRobot2022.kDriveReduction = kMK4_L2iDriveReduction;
@@ -449,10 +465,10 @@ public class Constants {
 
     static {
         kBackRightModuleConstantsRobot2022.kName = "Back Right";
-        kBackRightModuleConstantsRobot2022.kDriveMotorTalonId = Ports.REAR_RIGHT_DRIVE;
-        kBackRightModuleConstantsRobot2022.kSteerMotorTalonId = Ports.REAR_RIGHT_ROTATION;
+        kBackRightModuleConstantsRobot2022.kDriveMotorTalonId = Ports.BACK_RIGHT_DRIVE;
+        kBackRightModuleConstantsRobot2022.kSteerMotorTalonId = Ports.BACK_RIGHT_STEER;
         kBackRightModuleConstantsRobot2022.kSteerMotorEncoderHomeOffset = -327.0;
-        kBackRightModuleConstantsRobot2022.kCANCoderId = Ports.REAR_RIGHT_ENC;
+        kBackRightModuleConstantsRobot2022.kCANCoderId = Ports.BACK_RIGHT_CANCODER;
         kBackRightModuleConstantsRobot2022.kCANCoderOffsetDegrees = 0;
         kBackRightModuleConstantsRobot2022.kWheelDiameter = kMK4_L2iWheelDiameter;
         kBackRightModuleConstantsRobot2022.kDriveReduction = kMK4_L2iDriveReduction;

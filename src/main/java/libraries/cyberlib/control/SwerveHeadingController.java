@@ -36,9 +36,6 @@ public class SwerveHeadingController {
 
     private SwerveHeadingController() {
         mPIDFController = new SynchronousPIDF();
-        // brian temp debug
-        SmartDashboard.putNumber("heading kp", SmartDashboard.getNumber("heading kp", 0));
-        SmartDashboard.putNumber("heading kd", SmartDashboard.getNumber("heading kd", 0));
     }
 
     public HeadingControllerState getHeadingControllerState() {
@@ -84,6 +81,7 @@ public class SwerveHeadingController {
                 mPIDFController.setPID(Constants.kSnapSwerveHeadingKp, Constants.kSnapSwerveHeadingKi, Constants.kSnapSwerveHeadingKd);
                 break;
             case MAINTAIN:
+                // brian temp debug
                 mPIDFController.setPID(Constants.kMaintainSwerveHeadingKp, Constants.kMaintainSwerveHeadingKi, Constants.kMaintainSwerveHeadingKd);
                 break;
         }

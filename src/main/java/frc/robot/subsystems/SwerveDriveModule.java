@@ -86,13 +86,13 @@ public class SwerveDriveModule extends Subsystem {
 		public int kSteerMotorClosedLoopAllowableError = 5;
 
         // brian needs tuning (if used)
-		public double kSteerMotorSlot1Kp = 0.0;
-		public double kSteerMotorSlot1Ki = 0.0;
-		public double kSteerMotorSlot1Kd = 0.0;
-		public double kSteerMotorSlot1Kf = 0.0;
-		public int kSteerMotorSlot1IZone = 25;
-		public int kSteerMotorSlot1CruiseVelocity = 1698;
-		public int kSteerMotorSlot1Acceleration = 20379; // 12 * kSteerMotorCruiseVelocity
+		// public double kSteerMotorSlot1Kp = 0.0;
+		// public double kSteerMotorSlot1Ki = 0.0;
+		// public double kSteerMotorSlot1Kd = 0.0;
+		// public double kSteerMotorSlot1Kf = 0.0;
+		// public int kSteerMotorSlot1IZone = 25;
+		// public int kSteerMotorSlot1CruiseVelocity = 1698;
+		// public int kSteerMotorSlot1Acceleration = 20379; // 12 * kSteerMotorCruiseVelocity
 
 		// Steer Motor current/voltage
 		public int kSteerMotorContinuousCurrentLimit = 20; // amps
@@ -153,6 +153,8 @@ public class SwerveDriveModule extends Subsystem {
         mMaxSpeedInMetersPerSecond = maxSpeedInMetersPerSecond;
         mModuleName = String.format("%s %d", mConstants.kName, mConstants.kModuleId);
         mPeriodicIO.moduleID = mConstants.kModuleId;
+
+        System.out.println("SwerveDriveModule "+mModuleName+","+mConstants.kSteerMotorSlot0Kp);
 
         mDriveMotor = TalonFXFactory.createDefaultTalon(mConstants.kDriveMotorTalonId);
         mSteerMotor = TalonFXFactory.createDefaultTalon(mConstants.kSteerMotorTalonId);
@@ -226,7 +228,7 @@ public class SwerveDriveModule extends Subsystem {
         mSteerMotor.configVelocityMeasurementWindow(mConstants.kSteerMotorVelocityMeasurementWindow, Constants.kLongCANTimeoutMs);
         mSteerMotor.selectProfileSlot(0, 0);
 
-        // Slot 1 is for normal use (tuned for fx integrated encoder)
+        //Slot 0 is for normal use (tuned for fx integrated encoder)
         mSteerMotor.config_kP(0, mConstants.kSteerMotorSlot0Kp, Constants.kLongCANTimeoutMs);
         mSteerMotor.config_kI(0, mConstants.kSteerMotorSlot0Ki, Constants.kLongCANTimeoutMs);
         mSteerMotor.config_kD(0, mConstants.kSteerMotorSlot0Kd, Constants.kLongCANTimeoutMs);
@@ -249,7 +251,7 @@ public class SwerveDriveModule extends Subsystem {
 //        mSteerMotor.config_IntegralZone(1, mConstants.kSteerMotorSlot1IZone, Constants.kLongCANTimeoutMs);
 
         // TODO:  Do we want to do command motor to "move" here (even though it should be stationary)?
-        mSteerMotor.set(ControlMode.MotionMagic, mSteerMotor.getSelectedSensorPosition(0));
+        // mSteerMotor.set(ControlMode.MotionMagic, mSteerMotor.getSelectedSensorPosition(0));
 
         // Configure Drive motor
         mDriveMotor.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor, 0, Constants.kLongCANTimeoutMs);
@@ -360,7 +362,8 @@ public class SwerveDriveModule extends Subsystem {
             adjustedReferenceAngleRadians += 2.0 * Math.PI;
         }
 
-        mPeriodicIO.steerControlMode = ControlMode.MotionMagic;
+        // mPeriodicIO.steerControlMode = ControlMode.MotionMagic;
+        mPeriodicIO.steerControlMode = ControlMode.Position;
         // brian check this code again may want to switch back to adjustedReference...
         // mPeriodicIO.steerDemand = radiansToEncoderUnits(adjustedReferenceAngleRadians);
         mPeriodicIO.steerDemand = radiansToEncoderUnits(referenceAngleRadians);
