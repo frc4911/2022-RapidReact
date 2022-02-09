@@ -215,15 +215,17 @@ public class Swerve extends Subsystem {
         //         mPeriodicIO.forward, mPeriodicIO.strafe, mPeriodicIO.rotation, mPeriodicIO.low_power,
         //         mPeriodicIO.field_relative, mPeriodicIO.use_heading_controller);
 
-        var chassisSpeeds = new ChassisSpeeds(mPeriodicIO.forward, mPeriodicIO.strafe, mPeriodicIO.rotation);
+        // Scale joystick values to SI units and relative to maximum.
+        var translationInput = new Translation2d(mPeriodicIO.forward, mPeriodicIO.strafe)
+                .scale(mSwerveConfiguration.maxSpeedInMetersPerSecond);
+
+        var rotationInput = mPeriodicIO.rotation * mSwerveConfiguration.maxSpeedInRadiansPerSecond;
 
         if (mPeriodicIO.field_relative) {
-            var translationInput = new Translation2d(
-                    chassisSpeeds.vxInMetersPerSecond, chassisSpeeds.vyInMetersPerSecond).
-                    rotateBy(getPose().getRotation().inverse());
-            chassisSpeeds = new ChassisSpeeds(
-                    translationInput.x(), translationInput.y(), chassisSpeeds.omegaInRadiansPerSecond);
+            translationInput = translationInput.rotateBy(getPose().getRotation().inverse());
         }
+
+        var chassisSpeeds = new ChassisSpeeds(translationInput.x(), translationInput.y(), rotationInput);
 
         // Now calculate the new Swerve Module states using inverse kinematics.
         mPeriodicIO.swerveModuleStates = mKinematics.toSwerveModuleStates(chassisSpeeds);
@@ -232,6 +234,7 @@ public class Swerve extends Subsystem {
         // System.out.println(mPeriodicIO.swerveModuleStates[1].toString());
         // System.out.println(mPeriodicIO.swerveModuleStates[2].toString());
         // System.out.println(mPeriodicIO.swerveModuleStates[3].toString());
+
         // Normalize wheels speeds if any individual speed is above the specified maximum.
         SwerveDriveKinematics.desaturateWheelSpeeds(
                 mPeriodicIO.swerveModuleStates, mSwerveConfiguration.maxSpeedInMetersPerSecond);
@@ -240,9 +243,7 @@ public class Swerve extends Subsystem {
         // if(++throttlePrints%printFreq==0){
         //     System.out.println("01 s handleManual (mPeriodicIO.swerveModuleStates[0]) ("+mPeriodicIO.swerveModuleStates[0].toString()+")");
         // }
-        
     }
-
 
 //    //Assigns appropriate directions for scrub factors
 //    public void setCarpetDirection(boolean standardDirection) {
@@ -322,8 +323,8 @@ public class Swerve extends Subsystem {
         var backRight = mBackRight.getState();
 
         // brian it would be nice to order the modules CCW like the rest of the code
-        mChassisSpeeds = mKinematics.toChassisSpeeds(frontLeft, frontRight, backLeft, backRight);
-        mPose = mOdometry.updateWithTime(timestamp, getAngle(), frontLeft, frontRight, backLeft, backRight);
+        mChassisSpeeds = mKinematics.toChassisSpeeds(frontRight, frontLeft, backLeft, backRight);
+        mPose = mOdometry.updateWithTime(timestamp, getAngle(), frontRight, frontLeft, backLeft, backRight);
     }
 
     public boolean isDoneWithTrajectory() {
