@@ -10,6 +10,25 @@ import libraries.cyberlib.io.Xbox;
 
 public class JSticks extends Subsystem{
 
+    /*
+    TO-DO:
+    Uncomment driver and operator controllers and superstructure
+
+    Add joystick input variables to PeriodicIO
+        -The button allocations may be arbitrarily assigned for now
+        -They will eventually be based on driver and operator preference,
+        so they will likely change
+        -Naming convention: <which controller, dr or op><button being used>_<robot action>
+        e.g. opLeftTrigger_Collect
+
+    Read joystick inputs in readPeriodicInputs(){}
+
+    Look at 2020 or 2021 Deadeye code and add...
+        -currentState and previousState local variables
+        -activeBtnIsReleased() and all
+        -long if else chain with the mSuperstructure calls inside
+    */
+
     public enum SystemState {
         READINGBUTTONS,
     }
@@ -196,5 +215,6 @@ public class JSticks extends Subsystem{
         public double  dr_LeftStickX_Rotate;     // drive
         public boolean dr_YButton_ResetIMU = false;      // reset direction
         public boolean dr_LeftToggleDown_RobotOrient = false; // field/robot oriented
+
     }
 }
