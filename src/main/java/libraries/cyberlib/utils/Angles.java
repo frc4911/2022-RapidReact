@@ -32,12 +32,12 @@ public class Angles {
      * @return A normalized angle between -pi and pi
      */
     public static double normalizeAngle(final double angleInRadians) {
-        var a = normalizeAnglePositive(angleInRadians);
-        if (a > Math.PI) {
-            a -= 2.0 * Math.PI;
+        var angle = normalizeAnglePositive(angleInRadians);
+        if (angle > Math.PI) {
+            angle -= 2.0 * Math.PI;
         }
 
-        return a;
+        return angle;
     }
 
     /**
