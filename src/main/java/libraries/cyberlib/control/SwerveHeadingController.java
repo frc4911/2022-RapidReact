@@ -76,21 +76,15 @@ public class SwerveHeadingController {
         } else if (current_error < -180) {
             current_angle -= 360;
         }
-        // brian temp debug
-        double new_kp = SmartDashboard.getNumber("heading kp", 0);
-        SmartDashboard.putNumber("heading err", current_error);
-        double new_kd = SmartDashboard.getNumber("heading kd", 0);
 
         switch (mHeadingControllerState) {
             case OFF:
                 return 0.0;
             case SNAP:
-            // brian temp debug
-            mPIDFController.setPID(new_kp /*Constants.kSnapSwerveHeadingKp*/, Constants.kSnapSwerveHeadingKi, new_kd /*Constants.kSnapSwerveHeadingKd*/);
+                mPIDFController.setPID(Constants.kSnapSwerveHeadingKp, Constants.kSnapSwerveHeadingKi, Constants.kSnapSwerveHeadingKd);
                 break;
             case MAINTAIN:
-                // brian temp debug
-                mPIDFController.setPID(new_kp/*Constants.kMaintainSwerveHeadingKp*/, Constants.kMaintainSwerveHeadingKi, new_kd /*Constants.kMaintainSwerveHeadingKd*/);
+                mPIDFController.setPID(Constants.kMaintainSwerveHeadingKp, Constants.kMaintainSwerveHeadingKi, Constants.kMaintainSwerveHeadingKd);
                 break;
         }
 

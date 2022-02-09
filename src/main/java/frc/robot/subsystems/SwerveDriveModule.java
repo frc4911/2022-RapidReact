@@ -226,7 +226,7 @@ public class SwerveDriveModule extends Subsystem {
         mSteerMotor.configVelocityMeasurementWindow(mConstants.kSteerMotorVelocityMeasurementWindow, Constants.kLongCANTimeoutMs);
         mSteerMotor.selectProfileSlot(0, 0);
 
-        //Slot 1 is for normal use (tuned for fx integrated encoder)
+        // Slot 1 is for normal use (tuned for fx integrated encoder)
         mSteerMotor.config_kP(0, mConstants.kSteerMotorSlot0Kp, Constants.kLongCANTimeoutMs);
         mSteerMotor.config_kI(0, mConstants.kSteerMotorSlot0Ki, Constants.kLongCANTimeoutMs);
         mSteerMotor.config_kD(0, mConstants.kSteerMotorSlot0Kd, Constants.kLongCANTimeoutMs);
