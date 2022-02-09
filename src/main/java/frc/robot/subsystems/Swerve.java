@@ -39,7 +39,8 @@ public class Swerve extends Subsystem {
 
 	// Module declaration
 	private final List<SwerveDriveModule> mModules = new ArrayList<>();
-	private SwerveDriveModule mFrontRight=null, mFrontLeft=null, mBackLeft=null, mBackRight=null;
+	public SwerveDriveModule mFrontRight=null;
+	private SwerveDriveModule mFrontLeft=null, mBackLeft=null, mBackRight=null;
 
 	double lastUpdateTimestamp = 0;
 

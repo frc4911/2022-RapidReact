@@ -134,7 +134,12 @@ public class SwerveDriveModule extends Subsystem {
 		public int kDriveStatusFrame10UpdateRate = 200; // motion magic, ms
         public SensorVelocityMeasPeriod kDriveMotorVelocityMeasurementPeriod = SensorVelocityMeasPeriod.Period_100Ms; // dt for velocity measurements, ms
 		public int kDriveVelocityMeasurementWindow = 32; // # of samples in rolling average
-	}
+
+        // imu heading PID constants
+        public double kSwerveHeadingKp = 0.018;
+        public double kSwerveHeadingKi = 0.0;
+        public double kSwerveHeadingKd = 0.0;
+    }
 
 	private final boolean mLoggingEnabled = true;    // used to disable logging for this subsystem only
 	private final CheckFaults mFaultChecker = new CheckFaults();
@@ -144,7 +149,7 @@ public class SwerveDriveModule extends Subsystem {
 
 	private final PeriodicIO mPeriodicIO = new PeriodicIO();
 	private ControlState mControlState = ControlState.NEUTRAL;
-	private final SwerveModuleConstants mConstants;
+	public final SwerveModuleConstants mConstants;
 
     private double mMaxSpeedInMetersPerSecond = 1.0;
 

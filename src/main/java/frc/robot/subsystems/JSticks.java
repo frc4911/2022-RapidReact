@@ -74,6 +74,11 @@ public class JSticks extends Subsystem{
         sClassName = this.getClass().getSimpleName();
         // mSuperstructure = Superstructure.getInstance(sClassName);
         mSwerve = Swerve.getInstance(sClassName);
+        mHeadingController.setPIDFConstants(
+            mSwerve.mFrontRight.mConstants.kSwerveHeadingKp,
+            mSwerve.mFrontRight.mConstants.kSwerveHeadingKi,
+            mSwerve.mFrontRight.mConstants.kSwerveHeadingKd,
+            0);
         mDriver = new Xbox();
         mDriver2 = new LogitechExtreme();
         mOperator = new Xbox();
@@ -161,8 +166,7 @@ public class JSticks extends Subsystem{
 
         if (!maintainHeading) {
             mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.OFF);
-    // brian, i do not see where the code sets the SNAP state
-        } else if ((mHeadingController.getHeadingControllerState() == SwerveHeadingController.HeadingControllerState.SNAP && mHeadingController.isAtGoal()) || changeHeadingSetpoint) {
+        } else if (changeHeadingSetpoint) {
             mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.MAINTAIN);
             mHeadingController.setGoal(mSwerve.getHeading().getDegrees());
         }
@@ -203,13 +207,16 @@ public class JSticks extends Subsystem{
         }
         else {
             dr_RightStickX_Translate = -mDriver2.getRaw(LogitechExtreme.X, mDeadBand);
+            dr_RightStickX_Translate = Math.copySign(Math.pow(dr_RightStickX_Translate,2), dr_RightStickX_Translate);
             dr_RightStickY_Translate = -mDriver2.getRaw(LogitechExtreme.Y, mDeadBand);
+            dr_RightStickY_Translate = Math.copySign(Math.pow(dr_RightStickY_Translate,2), dr_RightStickY_Translate);
             // brian make it easier to drive w/o rotate
             if (mDriver2.getButton(LogitechExtreme.TOP_THREE, CW.PRESSED_LEVEL)){
                 dr_LeftStickX_Rotate = 0;    
             }
             else{
                 dr_LeftStickX_Rotate = -mDriver2.getRaw(LogitechExtreme.Z, mDeadBand);
+                dr_LeftStickX_Rotate = Math.copySign(Math.pow(dr_LeftStickX_Rotate,2), dr_LeftStickX_Rotate);
             }
             dr_YButton_ResetIMU = mDriver2.getButton(LogitechExtreme.THUMB_BUTTON, CW.PRESSED_EDGE);
             // hold trigger to switch to robot oriented
