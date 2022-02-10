@@ -77,14 +77,6 @@ public class Constants {
     // Translation2d(48.0 + kRobotHalfLength, 75.25 + kRobotHalfWidth),
     // Rotation2d.fromDegrees(0));
 
-    // brian these numbers are for junior
-    // Swerve Calculations Constants (measurements are in inches)
-    // Distance is the center to center of wheels
-    // Length is front to back, width is left to right
-    public static final double kWheelbaseLength = 14.5;
-    public static final double kWheelbaseWidth = 14.5;
-    public static final double kSwerveDiagonal = Math.hypot(kWheelbaseLength, kWheelbaseWidth);
-
     public static double kMaxAngleAimError = 1;
     public static final double kMaxAimTurningVelocity = 0.1;
 
@@ -299,12 +291,14 @@ public class Constants {
     // Junior //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // swerve modules
     // zero - bezel to the left
-    // brian these numbers are for junior
+    // these numbers are for junior
     public static final SwerveConfiguration kSwerveConfigurationJunior = new SwerveConfiguration(
             Units.inchesToMeters(14.5),
             Units.inchesToMeters(14.5),
             Units.feetToMeters(14.2),
-            Math.toRadians(270)
+            Math.toRadians(270),
+            .018,0,0,0 //kSwerveHeadingKp,kSwerveHeadingKi,kSwerveHeadingKp,kSwerveHeadingKf
+
     );
 
     public static final SwerveDriveModule.SwerveModuleConstants kFrontRightModuleConstantsJunior = new SwerveDriveModule.SwerveModuleConstants();
@@ -324,8 +318,7 @@ public class Constants {
 		kFrontRightModuleConstantsJunior.kSteerMotorSlot0Ki = 0.0;
 		kFrontRightModuleConstantsJunior.kSteerMotorSlot0Kd = 0.0;
 		kFrontRightModuleConstantsJunior.kSteerMotorSlot0Kf = 0.0;
-        kFrontRightModuleConstantsJunior.kSwerveHeadingKp = .018;
-
+    
         /* ... */
     }
 
@@ -397,7 +390,8 @@ public class Constants {
             Units.inchesToMeters(21.0),
             Units.inchesToMeters(21.0),
             Units.feetToMeters(14.2),
-            Math.toRadians(270)
+            Math.toRadians(270),
+            .018,0,0,0 //kSwerveHeadingKp,kSwerveHeadingKi,kSwerveHeadingKp,kSwerveHeadingKf
     );
 
 
@@ -468,7 +462,8 @@ public class Constants {
             Units.inchesToMeters(23.75),
             Units.inchesToMeters(20.75),
             Units.feetToMeters(14.2),
-            Math.toRadians(270)
+            Math.toRadians(270),
+            .018,0,0,0 //kSwerveHeadingKp,kSwerveHeadingKi,kSwerveHeadingKp,kSwerveHeadingKf
     );
 
     public static final SwerveDriveModule.SwerveModuleConstants kFrontRightModuleConstantsRobot2022 = new SwerveDriveModule.SwerveModuleConstants();

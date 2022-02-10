@@ -11,6 +11,12 @@ public class SwerveConfiguration {
     public final double maxSpeedInMetersPerSecond;
     public final double maxSpeedInRadiansPerSecond;
     public final List<Translation2d> moduleLocations;
+    // imu heading PID constants
+    public final double kSwerveHeadingKp;
+    public final double kSwerveHeadingKi;
+    public final double kSwerveHeadingKd;
+    public final double kSwerveHeadingKf;
+    
 
     /**
      * Creates an instance of SwerveConfiguration
@@ -25,8 +31,15 @@ public class SwerveConfiguration {
     public SwerveConfiguration (double wheelbaseLengthInMeters,
                                 double wheelbaseWidthInMeters,
                                 double maxSpeedInMetersPerSecond,
-                                double maxSpeedInRadiansPerSecondLimit) {
-
+                                double maxSpeedInRadiansPerSecondLimit,
+                                double kSwerveHeadingKp,
+                                double kSwerveHeadingKi,
+                                double kSwerveHeadingKd,
+                                double kSwerveHeadingKf) {
+        this.kSwerveHeadingKp = kSwerveHeadingKp;
+        this.kSwerveHeadingKi = kSwerveHeadingKi;
+        this.kSwerveHeadingKd = kSwerveHeadingKd;
+        this.kSwerveHeadingKf = kSwerveHeadingKf;
         this.wheelbaseLengthInMeters = wheelbaseLengthInMeters;
         this.wheelbaseWidthInMeters = wheelbaseWidthInMeters;
         this.maxSpeedInMetersPerSecond = maxSpeedInMetersPerSecond;

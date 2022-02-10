@@ -64,18 +64,7 @@ public class SwerveDriveModule extends Subsystem {
 		public int kCANCoderStatusFramePeriodSensorData = 255;
 		public double kCANCoderOffsetDegrees = 0.0;
 
-		// CANCoder Motor motion
-//		public double kCANCoderSteerMotorKp = 0.1;
-//		public double kCANCoderSteerMotorKi = 0.0;
-//		public double kCANCoderSteerMotorKd = 0.84;
-//		public double kCANCoderSteerMotorKf = 0.05;
-//		public int kCANCoderSteerMotorIZone = 25;
-//		public int kCANCoderSteerMotorCruiseVelocity = 1698;
-//		public int kCANCoderSteerMotorAcceleration = 20379; // 12 * kSteerMotorCruiseVelocity
-//		public int kCANCoderSteerMotorClosedLoopAllowableError = 5;
-
-        // brian needs tuning
-		// Steer Motor motion
+ 		// Steer Motor motion
 		public double kSteerMotorSlot0Kp = 0.4;
 		public double kSteerMotorSlot0Ki = 0.0;
 		public double kSteerMotorSlot0Kd = 0.0;
@@ -84,15 +73,6 @@ public class SwerveDriveModule extends Subsystem {
 		public int kSteerMotorSlot0CruiseVelocity = 1698;
 		public int kSteerMotorSlot0Acceleration = 20379; // 12 * kSteerMotorCruiseVelocity
 		public int kSteerMotorClosedLoopAllowableError = 5;
-
-        // brian needs tuning (if used)
-		// public double kSteerMotorSlot1Kp = 0.0;
-		// public double kSteerMotorSlot1Ki = 0.0;
-		// public double kSteerMotorSlot1Kd = 0.0;
-		// public double kSteerMotorSlot1Kf = 0.0;
-		// public int kSteerMotorSlot1IZone = 25;
-		// public int kSteerMotorSlot1CruiseVelocity = 1698;
-		// public int kSteerMotorSlot1Acceleration = 20379; // 12 * kSteerMotorCruiseVelocity
 
 		// Steer Motor current/voltage
 		public int kSteerMotorContinuousCurrentLimit = 20; // amps
@@ -134,11 +114,6 @@ public class SwerveDriveModule extends Subsystem {
 		public int kDriveStatusFrame10UpdateRate = 200; // motion magic, ms
         public SensorVelocityMeasPeriod kDriveMotorVelocityMeasurementPeriod = SensorVelocityMeasPeriod.Period_100Ms; // dt for velocity measurements, ms
 		public int kDriveVelocityMeasurementWindow = 32; // # of samples in rolling average
-
-        // imu heading PID constants
-        public double kSwerveHeadingKp = 0.018;
-        public double kSwerveHeadingKi = 0.0;
-        public double kSwerveHeadingKd = 0.0;
     }
 
 	private final boolean mLoggingEnabled = true;    // used to disable logging for this subsystem only
@@ -340,10 +315,6 @@ public class SwerveDriveModule extends Subsystem {
 
         // TODO:  Consider using SwerveModule.optimize() here instead of setReferenceAngle()
         setReferenceAngle(swreveModuleState.angle.getRadians());
-        // brian temp debug
-        // if(throttlePrints%printFreq==0 && mConstants.kModuleId==0){
-        //     System.out.println("0? sdm setState (swreveModuleState) ("+swreveModuleState.toString()+")");
-        // }
     }
 
     /**
@@ -369,16 +340,7 @@ public class SwerveDriveModule extends Subsystem {
 
         // mPeriodicIO.steerControlMode = ControlMode.MotionMagic;
         mPeriodicIO.steerControlMode = ControlMode.Position;
-        // brian check this code again may want to switch back to adjustedReference...
-        // mPeriodicIO.steerDemand = radiansToEncoderUnits(adjustedReferenceAngleRadians);
-        mPeriodicIO.steerDemand = radiansToEncoderUnits(referenceAngleRadians);
-        // brian temp debug
-        // if(mConstants.kModuleId==0){
-        //     if(throttlePrints%printFreq==0){
-        //         System.out.println("0? sdm setReferenceAngle (mPeriodicIO.steerDemand) ("+mPeriodicIO.steerDemand+")");
-        //     }
-        // }
-
+        mPeriodicIO.steerDemand = radiansToEncoderUnits(adjustedReferenceAngleRadians);
     }
 
     /**
@@ -546,11 +508,6 @@ public class SwerveDriveModule extends Subsystem {
                 } else {
                     mSteerMotor.set(mPeriodicIO.steerControlMode, mPeriodicIO.steerDemand);
                     mDriveMotor.set(mPeriodicIO.driveControlMode, mPeriodicIO.driveDemand);
-                    // brian temp debug
-                    // if(++throttlePrints%printFreq==0 && mConstants.kModuleId == 0){
-                    //     System.out.println("00 sdm writePeriodicOutputs (steerDemand, driveDemand) ("+mPeriodicIO.steerDemand+","+mPeriodicIO.driveDemand+")");
-                    // }
-           
                 }
                 break;
             case NEUTRAL:
@@ -559,9 +516,6 @@ public class SwerveDriveModule extends Subsystem {
         }
     }
 
-    // brian temp debug
-    // int throttlePrints = 0;
-    // final int printFreq = 10;
     @Override
     public void outputTelemetry() {
         // SmartDashboard.putNumber(mModuleName + "Angle", getModuleAngle().getDegrees());
