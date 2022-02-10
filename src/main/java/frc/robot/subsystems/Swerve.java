@@ -7,6 +7,9 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
+import frc.robot.config.DeadEye;
+import frc.robot.config.Junior;
+import frc.robot.config.Robot2022;
 import frc.robot.planners.DriveMotionPlanner;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Pose2dWithCurvature;
@@ -87,37 +90,25 @@ public class Swerve extends Subsystem {
         mPigeon = Pigeon.getInstance();
 
         if (RobotName.name.equals(Constants.kJuniorName)) {
-            // Constants.kFrontRightModuleConstants.kCANCoderOffsetDegrees = Constants.kFrontRightCancoderStartingPosDegreesR1;
-            // Constants.kFrontLeftModuleConstants.kCANCoderOffsetDegrees = Constants.kFrontLeftCancoderStartingPosDegreesR1;
-            // Constants.kBackLeftModuleConstants.kCANCoderOffsetDegrees = Constants.kRearLeftCancoderStartingPosDegreesR1;
-            // Constants.kBackRightModuleConstants.kCANCoderOffsetDegrees = Constants.kRearRightCancoderStartingPosDegreesR1;
-            mSwerveConfiguration = Constants.kSwerveConfigurationJunior;
-            mModules.add(mFrontRight = new SwerveDriveModule(Constants.kFrontRightModuleConstantsJunior, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-            mModules.add(mFrontLeft = new SwerveDriveModule(Constants.kFrontLeftModuleConstantsJunior, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-            mModules.add(mBackLeft = new SwerveDriveModule(Constants.kBackLeftModuleConstantsJunior, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-            mModules.add(mBackRight = new SwerveDriveModule(Constants.kBackRightModuleConstantsJunior, mSwerveConfiguration.maxSpeedInMetersPerSecond));
+            mSwerveConfiguration = Junior.kSwerveConfiguration;
+            mModules.add(mFrontRight = new SwerveDriveModule(Junior.kFrontRightModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
+            mModules.add(mFrontLeft = new SwerveDriveModule(Junior.kFrontLeftModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
+            mModules.add(mBackLeft = new SwerveDriveModule(Junior.kBackLeftModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
+            mModules.add(mBackRight = new SwerveDriveModule(Junior.kBackRightModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
         }
         else if (RobotName.name.equals(Constants.kDeadEyeName)) {
-            // Constants.kFrontLeftModuleConstants.kCANCoderOffsetDegrees = Constants.kFrontLeftCancoderStartingPosDegreesR2;
-            // Constants.kFrontRightModuleConstants.kCANCoderOffsetDegrees = Constants.kFrontRightCancoderStartingPosDegreesR2;
-            // Constants.kBackLeftModuleConstants.kCANCoderOffsetDegrees = Constants.kRearLeftCancoderStartingPosDegreesR2;
-            // Constants.kBackRightModuleConstants.kCANCoderOffsetDegrees = Constants.kRearRightCancoderStartingPosDegreesR2;
-            mSwerveConfiguration = Constants.kSwerveConfigurationDeadEye;
-            mModules.add(mFrontRight = new SwerveDriveModule(Constants.kFrontRightModuleConstantsDeadEye, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-            mModules.add(mFrontLeft = new SwerveDriveModule(Constants.kFrontLeftModuleConstantsDeadEye, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-            mModules.add(mBackLeft = new SwerveDriveModule(Constants.kBackLeftModuleConstantsDeadEye, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-            mModules.add(mBackRight = new SwerveDriveModule(Constants.kBackRightModuleConstantsDeadEye, mSwerveConfiguration.maxSpeedInMetersPerSecond));
+            mSwerveConfiguration = DeadEye.kSwerveConfiguration;
+            mModules.add(mFrontRight = new SwerveDriveModule(DeadEye.kFrontRightModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
+            mModules.add(mFrontLeft = new SwerveDriveModule(DeadEye.kFrontLeftModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
+            mModules.add(mBackLeft = new SwerveDriveModule(DeadEye.kBackLeftModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
+            mModules.add(mBackRight = new SwerveDriveModule(DeadEye.kBackRightModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
         }
         else if (RobotName.name.equals(Constants.kRobot2022Name)) {
-            // Constants.kFrontLeftModuleConstants.kCANCoderOffsetDegrees = Constants.kFrontLeftCancoderStartingPosDegreesCetus;
-            // Constants.kFrontRightModuleConstants.kCANCoderOffsetDegrees = Constants.kFrontRightCancoderStartingPosDegreesCetus;
-            // Constants.kBackLeftModuleConstants.kCANCoderOffsetDegrees = Constants.kRearLeftCancoderStartingPosDegreesCetus;
-            // Constants.kBackRightModuleConstants.kCANCoderOffsetDegrees = Constants.kRearRightCancoderStartingPosDegreesCetus;
-            mSwerveConfiguration = Constants.kSwerveConfigurationRobot2022;
-            mModules.add(mFrontRight = new SwerveDriveModule(Constants.kFrontRightModuleConstantsRobot2022, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-            mModules.add(mFrontLeft = new SwerveDriveModule(Constants.kFrontLeftModuleConstantsRobot2022, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-            mModules.add(mBackLeft = new SwerveDriveModule(Constants.kBackLeftModuleConstantsRobot2022, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-            mModules.add(mBackRight = new SwerveDriveModule(Constants.kBackRightModuleConstantsRobot2022, mSwerveConfiguration.maxSpeedInMetersPerSecond));
+            mSwerveConfiguration = Robot2022.kSwerveConfiguration;
+            mModules.add(mFrontRight = new SwerveDriveModule(Robot2022.kFrontRightModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
+            mModules.add(mFrontLeft = new SwerveDriveModule(Robot2022.kFrontLeftModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
+            mModules.add(mBackLeft = new SwerveDriveModule(Robot2022.kBackLeftModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
+            mModules.add(mBackRight = new SwerveDriveModule(Robot2022.kBackRightModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
         }
 
         mKinematics = new SwerveDriveKinematics(mSwerveConfiguration.moduleLocations);

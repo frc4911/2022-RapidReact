@@ -203,8 +203,8 @@ public class SwerveDriveModule extends Subsystem {
         }
 
         // TODO: Set these correctly
-        mSteerMotor.configMotionAcceleration(Constants.kSwerveRotationMaxSpeed * 12.5, Constants.kLongCANTimeoutMs);
-        mSteerMotor.configMotionCruiseVelocity(Constants.kSwerveRotationMaxSpeed, Constants.kLongCANTimeoutMs);
+        mSteerMotor.configMotionAcceleration(0.9 * mConstants.kSteerTicksPerUnitVelocity * 0.25, Constants.kLongCANTimeoutMs);
+        mSteerMotor.configMotionCruiseVelocity(0.9 * mConstants.kSteerTicksPerUnitVelocity, Constants.kLongCANTimeoutMs);
         mSteerMotor.configVelocityMeasurementPeriod(mConstants.kSteerMotorVelocityMeasurementPeriod, Constants.kLongCANTimeoutMs);
         mSteerMotor.configVelocityMeasurementWindow(mConstants.kSteerMotorVelocityMeasurementWindow, Constants.kLongCANTimeoutMs);
         mSteerMotor.selectProfileSlot(0, 0);
