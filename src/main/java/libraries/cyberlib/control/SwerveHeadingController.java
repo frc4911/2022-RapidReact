@@ -24,7 +24,8 @@ public class SwerveHeadingController {
     }
 
     public enum HeadingControllerState {
-        OFF, SNAP, // for dpad snapping to cardinals
+        OFF,
+        //SNAP, // for dpad snapping to cardinals
         MAINTAIN, // maintaining current heading while driving
     }
 
@@ -35,6 +36,10 @@ public class SwerveHeadingController {
 
     private SwerveHeadingController() {
         mPIDFController = new SynchronousPIDF();
+    }
+
+    public void setPIDFConstants(double kP, double kI, double kD, double kF){
+        mPIDFController.setPIDF(kP, kI, kD, kF);
     }
 
     public HeadingControllerState getHeadingControllerState() {
@@ -73,15 +78,8 @@ public class SwerveHeadingController {
             current_angle -= 360;
         }
 
-        switch (mHeadingControllerState) {
-            case OFF:
-                return 0.0;
-            case SNAP:
-                mPIDFController.setPID(Constants.kSnapSwerveHeadingKp, Constants.kSnapSwerveHeadingKi, Constants.kSnapSwerveHeadingKd);
-                break;
-            case MAINTAIN:
-                mPIDFController.setPID(Constants.kMaintainSwerveHeadingKp, Constants.kMaintainSwerveHeadingKi, Constants.kMaintainSwerveHeadingKd);
-                break;
+        if (mHeadingControllerState == HeadingControllerState.OFF) {
+            return 0;
         }
 
         return mPIDFController.calculate(current_angle);
