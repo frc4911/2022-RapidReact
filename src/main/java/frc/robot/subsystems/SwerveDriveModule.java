@@ -6,6 +6,7 @@ import com.ctre.phoenix.motorcontrol.can.TalonFX;
 
 import libraries.cheesylib.util.Util;
 import libraries.cyberlib.kinematics.SwerveModuleState;
+import libraries.cyberlib.utils.Angles;
 import libraries.cyberlib.utils.CheckFaults;
 
 import frc.robot.Constants;
@@ -323,24 +324,24 @@ public class SwerveDriveModule extends Subsystem {
      * @param referenceAngleRadians goal angle in radians
      */
     private void setReferenceAngle(double referenceAngleRadians) {
+        // Note that Falcon is contiguous, so it can be larger then 2pi.
         double currentAngleRadians = encoderUnitsToRadians(mPeriodicIO.steerPosition);
 
-        double currentAngleRadiansMod = currentAngleRadians % (2.0 * Math.PI);
-        if (currentAngleRadiansMod < 0.0) {
-            currentAngleRadiansMod += 2.0 * Math.PI;
-        }
+        // Map onto (0, 2pi)
+        double currentAngleRadiansMod = Angles.normalizeAngle(currentAngleRadians);
+        referenceAngleRadians = Angles.normalizeAngle(referenceAngleRadians);
 
-        // The reference angle has the range [0, 2pi) but the Falcon's encoder can go above that
-        double adjustedReferenceAngleRadians = referenceAngleRadians + currentAngleRadians - currentAngleRadiansMod;
-        if (referenceAngleRadians - currentAngleRadiansMod > Math.PI) {
-            adjustedReferenceAngleRadians -= 2.0 * Math.PI;
-        } else if (referenceAngleRadians - currentAngleRadiansMod < -Math.PI) {
-            adjustedReferenceAngleRadians += 2.0 * Math.PI;
-        }
+        // Get the shortest angular distance between current and reference angles.
+        double shortest_distance = Angles.shortest_angular_distance(currentAngleRadiansMod, referenceAngleRadians);
+
+        // Adjust by adding the shortest distance to current angle (which can be in  multiples of 2pi)
+        double adjustedReferenceAngleRadians = currentAngleRadians + shortest_distance;
 
         // mPeriodicIO.steerControlMode = ControlMode.MotionMagic;
         mPeriodicIO.steerControlMode = ControlMode.Position;
-        mPeriodicIO.steerDemand = radiansToEncoderUnits(adjustedReferenceAngleRadians);
+
+        // convert to encoder units
+        mPeriodicIO.steerDemand = radiansToEncoderUnits(adjustedReferenceAngleRadians);                        
     }
 
     /**
