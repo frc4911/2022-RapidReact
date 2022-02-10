@@ -23,6 +23,7 @@ import libraries.cyberlib.kinematics.SwerveDriveOdometry;
 import libraries.cyberlib.kinematics.SwerveModuleState;
 import libraries.cyberlib.utils.RobotName;
 import libraries.cyberlib.utils.SwerveDriveHelper;
+import libraries.cyberlib.utils.SwerveDriveSignal;
 
 public class Swerve extends Subsystem {
 
@@ -50,8 +51,6 @@ public class Swerve extends Subsystem {
 
 	private final SwerveDriveOdometry mOdometry;
 	private final SwerveDriveKinematics mKinematics;
-
-    private SwerveDriveHelper mSwerveDriveHelper;
 
     // Trajectory following
     private DriveMotionPlanner mMotionPlanner;
@@ -120,9 +119,6 @@ public class Swerve extends Subsystem {
             mModules.add(mBackLeft = new SwerveDriveModule(Constants.kBackLeftModuleConstantsRobot2022, mSwerveConfiguration.maxSpeedInMetersPerSecond));
             mModules.add(mBackRight = new SwerveDriveModule(Constants.kBackRightModuleConstantsRobot2022, mSwerveConfiguration.maxSpeedInMetersPerSecond));
         }
-
-        mSwerveDriveHelper = new SwerveDriveHelper(mSwerveConfiguration.maxSpeedInMetersPerSecond,
-                mSwerveConfiguration.maxSpeedInRadiansPerSecond);
 
         mKinematics = new SwerveDriveKinematics(mSwerveConfiguration.moduleLocations);
 		mOdometry = new SwerveDriveOdometry(mKinematics, mPigeon.getYaw());
@@ -206,18 +202,22 @@ public class Swerve extends Subsystem {
      * are as percent [-1.0, 1.0].  They need to be converted to SI units before creating the ChassisSpeeds.
      */
     private void handleManual() {
+        SwerveDriveSignal driveSignal = null;
+
         // Helper to make driving feel better
-        // var chassisSpeeds = mSwerveDriveHelper.calculateChassisSpeeds(
-        //         mPeriodicIO.forward, mPeriodicIO.strafe, mPeriodicIO.rotation, mPeriodicIO.low_power,
-        //         mPeriodicIO.field_relative, mPeriodicIO.use_heading_controller);
+//        driveSignal = SwerveDriveHelper.calculate(
+//                mPeriodicIO.forward, mPeriodicIO.strafe, mPeriodicIO.rotation,
+//                mPeriodicIO.low_power, mPeriodicIO.field_relative, mPeriodicIO.use_heading_controller);
 
-        // Scale joystick values to SI units and relative to maximum.
-        var translationInput = new Translation2d(mPeriodicIO.forward, mPeriodicIO.strafe)
-                .scale(mSwerveConfiguration.maxSpeedInMetersPerSecond);
+        driveSignal = new SwerveDriveSignal(new Translation2d(mPeriodicIO.forward, mPeriodicIO.strafe),
+                    mPeriodicIO.rotation, mPeriodicIO.field_relative);
 
-        var rotationInput = mPeriodicIO.rotation * mSwerveConfiguration.maxSpeedInRadiansPerSecond;
+        // Convert to velocities and SI units
+        var translationInput = driveSignal.getTranslation().scale(mSwerveConfiguration.maxSpeedInMetersPerSecond);
+        var rotationInput = driveSignal.getRotation() * mSwerveConfiguration.maxSpeedInRadiansPerSecond;
 
-        if (mPeriodicIO.field_relative) {
+        if (driveSignal.isFieldOriented()) {
+            // Adjust for robot heading to maintain field relative motion.
             translationInput = translationInput.rotateBy(getPose().getRotation().inverse());
         }
 

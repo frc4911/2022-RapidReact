@@ -1,6 +1,5 @@
 package libraries.cyberlib.control;
 
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 import frc.robot.subsystems.Swerve;
 import libraries.cheesylib.util.SynchronousPIDF;
@@ -16,7 +15,7 @@ public class SwerveHeadingController {
         if (mInstance == null) {
             mInstance = new SwerveHeadingController();
             // this needs to happen during class creation but
-            // after sInstance is set because Swerve will get an
+            // after mInstance is set because Swerve will get an
             // instance of SwerveHeadingController
             mSwerve = Swerve.getInstance("SwerveHeadingController");
         }
@@ -25,7 +24,7 @@ public class SwerveHeadingController {
     }
 
     public enum HeadingControllerState {
-        OFF, 
+        OFF,
         //SNAP, // for dpad snapping to cardinals
         MAINTAIN, // maintaining current heading while driving
     }
@@ -79,7 +78,7 @@ public class SwerveHeadingController {
             current_angle -= 360;
         }
 
-        if (mHeadingControllerState == HeadingControllerState.OFF){
+        if (mHeadingControllerState == HeadingControllerState.OFF) {
             return 0;
         }
 
