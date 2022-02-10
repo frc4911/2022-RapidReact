@@ -5,58 +5,56 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SwerveDriveHelperTest {
-    private static final double SWERVE_DRIVE_MAX_SPEED_IN_METERS_PER_SECOND = 5.0;
-    private static final double SWERVE_ROTATION_MAX_SPEED_IN_RADIANS_PER_SECOND = Math.toRadians(270);
+    private static final double SWERVE_DRIVE_MAX_INPUT = 1.0;
+    private static final double SWERVE_ROTATION_MAX_INPUT = 1.0;
 
     @Test
-    void calculateChassisSpeeds() {
-        SwerveDriveHelper swerveDriveHelper = new SwerveDriveHelper(
-                SWERVE_DRIVE_MAX_SPEED_IN_METERS_PER_SECOND, SWERVE_ROTATION_MAX_SPEED_IN_RADIANS_PER_SECOND);
+    void calculatedriveSignal() {
 
-        var chassisSpeeds = swerveDriveHelper.calculateChassisSpeeds(
+        var driveSignal = SwerveDriveHelper.calculate(
                 0.0, 0.0, 0.0, false, false, false);
-        assertEquals(0.0, chassisSpeeds.vxInMetersPerSecond);
-        assertEquals(0.0, chassisSpeeds.vyInMetersPerSecond);
-        assertEquals(0.0, chassisSpeeds.omegaInRadiansPerSecond);
+        assertEquals(0.0, driveSignal.getTranslation().x());
+        assertEquals(0.0, driveSignal.getTranslation().y());
+        assertEquals(0.0, driveSignal.getRotation());
 
-        chassisSpeeds = swerveDriveHelper.calculateChassisSpeeds(
+        driveSignal = SwerveDriveHelper.calculate(
                 1.0, 0, 0, false, false, false);
-        assertEquals(SWERVE_DRIVE_MAX_SPEED_IN_METERS_PER_SECOND, chassisSpeeds.vxInMetersPerSecond);
-        assertEquals(0.0, chassisSpeeds.vyInMetersPerSecond);
-        assertEquals(0.0, chassisSpeeds.omegaInRadiansPerSecond);
+        assertEquals(SWERVE_DRIVE_MAX_INPUT, driveSignal.getTranslation().x());
+        assertEquals(0.0, driveSignal.getTranslation().y());
+        assertEquals(0.0, driveSignal.getRotation());
 
-        chassisSpeeds = swerveDriveHelper.calculateChassisSpeeds(
+        driveSignal = SwerveDriveHelper.calculate(
                 -1.0, 0, 0, false, false, false);
-        assertEquals(-SWERVE_DRIVE_MAX_SPEED_IN_METERS_PER_SECOND, chassisSpeeds.vxInMetersPerSecond);
-        assertEquals(0.0, chassisSpeeds.vyInMetersPerSecond);
-        assertEquals(0.0, chassisSpeeds.omegaInRadiansPerSecond);
+        assertEquals(-SWERVE_DRIVE_MAX_INPUT, driveSignal.getTranslation().x());
+        assertEquals(0.0, driveSignal.getTranslation().y());
+        assertEquals(0.0, driveSignal.getRotation());
 
-        chassisSpeeds = swerveDriveHelper.calculateChassisSpeeds(
+        driveSignal = SwerveDriveHelper.calculate(
                 0.0, 1.0, 0, false, false, false);
-        assertEquals(0.0, chassisSpeeds.vxInMetersPerSecond);
-        assertEquals(SWERVE_DRIVE_MAX_SPEED_IN_METERS_PER_SECOND, chassisSpeeds.vyInMetersPerSecond);
-        assertEquals(0.0, chassisSpeeds.omegaInRadiansPerSecond);
+        assertEquals(0.0, driveSignal.getTranslation().x());
+        assertEquals(SWERVE_DRIVE_MAX_INPUT, driveSignal.getTranslation().y());
+        assertEquals(0.0, driveSignal.getRotation());
 
-        chassisSpeeds = swerveDriveHelper.calculateChassisSpeeds(
+        driveSignal = SwerveDriveHelper.calculate(
                 0.0, -1.0, 0, false, false, false);
-        assertEquals(0.0, chassisSpeeds.vxInMetersPerSecond);
-        assertEquals(-SWERVE_DRIVE_MAX_SPEED_IN_METERS_PER_SECOND, chassisSpeeds.vyInMetersPerSecond);
-        assertEquals(0.0, chassisSpeeds.omegaInRadiansPerSecond);
+        assertEquals(0.0, driveSignal.getTranslation().x());
+        assertEquals(-SWERVE_DRIVE_MAX_INPUT, driveSignal.getTranslation().y());
+        assertEquals(0.0, driveSignal.getRotation());
 
-        chassisSpeeds = swerveDriveHelper.calculateChassisSpeeds(
+        driveSignal = SwerveDriveHelper.calculate(
                 0.0, 0.0, 1.0, false, false, false);
-        assertEquals(0.0, chassisSpeeds.vxInMetersPerSecond);
-        assertEquals(0.0, chassisSpeeds.vyInMetersPerSecond);
+        assertEquals(0.0, driveSignal.getTranslation().x());
+        assertEquals(0.0, driveSignal.getTranslation().y());
 
-        var maxSpeed = SWERVE_ROTATION_MAX_SPEED_IN_RADIANS_PER_SECOND * 0.8; //SwerveDriveHelper's kHighPowerRotationScalar
-        assertEquals(maxSpeed, chassisSpeeds.omegaInRadiansPerSecond);
+        var maxSpeed = SWERVE_ROTATION_MAX_INPUT * 0.8; //SwerveDriveHelper's kHighPowerRotationScalar
+        assertEquals(maxSpeed, driveSignal.getRotation());
 
-        chassisSpeeds = swerveDriveHelper.calculateChassisSpeeds(
+        driveSignal = SwerveDriveHelper.calculate(
                 0.0, 0.0, 1.0, true, false, false);
-        assertEquals(0.0, chassisSpeeds.vxInMetersPerSecond);
-        assertEquals(0.0, chassisSpeeds.vyInMetersPerSecond);
+        assertEquals(0.0, driveSignal.getTranslation().x());
+        assertEquals(0.0, driveSignal.getTranslation().y());
 
-        maxSpeed = SWERVE_ROTATION_MAX_SPEED_IN_RADIANS_PER_SECOND * 0.5; //SwerveDriveHelper's kHighPowerRotationScalar
-        assertEquals(maxSpeed, chassisSpeeds.omegaInRadiansPerSecond);
+        maxSpeed = SWERVE_ROTATION_MAX_INPUT * 0.5; //SwerveDriveHelper's kHighPowerRotationScalar
+        assertEquals(maxSpeed, driveSignal.getRotation());
     }
 }

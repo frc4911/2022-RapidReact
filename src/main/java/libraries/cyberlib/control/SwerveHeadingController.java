@@ -1,6 +1,5 @@
 package libraries.cyberlib.control;
 
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 import frc.robot.subsystems.Swerve;
 import libraries.cheesylib.util.SynchronousPIDF;
@@ -16,7 +15,7 @@ public class SwerveHeadingController {
         if (mInstance == null) {
             mInstance = new SwerveHeadingController();
             // this needs to happen during class creation but
-            // after sInstance is set because Swerve will get an
+            // after mInstance is set because Swerve will get an
             // instance of SwerveHeadingController
             mSwerve = Swerve.getInstance("SwerveHeadingController");
         }
@@ -78,11 +77,9 @@ public class SwerveHeadingController {
             case OFF:
                 return 0.0;
             case SNAP:
-            // brian temp debug
-            mPIDFController.setPID(Constants.kSnapSwerveHeadingKp, Constants.kSnapSwerveHeadingKi, Constants.kSnapSwerveHeadingKd);
+                mPIDFController.setPID(Constants.kSnapSwerveHeadingKp, Constants.kSnapSwerveHeadingKi, Constants.kSnapSwerveHeadingKd);
                 break;
             case MAINTAIN:
-                // brian temp debug
                 mPIDFController.setPID(Constants.kMaintainSwerveHeadingKp, Constants.kMaintainSwerveHeadingKi, Constants.kMaintainSwerveHeadingKd);
                 break;
         }
