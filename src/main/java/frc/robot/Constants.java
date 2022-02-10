@@ -60,7 +60,7 @@ public class Constants {
     public static final List<Rotation2d> kPossibleBallTargetAngles = Arrays.asList(Rotation2d.fromDegrees(90.0),
             Rotation2d.fromDegrees(-90.0));
 
-    public static final Pose2d kRobotStartingPose = new Pose2d();
+    public static final Pose2d kRobotStartingPose = Pose2d.identity();
     public static final Pose2d kRobotSpecialPose = new Pose2d(new Translation2d(0,0), Rotation2d.fromDegrees(180));
     public static final Pose2d kRobotLeftStartingPose = new Pose2d(
             new Translation2d(48.0 + kRobotHalfLength, 97.0 + kRobotHalfWidth - 162.0), Rotation2d.fromDegrees(0));
@@ -205,6 +205,7 @@ public class Constants {
 //    public static final double kSwerveDriveTicksPerWheelRev = .85*14178; //brian 1.21 new gear ratio 2048 * 6.923 //SwerveDriveEncoderResolution * kSwerveEncoderToWheelRatio;
 //    public static final double kSwerveEncUnitsPerInch = kSwerveDriveTicksPerWheelRev / (Math.PI * kSwerveWheelDiameter);
 
+  // TODO - Replace the following constants with configuration
     //Swerve Speed Constants
     //max ticks/100ms; 2048 ticks/shaft rev * 106 max rev/sec=21777.1
     // setting slightly below to assure it is reachable
@@ -216,35 +217,6 @@ public class Constants {
     public static final double kSwerveRotationMaxSpeed = 21000.0; // rotation motor ticks/100ms
 //    public static final double kSwerveRotation10VoltMaxSpeed = 1350.0; // TODO: tune this!!!
 
-
-    // 7/190 = .037
-//    public static final double kSwerveRotationSpeedScalar = ((1.0 / 0.125) - 1.0) / kSwerveMaxSpeedInchesPerSecond;
-
-    //Swerve Module Wheel Offsets (cancoder Rotation encoder values in degrees when the wheels are facing 0 degrees), gear bevel on inside, cw rotation from bottom is negative
-
-//     public static final int kFrontRightCancoderStartingPosDegreesCetus = -112;
-//     public static final int kFrontLeftCancoderStartingPosDegreesCetus = 92;
-//     public static final int kRearLeftCancoderStartingPosDegreesCetus = -13;
-//     public static final int kRearRightCancoderStartingPosDegreesCetus = -130;
-
-//     public static final int kFrontRightCancoderStartingPosDegreesR1 = 359; //1; //-slight tuning blockparty day 2 //148;
-//     public static final int kFrontLeftCancoderStartingPosDegreesR1 = 211; //151; //345;//-wheel was reoriented for repairs (loose falcons) //332;-temp fix //45;
-//     public static final int kRearLeftCancoderStartingPosDegreesR1 = 235; //125; //5;
-//     public static final int kRearRightCancoderStartingPosDegreesR1 = 250;
-
-//     public static final int kFrontRightCancoderStartingPosDegreesR2 = 0;
-//     public static final int kFrontLeftCancoderStartingPosDegreesR2 = 0;
-//     public static final int kRearLeftCancoderStartingPosDegreesR2 = 0;
-//     public static final int kRearRightCancoderStartingPosDegreesR2 = 0;
-
-    //Swerve Module Positions (relative to the center of the drive base)
-//    public static final Translation2d kVehicleToModuleZero = new Translation2d(kWheelbaseLength/2, kWheelbaseWidth/2);
-//    public static final Translation2d kVehicleToModuleOne = new Translation2d(kWheelbaseLength/2, -kWheelbaseWidth/2);
-//    public static final Translation2d kVehicleToModuleTwo = new Translation2d(-kWheelbaseLength/2, -kWheelbaseWidth/2);
-//    public static final Translation2d kVehicleToModuleThree = new Translation2d(-kWheelbaseLength/2, kWheelbaseWidth/2);
-//
-//    public static final List<Translation2d> kModulePositions = Arrays.asList(kVehicleToModuleZero,
-//            kVehicleToModuleOne, kVehicleToModuleTwo, kVehicleToModuleThree);
 
     // NEW SWERVE
     // TODO: use SDS MK4 module configurations file.
@@ -264,29 +236,11 @@ public class Constants {
     public static final boolean kMK4_L2iSteerInverted = true;
 
     // New Swerve requires SI units
-//    public static final double kWheelbaseLengthInMeters = Units.inchesToMeters(kWheelbaseLength);
-//    public static final double kWheelbaseWidthInMeters = Units.inchesToMeters(kWheelbaseWidth);
-
-//    public static final double kSwerveDiagonal = Math.hypot(kWheelbaseLength, kWheelbaseWidth);
-//    final static double kRadiusInMeters = Math.hypot(kWheelbaseWidthInMeters / 2, kWheelbaseLengthInMeters / 2);
-
-    // Max translational velocity in m/s
-//    public static final double kSwerveDriveMaxSpeedInMetersPerSecond = Units.inchesToMeters(kSwerveMaxSpeedInchesPerSecond) ;
-    // Maximum angular velocity in rad/s
-//    public static final double kSwerveRotationMaxSpeedInRadiansPerSecond = Math.min(
-//            kSwerveDriveMaxSpeedInMetersPerSecond / kRadiusInMeters, Math.toRadians(270));
-
-    // If CW, then right is positive.  If CCW left is positive
-//    public static final Translation2d kFrontRightModuleLocation = new Translation2d(kWheelbaseLengthInMeters / 2, kWheelbaseWidthInMeters / 2);
-//    public static final Translation2d kFrontLeftModuleLocation = new Translation2d(kWheelbaseLengthInMeters / 2, -kWheelbaseWidthInMeters / 2);
-//    public static final Translation2d kBackLeftModuleLocation = new Translation2d(-kWheelbaseLengthInMeters / 2, -kWheelbaseWidthInMeters / 2);
-//    public static final Translation2d kBackRightModuleLocation = new Translation2d(-kWheelbaseLengthInMeters / 2, kWheelbaseWidthInMeters / 2);
-
-//    public static final List<Translation2d> kModuleLocations = Arrays.asList(kFrontRightModuleLocation,
-//            kFrontLeftModuleLocation, kBackLeftModuleLocation, kBackRightModuleLocation);
-
     public static final double kDriveDeadband = 0.05;
 
+    // NOTE:
+    //    Robot specific Swerve configuration is done in SwerveConfiguration
+    //    Module specific configuration is done in SwerveDriveConstants
 
     // Junior //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // swerve modules
@@ -394,7 +348,6 @@ public class Constants {
             .018,0,0,0 //kSwerveHeadingKp,kSwerveHeadingKi,kSwerveHeadingKp,kSwerveHeadingKf
     );
 
-
     public static final SwerveDriveModule.SwerveModuleConstants kFrontRightModuleConstantsDeadEye = new SwerveDriveModule.SwerveModuleConstants();
 
     static {
@@ -449,7 +402,7 @@ public class Constants {
         kBackRightModuleConstantsDeadEye.kSteerMotorEncoderHomeOffset = -327.0;
         kBackRightModuleConstantsDeadEye.kCANCoderId = Ports.BACK_RIGHT_CANCODER;
         kBackRightModuleConstantsDeadEye.kCANCoderOffsetDegrees = 0;
-        kBackRightModuleConstantsDeadEye.kWheelDiameter = kMK4_L2iWheelDiameter;
+        kBackRightModuleConstantsDeadEye.kWheelDiameter = kMK2_WheelDiameter;
         kBackRightModuleConstantsDeadEye.kDriveReduction = (16.0 / 40.0) * (26.0 / 18.0) * (15.0 / 60.0);
         kBackRightModuleConstantsDeadEye.kSteerReduction = kMK2_SteerReduction;
         /* ... */
