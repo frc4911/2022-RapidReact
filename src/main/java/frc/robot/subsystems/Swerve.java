@@ -49,10 +49,6 @@ public class Swerve extends Subsystem {
 
 	private final SwerveDriveOdometry mOdometry;
 	private final SwerveDriveKinematics mKinematics;
-	private ChassisSpeeds mChassisSpeeds;
-
-    // Updated as part of periodic odometry
-    private Pose2d mPose = Pose2d.identity();
 
     private SwerveDriveHelper mSwerveDriveHelper;
 
@@ -129,7 +125,7 @@ public class Swerve extends Subsystem {
 
         mKinematics = new SwerveDriveKinematics(mSwerveConfiguration.moduleLocations);
 		mOdometry = new SwerveDriveOdometry(mKinematics, mPigeon.getYaw());
-        mPose = mOdometry.getPose();
+        mPeriodicIO.robotPose = mOdometry.getPose();
 
         mMotionPlanner = new DriveMotionPlanner();
 
@@ -206,8 +202,7 @@ public class Swerve extends Subsystem {
      * Handles MANUAL state which corresponds to joy stick inputs.
      * <p>
      * Using the joy stick values in PeriodicIO, calculate and updates the swerve states. The joy stick values
-     * are as percent [-1.0, 1.0].  The swerveDriverHelper converts percent inputs to SI units before creating
-     * the ChassisSpeeds.
+     * are as percent [-1.0, 1.0].  They need to be converted to SI units before creating the ChassisSpeeds.
      */
     private void handleManual() {
         // Helper to make driving feel better
@@ -293,7 +288,7 @@ public class Swerve extends Subsystem {
     }
 
     public Pose2d getPose() {
-        return mPose;
+        return mPeriodicIO.robotPose;
     }
 
     public Rotation2d getHeading() {
@@ -307,7 +302,7 @@ public class Swerve extends Subsystem {
      */
     public synchronized void setRobotPosition(Pose2d pose) {
         mOdometry.resetPosition(pose, mPigeon.getYaw());
-        mPose = mOdometry.getPose();
+        mPeriodicIO.robotPose = mOdometry.getPose();
     }
 
     /**
@@ -322,9 +317,9 @@ public class Swerve extends Subsystem {
         var backLeft = mBackLeft.getState();
         var backRight = mBackRight.getState();
 
-        // brian it would be nice to order the modules CCW like the rest of the code
-        mChassisSpeeds = mKinematics.toChassisSpeeds(frontRight, frontLeft, backLeft, backRight);
-        mPose = mOdometry.updateWithTime(timestamp, getAngle(), frontRight, frontLeft, backLeft, backRight);
+        // order is CCW starting with front right.
+        mPeriodicIO.chassisSpeeds = mKinematics.toChassisSpeeds(frontRight, frontLeft, backLeft, backRight);
+        mPeriodicIO.robotPose = mOdometry.updateWithTime(timestamp, getAngle(), frontRight, frontLeft, backLeft, backRight);
     }
 
     public boolean isDoneWithTrajectory() {
@@ -510,32 +505,35 @@ public class Swerve extends Subsystem {
     public void outputTelemetry() {
         mModules.forEach((m) -> m.outputTelemetry());
         SmartDashboard.putString("Swerve/Swerve State", mControlState.toString());
+        SmartDashboard.putString("Swerve/Pose", mPeriodicIO.robotPose.toString());
+        SmartDashboard.putString("Swerve/Chassis Speeds", mPeriodicIO.chassisSpeeds.toString());
 //        SmartDashboard.putBoolean("Swerve/isOnTarget", isOnTarget());
+
         if (Constants.kDebuggingOutput) {
             // Get the current pose from odometry state
-            Pose2d pose = mOdometry.getPose();
-            SmartDashboard.putString("Swerve/pose", pose.toString());
-            SmartDashboard.putString("Swerve/State", mControlState.toString());
+            SmartDashboard.putNumber("Swerve/Robot X", mPeriodicIO.robotPose.getTranslation().x());
+            SmartDashboard.putNumber("Swerve/Robot Y", mPeriodicIO.robotPose.getTranslation().y());
+
+            SmartDashboard.putNumber("Swerve/Translational Velocity m/s",
+                    Math.hypot(
+                            mPeriodicIO.chassisSpeeds.vxInMetersPerSecond,
+                            mPeriodicIO.chassisSpeeds.vyInMetersPerSecond));
+            SmartDashboard.putNumber("Swerve/Translational Velocity ft/s",
+                    Math.hypot(
+                            Units.metersToFeet(mPeriodicIO.chassisSpeeds.vxInMetersPerSecond),
+                            Units.metersToFeet(mPeriodicIO.chassisSpeeds.vyInMetersPerSecond)));
+            SmartDashboard.putNumber("Swerve/Rotational Velocity rad/s",
+                    mPeriodicIO.chassisSpeeds.omegaInRadiansPerSecond);
+
             SmartDashboard.putNumberArray("Swerve/Pigeon YPR", mPigeon.getYPR());
 //            SmartDashboard.putString("Swerve/Heading Controller", mHeadingController.getState().toString());
 //            SmartDashboard.putNumber("Swerve/Target Heading", mHeadingController.getTargetHeading());
-            SmartDashboard.putNumber("Swerve/Distance from start/last reset", mOdometry.getPose().getTranslation().norm());
-            SmartDashboard.putNumber("Swerve/Translational Velocity m/s",
-                    Math.hypot(
-                            mChassisSpeeds.vxInMetersPerSecond,
-                            mChassisSpeeds.vyInMetersPerSecond));
-            SmartDashboard.putNumber("Swerve/Translational Velocity ft/s",
-                    Math.hypot(
-                            Units.metersToFeet(mChassisSpeeds.vxInMetersPerSecond),
-                            Units.metersToFeet(mChassisSpeeds.vyInMetersPerSecond)));
-            SmartDashboard.putString("Swerve/Chassis Speed", mChassisSpeeds.toString());
-//            SmartDashboard.putBoolean("Swerve/Vision Updates Allowed", visionUpdatesAllowed);
+//            SmartDashboard.putNumber("Swerve/Distance from start/last reset", mOdometry.getPose().getTranslation().norm());
 
-            SmartDashboard.putNumberArray("Swerve/Robot Pose", new double[]{pose.getTranslation().x(), pose.getTranslation().y(), pose.getRotation().getUnboundedDegrees()});
-            SmartDashboard.putNumber("Swerve/Robot X", pose.getTranslation().x());
-            SmartDashboard.putNumber("Swerve/Robot Y", pose.getTranslation().y());
-            SmartDashboard.putNumber("Swerve/Robot Heading", pose.getRotation().getUnboundedDegrees());
-//            SmartDashboard.putNumber("Swerve/Robot Velocity", currentVelocity);
+            // SmartDashboard.putBoolean("Swerve/Vision Updates Allowed", visionUpdatesAllowed);
+
+//            SmartDashboard.putNumberArray("Swerve/Robot Pose", new double[]{pose.getTranslation().x(), pose.getTranslation().y(), pose.getRotation().getUnboundedDegrees()});
+//            SmartDashboard.putNumber("Swerve/Robot Heading", pose.getRotation().getUnboundedDegrees());
         }
 
 //        if (!hasFinishedPath() && hasStartedFollowing) {
@@ -555,6 +553,10 @@ public class Swerve extends Subsystem {
         public double schedDeltaActual;
         public double schedDuration;
         private double lastSchedStart;
+
+        // Updated as part of periodic odometry
+        public Pose2d robotPose = Pose2d.identity();
+        public ChassisSpeeds chassisSpeeds = new ChassisSpeeds();
 
         // Inputs
         public Rotation2d gyro_heading = Rotation2d.identity();

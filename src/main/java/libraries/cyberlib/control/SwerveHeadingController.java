@@ -78,8 +78,7 @@ public class SwerveHeadingController {
             case OFF:
                 return 0.0;
             case SNAP:
-            // brian temp debug
-            mPIDFController.setPID(Constants.kSnapSwerveHeadingKp, Constants.kSnapSwerveHeadingKi, Constants.kSnapSwerveHeadingKd);
+                mPIDFController.setPID(Constants.kSnapSwerveHeadingKp, Constants.kSnapSwerveHeadingKi, Constants.kSnapSwerveHeadingKd);
                 break;
             case MAINTAIN:
                 // brian temp debug

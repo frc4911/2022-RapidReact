@@ -167,11 +167,15 @@ public class JSticks extends Subsystem{
             mHeadingController.setGoal(mSwerve.getHeading().getDegrees());
         }
 
+        var isFieldOriented = !dr_LeftToggleDown_RobotOrient;
+
         // brian field oriented driving is not working
         if (mHeadingController.getHeadingControllerState() != SwerveHeadingController.HeadingControllerState.OFF) {
-            mSwerve.setTeleopInputs(swerveXInput, swerveYInput, mHeadingController.update(),false, !dr_LeftToggleDown_RobotOrient, true);
+            mSwerve.setTeleopInputs(swerveXInput, swerveYInput, mHeadingController.update(),
+                    false, isFieldOriented, true);
         } else {
-            mSwerve.setTeleopInputs(swerveXInput, swerveYInput,swerveRotationInput,false, !dr_LeftToggleDown_RobotOrient, false);
+            mSwerve.setTeleopInputs(swerveXInput, swerveYInput, swerveRotationInput,
+                    false, isFieldOriented, false);
         }
 
 		if (dr_YButton_ResetIMU) {
