@@ -37,7 +37,7 @@ public class Pigeon {
         double [] ypr = new double[3];
         pigeon.getYawPitchRoll(ypr);
         PigeonIMU.FusionStatus fusionStatus = new PigeonIMU.FusionStatus();
-        // brian temp debug
+        // brian temp debug please move to somewhere better
         SmartDashboard.putNumber("Pigeon Heading", pigeon.getFusedHeading(fusionStatus));
         return Rotation2d.fromDegrees(pigeon.getFusedHeading(fusionStatus)/*-ypr[0]*/);
     }
