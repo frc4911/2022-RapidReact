@@ -4,6 +4,9 @@ import java.util.Arrays;
 import java.util.List;
 
 import edu.wpi.first.math.util.Units;
+import frc.robot.config.DeadEye;
+import frc.robot.config.Junior;
+import frc.robot.config.Robot2022;
 import frc.robot.subsystems.LimeLights.LimeLight;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.SwerveConfiguration;
@@ -206,16 +209,11 @@ public class Constants {
 //    public static final double kSwerveEncUnitsPerInch = kSwerveDriveTicksPerWheelRev / (Math.PI * kSwerveWheelDiameter);
 
   // TODO - Replace the following constants with configuration
-    //Swerve Speed Constants
-    //max ticks/100ms; 2048 ticks/shaft rev * 106 max rev/sec=21777.1
-    // setting slightly below to assure it is reachable
+
     public static final double kSwerveDriveMaxSpeed = 21000.0; // drive motor ticks/100ms
     // start with velocity of motor shaft kSwerveDriveMaxSpeed*10 in ticks/sec * 6.923 (gear ratio) * wheel diameter * pi
+    // TODO:  This is used by Trajectory code etc.  Replace later.
     public static final double kSwerveMaxSpeedInchesPerSecond = kSwerveDriveMaxSpeed*10.0/(6.923*2048)*kSwerveWheelDiameter*Math.PI;
-    //max ticks/100ms; 2048 ticks/shaft rev * 106 max rev/sec=21777.1
-    // setting slightly below to assure it is reachable
-    public static final double kSwerveRotationMaxSpeed = 21000.0; // rotation motor ticks/100ms
-//    public static final double kSwerveRotation10VoltMaxSpeed = 1350.0; // TODO: tune this!!!
 
 
     // NEW SWERVE
@@ -235,254 +233,15 @@ public class Constants {
     public static final double kMK4_L2iSteerReduction = (14.0/50.0) * (10.0 / 60.0);
     public static final boolean kMK4_L2iSteerInverted = true;
 
-    // New Swerve requires SI units
     public static final double kDriveDeadband = 0.05;
 
-    // NOTE:
+    // New Swerve requires SI units
+    // NOTE:  All Robot specific configuration for Junior, DeadEye, and Robot2022 can be found in config folder.
     //    Robot specific Swerve configuration is done in SwerveConfiguration
     //    Module specific configuration is done in SwerveDriveConstants
 
-    // Junior //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // swerve modules
-    // zero - bezel to the left
-    // these numbers are for junior
-    public static final SwerveConfiguration kSwerveConfigurationJunior = new SwerveConfiguration(
-            Units.inchesToMeters(14.5),
-            Units.inchesToMeters(14.5),
-            Units.feetToMeters(14.2),
-            Math.toRadians(270),
-            .018,0,0,0 //kSwerveHeadingKp,kSwerveHeadingKi,kSwerveHeadingKp,kSwerveHeadingKf
-
-    );
-
-    public static final SwerveDriveModule.SwerveModuleConstants kFrontRightModuleConstantsJunior = new SwerveDriveModule.SwerveModuleConstants();
-
-    static {
-        kFrontRightModuleConstantsJunior.kName = "Front Right";
-        kFrontRightModuleConstantsJunior.kModuleId = 0;
-        kFrontRightModuleConstantsJunior.kDriveMotorTalonId = Ports.FRONT_RIGHT_DRIVE;
-        kFrontRightModuleConstantsJunior.kSteerMotorTalonId = Ports.FRONT_RIGHT_STEER;
-        kFrontRightModuleConstantsJunior.kSteerMotorEncoderHomeOffset = 883.0;
-        kFrontRightModuleConstantsJunior.kCANCoderOffsetDegrees = 80;
-        kFrontRightModuleConstantsJunior.kCANCoderId = Ports.FRONT_RIGHT_CANCODER;
-        kFrontRightModuleConstantsJunior.kWheelDiameter = kMK2_WheelDiameter;
-        kFrontRightModuleConstantsJunior.kDriveReduction = (18.0 / 38.0) * (26.0 / 18.0) * (15.0 / 60.0);
-        kFrontRightModuleConstantsJunior.kSteerReduction = kMK2_SteerReduction;
-        kFrontRightModuleConstantsJunior.kSteerMotorSlot0Kp = 0.4;
-		kFrontRightModuleConstantsJunior.kSteerMotorSlot0Ki = 0.0;
-		kFrontRightModuleConstantsJunior.kSteerMotorSlot0Kd = 0.0;
-		kFrontRightModuleConstantsJunior.kSteerMotorSlot0Kf = 0.0;
-    
-        /* ... */
-    }
-
-    public static final SwerveDriveModule.SwerveModuleConstants kFrontLeftModuleConstantsJunior = new SwerveDriveModule.SwerveModuleConstants();
-
-    static {
-        kFrontLeftModuleConstantsJunior.kName = "Front Left";
-        kFrontLeftModuleConstantsJunior.kModuleId = 1;
-        kFrontLeftModuleConstantsJunior.kDriveMotorTalonId = Ports.FRONT_LEFT_DRIVE;
-        kFrontLeftModuleConstantsJunior.kSteerMotorTalonId = Ports.FRONT_LEFT_STEER;
-        kFrontLeftModuleConstantsJunior.kSteerMotorEncoderHomeOffset = 1683.0;
-        kFrontLeftModuleConstantsJunior.kCANCoderOffsetDegrees = -28;
-        kFrontLeftModuleConstantsJunior.kCANCoderId = Ports.FRONT_LEFT_CANCODER;
-        kFrontLeftModuleConstantsJunior.kWheelDiameter = kMK2_WheelDiameter;
-        kFrontLeftModuleConstantsJunior.kDriveReduction = (18.0 / 38.0) * (26.0 / 18.0) * (15.0 / 60.0);
-        kFrontLeftModuleConstantsJunior.kSteerReduction = kMK2_SteerReduction;
-        kFrontLeftModuleConstantsJunior.kSteerMotorSlot0Kp = 0.4;
-		kFrontLeftModuleConstantsJunior.kSteerMotorSlot0Ki = 0.0;
-		kFrontLeftModuleConstantsJunior.kSteerMotorSlot0Kd = 0.0;
-		kFrontLeftModuleConstantsJunior.kSteerMotorSlot0Kf = 0.0;
-        /* ... */
-    }
-
-    public static final SwerveDriveModule.SwerveModuleConstants kBackLeftModuleConstantsJunior = new SwerveDriveModule.SwerveModuleConstants();
-
-    static {
-        kBackLeftModuleConstantsJunior.kName = "Back Left";
-        kBackLeftModuleConstantsJunior.kModuleId = 2;
-        kBackLeftModuleConstantsJunior.kDriveMotorTalonId = Ports.BACK_LEFT_DRIVE;
-        kBackLeftModuleConstantsJunior.kSteerMotorTalonId = Ports.BACK_LEFT_STEER;
-        kBackLeftModuleConstantsJunior.kSteerMotorEncoderHomeOffset = 3451.0;
-        kBackLeftModuleConstantsJunior.kCANCoderOffsetDegrees = 146;
-        kBackLeftModuleConstantsJunior.kCANCoderId = Ports.BACK_LEFT_CANCODER;
-        kBackLeftModuleConstantsJunior.kWheelDiameter = kMK2_WheelDiameter;
-        kBackLeftModuleConstantsJunior.kDriveReduction = (18.0 / 38.0) * (26.0 / 18.0) * (15.0 / 60.0);
-        kBackLeftModuleConstantsJunior.kSteerReduction = kMK2_SteerReduction;
-        kBackLeftModuleConstantsJunior.kSteerMotorSlot0Kp = 0.4;
-		kBackLeftModuleConstantsJunior.kSteerMotorSlot0Ki = 0.0;
-		kBackLeftModuleConstantsJunior.kSteerMotorSlot0Kd = 0.0;
-		kBackLeftModuleConstantsJunior.kSteerMotorSlot0Kf = 0.0;
-        /* ... */
-    }
-
-    public static final SwerveDriveModule.SwerveModuleConstants kBackRightModuleConstantsJunior = new SwerveDriveModule.SwerveModuleConstants();
-
-    static {
-        kBackRightModuleConstantsJunior.kName = "Back Right";
-        kBackRightModuleConstantsJunior.kModuleId = 3;
-        kBackRightModuleConstantsJunior.kDriveMotorTalonId = Ports.BACK_RIGHT_DRIVE;
-        kBackRightModuleConstantsJunior.kSteerMotorTalonId = Ports.BACK_RIGHT_STEER;
-        kBackRightModuleConstantsJunior.kSteerMotorEncoderHomeOffset = -327.0;
-        kBackRightModuleConstantsJunior.kCANCoderId = Ports.BACK_RIGHT_CANCODER;
-        kBackRightModuleConstantsJunior.kCANCoderOffsetDegrees = -24;
-        kBackRightModuleConstantsJunior.kWheelDiameter = kMK2_WheelDiameter;
-        kBackRightModuleConstantsJunior.kDriveReduction = (18.0 / 38.0) * (26.0 / 18.0) * (15.0 / 60.0);
-        kBackRightModuleConstantsJunior.kSteerReduction = kMK2_SteerReduction;
-        kBackRightModuleConstantsJunior.kSteerMotorSlot0Kp = 0.4;
-		kBackRightModuleConstantsJunior.kSteerMotorSlot0Ki = 0.0;
-		kBackRightModuleConstantsJunior.kSteerMotorSlot0Kd = 0.0;
-		kBackRightModuleConstantsJunior.kSteerMotorSlot0Kf = 0.0;
-        /* ... */
-    }
-
-    // DeadEye //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // swerve modules
-    // zero - bezel to the left
-
-    public static final SwerveConfiguration kSwerveConfigurationDeadEye = new SwerveConfiguration(
-            Units.inchesToMeters(21.0),
-            Units.inchesToMeters(21.0),
-            Units.feetToMeters(14.2),
-            Math.toRadians(270),
-            .018,0,0,0 //kSwerveHeadingKp,kSwerveHeadingKi,kSwerveHeadingKp,kSwerveHeadingKf
-    );
-
-    public static final SwerveDriveModule.SwerveModuleConstants kFrontRightModuleConstantsDeadEye = new SwerveDriveModule.SwerveModuleConstants();
-
-    static {
-        kFrontRightModuleConstantsDeadEye.kName = "Front Right";
-        kFrontRightModuleConstantsDeadEye.kDriveMotorTalonId = Ports.FRONT_RIGHT_DRIVE;
-        kFrontRightModuleConstantsDeadEye.kSteerMotorTalonId = Ports.FRONT_RIGHT_STEER;
-        kFrontRightModuleConstantsDeadEye.kSteerMotorEncoderHomeOffset = 883.0;
-        kFrontRightModuleConstantsDeadEye.kCANCoderId = Ports.FRONT_RIGHT_CANCODER;
-        kFrontRightModuleConstantsDeadEye.kCANCoderOffsetDegrees = 0;
-        kFrontRightModuleConstantsDeadEye.kWheelDiameter = kMK2_WheelDiameter;
-        kFrontRightModuleConstantsDeadEye.kDriveReduction = (16.0 / 40.0) * (26.0 / 18.0) * (15.0 / 60.0);
-        kFrontRightModuleConstantsDeadEye.kSteerReduction = kMK2_SteerReduction;
-        /* ... */
-    }
-
-    public static final SwerveDriveModule.SwerveModuleConstants kFrontLeftModuleConstantsDeadEye = new SwerveDriveModule.SwerveModuleConstants();
-
-    static {
-        kFrontLeftModuleConstantsDeadEye.kName = "Front Left";
-        kFrontLeftModuleConstantsDeadEye.kDriveMotorTalonId = Ports.FRONT_LEFT_DRIVE;
-        kFrontLeftModuleConstantsDeadEye.kSteerMotorTalonId = Ports.FRONT_LEFT_STEER;
-        kFrontLeftModuleConstantsDeadEye.kSteerMotorEncoderHomeOffset = 1683.0;
-        kFrontLeftModuleConstantsDeadEye.kCANCoderId = Ports.FRONT_LEFT_CANCODER;
-        kFrontLeftModuleConstantsDeadEye.kCANCoderOffsetDegrees = 0;
-        kFrontLeftModuleConstantsDeadEye.kWheelDiameter = kMK2_WheelDiameter;
-        kFrontLeftModuleConstantsDeadEye.kDriveReduction = (16.0 / 40.0) * (26.0 / 18.0) * (15.0 / 60.0);
-        kFrontLeftModuleConstantsDeadEye.kSteerReduction = kMK2_SteerReduction;
-        /* ... */
-    }
-
-    public static final SwerveDriveModule.SwerveModuleConstants kBackLeftModuleConstantsDeadEye = new SwerveDriveModule.SwerveModuleConstants();
-
-    static {
-        kBackLeftModuleConstantsDeadEye.kName = "Back Left";
-        kBackLeftModuleConstantsDeadEye.kDriveMotorTalonId = Ports.BACK_LEFT_DRIVE;
-        kBackLeftModuleConstantsDeadEye.kSteerMotorTalonId = Ports.BACK_LEFT_STEER;
-        kBackLeftModuleConstantsDeadEye.kSteerMotorEncoderHomeOffset = 3451.0;
-        kBackLeftModuleConstantsDeadEye.kCANCoderId = Ports.BACK_LEFT_CANCODER;
-        kBackLeftModuleConstantsDeadEye.kCANCoderOffsetDegrees = 0;
-        kBackLeftModuleConstantsDeadEye.kWheelDiameter = kMK2_WheelDiameter;
-        kBackLeftModuleConstantsDeadEye.kDriveReduction = (16.0 / 40.0) * (26.0 / 18.0) * (15.0 / 60.0);
-        kBackLeftModuleConstantsDeadEye.kSteerReduction = kMK2_SteerReduction;
-        /* ... */
-    }
-
-    public static final SwerveDriveModule.SwerveModuleConstants kBackRightModuleConstantsDeadEye = new SwerveDriveModule.SwerveModuleConstants();
-
-    static {
-        kBackRightModuleConstantsDeadEye.kName = "Back Right";
-        kBackRightModuleConstantsDeadEye.kDriveMotorTalonId = Ports.BACK_RIGHT_DRIVE;
-        kBackRightModuleConstantsDeadEye.kSteerMotorTalonId = Ports.BACK_RIGHT_STEER;
-        kBackRightModuleConstantsDeadEye.kSteerMotorEncoderHomeOffset = -327.0;
-        kBackRightModuleConstantsDeadEye.kCANCoderId = Ports.BACK_RIGHT_CANCODER;
-        kBackRightModuleConstantsDeadEye.kCANCoderOffsetDegrees = 0;
-        kBackRightModuleConstantsDeadEye.kWheelDiameter = kMK2_WheelDiameter;
-        kBackRightModuleConstantsDeadEye.kDriveReduction = (16.0 / 40.0) * (26.0 / 18.0) * (15.0 / 60.0);
-        kBackRightModuleConstantsDeadEye.kSteerReduction = kMK2_SteerReduction;
-        /* ... */
-    }
-
-    // Robot2022 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // swerve modules
-    // zero - bezel to the left
-    public static final SwerveConfiguration kSwerveConfigurationRobot2022 = new SwerveConfiguration(
-            Units.inchesToMeters(23.75),
-            Units.inchesToMeters(20.75),
-            Units.feetToMeters(14.2),
-            Math.toRadians(270),
-            .018,0,0,0 //kSwerveHeadingKp,kSwerveHeadingKi,kSwerveHeadingKp,kSwerveHeadingKf
-    );
-
-    public static final SwerveDriveModule.SwerveModuleConstants kFrontRightModuleConstantsRobot2022 = new SwerveDriveModule.SwerveModuleConstants();
-
-    static {
-        kFrontRightModuleConstantsRobot2022.kName = "Front Right";
-        kFrontRightModuleConstantsRobot2022.kDriveMotorTalonId = Ports.FRONT_RIGHT_DRIVE;
-        kFrontRightModuleConstantsRobot2022.kSteerMotorTalonId = Ports.FRONT_RIGHT_STEER;
-        kFrontRightModuleConstantsRobot2022.kSteerMotorEncoderHomeOffset = 883.0;
-        kFrontRightModuleConstantsRobot2022.kCANCoderId = Ports.FRONT_RIGHT_CANCODER;
-        kFrontRightModuleConstantsRobot2022.kCANCoderOffsetDegrees = 0;
-        kFrontRightModuleConstantsRobot2022.kWheelDiameter = kMK4_L2iWheelDiameter;
-        kFrontRightModuleConstantsRobot2022.kDriveReduction = kMK4_L2iDriveReduction;
-        kFrontRightModuleConstantsRobot2022.kSteerReduction = kMK4_L2iSteerReduction;
-        /* ... */
-    }
-
-    public static final SwerveDriveModule.SwerveModuleConstants kFrontLeftModuleConstantsRobot2022 = new SwerveDriveModule.SwerveModuleConstants();
-
-    static {
-        kFrontLeftModuleConstantsRobot2022.kName = "Front Left";
-        kFrontLeftModuleConstantsRobot2022.kDriveMotorTalonId = Ports.FRONT_LEFT_DRIVE;
-        kFrontLeftModuleConstantsRobot2022.kSteerMotorTalonId = Ports.FRONT_LEFT_STEER;
-        kFrontLeftModuleConstantsRobot2022.kSteerMotorEncoderHomeOffset = 1683.0;
-        kFrontLeftModuleConstantsRobot2022.kCANCoderId = Ports.FRONT_LEFT_CANCODER;
-        kFrontLeftModuleConstantsRobot2022.kCANCoderOffsetDegrees = 0;
-        kFrontLeftModuleConstantsRobot2022.kWheelDiameter = kMK4_L2iWheelDiameter;
-        kFrontLeftModuleConstantsRobot2022.kDriveReduction = kMK4_L2iDriveReduction;
-        kFrontLeftModuleConstantsRobot2022.kSteerReduction = kMK4_L2iSteerReduction;
-        /* ... */
-    }
-
-    public static final SwerveDriveModule.SwerveModuleConstants kBackLeftModuleConstantsRobot2022 = new SwerveDriveModule.SwerveModuleConstants();
-
-    static {
-        kBackLeftModuleConstantsRobot2022.kName = "Back Left";
-        kBackLeftModuleConstantsRobot2022.kDriveMotorTalonId = Ports.BACK_LEFT_DRIVE;
-        kBackLeftModuleConstantsRobot2022.kSteerMotorTalonId = Ports.BACK_LEFT_STEER;
-        kBackLeftModuleConstantsRobot2022.kSteerMotorEncoderHomeOffset = 3451.0;
-        kBackLeftModuleConstantsRobot2022.kCANCoderId = Ports.BACK_LEFT_CANCODER;
-        kBackLeftModuleConstantsRobot2022.kCANCoderOffsetDegrees = 0;
-        kBackLeftModuleConstantsRobot2022.kWheelDiameter = kMK4_L2iWheelDiameter;
-        kBackLeftModuleConstantsRobot2022.kDriveReduction = kMK4_L2iDriveReduction;
-        kBackLeftModuleConstantsRobot2022.kSteerReduction = kMK4_L2iSteerReduction;
-        /* ... */
-    }
-
-    public static final SwerveDriveModule.SwerveModuleConstants kBackRightModuleConstantsRobot2022 = new SwerveDriveModule.SwerveModuleConstants();
-
-    static {
-        kBackRightModuleConstantsRobot2022.kName = "Back Right";
-        kBackRightModuleConstantsRobot2022.kDriveMotorTalonId = Ports.BACK_RIGHT_DRIVE;
-        kBackRightModuleConstantsRobot2022.kSteerMotorTalonId = Ports.BACK_RIGHT_STEER;
-        kBackRightModuleConstantsRobot2022.kSteerMotorEncoderHomeOffset = -327.0;
-        kBackRightModuleConstantsRobot2022.kCANCoderId = Ports.BACK_RIGHT_CANCODER;
-        kBackRightModuleConstantsRobot2022.kCANCoderOffsetDegrees = 0;
-        kBackRightModuleConstantsRobot2022.kWheelDiameter = kMK4_L2iWheelDiameter;
-        kBackRightModuleConstantsRobot2022.kDriveReduction = kMK4_L2iDriveReduction;
-        kBackRightModuleConstantsRobot2022.kSteerReduction = kMK4_L2iSteerReduction;
-        /* ... */
-    }
-
     // Swerve Heading Controller
     public static final double kSwerveHeadingControllerErrorTolerance = 1.0; // degrees
-
-
 
     // END NEW SWERVE
 
