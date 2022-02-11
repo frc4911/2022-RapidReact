@@ -45,18 +45,18 @@ public class SwerveDriveModule extends Subsystem {
 		public int kDriveMotorTalonId = -1;
 		public int kSteerMotorTalonId = -1;
 
-		// general Steer Motor
-		public boolean kInvertSteerMotor = false;
-		public boolean kInvertSteerMotorSensorPhase = true;
-		public NeutralMode kSteerMotorInitNeutralMode = NeutralMode.Coast; // neutral mode could change
-        public double kSteerMotorTicksPerRadian = (2048.0 * 18)/(2.0 * Math.PI); // for steer motor
-        public double kSteerMotorTicksPerRadianPerSecond = kSteerMotorTicksPerRadian / 10; // for steer motor
-		public double kSteerMotorEncoderHomeOffset = 0;
-
         // Default steer reduction is Mk4_L2i value
         public double kSteerReduction = (14.0 / 50.0) * (10.0 / 60.0); // 1/21.43
         public double kSteerTicksPerUnitDistance = (1.0 / 2048.0) * kSteerReduction * (2.0 * Math.PI); 
         public double kSteerTicksPerUnitVelocity = kSteerTicksPerUnitDistance * 10;  // Motor controller unit is ticks per 100 ms
+
+		// general Steer Motor
+		public boolean kInvertSteerMotor = false;
+		public boolean kInvertSteerMotorSensorPhase = true;
+		public NeutralMode kSteerMotorInitNeutralMode = NeutralMode.Coast; // neutral mode could change
+        public double kSteerMotorTicksPerRadian = (2048.0 / kSteerReduction)/(2.0 * Math.PI); // for steer motor
+        public double kSteerMotorTicksPerRadianPerSecond = kSteerMotorTicksPerRadian / 10; // for steer motor
+		public double kSteerMotorEncoderHomeOffset = 0;
 
 		// Steer CANCoder
 		public int kCANCoderId = -1;
@@ -144,7 +144,7 @@ public class SwerveDriveModule extends Subsystem {
         config.initializationStrategy = mConstants.kCANCoderSensorInitializationStrategy;
         config.absoluteSensorRange = AbsoluteSensorRange.Unsigned_0_to_360;
         config.magnetOffsetDegrees = constants.kCANCoderOffsetDegrees;
-        config.sensorDirection = true;
+        config.sensorDirection = false; //TODO - Make cancoder direction configurable through robot config files
 
         mCANCoder = new CANCoder(constants.kCANCoderId);
         mCANCoder.configAllSettings(config, Constants.kLongCANTimeoutMs);
@@ -528,6 +528,7 @@ public class SwerveDriveModule extends Subsystem {
         SmartDashboard.putNumber(mModuleName + " steerDemand", mPeriodicIO.steerDemand);
         SmartDashboard.putNumber(mModuleName + " steerPosition", mPeriodicIO.steerPosition);
         SmartDashboard.putNumber(mModuleName + " driveDemand", mPeriodicIO.driveDemand);
+        SmartDashboard.putNumber(mModuleName + " drivePosition", mPeriodicIO.drivePosition);
         // SmartDashboard.putNumber(mModuleName + "Steer", periodicIO.drivePosition);
         // SmartDashboard.putNumber(mModuleName + "Velocity", mDriveMotor.getSelectedSensorVelocity(0));
         //SmartDashboard.putNumber(mModuleName + "Velocity", encVelocityToInchesPerSecond(periodicIO.velocity));
