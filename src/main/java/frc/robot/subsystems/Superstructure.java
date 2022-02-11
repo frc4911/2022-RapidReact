@@ -186,11 +186,19 @@ public class Superstructure extends Subsystem{
         return backingStateTransfer();
     }
 
-    // TO-DO: Get help with logic and limelight implementation
+    // TO-DO: Get help with logic and limelight implementation - CURRENTLY UNUSED
     // If time constrains, may not be complete by Week 1
     private SystemState handleAutoShooting() {
         if(mStateChanged){
+            mShootSetup = true;
+            mPeriodicIO.schedDeltaDesired = mFastCycle;
+        }
 
+        if (mShooter.readyToShoot() || !mShootSetup) {
+            mIndexer.setWantedState(Indexer.WantedState.FEED);
+            mShootSetup = false;
+        } else {
+            mIndexer.setWantedState(Indexer.WantedState.HOLD);
         }
 
         return shootingStateTransfer();
