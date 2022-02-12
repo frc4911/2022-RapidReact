@@ -291,7 +291,7 @@ public class Superstructure extends Subsystem{
             case AUTO_CLIMB:
                 return SystemState.AUTO_CLIMBING;
             case MANUAL_CLIMB:
-                return SystemState.AUTO_SHOOTING;
+                return SystemState.MANUAL_CLIMBING;
             case HOLD:
             default:
                 return SystemState.HOLDING;
