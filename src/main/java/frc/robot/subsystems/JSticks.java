@@ -12,8 +12,6 @@ public class JSticks extends Subsystem{
 
     /*
     TO-DO:
-    Uncomment driver and operator controllers and superstructure
-
     Add joystick input variables to PeriodicIO
         -The button allocations may be arbitrarily assigned for now
         -They will eventually be based on driver and operator preference,
@@ -142,7 +140,7 @@ public class JSticks extends Subsystem{
 		double swerveXInput = mPeriodicIO.dr_RightStickY_Translate;
 		double swerveRotationInput = mPeriodicIO.dr_LeftStickX_Rotate;
 
-        mSwerve.sendInput(swerveXInput, swerveYInput, swerveRotationInput, mPeriodicIO.dr_LeftToggleDown_RobotOrient, false);
+        mSwerve.sendInput(swerveXInput, swerveYInput, swerveRotationInput, mPeriodicIO.dr_LeftTrigger_RobotOrient, false);
 
 		if (mPeriodicIO.dr_YButton_ResetIMU) {
 			mSwerve.temporarilyDisableHeadingController();
@@ -162,7 +160,13 @@ public class JSticks extends Subsystem{
         mPeriodicIO.dr_RightStickY_Translate = mDriver.getRaw(Xbox.RIGHT_STICK_Y, mDeadBand);
         mPeriodicIO.dr_LeftStickX_Rotate = mDriver.getRaw(Xbox.LEFT_STICK_X, mDeadBand);
         mPeriodicIO.dr_YButton_ResetIMU = mDriver.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
-
+        mPeriodicIO.op_LeftStickY_ClimberArms = mOperator.getRaw(Xbox.LEFT_STICK_X, mDeadBand);
+        mPeriodicIO.dr_LeftTrigger_RobotOrient = mDriver.getButton(Xbox.LEFT_TRIGGER, CW.PRESSED_EDGE); // field/robot oriented
+        mPeriodicIO.op_XButton_DeployCollector = mOperator.getButton(Xbox.X_BUTTON, CW.PRESSED_LEVEL);
+        mPeriodicIO.op_AButton_ClearCollector = mOperator.getButton(Xbox.A_BUTTON, CW.PRESSED_LEVEL);
+        mPeriodicIO.op_YButton_SlappySticks = mOperator.getButton(Xbox.X_BUTTON, CW.PRESSED_EDGE);
+        mPeriodicIO.op_BButton_StopShooter = mOperator.getButton(Xbox.B_BUTTON, CW.PRESSED_LEVEL);
+        mPeriodicIO.op_LeftTrigger_ManualShoot = mOperator.getButton(Xbox.LEFT_TRIGGER, CW.PRESSED_LEVEL);
     }
 
     private SystemState defaultStateTransfer() {
@@ -210,11 +214,19 @@ public class JSticks extends Subsystem{
         private double lastSchedStart;
 
         //Joystick Inputs
-        public double  dr_RightStickX_Translate; // drive
+        public double  dr_RightStickX_Translate ; // drive
         public double  dr_RightStickY_Translate; // drive
         public double  dr_LeftStickX_Rotate;     // drive
+        public double op_LeftStickY_ClimberArms;
         public boolean dr_YButton_ResetIMU = false;      // reset direction
-        public boolean dr_LeftToggleDown_RobotOrient = false; // field/robot oriented
+        public boolean dr_LeftTrigger_RobotOrient = false; // field/robot oriented
+        public boolean op_XButton_DeployCollector = false;
+        public boolean op_AButton_ClearCollector = false;
+        public boolean op_YButton_SlappySticks = false;
+        public boolean op_BButton_StopShooter = false;
+        public boolean op_LeftTrigger_ManualShoot = false;
+
+
 
     }
 }
