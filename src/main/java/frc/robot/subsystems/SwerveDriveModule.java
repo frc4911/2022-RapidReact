@@ -334,6 +334,18 @@ public class SwerveDriveModule extends Subsystem {
         // Get the shortest angular distance between current and reference angles.
         double shortest_distance = Angles.shortest_angular_distance(currentAngleRadiansMod, referenceAngleRadians);
 
+        // Calculates shortcut angle and direction to prevent wheels from rotating as much
+        // E.g. will drive wheels backward instead of rotation 180 degrees
+        double pi = Math.PI;
+        boolean flipDirection = false;
+        if(shortest_distance > (pi/2)){
+            shortest_distance -= pi;
+            flipDirection = true;
+        } else if (shortest_distance < (-pi/2)){
+            shortest_distance += pi;
+            flipDirection = true;
+        }
+
         // Adjust by adding the shortest distance to current angle (which can be in  multiples of 2pi)
         double adjustedReferenceAngleRadians = currentAngleRadians + shortest_distance;
 
@@ -341,7 +353,10 @@ public class SwerveDriveModule extends Subsystem {
         mPeriodicIO.steerControlMode = ControlMode.Position;
 
         // convert to encoder units
-        mPeriodicIO.steerDemand = radiansToEncoderUnits(adjustedReferenceAngleRadians);                        
+        mPeriodicIO.steerDemand = radiansToEncoderUnits(adjustedReferenceAngleRadians);
+        if(flipDirection){
+            mPeriodicIO.driveDemand *= -1;
+        }                        
     }
 
     /**
