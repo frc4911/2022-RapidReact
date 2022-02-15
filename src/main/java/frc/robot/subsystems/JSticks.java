@@ -135,6 +135,8 @@ public class JSticks extends Subsystem{
     }
 
     public void teleopRoutines() {
+
+        
         //Swerve control
 		double swerveYInput = mPeriodicIO.dr_RightStickX_Translate;
 		double swerveXInput = mPeriodicIO.dr_RightStickY_Translate;
