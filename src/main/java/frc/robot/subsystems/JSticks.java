@@ -47,9 +47,9 @@ public class JSticks extends Subsystem{
     private double lastSchedStart;
 
     //Joystick Inputs
-    public double  dr_RightStickX_Translate; // drive
-    public double  dr_RightStickY_Translate; // drive
-    public double  dr_LeftStickX_Rotate;     // drive
+    public double  dr_LeftStickX_Translate; // drive
+    public double  dr_LeftStickY_Translate; // drive
+    public double  dr_RightStickX_Rotate;     // drive
     public boolean dr_YButton_ResetIMU = false;      // reset direction
     public boolean dr_LeftToggleDown_RobotOrient = false; // field/robot oriented
     private double controlledSpeed = .4;
@@ -154,9 +154,9 @@ public class JSticks extends Subsystem{
 
     public void teleopRoutines() {
         //Swerve control
-		double swerveYInput = dr_RightStickX_Translate;
-		double swerveXInput = dr_RightStickY_Translate;
-		double swerveRotationInput = dr_LeftStickX_Rotate;
+		double swerveYInput = dr_LeftStickX_Translate;
+		double swerveXInput = dr_LeftStickY_Translate;
+		double swerveRotationInput = dr_RightStickX_Rotate;
  
         // NEW SWERVE
         boolean maintainHeading = mShouldMaintainHeading.update(swerveRotationInput == 0, 0.2);
@@ -193,9 +193,9 @@ public class JSticks extends Subsystem{
         lastSchedStart   = now;
 
         if (mDriver.joystickFound()) {
-            dr_RightStickX_Translate = -mDriver.getRaw(Xbox.RIGHT_STICK_X, mDeadBand);
-            dr_RightStickY_Translate = -mDriver.getRaw(Xbox.RIGHT_STICK_Y, mDeadBand);
-            dr_LeftStickX_Rotate = mDriver.getRaw(Xbox.LEFT_STICK_X, mDeadBand);
+            dr_LeftStickX_Translate = -mDriver.getRaw(Xbox.LEFT_STICK_X, mDeadBand);
+            dr_LeftStickY_Translate = -mDriver.getRaw(Xbox.LEFT_STICK_Y, mDeadBand);
+            dr_RightStickX_Rotate = -mDriver.getRaw(Xbox.RIGHT_STICK_X, mDeadBand);
             dr_YButton_ResetIMU = mDriver.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
         }
         else {
@@ -207,36 +207,36 @@ public class JSticks extends Subsystem{
                 controlledSpeed+=.01;
                 System.out.println("Controlled speed is now "+controlledSpeed);
             }
-            dr_LeftStickX_Rotate = 0; 
+            dr_RightStickX_Rotate = 0; 
             if (mDriver2.getButton(LogitechExtreme.LEFT_SEVEN, CW.PRESSED_LEVEL)){
-                dr_RightStickX_Translate = 0;
-                dr_RightStickY_Translate = controlledSpeed;
+                dr_LeftStickX_Translate = 0;
+                dr_LeftStickY_Translate = controlledSpeed;
             }
             else if (mDriver2.getButton(LogitechExtreme.LEFT_EIGHT, CW.PRESSED_LEVEL)){
-                dr_RightStickX_Translate = -controlledSpeed;
-                dr_RightStickY_Translate = 0;
+                dr_LeftStickX_Translate = -controlledSpeed;
+                dr_LeftStickY_Translate = 0;
             }
             else if (mDriver2.getButton(LogitechExtreme.LEFT_NINE, CW.PRESSED_LEVEL)){
-                dr_RightStickX_Translate = controlledSpeed;
-                dr_RightStickY_Translate = 0;
+                dr_LeftStickX_Translate = controlledSpeed;
+                dr_LeftStickY_Translate = 0;
             }
             else if (mDriver2.getButton(LogitechExtreme.LEFT_TEN, CW.PRESSED_LEVEL)){
-                dr_RightStickX_Translate = 0;
-                dr_RightStickY_Translate = -controlledSpeed;
+                dr_LeftStickX_Translate = 0;
+                dr_LeftStickY_Translate = -controlledSpeed;
             }
             else {
-                dr_RightStickX_Translate = -mDriver2.getRaw(LogitechExtreme.X, mDeadBand);
-                dr_RightStickX_Translate = Math.copySign(Math.pow(dr_RightStickX_Translate,2), dr_RightStickX_Translate);
-                dr_RightStickY_Translate = -mDriver2.getRaw(LogitechExtreme.Y, mDeadBand);
-                dr_RightStickY_Translate = Math.copySign(Math.pow(dr_RightStickY_Translate,2), dr_RightStickY_Translate);
+                dr_LeftStickX_Translate = -mDriver2.getRaw(LogitechExtreme.X, mDeadBand);
+                dr_LeftStickX_Translate = Math.copySign(Math.pow(dr_LeftStickX_Translate,2), dr_LeftStickX_Translate);
+                dr_LeftStickY_Translate = -mDriver2.getRaw(LogitechExtreme.Y, mDeadBand);
+                dr_LeftStickY_Translate = Math.copySign(Math.pow(dr_LeftStickY_Translate,2), dr_LeftStickY_Translate);
             }
             // make it easier to drive w/o rotate
             if (mDriver2.getButton(LogitechExtreme.TOP_THREE, CW.PRESSED_LEVEL)){
-                dr_LeftStickX_Rotate = 0;    
+                dr_RightStickX_Rotate = 0;    
             }
             else{
-                dr_LeftStickX_Rotate = -mDriver2.getRaw(LogitechExtreme.Z, mDeadBand);
-                dr_LeftStickX_Rotate = Math.copySign(Math.pow(dr_LeftStickX_Rotate,2), dr_LeftStickX_Rotate);
+                dr_RightStickX_Rotate = -mDriver2.getRaw(LogitechExtreme.Z, mDeadBand);
+                dr_RightStickX_Rotate = Math.copySign(Math.pow(dr_RightStickX_Rotate,2), dr_RightStickX_Rotate);
             }
             dr_YButton_ResetIMU = mDriver2.getButton(LogitechExtreme.THUMB_BUTTON, CW.PRESSED_EDGE);
             // hold trigger to switch to robot oriented

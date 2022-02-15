@@ -32,7 +32,7 @@ public class Robot2022 {
         kFrontRightModuleConstants.kSteerReduction = kMK4_L2iSteerReduction;
         kFrontRightModuleConstants.kInvertDrive = true;
         kFrontRightModuleConstants.kInvertSteerMotor = true;
-        kFrontRightModuleConstants.kSteerMotorSlot0Kp = 0.2;
+        kFrontRightModuleConstants.kSteerMotorSlot0Kp = 0.25;
         kFrontRightModuleConstants.kSteerMotorSlot0Ki = 0.0;
         kFrontRightModuleConstants.kSteerMotorSlot0Kd = 0.0;
         kFrontRightModuleConstants.kSteerMotorSlot0Kf = 0.0;
@@ -53,7 +53,7 @@ public class Robot2022 {
         kFrontLeftModuleConstants.kSteerReduction = kMK4_L2iSteerReduction;
         kFrontLeftModuleConstants.kInvertDrive = true;
         kFrontLeftModuleConstants.kInvertSteerMotor = true;
-        kFrontLeftModuleConstants.kSteerMotorSlot0Kp = 0.2;
+        kFrontLeftModuleConstants.kSteerMotorSlot0Kp = 0.25;
         kFrontLeftModuleConstants.kSteerMotorSlot0Ki = 0.0;
         kFrontLeftModuleConstants.kSteerMotorSlot0Kd = 0.0;
         kFrontLeftModuleConstants.kSteerMotorSlot0Kf = 0.0;
@@ -74,7 +74,7 @@ public class Robot2022 {
         kBackLeftModuleConstants.kSteerReduction = kMK4_L2iSteerReduction;
         kBackLeftModuleConstants.kInvertDrive = true;
         kBackLeftModuleConstants.kInvertSteerMotor = true;
-        kBackLeftModuleConstants.kSteerMotorSlot0Kp = 0.2;
+        kBackLeftModuleConstants.kSteerMotorSlot0Kp = 0.25;
         kBackLeftModuleConstants.kSteerMotorSlot0Ki = 0.0;
         kBackLeftModuleConstants.kSteerMotorSlot0Kd = 0.0;
         kBackLeftModuleConstants.kSteerMotorSlot0Kf = 0.0;
@@ -95,7 +95,7 @@ public class Robot2022 {
         kBackRightModuleConstants.kSteerReduction = kMK4_L2iSteerReduction;
         kBackRightModuleConstants.kInvertDrive = true;
         kBackRightModuleConstants.kInvertSteerMotor = true;
-        kBackRightModuleConstants.kSteerMotorSlot0Kp = 0.2;
+        kBackRightModuleConstants.kSteerMotorSlot0Kp = 0.25;
         kBackRightModuleConstants.kSteerMotorSlot0Ki = 0.0;
         kBackRightModuleConstants.kSteerMotorSlot0Kd = 0.0;
         kBackRightModuleConstants.kSteerMotorSlot0Kf = 0.0;

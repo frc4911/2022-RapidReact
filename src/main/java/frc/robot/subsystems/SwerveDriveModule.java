@@ -236,22 +236,23 @@ public class SwerveDriveModule extends Subsystem {
 
         // Configure Drive motor
         mDriveMotor.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor, 0, Constants.kLongCANTimeoutMs);
-        mDriveMotor.setSelectedSensorPosition(0, 0, Constants.kLongCANTimeoutMs);
         mDriveMotor.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
         mDriveMotor.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
-        mDriveMotor.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, mConstants.kDriveStatusFrame2UpdateRate, Constants.kLongCANTimeoutMs);
         mDriveMotor.configVelocityMeasurementPeriod(mConstants.kDriveMotorVelocityMeasurementPeriod, Constants.kLongCANTimeoutMs);
         mDriveMotor.configVelocityMeasurementWindow(mConstants.kDriveVelocityMeasurementWindow, Constants.kLongCANTimeoutMs);
         mDriveMotor.configNominalOutputForward(0.0, Constants.kLongCANTimeoutMs);
         mDriveMotor.configNominalOutputReverse(0.0, Constants.kLongCANTimeoutMs);
         mDriveMotor.configVoltageCompSaturation(mConstants.kDriveMaxVoltage, Constants.kLongCANTimeoutMs);
         mDriveMotor.enableVoltageCompensation(true);
+        mDriveMotor.setControlFramePeriod(ControlFrame.Control_3_General, 18); // Need this to prevent clicking sounds
         mDriveMotor.setInverted(mConstants.kInvertDrive);
-        mDriveMotor.setSensorPhase(mConstants.kInvertDriveSensorPhase);
         mDriveMotor.setNeutralMode(mConstants.kDriveInitNeutralMode);
-        mDriveMotor.configOpenloopRamp(0.25, Constants.kLongCANTimeoutMs);
-//        mDriveMotor.configClosedloopRamp(0.0);
-//        mDriveMotor.configAllowableClosedloopError(0, 0, Constants.kLongCANTimeoutMs);
+        mDriveMotor.setSelectedSensorPosition(0, 0, Constants.kLongCANTimeoutMs);
+        mDriveMotor.setSensorPhase(mConstants.kInvertDriveSensorPhase);
+        mDriveMotor.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, mConstants.kDriveStatusFrame2UpdateRate, Constants.kLongCANTimeoutMs);
+        // mDriveMotor.configOpenloopRamp(0.25, Constants.kLongCANTimeoutMs); //Bring back if swerve acceleration is too fast
+        mDriveMotor.configClosedloopRamp(0.0);
+        mDriveMotor.configAllowableClosedloopError(0, 0, Constants.kLongCANTimeoutMs);
 
         if (mConstants.kDriveEnableCurrentLimit) {
             var supplyCurrLimit = new SupplyCurrentLimitConfiguration();
