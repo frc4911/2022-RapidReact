@@ -141,8 +141,48 @@ public class JSticks extends Subsystem{
 			mSwerve.zeroSensors(Constants.kRobotStartingPose);
 			mSwerve.resetAveragedDirection();
 		}
+        // if (currentState == Superstructure.WantedState.CLIMB) {                             WTF IS GOING ON - CALEB
+		// 	mSuperstructure.setClimbOpenLoop(mPeriodicIO.opLeftStickY_ClimbSpeed);             WTF WTF WTF - GAVIN
+		// }
+
+        currentState = activeBtnIsReleased(currentState);
+		if (currentState == Superstructure.WantedState.HOLD) {
+			if (mPeriodicIO.op_LeftTrigger_ManualShoot) {
+				mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT);
+			} else if (mPeriodicIO.op_XButton_DeployCollector) {
+				mSuperstructure.setWantedState(Superstructure.WantedState.COLLECT);
+			} else if (mPeriodicIO.op_YButton_SlappySticks) {
+				mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_CLIMB);
+			} else if (mPeriodicIO.op_AButton_ClearCollector) {
+                mSuperstructure.setWantedState(Superstructure.WantedState.CLEAR);
+            } else if (previousState != currentState) {
+				mSuperstructure.setWantedState(Superstructure.WantedState.HOLD);
+			}
+
+
+        }
 
 	}
+
+    private Superstructure.WantedState activeBtnIsReleased(Superstructure.WantedState currentState) {
+		switch (currentState) {
+			case MANUAL_SHOOT:
+				return !mPeriodicIO.op_LeftTrigger_ManualShoot ? Superstructure.WantedState.HOLD : currentState;
+			case COLLECT:
+				return !mPeriodicIO.op_XButton_DeployCollector ? Superstructure.WantedState.HOLD : currentState;
+			case MANUAL_CLIMB:
+				return !mPeriodicIO.op_LeftTrigger_ManualShoot ? Superstructure.WantedState.HOLD : currentState;
+			// case MANUAL_SHOOT:                                                                                         IDK ABOUT THIS EITHER -CALEB WEST
+			// 	if (!mPeriodicIO.opPOV0_MANUAL10 && !mPeriodicIO.opPOV90_MANUAL15 && !mPeriodicIO.opPOV180_MANUAL20 && !mPeriodicIO.opPOV270_MANUAL25) {
+			// 		return Superstructure.WantedState.HOLD;
+			// 	}
+			// 	return currentState;
+			case CLEAR:
+                return !mPeriodicIO.op_AButton_ClearCollector ? Superstructure.WantedState.HOLD : currentState;
+			default:
+                return Superstructure.WantedState.HOLD;
+        }        
+    }
 
     @Override
     public void readPeriodicInputs() {
