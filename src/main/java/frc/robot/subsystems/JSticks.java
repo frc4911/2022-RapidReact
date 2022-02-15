@@ -141,8 +141,8 @@ public class JSticks extends Subsystem{
 			mSwerve.zeroSensors(Constants.kRobotStartingPose);
 			mSwerve.resetAveragedDirection();
 		}
-        // if (currentState == Superstructure.WantedState.CLIMB) {                             WTF IS GOING ON - CALEB
-		// 	mSuperstructure.setClimbOpenLoop(mPeriodicIO.opLeftStickY_ClimbSpeed);             WTF WTF WTF - GAVIN
+        // if (currentState == Superstructure.WantedState.CLIMB) {                             
+		// 	mSuperstructure.setClimbOpenLoop(mPeriodicIO.opLeftStickY_ClimbSpeed);             
 		// }
 
         currentState = activeBtnIsReleased(currentState);
@@ -158,7 +158,7 @@ public class JSticks extends Subsystem{
             } else if (previousState != currentState) {
 				mSuperstructure.setWantedState(Superstructure.WantedState.HOLD);
 			}
-
+            //AUTO SHOOT AND CLIMB ARE MISSING BUT WE DONT KNOW HOW TO ADD THEM
 
         }
 
