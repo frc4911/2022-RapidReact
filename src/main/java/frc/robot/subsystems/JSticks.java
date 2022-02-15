@@ -12,15 +12,6 @@ public class JSticks extends Subsystem{
 
     /*
     TO-DO:
-    Add joystick input variables to PeriodicIO
-        -The button allocations may be arbitrarily assigned for now
-        -They will eventually be based on driver and operator preference,
-        so they will likely change
-        -Naming convention: <which controller, dr or op><button being used>_<robot action>
-        e.g. opLeftTrigger_Collect
-
-    Read joystick inputs in readPeriodicInputs(){}
-
     Look at 2020 or 2021 Deadeye code and add...
         -currentState and previousState local variables
         -activeBtnIsReleased() and all
@@ -135,7 +126,8 @@ public class JSticks extends Subsystem{
     }
 
     public void teleopRoutines() {
-
+        Superstructure.WantedState currentState = mSuperstructure.getWantedState();
+		Superstructure.WantedState previousState = currentState;
         
         //Swerve control
 		double swerveYInput = mPeriodicIO.dr_RightStickX_Translate;
@@ -227,8 +219,5 @@ public class JSticks extends Subsystem{
         public boolean op_YButton_SlappySticks = false;
         public boolean op_BButton_StopShooter = false;
         public boolean op_LeftTrigger_ManualShoot = false;
-
-
-
     }
 }

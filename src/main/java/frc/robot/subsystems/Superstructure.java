@@ -210,6 +210,10 @@ public class Superstructure extends Subsystem{
         mWantedState = state;
     }
 
+    public WantedState getWantedState() {
+        return mWantedState;
+    }
+
     @Override
     public void writePeriodicOutputs() {
     }
