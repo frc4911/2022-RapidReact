@@ -180,7 +180,7 @@ public class Shooter extends Subsystem{
         return mSystemState == SystemState.SHOOTING && mPeriodicIO.reachedDesiredSpeed && mPeriodicIO.flywheelRPM > kSpeedTolerance;
     }
 
-    // TO-DO: Add kShootDistance constants
+    // TO-DO: Add kShootDistance constants and confirm distance calculations are correct
     public synchronized void setShootDistance(double distance) {
         if (mSystemState != SystemState.SHOOTING) {
             mWantedState = WantedState.SHOOT;
@@ -200,6 +200,13 @@ public class Shooter extends Subsystem{
         }
 
         mHoldSpeed = speed;
+    }
+
+    // TO-DO: Figure out what units parameter will be in - potentially an angle?
+    // Convert angle (or other unit) to falcon ticks
+    // Find out gear ratio for hood - how many falcon rotations per angle are needed
+    public void setFlywheelHood(double position){
+
     }
 
     private double ticksPer100MsToRPM(double speed) {
@@ -222,11 +229,13 @@ public class Shooter extends Subsystem{
         mPeriodicIO.lastSchedStart   = now;
     }
 
+    // TO-DO: Double check if the shooter motors will run using velocity control
+    // Motors did not function from velocity when testing on the test board
     @Override
     public void writePeriodicOutputs() {
         if(mSystemState == SystemState.SHOOTING){
-            mFXLeftFlyWheel.set(ControlMode.Velocity, mPeriodicIO.flywheelVelocityDemand);
-            mFXRightFlyWheel.set(ControlMode.Velocity, mPeriodicIO.flywheelVelocityDemand);
+            mFXLeftFlyWheel.set(ControlMode.Velocity, mPeriodicIO.flywheelVelocityDemand);  
+            mFXRightFlyWheel.set(ControlMode.Velocity, mPeriodicIO.flywheelVelocityDemand); 
         } else {
             mFXLeftFlyWheel.set(ControlMode.PercentOutput, mPeriodicIO.flywheelPercentDemand);
             mFXRightFlyWheel.set(ControlMode.PercentOutput, mPeriodicIO.flywheelPercentDemand);
@@ -291,6 +300,7 @@ public class Shooter extends Subsystem{
         //Outputs
         private double flywheelVelocityDemand;
         private double flywheelPercentDemand;
+        private double flywheelHoodDemand;
     }
 
 }
