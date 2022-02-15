@@ -10,14 +10,6 @@ import libraries.cyberlib.io.Xbox;
 
 public class JSticks extends Subsystem{
 
-    /*
-    TO-DO:
-    Look at 2020 or 2021 Deadeye code and add...
-        -currentState and previousState local variables
-        -activeBtnIsReleased() and all
-        -long if else chain with the mSuperstructure calls inside
-    */
-
     public enum SystemState {
         READINGBUTTONS,
     }
@@ -149,11 +141,11 @@ public class JSticks extends Subsystem{
 		if (currentState == Superstructure.WantedState.HOLD) {
 			if (mPeriodicIO.op_LeftTrigger_ManualShoot) {
 				mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT);
-			} else if (mPeriodicIO.op_XButton_DeployCollector) {
+			} else if (mPeriodicIO.op_XButton_Collect) {
 				mSuperstructure.setWantedState(Superstructure.WantedState.COLLECT);
 			} else if (mPeriodicIO.op_YButton_SlappySticks) {
 				mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_CLIMB);
-			} else if (mPeriodicIO.op_AButton_ClearCollector) {
+			} else if (mPeriodicIO.op_AButton_Clear) {
                 mSuperstructure.setWantedState(Superstructure.WantedState.CLEAR);
             } else if (previousState != currentState) {
 				mSuperstructure.setWantedState(Superstructure.WantedState.HOLD);
@@ -169,7 +161,7 @@ public class JSticks extends Subsystem{
 			case MANUAL_SHOOT:
 				return !mPeriodicIO.op_LeftTrigger_ManualShoot ? Superstructure.WantedState.HOLD : currentState;
 			case COLLECT:
-				return !mPeriodicIO.op_XButton_DeployCollector ? Superstructure.WantedState.HOLD : currentState;
+				return !mPeriodicIO.op_XButton_Collect ? Superstructure.WantedState.HOLD : currentState;
 			case MANUAL_CLIMB:
 				return !mPeriodicIO.op_LeftTrigger_ManualShoot ? Superstructure.WantedState.HOLD : currentState;
 			// case MANUAL_SHOOT:                                                                                         IDK ABOUT THIS EITHER -CALEB WEST
@@ -178,7 +170,7 @@ public class JSticks extends Subsystem{
 			// 	}
 			// 	return currentState;
 			case CLEAR:
-                return !mPeriodicIO.op_AButton_ClearCollector ? Superstructure.WantedState.HOLD : currentState;
+                return !mPeriodicIO.op_AButton_Clear ? Superstructure.WantedState.HOLD : currentState;
 			default:
                 return Superstructure.WantedState.HOLD;
         }        
@@ -196,8 +188,8 @@ public class JSticks extends Subsystem{
         mPeriodicIO.dr_YButton_ResetIMU = mDriver.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.op_LeftStickY_ClimberArms = mOperator.getRaw(Xbox.LEFT_STICK_X, mDeadBand);
         mPeriodicIO.dr_LeftTrigger_RobotOrient = mDriver.getButton(Xbox.LEFT_TRIGGER, CW.PRESSED_EDGE); // field/robot oriented
-        mPeriodicIO.op_XButton_DeployCollector = mOperator.getButton(Xbox.X_BUTTON, CW.PRESSED_LEVEL);
-        mPeriodicIO.op_AButton_ClearCollector = mOperator.getButton(Xbox.A_BUTTON, CW.PRESSED_LEVEL);
+        mPeriodicIO.op_XButton_Collect = mOperator.getButton(Xbox.X_BUTTON, CW.PRESSED_LEVEL);
+        mPeriodicIO.op_AButton_Clear = mOperator.getButton(Xbox.A_BUTTON, CW.PRESSED_LEVEL);
         mPeriodicIO.op_YButton_SlappySticks = mOperator.getButton(Xbox.X_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.op_BButton_StopShooter = mOperator.getButton(Xbox.B_BUTTON, CW.PRESSED_LEVEL);
         mPeriodicIO.op_LeftTrigger_ManualShoot = mOperator.getButton(Xbox.LEFT_TRIGGER, CW.PRESSED_LEVEL);
@@ -247,6 +239,7 @@ public class JSticks extends Subsystem{
         public  double schedDuration;
         private double lastSchedStart;
 
+        //THESE VALUES ARE TEMPORARY AND WILL CHANGE ONCE RANIA GIVES HER PREFERENCES
         //Joystick Inputs
         public double  dr_RightStickX_Translate ; // drive
         public double  dr_RightStickY_Translate; // drive
@@ -254,8 +247,8 @@ public class JSticks extends Subsystem{
         public double op_LeftStickY_ClimberArms;
         public boolean dr_YButton_ResetIMU = false;      // reset direction
         public boolean dr_LeftTrigger_RobotOrient = false; // field/robot oriented
-        public boolean op_XButton_DeployCollector = false;
-        public boolean op_AButton_ClearCollector = false;
+        public boolean op_XButton_Collect = false;
+        public boolean op_AButton_Clear = false;
         public boolean op_YButton_SlappySticks = false;
         public boolean op_BButton_StopShooter = false;
         public boolean op_LeftTrigger_ManualShoot = false;
