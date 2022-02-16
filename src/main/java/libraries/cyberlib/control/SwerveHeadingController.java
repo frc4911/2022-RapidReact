@@ -1,27 +1,11 @@
 package libraries.cyberlib.control;
 
-import frc.robot.Constants;
-import frc.robot.subsystems.Swerve;
-import libraries.cheesylib.util.SynchronousPIDF;
+import libraries.cyberlib.utils.Angles;
 
 /**
  * Controls overall swerve heading of the robot.
  */
 public class SwerveHeadingController {
-    private static SwerveHeadingController mInstance;
-    private static Swerve mSwerve = null;
-
-    public static SwerveHeadingController getInstance() {
-        if (mInstance == null) {
-            mInstance = new SwerveHeadingController();
-            // this needs to happen during class creation but
-            // after mInstance is set because Swerve will get an
-            // instance of SwerveHeadingController
-            mSwerve = Swerve.getInstance("SwerveHeadingController");
-        }
-
-        return mInstance;
-    }
 
     public enum HeadingControllerState {
         OFF,
@@ -29,17 +13,16 @@ public class SwerveHeadingController {
         MAINTAIN, // maintaining current heading while driving
     }
 
-    private final SynchronousPIDF mPIDFController;
-    private double mSetpoint = 0.0;
+    private final PidController mHeadingController;
 
     private HeadingControllerState mHeadingControllerState = HeadingControllerState.OFF;
 
-    private SwerveHeadingController() {
-        mPIDFController = new SynchronousPIDF();
-    }
+    private double lastTimeStamp = Double.POSITIVE_INFINITY;
 
-    public void setPIDFConstants(double kP, double kI, double kD, double kF){
-        mPIDFController.setPIDF(kP, kI, kD, kF);
+    public SwerveHeadingController(PidGains gains) {
+        mHeadingController = new PidController(gains);
+        mHeadingController.setInputRange(0, 360);
+        mHeadingController.setContinuous(true);
     }
 
     public HeadingControllerState getHeadingControllerState() {
@@ -56,32 +39,27 @@ public class SwerveHeadingController {
      * @param goalPositionInDegrees goal position in degrees
      */
     public void setGoal(double goalPositionInDegrees) {
-        mSetpoint = goalPositionInDegrees;
-    }
-
-    public boolean isAtGoal() {
-        return mPIDFController.onTarget(Constants.kSwerveHeadingControllerErrorTolerance);
+        mHeadingController.setSetpoint(goalPositionInDegrees);
     }
 
     /**
      * Should be called from a looper at a constant dt
      */
-    public double update() {
-        mPIDFController.setSetpoint(mSetpoint);
-        // double current_angle = Swerve.getInstance("SwerveHeadingController").getHeading().getDegrees();
-        double current_angle = mSwerve.getHeading().getDegrees();
-        double current_error = mSetpoint - current_angle;
-
-        if (current_error > 180) {
-            current_angle += 360;
-        } else if (current_error < -180) {
-            current_angle -= 360;
-        }
-
+    public double update(double currentAngleInDegrees, double timeStamp) {
         if (mHeadingControllerState == HeadingControllerState.OFF) {
             return 0;
         }
 
-        return mPIDFController.calculate(current_angle);
+        var dt = timeStamp - lastTimeStamp;
+        lastTimeStamp = timeStamp;
+
+        if (dt < 1E-6) {
+            dt = 1E-6;
+        }
+
+        // Normalize angle into -pi to pi range
+        var angle = Angles.normalizeAngle(Math.toRadians(currentAngleInDegrees));
+
+        return mHeadingController.calculate(Math.toDegrees(angle), dt);
     }
 }

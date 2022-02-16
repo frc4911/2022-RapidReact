@@ -7,6 +7,7 @@ import libraries.cheesylib.loops.Loop;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.util.LatchedBoolean;
 import libraries.cheesylib.util.TimeDelayedBoolean;
+import libraries.cyberlib.control.PidGains;
 import libraries.cyberlib.control.SwerveHeadingController;
 import libraries.cyberlib.io.CW;
 import libraries.cyberlib.io.LogitechExtreme;
@@ -15,7 +16,7 @@ import libraries.cyberlib.io.Xbox;
 public class JSticks extends Subsystem{
 
     // Heading controller methods
-    private final SwerveHeadingController mHeadingController = SwerveHeadingController.getInstance();
+    private final SwerveHeadingController mHeadingController;
     private final LatchedBoolean shouldChangeHeadingSetpoint = new LatchedBoolean();
     private final TimeDelayedBoolean mShouldMaintainHeading = new TimeDelayedBoolean();
 
@@ -31,13 +32,13 @@ public class JSticks extends Subsystem{
     private WantedState mWantedState = WantedState.READBUTTONS;
     @SuppressWarnings("unused")
     private boolean mStateChanged;
-    private CW mDriver;
+    private final CW mDriver;
     private CW mOperator;
-    private LogitechExtreme mDriver2;
+    private final LogitechExtreme mDriver2;
 
     private final double mDeadBand = 0.15; // for the turnigy (driver) swerve controls
 	// private Superstructure mSuperstructure;
-    private Swerve mSwerve;
+    private final Swerve mSwerve;
 
     //Logging
     private final int mDefaultSchedDelta = 100; // axis updated every 100 msec
@@ -75,11 +76,12 @@ public class JSticks extends Subsystem{
         sClassName = this.getClass().getSimpleName();
         // mSuperstructure = Superstructure.getInstance(sClassName);
         mSwerve = Swerve.getInstance(sClassName);
-        mHeadingController.setPIDFConstants(
-            mSwerve.mSwerveConfiguration.kSwerveHeadingKp,
-            mSwerve.mSwerveConfiguration.kSwerveHeadingKi,
-            mSwerve.mSwerveConfiguration.kSwerveHeadingKd,
-            mSwerve.mSwerveConfiguration.kSwerveHeadingKf);
+        mHeadingController = new SwerveHeadingController(
+                new PidGains(
+                        mSwerve.mSwerveConfiguration.kSwerveHeadingKp,
+                        mSwerve.mSwerveConfiguration.kSwerveHeadingKi,
+                        mSwerve.mSwerveConfiguration.kSwerveHeadingKd
+                ));
         mDriver = new Xbox();
         mDriver2 = new LogitechExtreme();
         mOperator = new Xbox();
@@ -90,7 +92,7 @@ public class JSticks extends Subsystem{
     private Loop mLoop = new Loop(){
         
         @Override
-        public void onStart(Phase phase){
+        public void onStart(Phase phase) {
             synchronized (JSticks.this) {
                 mSystemState = SystemState.READINGBUTTONS;
                 mWantedState = WantedState.READBUTTONS;
@@ -113,13 +115,13 @@ public class JSticks extends Subsystem{
         }
 
         @Override
-        public void onLoop(double timestamp){
+        public void onLoop(double timestamp) {
             synchronized (JSticks.this) {
                 SystemState newState;
                 switch (mSystemState) {
                 case READINGBUTTONS:
                 default:
-                    newState = handleReadingButtons();
+                    newState = handleReadingButtons(timestamp);
                     break;
                 }
 
@@ -146,13 +148,13 @@ public class JSticks extends Subsystem{
         
     }
 
-    private SystemState handleReadingButtons() {
-        teleopRoutines();
+    private SystemState handleReadingButtons(double timestamp) {
+        teleopRoutines(timestamp);
         
         return defaultStateTransfer();
     }
 
-    public void teleopRoutines() {
+    public void teleopRoutines(double timestamp) {
         //Swerve control
 		double swerveYInput = dr_RightStickX_Translate;
 		double swerveXInput = dr_RightStickY_Translate;
@@ -171,11 +173,19 @@ public class JSticks extends Subsystem{
 
         var isFieldOriented = !dr_LeftToggleDown_RobotOrient;
         if (mHeadingController.getHeadingControllerState() != SwerveHeadingController.HeadingControllerState.OFF) {
-            mSwerve.setTeleopInputs(swerveXInput, swerveYInput, mHeadingController.update(),
-                    false, isFieldOriented, true);
+            mSwerve.setTeleopInputs(swerveXInput,
+                    swerveYInput,
+                    mHeadingController.update(mSwerve.getHeading().getDegrees(), timestamp),
+                    false,
+                    isFieldOriented,
+                    true);
         } else {
-            mSwerve.setTeleopInputs(swerveXInput, swerveYInput, swerveRotationInput,
-                    false, isFieldOriented, false);
+            mSwerve.setTeleopInputs(swerveXInput,
+                    swerveYInput,
+                    swerveRotationInput,
+                    false,
+                    isFieldOriented,
+                    false);
         }
 
 		if (dr_YButton_ResetIMU) {

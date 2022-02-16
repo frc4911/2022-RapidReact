@@ -2,15 +2,19 @@ package frc.robot.subsystems;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+import com.ctre.phoenix.motorcontrol.NeutralMode;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 import frc.robot.config.DeadEye;
 import frc.robot.config.Junior;
 import frc.robot.config.Robot2022;
-import frc.robot.planners.DriveMotionPlanner;
+//import frc.robot.planners.DriveMotionPlanner;
+import frc.robot.planners.SwerveDriveMotionPlanner;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Pose2dWithCurvature;
 import libraries.cheesylib.geometry.Rotation2d;
@@ -25,8 +29,7 @@ import libraries.cyberlib.kinematics.SwerveDriveKinematics;
 import libraries.cyberlib.kinematics.SwerveDriveOdometry;
 import libraries.cyberlib.kinematics.SwerveModuleState;
 import libraries.cyberlib.utils.RobotName;
-import libraries.cyberlib.utils.SwerveDriveHelper;
-import libraries.cyberlib.utils.SwerveDriveSignal;
+import libraries.cyberlib.utils.HolonomicDriveSignal;
 
 public class Swerve extends Subsystem {
 
@@ -50,13 +53,14 @@ public class Swerve extends Subsystem {
 
 	// Swerve kinematics & odometry
 	private final Pigeon mPigeon;
+    private boolean mIsBrakeMode;
 	private Rotation2d mGyroOffset = Rotation2d.identity();
 
 	private final SwerveDriveOdometry mOdometry;
 	private final SwerveDriveKinematics mKinematics;
 
     // Trajectory following
-    private DriveMotionPlanner mMotionPlanner;
+    private SwerveDriveMotionPlanner mMotionPlanner;
     private boolean mOverrideTrajectory = false;
 
     private int mListIndex = -1;
@@ -115,7 +119,7 @@ public class Swerve extends Subsystem {
 		mOdometry = new SwerveDriveOdometry(mKinematics, mPigeon.getYaw());
         mPeriodicIO.robotPose = mOdometry.getPose();
 
-        mMotionPlanner = new DriveMotionPlanner();
+        mMotionPlanner = new SwerveDriveMotionPlanner();
 
 //        generator = TrajectoryGenerator.getInstance();
     }
@@ -150,7 +154,7 @@ public class Swerve extends Subsystem {
                         handleManual();
                         break;
                     case PATH_FOLLOWING:
-                        updatePathFollower();
+                        updatePathFollower(lastUpdateTimestamp);
                         break;
                     case NEUTRAL:
                         stop();
@@ -193,26 +197,36 @@ public class Swerve extends Subsystem {
      * are as percent [-1.0, 1.0].  They need to be converted to SI units before creating the ChassisSpeeds.
      */
     private void handleManual() {
-        SwerveDriveSignal driveSignal = null;
+        HolonomicDriveSignal driveSignal;
 
         // Helper to make driving feel better
 //        driveSignal = SwerveDriveHelper.calculate(
 //                mPeriodicIO.forward, mPeriodicIO.strafe, mPeriodicIO.rotation,
 //                mPeriodicIO.low_power, mPeriodicIO.field_relative, mPeriodicIO.use_heading_controller);
 
-        driveSignal = new SwerveDriveSignal(new Translation2d(mPeriodicIO.forward, mPeriodicIO.strafe),
+        driveSignal = new HolonomicDriveSignal(new Translation2d(mPeriodicIO.forward, mPeriodicIO.strafe),
                     mPeriodicIO.rotation, mPeriodicIO.field_relative);
 
-        // Convert to velocities and SI units
-        var translationInput = driveSignal.getTranslation().scale(mSwerveConfiguration.maxSpeedInMetersPerSecond);
-        var rotationInput = driveSignal.getRotation() * mSwerveConfiguration.maxSpeedInRadiansPerSecond;
+        setOpenLoop(driveSignal);
+    }
 
-        if (driveSignal.isFieldOriented()) {
-            // Adjust for robot heading to maintain field relative motion.
-            translationInput = translationInput.rotateBy(getPose().getRotation().inverse());
+    private void updateModules(HolonomicDriveSignal driveSignal) {
+        ChassisSpeeds chassisSpeeds;
+
+        if (driveSignal == null) {
+            chassisSpeeds = new ChassisSpeeds(0.0, 0.0, 0.0);
+        } else {
+            // Convert to velocities and SI units
+            var translationInput = driveSignal.getTranslation().scale(mSwerveConfiguration.maxSpeedInMetersPerSecond);
+            var rotationInput = driveSignal.getRotation() * mSwerveConfiguration.maxSpeedInRadiansPerSecond;
+
+            if (driveSignal.isFieldOriented()) {
+                // Adjust for robot heading to maintain field relative motion.
+                translationInput = translationInput.rotateBy(getPose().getRotation().inverse());
+            }
+
+            chassisSpeeds = new ChassisSpeeds(translationInput.x(), translationInput.y(), rotationInput);
         }
-
-        var chassisSpeeds = new ChassisSpeeds(translationInput.x(), translationInput.y(), rotationInput);
 
         // Now calculate the new Swerve Module states using inverse kinematics.
         mPeriodicIO.swerveModuleStates = mKinematics.toSwerveModuleStates(chassisSpeeds);
@@ -280,7 +294,7 @@ public class Swerve extends Subsystem {
     /**
      * Sets the current robot position on the field.
      * <p>
-     * @param pose The (x,y,thetha) position.
+     * @param pose The (x,y,theta) position.
      */
     public synchronized void setRobotPosition(Pose2d pose) {
         mOdometry.resetPosition(pose, mPigeon.getYaw());
@@ -304,6 +318,12 @@ public class Swerve extends Subsystem {
         mPeriodicIO.robotPose = mOdometry.updateWithTime(timestamp, getAngle(), frontRight, frontLeft, backLeft, backRight);
     }
 
+
+    /**
+     * Gets whether path following is done or not.  Typically, called in autonomous actions.
+     * <p>
+     * @return true if done; otherwise false.
+     */
     public boolean isDoneWithTrajectory() {
         if (mMotionPlanner == null || mControlState != mControlState.PATH_FOLLOWING) {
             return false;
@@ -312,17 +332,11 @@ public class Swerve extends Subsystem {
     }
 
 
-//    public synchronized void setOpenLoop(double forward, double strafe, double rotation) {
-//        if (mControlState != ControlState.MANUAL) {
-//            mControlState = ControlState.MANUAL;
-//        }
-//
-//        mPeriodicIO.forward = forward;
-//        mPeriodicIO.strafe = strafe;
-//        mPeriodicIO.rotation = rotation;
-//        ChassisSpeeds chassisSpeeds = new ChassisSpeeds(mPeriodicIO.forward, mPeriodicIO.strafe, mPeriodicIO.rotation);
-//    }
-
+    /**
+     * Sets a trajectory to follow.
+     * <p>
+     * @param trajectory The trajectory to follow.
+     */
     public synchronized void setTrajectory(TrajectoryIterator<TimedState<Pose2dWithCurvature>> trajectory) {
         if (mMotionPlanner != null) {
             mOverrideTrajectory = false;
@@ -336,30 +350,60 @@ public class Swerve extends Subsystem {
         mOverrideTrajectory = value;
     }
 
-    private void updatePathFollower() {
-        // TODO: Implement Trajectory Following
+    private void updatePathFollower(double now) {
         if (mControlState == ControlState.PATH_FOLLOWING) {
-            final double now = Timer.getFPGATimestamp();
+            // Get updated drive signal
+            HolonomicDriveSignal driveSignal = null;
 
-//            var output = mMotionPlanner.update(now, RobotState.getInstance(sClassName).getFieldToVehicle(now));
-//
-//            // DriveSignal signal = new DriveSignal(demand.left_feedforward_voltage / 12.0, demand.right_feedforward_voltage / 12.0);
-//
-//            mPeriodicIO.error = mMotionPlanner.error();
-//            mPeriodicIO.path_setpoint = mMotionPlanner.setpoint();
-//
-//            if (!mOverrideTrajectory) {
-//                setVelocity(new DriveSignal(radiansPerSecondToTicksPer100ms(output.left_velocity), radiansPerSecondToTicksPer100ms(output.right_velocity)),
-//                        new DriveSignal(output.left_feedforward_voltage / 12.0, output.right_feedforward_voltage / 12.0));
-//
-//                mPeriodicIO.left_accel = radiansPerSecondToTicksPer100ms(output.left_accel) / 1000.0;
-//                mPeriodicIO.right_accel = radiansPerSecondToTicksPer100ms(output.right_accel) / 1000.0;
-//            } else {
-//                setVelocity(DriveSignal.BRAKE, DriveSignal.BRAKE);
-//                mPeriodicIO.left_accel = mPeriodicIO.right_accel = 0.0;
-//            }
-//        } else {
-//            DriverStation.reportError("Drive is not in path following state", false);
+            Optional<HolonomicDriveSignal> trajectorySignal = mMotionPlanner.update(now, mPeriodicIO.robotPose, mPeriodicIO.chassisSpeeds);
+            mPeriodicIO.error = mMotionPlanner.error();
+            mPeriodicIO.path_setpoint = mMotionPlanner.setpoint();
+
+            if (!mOverrideTrajectory) {
+                if (trajectorySignal.isPresent()) {
+                    driveSignal = trajectorySignal.get();
+                }
+            }
+
+            setPathFollowingVelocity(driveSignal);
+
+        } else {
+            DriverStation.reportError("Swerve is not in path following state.", false);
+        }
+    }
+
+    /**
+     * Configure modules for open loop control
+     */
+    public synchronized void setOpenLoop(HolonomicDriveSignal signal) {
+        if (mControlState != ControlState.MANUAL) {
+            setBrakeMode(true); // TODO: Consider driving in coast mode
+            mControlState = ControlState.MANUAL;
+        }
+        updateModules(signal);
+    }
+
+    /**
+     * Configure modules for path following.
+     */
+    public synchronized void setPathFollowingVelocity(HolonomicDriveSignal signal) {
+        if (mControlState != ControlState.PATH_FOLLOWING) {
+            setBrakeMode(true);
+            mControlState = ControlState.PATH_FOLLOWING;
+        }
+        updateModules(signal);
+    }
+
+    public boolean isBrakeMode() {
+        return mIsBrakeMode;
+    }
+
+    public synchronized void setBrakeMode(boolean shouldEnable) {
+        if (mIsBrakeMode != shouldEnable) {
+            mIsBrakeMode = shouldEnable;
+            NeutralMode mode = shouldEnable ? NeutralMode.Brake : NeutralMode.Coast;
+
+            mModules.forEach((m) -> m.setNeutralMode(mode));
         }
     }
 
@@ -465,7 +509,7 @@ public class Swerve extends Subsystem {
         for (int i = 0; i < mModules.size(); i++) {
             mModules.get(i).setState(mPeriodicIO.swerveModuleStates[i]);
         }
-        // System.out.println(mPeriodicIO.swerveModuleStates[0].toString());
+
         mModules.forEach((m) -> m.writePeriodicOutputs());
     }
 
@@ -484,6 +528,7 @@ public class Swerve extends Subsystem {
 
         if (Constants.kDebuggingOutput) {
             // Get the current pose from odometry state
+            SmartDashboard.putString("Swerve/Pose", mPeriodicIO.robotPose.toString());
             SmartDashboard.putNumber("Swerve/Robot X", mPeriodicIO.robotPose.getTranslation().x());
             SmartDashboard.putNumber("Swerve/Robot Y", mPeriodicIO.robotPose.getTranslation().y());
 
@@ -495,18 +540,11 @@ public class Swerve extends Subsystem {
                     Math.hypot(
                             Units.metersToFeet(mPeriodicIO.chassisSpeeds.vxInMetersPerSecond),
                             Units.metersToFeet(mPeriodicIO.chassisSpeeds.vyInMetersPerSecond)));
+
             SmartDashboard.putNumber("Swerve/Rotational Velocity rad/s",
                     mPeriodicIO.chassisSpeeds.omegaInRadiansPerSecond);
 
             SmartDashboard.putNumberArray("Swerve/Pigeon YPR", mPigeon.getYPR());
-//            SmartDashboard.putString("Swerve/Heading Controller", mHeadingController.getState().toString());
-//            SmartDashboard.putNumber("Swerve/Target Heading", mHeadingController.getTargetHeading());
-//            SmartDashboard.putNumber("Swerve/Distance from start/last reset", mOdometry.getPose().getTranslation().norm());
-
-            // SmartDashboard.putBoolean("Swerve/Vision Updates Allowed", visionUpdatesAllowed);
-
-//            SmartDashboard.putNumberArray("Swerve/Robot Pose", new double[]{pose.getTranslation().x(), pose.getTranslation().y(), pose.getRotation().getUnboundedDegrees()});
-//            SmartDashboard.putNumber("Swerve/Robot Heading", pose.getRotation().getUnboundedDegrees());
         }
     }
 
@@ -520,6 +558,11 @@ public class Swerve extends Subsystem {
         // Updated as part of periodic odometry
         public Pose2d robotPose = Pose2d.identity();
         public ChassisSpeeds chassisSpeeds = new ChassisSpeeds();
+
+        // Updated as part of trajectory following
+        public Pose2d error = Pose2d.identity();
+        public TimedState<Pose2dWithCurvature> path_setpoint = new TimedState<Pose2dWithCurvature>(Pose2dWithCurvature.identity());
+
 
         // Inputs
         public Rotation2d gyro_heading = Rotation2d.identity();

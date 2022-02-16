@@ -5,12 +5,12 @@ import libraries.cheesylib.geometry.Translation2d;
 /**
  * Represents a holonomic drive signal.
  */
-public class SwerveDriveSignal {
+public class HolonomicDriveSignal {
     private final Translation2d translation;
     private final double rotation;
     private final boolean fieldOriented;
 
-    public SwerveDriveSignal(Translation2d translation, double rotation, boolean fieldOriented) {
+    public HolonomicDriveSignal(Translation2d translation, double rotation, boolean fieldOriented) {
         this.translation = translation;
         this.rotation = rotation;
         this.fieldOriented = fieldOriented;

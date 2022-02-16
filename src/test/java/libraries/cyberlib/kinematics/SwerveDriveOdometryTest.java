@@ -3,6 +3,7 @@ package libraries.cyberlib.kinematics;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Rotation2d;
 import libraries.cheesylib.geometry.Translation2d;
+import libraries.cyberlib.utils.Angles;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -124,5 +125,63 @@ class SwerveDriveOdometryTest {
     System.out.printf(m_odometry.getPose().toString());
 
     assertEquals(5.0, m_odometry.getPose().getTranslation().x(), 0.01);
+  }
+
+  @Test
+  public void TestOdometryWithSwerveModuleOptimize() {
+    final SwerveModuleState[] wheelSpeeds = {
+            new SwerveModuleState(5, Rotation2d.fromDegrees(0)),
+            new SwerveModuleState(5, Rotation2d.fromDegrees(0)),
+            new SwerveModuleState(5, Rotation2d.fromDegrees(0)),
+            new SwerveModuleState(5, Rotation2d.fromDegrees(0))
+    };
+
+    m_odometry.updateWithTime(0.0, new Rotation2d(),
+            new SwerveModuleState(), new SwerveModuleState(),
+            new SwerveModuleState(), new SwerveModuleState());
+    var pose = m_odometry.updateWithTime(0.10, new Rotation2d(), wheelSpeeds);
+
+    assertAll(
+            () -> assertEquals(5.0 / 10.0, pose.getTranslation().x(), 0.01),
+            () -> assertEquals(0, pose.getTranslation().y(), 0.01),
+            () -> assertEquals(0.0, pose.getRotation().getDegrees(), 0.01)
+    );
+
+    // Current heading is 0 degrees but desired motion is backwards
+    var angleB = Rotation2d.fromDegrees(0);
+    SwerveModuleState[] optimizedB = {
+            SwerveModuleState.optimize(new SwerveModuleState(5, Rotation2d.fromDegrees(180)), angleB),
+            SwerveModuleState.optimize(new SwerveModuleState(5, Rotation2d.fromDegrees(180)), angleB),
+            SwerveModuleState.optimize(new SwerveModuleState(5, Rotation2d.fromDegrees(180)), angleB),
+            SwerveModuleState.optimize(new SwerveModuleState(5, Rotation2d.fromDegrees(180)), angleB)
+    };
+
+    SwerveModuleState[] optimizedC = {
+            new SwerveModuleState(5, Rotation2d.fromDegrees(180)),
+            new SwerveModuleState(5, Rotation2d.fromDegrees(180)),
+            new SwerveModuleState(5, Rotation2d.fromDegrees(180)),
+            new SwerveModuleState(5, Rotation2d.fromDegrees(180))
+    };
+
+    var pose1 = m_odometry.updateWithTime(0.20, new Rotation2d(), optimizedB);
+    var pose2 = m_odometry.updateWithTime(0.30, new Rotation2d(), optimizedC);
+
+    assertAll(
+            () -> assertEquals(0.0, pose1.getTranslation().x(), 0.01),
+            () -> assertEquals(0, pose1.getTranslation().y(), 0.01),
+            () -> assertEquals(0.0, pose1.getRotation().getDegrees(), 0.01)
+    );
+
+    assertAll(
+            () -> assertEquals(-5.0 / 10 , pose2.getTranslation().x(), 0.01),
+            () -> assertEquals(0, pose2.getTranslation().y(), 0.01),
+            () -> assertEquals(0.0, pose2.getRotation().getDegrees(), 0.01)
+    );
+
+    assertAll(
+            () -> assertEquals(optimizedB[0].speedInMetersPerSecond, -optimizedC[0].speedInMetersPerSecond, 0.01),
+            () -> assertEquals(Angles.normalizeAngle(optimizedB[0].angle.getRadians()),
+                    Angles.normalizeAngle(optimizedC[0].angle.getRadians() + Math.PI) , 0.01)
+    );
   }
 }

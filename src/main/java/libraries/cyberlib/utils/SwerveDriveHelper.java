@@ -26,7 +26,7 @@ public class SwerveDriveHelper {
      * @param use_heading_controller whether heading controller is used or not.
      * @return A SwerveDriveSignal object representing the adjusted inputs
      */
-    public static SwerveDriveSignal calculate(
+    public static HolonomicDriveSignal calculate(
             double forwardInput, double strafeInput, double rotationInput,
             boolean low_power, boolean field_relative, boolean use_heading_controller) {
 
@@ -77,6 +77,6 @@ public class SwerveDriveHelper {
             rotationInput *= kHighPowerRotationScalar;
         }
 
-        return new SwerveDriveSignal(translationalInput, rotationInput, field_relative);
+        return new HolonomicDriveSignal(translationalInput, rotationInput, field_relative);
     }
 }

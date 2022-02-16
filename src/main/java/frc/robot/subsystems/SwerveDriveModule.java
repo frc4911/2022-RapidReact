@@ -293,11 +293,9 @@ public class SwerveDriveModule extends Subsystem {
 	 */
 	public synchronized SwerveModuleState getState() {
         // Convert to encoder readings to SI units
-        double steerAngleInRadians = encoderUnitsToRadians(mPeriodicIO.steerPosition);
-        steerAngleInRadians %= 2.0 * Math.PI;
-        if (steerAngleInRadians < 0.0) {
-            steerAngleInRadians += 2.0 * Math.PI;
-        }
+        double steerAngleInRadians =
+                Angles.normalizeAngle(
+                encoderUnitsToRadians(mPeriodicIO.steerPosition));
 
 		return new SwerveModuleState(
                 encVelocityToMetersPerSecond(mPeriodicIO.driveDemand),
@@ -307,15 +305,23 @@ public class SwerveDriveModule extends Subsystem {
 	/**
 	 * Sets the state for the module.
 	 * <p>
-	 * @param swreveModuleState Desired state for the module.
+	 * @param desiredState Desired state for the module.
 	 */
-	public synchronized void setState(SwerveModuleState swreveModuleState) {
+	public synchronized void setState(SwerveModuleState desiredState) {
+        // Note that Falcon is contiguous, so it can be larger than 2pi.
+        // The Rotation2d normalizes the angle by default between 0 and 2pi.
+        Rotation2d currentAngle = Rotation2d.fromRadians(encoderUnitsToRadians(mPeriodicIO.steerPosition));
+
+        // Minimize the change in heading the desired swerve module state would require by potentially
+        // reversing the direction the wheel spins. Odometry will still be accurate as both steer angle
+        // and wheel speeds will have their signs "flipped."
+        var state = SwerveModuleState.optimize(desiredState, currentAngle);
+
         // Converts the velocity in SI units (meters per second) to a
         // voltage (as a percentage) for the motor controllers.
-		setDriveOpenLoop(swreveModuleState.speedInMetersPerSecond / mMaxSpeedInMetersPerSecond);
+		setDriveOpenLoop(state.speedInMetersPerSecond / mMaxSpeedInMetersPerSecond);
 
-        // TODO:  Consider using SwerveModule.optimize() here instead of setReferenceAngle()
-        setReferenceAngle(swreveModuleState.angle.getRadians());
+        setReferenceAngle(state.angle.getRadians());
     }
 
     /**
@@ -324,24 +330,11 @@ public class SwerveDriveModule extends Subsystem {
      * @param referenceAngleRadians goal angle in radians
      */
     private void setReferenceAngle(double referenceAngleRadians) {
-        // Note that Falcon is contiguous, so it can be larger then 2pi.
-        double currentAngleRadians = encoderUnitsToRadians(mPeriodicIO.steerPosition);
-
-        // Map onto (0, 2pi)
-        double currentAngleRadiansMod = Angles.normalizeAngle(currentAngleRadians);
-        referenceAngleRadians = Angles.normalizeAngle(referenceAngleRadians);
-
-        // Get the shortest angular distance between current and reference angles.
-        double shortest_distance = Angles.shortest_angular_distance(currentAngleRadiansMod, referenceAngleRadians);
-
-        // Adjust by adding the shortest distance to current angle (which can be in  multiples of 2pi)
-        double adjustedReferenceAngleRadians = currentAngleRadians + shortest_distance;
-
         // mPeriodicIO.steerControlMode = ControlMode.MotionMagic;
         mPeriodicIO.steerControlMode = ControlMode.Position;
 
         // convert to encoder units
-        mPeriodicIO.steerDemand = radiansToEncoderUnits(adjustedReferenceAngleRadians);                        
+        mPeriodicIO.steerDemand += radiansToEncoderUnits(referenceAngleRadians);
     }
 
     /**
@@ -412,6 +405,17 @@ public class SwerveDriveModule extends Subsystem {
 
     private double encVelocityToMetersPerSecond(double encUnitsPer100ms) {
         return encUnitsPer100ms * mConstants.kDriveTicksPerUnitVelocity;
+    }
+
+
+    /**
+     * Sets the mode of operation during neutral throttle output.
+     * <p>
+     * @param neutralMode  The desired mode of operation when the Talon FX
+     *                     Controller output throttle is neutral (ie brake/coast)
+     **/
+    public synchronized void setNeutralMode(NeutralMode neutralMode) {
+        mDriveMotor.setNeutralMode(neutralMode);
     }
 
     public synchronized void disable() {
