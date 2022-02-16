@@ -145,12 +145,11 @@ public class JSticks extends Subsystem{
 				mSuperstructure.setWantedState(Superstructure.WantedState.COLLECT);
 			} else if (mPeriodicIO.op_YButton_SlappySticks) {
 				mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_CLIMB);
-			} else if (mPeriodicIO.op_AButton_Clear) {
-                mSuperstructure.setWantedState(Superstructure.WantedState.CLEAR);
+			} else if (mPeriodicIO.op_AButton_Back) {
+                mSuperstructure.setWantedState(Superstructure.WantedState.BACK);
             } else if (previousState != currentState) {
 				mSuperstructure.setWantedState(Superstructure.WantedState.HOLD);
 			}
-            //AUTO SHOOT AND CLIMB ARE MISSING BUT WE DONT KNOW HOW TO ADD THEM
 
         }
 
@@ -169,8 +168,8 @@ public class JSticks extends Subsystem{
 			// 		return Superstructure.WantedState.HOLD;
 			// 	}
 			// 	return currentState;
-			case CLEAR:
-                return !mPeriodicIO.op_AButton_Clear ? Superstructure.WantedState.HOLD : currentState;
+			case BACK:
+                return !mPeriodicIO.op_AButton_Back ? Superstructure.WantedState.HOLD : currentState;
 			default:
                 return Superstructure.WantedState.HOLD;
         }        
@@ -189,9 +188,9 @@ public class JSticks extends Subsystem{
         mPeriodicIO.op_LeftStickY_ClimberArms = mOperator.getRaw(Xbox.LEFT_STICK_X, mDeadBand);
         mPeriodicIO.dr_LeftTrigger_RobotOrient = mDriver.getButton(Xbox.LEFT_TRIGGER, CW.PRESSED_EDGE); // field/robot oriented
         mPeriodicIO.op_XButton_Collect = mOperator.getButton(Xbox.X_BUTTON, CW.PRESSED_LEVEL);
-        mPeriodicIO.op_AButton_Clear = mOperator.getButton(Xbox.A_BUTTON, CW.PRESSED_LEVEL);
+        mPeriodicIO.op_AButton_Back = mOperator.getButton(Xbox.A_BUTTON, CW.PRESSED_LEVEL);
         mPeriodicIO.op_YButton_SlappySticks = mOperator.getButton(Xbox.X_BUTTON, CW.PRESSED_EDGE);
-        mPeriodicIO.op_BButton_StopShooter = mOperator.getButton(Xbox.B_BUTTON, CW.PRESSED_LEVEL);
+        mPeriodicIO.op_BButton_StopShooter = mOperator.getButton(Xbox.B_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.op_LeftTrigger_ManualShoot = mOperator.getButton(Xbox.LEFT_TRIGGER, CW.PRESSED_LEVEL);
     }
 
@@ -248,7 +247,7 @@ public class JSticks extends Subsystem{
         public boolean dr_YButton_ResetIMU = false;      // reset direction
         public boolean dr_LeftTrigger_RobotOrient = false; // field/robot oriented
         public boolean op_XButton_Collect = false;
-        public boolean op_AButton_Clear = false;
+        public boolean op_AButton_Back = false;
         public boolean op_YButton_SlappySticks = false;
         public boolean op_BButton_StopShooter = false;
         public boolean op_LeftTrigger_ManualShoot = false;
