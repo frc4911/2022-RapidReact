@@ -67,6 +67,12 @@ public class SwerveDriveMotionPlanner {
         }
     }
 
+    // TODO:  Add generateTrajectory methods with kinodynamic constraints.
+    // Remember, teh HolonomicTrajectoryFollower interprets the Pose2dWithCurvature as follows:
+    //  - Translation2d : the x and y coordinates for any point in the path
+    //  - Rotation2d : the orientation (or angular rotation) of the robot at any point in the path
+
+
     public void reset() {
         mError = Pose2d.identity();
 //        mOutput = new DriveOutput();
