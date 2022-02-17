@@ -39,7 +39,7 @@ public class HolonomicTrajectoryFollower extends TrajectoryFollower<HolonomicDri
             return new HolonomicDriveSignal(Translation2d.identity(), 0.0, false);
         }
 
-        lastState = trajectory.advance(time).state();
+        lastState = trajectory.advance(dt).state();
 
         Translation2d segmentVelocity = new Translation2d(
                 lastState.state().getRotation().cos(),
