@@ -13,8 +13,8 @@ public class Robot2022 {
     public static final SwerveConfiguration kSwerveConfiguration = new SwerveConfiguration(
             Units.inchesToMeters(23.75),
             Units.inchesToMeters(20.75),
-            Units.feetToMeters(14.2),
-            Math.toRadians(270),
+            Units.feetToMeters(14.2), //Max speed in feet per second: Theoretical max is 17.065 ft per second
+            Math.toRadians(270), //Max change in degrees per second
             .018,0,0,0 //kSwerveHeadingKp,kSwerveHeadingKi,kSwerveHeadingKp,kSwerveHeadingKf
     );
 
@@ -22,14 +22,20 @@ public class Robot2022 {
 
     static {
         kFrontRightModuleConstants.kName = "Front Right";
-        kFrontRightModuleConstants.kDriveMotorTalonId = Ports.FRONT_RIGHT_DRIVE;
-        kFrontRightModuleConstants.kSteerMotorTalonId = Ports.FRONT_RIGHT_STEER;
+        kFrontRightModuleConstants.kDriveMotorTalonId = Ports.ROBOT_2022_FRONT_RIGHT_DRIVE;
+        kFrontRightModuleConstants.kSteerMotorTalonId = Ports.ROBOT_2022_FRONT_RIGHT_STEER;
         kFrontRightModuleConstants.kSteerMotorEncoderHomeOffset = 883.0;
         kFrontRightModuleConstants.kCANCoderId = Ports.FRONT_RIGHT_CANCODER;
-        kFrontRightModuleConstants.kCANCoderOffsetDegrees = 0;
+        kFrontRightModuleConstants.kCANCoderOffsetDegrees = 358;
         kFrontRightModuleConstants.kWheelDiameter = kMK4_L2iWheelDiameter;
         kFrontRightModuleConstants.kDriveReduction = kMK4_L2iDriveReduction;
         kFrontRightModuleConstants.kSteerReduction = kMK4_L2iSteerReduction;
+        kFrontRightModuleConstants.kInvertDrive = true;
+        kFrontRightModuleConstants.kInvertSteerMotor = true;
+        kFrontRightModuleConstants.kSteerMotorSlot0Kp = 0.25;
+        kFrontRightModuleConstants.kSteerMotorSlot0Ki = 0.0;
+        kFrontRightModuleConstants.kSteerMotorSlot0Kd = 0.0;
+        kFrontRightModuleConstants.kSteerMotorSlot0Kf = 0.0;
         /* ... */
     }
 
@@ -37,14 +43,20 @@ public class Robot2022 {
 
     static {
         kFrontLeftModuleConstants.kName = "Front Left";
-        kFrontLeftModuleConstants.kDriveMotorTalonId = Ports.FRONT_LEFT_DRIVE;
-        kFrontLeftModuleConstants.kSteerMotorTalonId = Ports.FRONT_LEFT_STEER;
+        kFrontLeftModuleConstants.kDriveMotorTalonId = Ports.ROBOT_2022_FRONT_LEFT_DRIVE;
+        kFrontLeftModuleConstants.kSteerMotorTalonId = Ports.ROBOT_2022_FRONT_LEFT_STEER;
         kFrontLeftModuleConstants.kSteerMotorEncoderHomeOffset = 1683.0;
         kFrontLeftModuleConstants.kCANCoderId = Ports.FRONT_LEFT_CANCODER;
-        kFrontLeftModuleConstants.kCANCoderOffsetDegrees = 0;
+        kFrontLeftModuleConstants.kCANCoderOffsetDegrees = 210;
         kFrontLeftModuleConstants.kWheelDiameter = kMK4_L2iWheelDiameter;
         kFrontLeftModuleConstants.kDriveReduction = kMK4_L2iDriveReduction;
         kFrontLeftModuleConstants.kSteerReduction = kMK4_L2iSteerReduction;
+        kFrontLeftModuleConstants.kInvertDrive = true;
+        kFrontLeftModuleConstants.kInvertSteerMotor = true;
+        kFrontLeftModuleConstants.kSteerMotorSlot0Kp = 0.25;
+        kFrontLeftModuleConstants.kSteerMotorSlot0Ki = 0.0;
+        kFrontLeftModuleConstants.kSteerMotorSlot0Kd = 0.0;
+        kFrontLeftModuleConstants.kSteerMotorSlot0Kf = 0.0;
         /* ... */
     }
 
@@ -52,14 +64,20 @@ public class Robot2022 {
 
     static {
         kBackLeftModuleConstants.kName = "Back Left";
-        kBackLeftModuleConstants.kDriveMotorTalonId = Ports.BACK_LEFT_DRIVE;
-        kBackLeftModuleConstants.kSteerMotorTalonId = Ports.BACK_LEFT_STEER;
+        kBackLeftModuleConstants.kDriveMotorTalonId = Ports.ROBOT_2022_BACK_LEFT_DRIVE;
+        kBackLeftModuleConstants.kSteerMotorTalonId = Ports.ROBOT_2022_BACK_LEFT_STEER;
         kBackLeftModuleConstants.kSteerMotorEncoderHomeOffset = 3451.0;
         kBackLeftModuleConstants.kCANCoderId = Ports.BACK_LEFT_CANCODER;
-        kBackLeftModuleConstants.kCANCoderOffsetDegrees = 0;
+        kBackLeftModuleConstants.kCANCoderOffsetDegrees = 278;
         kBackLeftModuleConstants.kWheelDiameter = kMK4_L2iWheelDiameter;
         kBackLeftModuleConstants.kDriveReduction = kMK4_L2iDriveReduction;
         kBackLeftModuleConstants.kSteerReduction = kMK4_L2iSteerReduction;
+        kBackLeftModuleConstants.kInvertDrive = true;
+        kBackLeftModuleConstants.kInvertSteerMotor = true;
+        kBackLeftModuleConstants.kSteerMotorSlot0Kp = 0.25;
+        kBackLeftModuleConstants.kSteerMotorSlot0Ki = 0.0;
+        kBackLeftModuleConstants.kSteerMotorSlot0Kd = 0.0;
+        kBackLeftModuleConstants.kSteerMotorSlot0Kf = 0.0;
         /* ... */
     }
 
@@ -67,14 +85,20 @@ public class Robot2022 {
 
     static {
         kBackRightModuleConstants.kName = "Back Right";
-        kBackRightModuleConstants.kDriveMotorTalonId = Ports.BACK_RIGHT_DRIVE;
-        kBackRightModuleConstants.kSteerMotorTalonId = Ports.BACK_RIGHT_STEER;
+        kBackRightModuleConstants.kDriveMotorTalonId = Ports.ROBOT_2022_BACK_RIGHT_DRIVE;
+        kBackRightModuleConstants.kSteerMotorTalonId = Ports.ROBOT_2022_BACK_RIGHT_STEER;
         kBackRightModuleConstants.kSteerMotorEncoderHomeOffset = -327.0;
         kBackRightModuleConstants.kCANCoderId = Ports.BACK_RIGHT_CANCODER;
-        kBackRightModuleConstants.kCANCoderOffsetDegrees = 0;
+        kBackRightModuleConstants.kCANCoderOffsetDegrees = 116;
         kBackRightModuleConstants.kWheelDiameter = kMK4_L2iWheelDiameter;
         kBackRightModuleConstants.kDriveReduction = kMK4_L2iDriveReduction;
         kBackRightModuleConstants.kSteerReduction = kMK4_L2iSteerReduction;
+        kBackRightModuleConstants.kInvertDrive = true;
+        kBackRightModuleConstants.kInvertSteerMotor = true;
+        kBackRightModuleConstants.kSteerMotorSlot0Kp = 0.25;
+        kBackRightModuleConstants.kSteerMotorSlot0Ki = 0.0;
+        kBackRightModuleConstants.kSteerMotorSlot0Kd = 0.0;
+        kBackRightModuleConstants.kSteerMotorSlot0Kf = 0.0;
         /* ... */
     }
 }

@@ -52,7 +52,7 @@ public class Swerve extends Subsystem {
 	double lastUpdateTimestamp = 0;
 
 	// Swerve kinematics & odometry
-	private final Pigeon mPigeon;
+	private final PigeonTwo mPigeon;
     private boolean mIsBrakeMode;
 	private Rotation2d mGyroOffset = Rotation2d.identity();
 
@@ -91,7 +91,7 @@ public class Swerve extends Subsystem {
         int m3 = 0;
 
 
-        mPigeon = Pigeon.getInstance();
+        mPigeon = PigeonTwo.getInstance();
 
         if (RobotName.name.equals(Constants.kJuniorName)) {
             mSwerveConfiguration = Junior.kSwerveConfiguration;
@@ -116,7 +116,7 @@ public class Swerve extends Subsystem {
         }
 
         mKinematics = new SwerveDriveKinematics(mSwerveConfiguration.moduleLocations);
-		mOdometry = new SwerveDriveOdometry(mKinematics, mPigeon.getYaw());
+		mOdometry = new SwerveDriveOdometry(mKinematics, mPigeon.getRotation2dYaw());
         mPeriodicIO.robotPose = mOdometry.getPose();
 
         mMotionPlanner = new SwerveDriveMotionPlanner();
@@ -280,7 +280,7 @@ public class Swerve extends Subsystem {
      * @return The angle of the robot (CCW).
      */
     private synchronized Rotation2d getAngle() {
-        return mPigeon.getYaw();
+        return mPigeon.getRotation2dYaw();
     }
 
     public Pose2d getPose() {
@@ -297,7 +297,7 @@ public class Swerve extends Subsystem {
      * @param pose The (x,y,theta) position.
      */
     public synchronized void setRobotPosition(Pose2d pose) {
-        mOdometry.resetPosition(pose, mPigeon.getYaw());
+        mOdometry.resetPosition(pose, mPigeon.getRotation2dYaw());
         mPeriodicIO.robotPose = mOdometry.getPose();
     }
 
@@ -496,7 +496,7 @@ public class Swerve extends Subsystem {
         double now                   = Timer.getFPGATimestamp();
         mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
         mPeriodicIO.lastSchedStart   = now;
-        mPeriodicIO.gyro_heading     = Rotation2d.fromDegrees(mPigeon.getYaw().getDegrees()).rotateBy(mGyroOffset);
+        mPeriodicIO.gyro_heading     = Rotation2d.fromDegrees(mPigeon.getRotation2dYaw().getDegrees()).rotateBy(mGyroOffset);
 
         // read modules
         mModules.forEach((m) -> m.readPeriodicInputs());
