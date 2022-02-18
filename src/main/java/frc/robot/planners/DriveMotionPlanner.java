@@ -1,7 +1,7 @@
 package frc.robot.planners;
 
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
+import frc.robot.subsystems.Swerve;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Pose2dWithCurvature;
 import libraries.cheesylib.geometry.Rotation2d;
@@ -12,9 +12,13 @@ import libraries.cheesylib.trajectory.timing.TimingConstraint;
 import libraries.cheesylib.trajectory.timing.TimingUtil;
 import libraries.cheesylib.util.CSVWritable;
 import libraries.cheesylib.util.Util;
+import libraries.cyberlib.kinematics.ChassisSpeeds;
+import libraries.cyberlib.utils.Angles;
+import libraries.cyberlib.utils.HolonomicDriveSignal;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class DriveMotionPlanner implements CSVWritable {
     private static final double kMaxDx = 2.0;
@@ -50,12 +54,12 @@ public class DriveMotionPlanner implements CSVWritable {
     double mLastTime = Double.POSITIVE_INFINITY;
     public TimedState<Pose2dWithCurvature> mSetpoint = new TimedState<>(Pose2dWithCurvature.identity());
     Pose2d mError = Pose2d.identity();
-    Translation2d mOutput = Translation2d.identity();
+    HolonomicDriveSignal mOutput = new HolonomicDriveSignal(Translation2d.identity(), 0.0, true);
     double currentTrajectoryLength = 0.0;
 
     double mDt = 0.0;
 
-    public double getMaxRotationSpeed(){
+    public double getRotationSample() {
         final double kStartPoint = 0.2;
         final double kPivotPoint = 0.5;
         final double kEndPoint = 0.8;
@@ -94,7 +98,7 @@ public class DriveMotionPlanner implements CSVWritable {
 
     public void reset() {
         mError = Pose2d.identity();
-        mOutput = Translation2d.identity();
+        mOutput = new HolonomicDriveSignal(Translation2d.identity(), 0.0, true);
         mLastTime = Double.POSITIVE_INFINITY;
         useDefaultCook = true;
     }
@@ -157,9 +161,9 @@ public class DriveMotionPlanner implements CSVWritable {
         }
         // Generate the timed trajectory.
         Trajectory<TimedState<Pose2dWithCurvature>> timed_trajectory = TimingUtil.timeParameterizeTrajectory
-                (reversed, new
-                                DistanceView<>(trajectory), kMaxDx, all_constraints, start_vel, end_vel, max_vel, max_accel,
-                        max_decel, slowdown_chunks);
+                (reversed, new DistanceView<>(trajectory), kMaxDx, all_constraints,
+                        start_vel, end_vel, max_vel, max_accel, max_decel, slowdown_chunks);
+
         timed_trajectory.setDefaultVelocity(default_vel / Constants.kSwerveMaxSpeedInchesPerSecond);
         return timed_trajectory;
     }
@@ -173,20 +177,24 @@ public class DriveMotionPlanner implements CSVWritable {
 
     @Override
     public String toCSV() {
-        return mOutput.toCSV();
+//        return mOutput.toCSV();
+        return "";
     }
 
-    protected Translation2d updatePurePursuit(Pose2d current_state) {
+    protected Optional<HolonomicDriveSignal> updatePurePursuit(Pose2d current_state) {
         double lookahead_time = Constants.kPathLookaheadTime;
         final double kLookaheadSearchDt = 0.01;
+
         TimedState<Pose2dWithCurvature> lookahead_state = mCurrentTrajectory.preview(lookahead_time).state();
         double actual_lookahead_distance = mSetpoint.state().distance(lookahead_state.state());
+
         while (actual_lookahead_distance < Constants.kPathMinLookaheadDistance &&
                 mCurrentTrajectory.getRemainingProgress() > lookahead_time) {
             lookahead_time += kLookaheadSearchDt;
             lookahead_state = mCurrentTrajectory.preview(lookahead_time).state();
             actual_lookahead_distance = mSetpoint.state().distance(lookahead_state.state());
         }
+
         if (actual_lookahead_distance < Constants.kPathMinLookaheadDistance) {
             lookahead_state = new TimedState<>(new Pose2dWithCurvature(lookahead_state.state()
                     .getPose().transformBy(Pose2d.fromTranslation(new Translation2d(
@@ -195,38 +203,41 @@ public class DriveMotionPlanner implements CSVWritable {
                     , lookahead_state.velocity(), lookahead_state.acceleration());
         }
 
-        SmartDashboard.putNumber("Path X", lookahead_state.state().getTranslation().x());
-        SmartDashboard.putNumber("Path Y", lookahead_state.state().getTranslation().y());
-        SmartDashboard.putNumber("Path Velocity", lookahead_state.velocity() / Constants.kSwerveMaxSpeedInchesPerSecond);
+//        SmartDashboard.putNumber("Path X", lookahead_state.state().getTranslation().x());
+//        SmartDashboard.putNumber("Path Y", lookahead_state.state().getTranslation().y());
+//        SmartDashboard.putNumber("Path Velocity", lookahead_state.velocity() / Constants.kSwerveMaxSpeedInchesPerSecond);
 
-        Translation2d lookaheadTranslation = new Translation2d(current_state.getTranslation(),
-                lookahead_state.state().getTranslation());
-        Rotation2d steeringDirection = lookaheadTranslation.direction();
-        double normalizedSpeed = Math.abs(mSetpoint.velocity()) / Constants.kSwerveMaxSpeedInchesPerSecond;
+        // A WCD would have to plot an arc.  Since this is Swerve, use a straight line.
+        // Translate to lookahead position in the straight line formed by the two points: current and lookahead position
+        // Normalize to euclidian unit circle as Swerve Drive will scale speed properly
+        Translation2d lookaheadTranslation = new Translation2d(
+                current_state.getTranslation(), lookahead_state.state().getTranslation()).normalize();
 
-        //System.out.println("Lookahead point: " + lookahead_state.state().getTranslation().toString() + " Current State: " + current_state.getTranslation().toString() + " Lookahad translation: " + lookaheadTranslation.toString());
+        var startAngle = mCurrentTrajectory.trajectory().getFirstState().state().getPose().getRotation().getRadians();
+        var endAngle = mCurrentTrajectory.trajectory().getLastState().state().getPose().getRotation().getRadians();
 
-        //System.out.println("Speed: " + normalizedSpeed + " DefaultCook: " + defaultCook + " setpoint t:" + mSetpoint.t() + " Length: " + currentTrajectoryLength);
-        if(normalizedSpeed > defaultCook || mSetpoint.t() > (currentTrajectoryLength / 2.0)){
-            useDefaultCook = false;
-        }
-        if(useDefaultCook){
-            normalizedSpeed = defaultCook;
-        }
+        // Get the rotation angle over the trajectory
+        double totalAngle = Angles.shortest_angular_distance(startAngle, endAngle);
 
-        //System.out.println("Steering direction " + steeringDirection.getDegrees() + " Speed: " + normalizedSpeed);
+        var theta1 = (totalAngle * getRotationSample()) + startAngle;
+        var theta0 = current_state.getRotation().getRadians();
 
-        final Translation2d steeringVector = Translation2d.fromPolar(steeringDirection, normalizedSpeed);
+        // Distribute rotation
+        // w = (theta(1) - theta(0)) / dt
+        double rotationVelocity = (Angles.normalizeAngle(theta1 - theta0) / mDt);
 
-        //System.out.println("Pure pursuit updated, vector is: " + steeringVector.toString());
-        return steeringVector;
+        // Scale it to a percentage of max angular velocity as Swerve will scale it correctly
+        rotationVelocity /= Swerve.getInstance("DriveMotionPlanner").mSwerveConfiguration.maxSpeedInRadiansPerSecond;
+
+        return Optional.of(new HolonomicDriveSignal(lookaheadTranslation, rotationVelocity, true));
     }
 
-    public Translation2d update(double timestamp, Pose2d current_state) {
+     public Optional<HolonomicDriveSignal> update(double timestamp, Pose2d current_state, ChassisSpeeds chassisSpeeds) {
         if (mCurrentTrajectory == null){
-            //System.out.println("Trajectory is null, returning zero trajectory");
-            return Translation2d.identity();
+
+            return Optional.empty();
         }
+
         if (mCurrentTrajectory.getProgress() == 0.0 && !Double.isFinite(mLastTime)) {
             mLastTime = timestamp;
         }
@@ -235,13 +246,13 @@ public class DriveMotionPlanner implements CSVWritable {
         mLastTime = timestamp;
 
         current_state = current_state.transformBy(Pose2d.fromTranslation(followingCenter));
-
         double searchStepSize = 1.0;
         double previewQuantity = 0.0;
         double searchDirection = 1.0;
         double forwardDistance = distance(current_state, previewQuantity + searchStepSize);
         double reverseDistance = distance(current_state, previewQuantity - searchStepSize);
         searchDirection = Math.signum(reverseDistance - forwardDistance);
+
         while(searchStepSize > 0.001){
             if(Util.epsilonEquals(distance(current_state, previewQuantity), 0.0, 0.001)) break;
             while(/* next point is closer than current point */ distance(current_state, previewQuantity + searchStepSize*searchDirection) <
@@ -263,14 +274,11 @@ public class DriveMotionPlanner implements CSVWritable {
             mError = current_state.inverse().transformBy(mSetpoint.state().getPose());
 
             if (mFollowerType == FollowerType.PURE_PURSUIT) {
-                mOutput = updatePurePursuit(current_state);
+                return updatePurePursuit(current_state);
             }
-        } else {
-            // TODO Possibly switch to a pose stabilizing controller?
-            mOutput = Translation2d.identity();
-            // System.out.println("Motion planner done, returning zero trajectory");
         }
-        return mOutput;
+
+        return Optional.empty();
     }
 
     private double distance(Pose2d current_state, double additional_progress){
