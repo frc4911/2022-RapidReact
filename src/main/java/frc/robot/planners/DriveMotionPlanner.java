@@ -11,6 +11,7 @@ import libraries.cheesylib.trajectory.timing.TimedState;
 import libraries.cheesylib.trajectory.timing.TimingConstraint;
 import libraries.cheesylib.trajectory.timing.TimingUtil;
 import libraries.cheesylib.util.CSVWritable;
+import libraries.cheesylib.util.Units;
 import libraries.cheesylib.util.Util;
 import libraries.cyberlib.kinematics.ChassisSpeeds;
 import libraries.cyberlib.utils.Angles;
@@ -21,12 +22,9 @@ import java.util.List;
 import java.util.Optional;
 
 public class DriveMotionPlanner implements CSVWritable {
-    private static final double kMaxDx = 2.0;
-    private static final double kMaxDy = 0.25;
+    private static final double kMaxDx = Units.inches_to_meters(2.0);
+    private static final double kMaxDy = Units.inches_to_meters(0.25);
     private static final double kMaxDTheta = Math.toRadians(5.0);
-
-    private double defaultCook = 0.5;
-    private boolean useDefaultCook = true;
 
     private Translation2d followingCenter = Translation2d.identity();
 
@@ -83,7 +81,6 @@ public class DriveMotionPlanner implements CSVWritable {
     public void setTrajectory(final TrajectoryIterator<TimedState<Pose2dWithCurvature>> trajectory) {
         mCurrentTrajectory = trajectory;
         mSetpoint = trajectory.getState();
-        defaultCook = trajectory.trajectory().defaultVelocity();
         currentTrajectoryLength = trajectory.trajectory().getLastState().t();
         for (int i = 0; i < trajectory.trajectory().length(); ++i) {
             if (trajectory.trajectory().getState(i).velocity() > Util.kEpsilon) {
@@ -100,7 +97,6 @@ public class DriveMotionPlanner implements CSVWritable {
         mError = Pose2d.identity();
         mOutput = new HolonomicDriveSignal(Translation2d.identity(), 0.0, true);
         mLastTime = Double.POSITIVE_INFINITY;
-        useDefaultCook = true;
     }
 
     public Trajectory<TimedState<Pose2dWithCurvature>> generateTrajectory(

@@ -1,13 +1,14 @@
 package libraries.cheesylib.spline;
 
 import libraries.cheesylib.geometry.*;
+import libraries.cheesylib.util.Units;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class SplineGenerator {
-    private static final double kMaxDX = 2.0; //inches
-    private static final double kMaxDY = 0.05; //inches
+    private static final double kMaxDX = Units.inches_to_meters(2.0); //meters
+    private static final double kMaxDY = Units.inches_to_meters(0.05); //inches
     private static final double kMaxDTheta = 0.1; //radians!
     private static final int kMinSampleSize = 1;
 
