@@ -439,7 +439,8 @@ public class CW {
 
         public double getRaw(double deadband){
             double value = stick.getRawAxis(num);
-            return Math.abs(value)<=deadband?0:value;
+            double scalar = 1/(1-deadband); //Calculates the input scalar with the given deadband
+            return Math.abs(value) <= deadband? 0:(value > 0)? (value-deadband)*scalar:(value+deadband)*scalar;
         }
     }
 
