@@ -168,7 +168,7 @@ public class SwerveDriveModule extends Subsystem {
         // multiple (usually 2) sets were needed to set new encoder value
         double fxTicksBefore = mSteerMotor.getSelectedSensorPosition();
         double cancoderDegrees = mCANCoder.getAbsolutePosition();
-        double fxTicksTarget = degreesToEncUnits(cancoderDegrees);
+        double fxTicksTarget = degreesToEncoderUnits(cancoderDegrees);
         double fxTicksNow = fxTicksBefore;
         int loops = 0;
         final double acceptableTickErr = 10;
@@ -250,7 +250,7 @@ public class SwerveDriveModule extends Subsystem {
         mDriveMotor.setSelectedSensorPosition(0, 0, Constants.kLongCANTimeoutMs);
         mDriveMotor.setSensorPhase(mConstants.kInvertDriveSensorPhase);
         mDriveMotor.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, mConstants.kDriveStatusFrame2UpdateRate, Constants.kLongCANTimeoutMs);
-        // mDriveMotor.configOpenloopRamp(0.25, Constants.kLongCANTimeoutMs); //Bring back if swerve acceleration is too fast
+        mDriveMotor.configOpenloopRamp(0.15, Constants.kLongCANTimeoutMs); //Increase if swerve acceleration is too fast
         mDriveMotor.configClosedloopRamp(0.0);
         mDriveMotor.configAllowableClosedloopError(0, 0, Constants.kLongCANTimeoutMs);
 
@@ -305,18 +305,26 @@ public class SwerveDriveModule extends Subsystem {
 				Rotation2d.fromRadians(steerAngleInRadians));
 	}
 
-	/**
-	 * Sets the state for the module.
-	 * <p>
-	 * @param swreveModuleState Desired state for the module.
-	 */
-	public synchronized void setState(SwerveModuleState swreveModuleState) {
+    /**
+     * Sets the state for the module.
+     * <p>
+     * @param desiredState Desired state for the module.
+     */
+    public synchronized void setState(SwerveModuleState desiredState) {
+        // Note that Falcon is contiguous, so it can be larger than 2pi.
+        // The Rotation2d normalizes the angle by default between 0 and 2pi.
+        Rotation2d currentAngle = Rotation2d.fromRadians(encoderUnitsToRadians(mPeriodicIO.steerPosition));
+
+        // Minimize the change in heading the desired swerve module state would require by potentially
+        // reversing the direction the wheel spins. Odometry will still be accurate as both steer angle
+        // and wheel speeds will have their signs "flipped."
+        var state = SwerveModuleState.optimize(desiredState, currentAngle);
+
         // Converts the velocity in SI units (meters per second) to a
         // voltage (as a percentage) for the motor controllers.
-		setDriveOpenLoop(swreveModuleState.speedInMetersPerSecond / mMaxSpeedInMetersPerSecond);
+        setDriveOpenLoop(state.speedInMetersPerSecond / mMaxSpeedInMetersPerSecond);
 
-        // TODO:  Consider using SwerveModule.optimize() here instead of setReferenceAngle()
-        setReferenceAngle(swreveModuleState.angle.getRadians());
+        setReferenceAngle(state.angle.getRadians());
     }
 
     /**
@@ -333,31 +341,14 @@ public class SwerveDriveModule extends Subsystem {
         referenceAngleRadians = Angles.normalizeAngle(referenceAngleRadians);
 
         // Get the shortest angular distance between current and reference angles.
-        double shortest_distance = Angles.shortest_angular_distance(currentAngleRadiansMod, referenceAngleRadians);
-
-        // Calculates shortcut angle and direction to prevent wheels from rotating as much
-        // E.g. will drive wheels backward instead of rotation 180 degrees
-        double pi = Math.PI;
-        boolean flipDirection = false;
-        if(shortest_distance > (pi/2)){
-            shortest_distance -= pi;
-            flipDirection = true;
-        } else if (shortest_distance < (-pi/2)){
-            shortest_distance += pi;
-            flipDirection = true;
-        }
+        double shortestDistance = Angles.shortest_angular_distance(currentAngleRadiansMod, referenceAngleRadians);
 
         // Adjust by adding the shortest distance to current angle (which can be in  multiples of 2pi)
-        double adjustedReferenceAngleRadians = currentAngleRadians + shortest_distance;
+        double adjustedReferenceAngleRadians = currentAngleRadians + shortestDistance;
 
         // mPeriodicIO.steerControlMode = ControlMode.MotionMagic;
         mPeriodicIO.steerControlMode = ControlMode.Position;
-
-        // convert to encoder units
         mPeriodicIO.steerDemand = radiansToEncoderUnits(adjustedReferenceAngleRadians);
-        if(flipDirection){
-            mPeriodicIO.driveDemand *= -1;
-        }                        
     }
 
     /**
@@ -393,11 +384,11 @@ public class SwerveDriveModule extends Subsystem {
         return radians * mConstants.kSteerMotorTicksPerRadian;
     }
 
-    private int degreesToEncUnits(double degrees) {
+    private int degreesToEncoderUnits(double degrees) {
         return (int) radiansToEncoderUnits(Math.toRadians(degrees));
     }
 
-    private double encUnitsToDegrees(double encUnits) {
+    private double encoderUnitsToDegrees(double encUnits) {
         return Math.toDegrees(encoderUnitsToRadians(encUnits));
     }
 
@@ -551,7 +542,7 @@ public class SwerveDriveModule extends Subsystem {
         if(Constants.kDebuggingOutput) {
             SmartDashboard.putNumber(mModuleName + "Pulse Width", mSteerMotor.getSelectedSensorPosition(0));
             if(mSteerMotor.getControlMode() == ControlMode.MotionMagic)
-                SmartDashboard.putNumber(mModuleName + "Error", encUnitsToDegrees(mSteerMotor.getClosedLoopError(0)));
+                SmartDashboard.putNumber(mModuleName + "Error", encoderUnitsToDegrees(mSteerMotor.getClosedLoopError(0)));
             //SmartDashboard.putNumber(mModuleName + "X", position.x());
             //SmartDashboard.putNumber(mModuleName + "Y", position.y());
             SmartDashboard.putNumber(mModuleName + "Steer Speed", mSteerMotor.getSelectedSensorVelocity(0));
