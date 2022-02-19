@@ -219,11 +219,10 @@ public class DriveMotionPlanner implements CSVWritable {
 
         // Distribute rotation
         // w = (theta(1) - theta(0)) / dt
-        double rotationDifferrnce = (Angles.normalizeAngle(theta1 - theta0) / mDt);
+        double rotationVelocity = Angles.normalizeAngle(theta1 - theta0) / mDt;
 
         // Scale it to a percentage of max angular velocity as Swerve will scale it correctly
-        double rotationVelocity =
-                rotationDifferrnce / Swerve.getInstance("DriveMotionPlanner").mSwerveConfiguration.maxSpeedInRadiansPerSecond;
+         rotationVelocity /= Swerve.getInstance("DriveMotionPlanner").mSwerveConfiguration.maxSpeedInRadiansPerSecond;
 
         return Optional.of(new HolonomicDriveSignal(lookaheadTranslation, rotationVelocity, true));
     }
