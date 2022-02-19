@@ -20,7 +20,19 @@ public class Util {
         return limit(v, -maxMagnitude, maxMagnitude);
     }
 
+    /**
+     * Limits a value between a minimum and a maximum value.
+     *
+     * @param v The value to limit.
+     * @param min The minimum value of the range. This value must be less than max.
+     * @param max The maximum value of the range. This value must be greater than min.
+     * @return the limited value.
+    */
     public static double limit(double v, double min, double max) {
+        if (min > max) {
+            throw new IllegalArgumentException("min must not be greater than max");
+        }
+
         return Math.min(max, Math.max(min, v));
     }
 

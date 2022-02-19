@@ -18,13 +18,13 @@ import java.util.List;
 import frc.robot.Constants;
 
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import libraries.cheesylib.util.Units;
 
 public class TrajectoryGenerator {
     private boolean skipThisOne = false;
-    private static final double kMaxVelocity = 120.0;
-    private static final double kMaxAccel = 60.0; //120.0;
-    private static final double kMaxDecel = 72.0; //72.0;
+    private static final double kMaxVelocity = Units.inches_to_meters(120.0);
+    private static final double kMaxAccel = Units.inches_to_meters(60.0); //120.0;
+    private static final double kMaxDecel = Units.inches_to_meters(72.0); //72.0;
     private static final double kMaxVoltage = 9.0;
 
 
@@ -57,8 +57,8 @@ public class TrajectoryGenerator {
             boolean reversed,
             final List<Pose2d> waypoints,
             final List<TimingConstraint<Pose2dWithCurvature>> constraints,
-            double max_vel,  // inches/s
-            double max_accel,  // inches/s^2
+            double max_vel,  // meters/s
+            double max_accel,  // meters/s^2
             double max_decel,
             double max_voltage,
             double default_vel,
@@ -71,10 +71,10 @@ public class TrajectoryGenerator {
             boolean reversed,
             final List<Pose2d> waypoints,
             final List<TimingConstraint<Pose2dWithCurvature>> constraints,
-            double start_vel,  // inches/s
-            double end_vel,  // inches/s
-            double max_vel,  // inches/s
-            double max_accel,  // inches/s^2
+            double start_vel,  // meters/s
+            double end_vel,  // meters/s
+            double max_vel,  // meters/s
+            double max_accel,  // meters/s^2
             double max_decel,
             double max_voltage,
             double default_vel,
@@ -116,7 +116,7 @@ public class TrajectoryGenerator {
         private Trajectory<TimedState<Pose2dWithCurvature>> getTestTrajectory() {
             List<Pose2d> waypoints = new ArrayList<>();
             waypoints.add(new Pose2d(Translation2d.identity(), Rotation2d.fromDegrees(180)));
-            waypoints.add(new Pose2d(-120, 120, Rotation2d.fromDegrees(90)));
+            waypoints.add(new Pose2d(Units.inches_to_meters(-120), Units.inches_to_meters(120), Rotation2d.fromDegrees(90)));
             return generateTrajectory(false, waypoints,
                     Arrays.asList(new CentripetalAccelerationConstraint(60)),
                     kMaxVelocity, kMaxAccel, kMaxDecel, kMaxVoltage, kMaxVelocity, 1);
@@ -124,7 +124,7 @@ public class TrajectoryGenerator {
 
         private Trajectory<TimedState<Pose2dWithCurvature>> getTestTrajectoryBack() {
             List<Pose2d> waypoints = new ArrayList<>();
-            waypoints.add(new Pose2d(-120, 120, Rotation2d.fromDegrees(90)));
+            waypoints.add(new Pose2d(Units.inches_to_meters(-120), Units.inches_to_meters(120), Rotation2d.fromDegrees(90)));
             waypoints.add(new Pose2d(Translation2d.identity(), Rotation2d.fromDegrees(180)));
             return generateTrajectory(true, waypoints, Arrays.asList(new CentripetalAccelerationConstraint(60)),
                     kMaxVelocity, kMaxAccel, kMaxDecel, kMaxVoltage, kMaxVelocity, 1);
