@@ -22,6 +22,7 @@ import libraries.cheesylib.util.Units;
 
 public class TrajectoryGenerator {
     private boolean skipThisOne = false;
+    // TODO - Should use Swerve Configuration values here
     private static final double kMaxVelocity = Units.inches_to_meters(120.0);
     private static final double kMaxAccel = Units.inches_to_meters(60.0); //120.0;
     private static final double kMaxDecel = Units.inches_to_meters(72.0); //72.0;
