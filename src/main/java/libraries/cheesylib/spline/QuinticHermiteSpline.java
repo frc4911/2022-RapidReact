@@ -3,7 +3,10 @@ package libraries.cheesylib.spline;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Rotation2d;
 import libraries.cheesylib.geometry.Translation2d;
+import libraries.cheesylib.util.Util;
 
+import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.List;
 
 public class QuinticHermiteSpline extends Spline {
@@ -13,8 +16,10 @@ public class QuinticHermiteSpline extends Spline {
     private static final int kSamples = 100;
     private static final int kMaxIterations = 100;
 
-    private double x0, x1, dx0, dx1, ddx0, ddx1, y0, y1, dy0, dy1, ddy0, ddy1;
+    public double x0, x1, dx0, dx1, ddx0, ddx1, y0, y1, dy0, dy1, ddy0, ddy1;
+    public double theta0, theta1, dtheta0, dtheta1, ddtheta0, ddtheta1;
     private double ax, bx, cx, dx, ex, fx, ay, by, cy, dy, ey, fy;
+    private double atheta, btheta, ctheta, dtheta, etheta, ftheta;
 
     /**
      * @param p0 The starting pose of the spline
@@ -35,14 +40,31 @@ public class QuinticHermiteSpline extends Spline {
         ddy0 = 0;
         ddy1 = 0;
 
+        //Orientation
+        var angle = Util.normalize_angle_positive(Math.atan2(y1 - y0, x1 - x0));
+        theta0 = angle;
+        theta1 = angle;
+        dtheta0 = 0.0;
+        dtheta1 = 0.0;
+        ddtheta0 = 0.0;
+        ddtheta1 = 0.0;
+
+        computeCoefficients();
+    }
+
+    public QuinticHermiteSpline(Pose2d p0, Pose2d p1, double theta0, double theta1) {
+        this(p0, p1);
+        this.theta0 = theta0;
+        this.theta1 = theta1;
+
         computeCoefficients();
     }
 
     /**
      * Used by the curvature optimization function
      */
-    private QuinticHermiteSpline(double x0, double x1, double dx0, double dx1, double ddx0, double ddx1,
-                                 double y0, double y1, double dy0, double dy1, double ddy0, double ddy1) {
+    public QuinticHermiteSpline(double x0, double x1, double dx0, double dx1, double ddx0, double ddx1,
+                                double y0, double y1, double dy0, double dy1, double ddy0, double ddy1) {
         this.x0 = x0;
         this.x1 = x1;
         this.dx0 = dx0;
@@ -60,10 +82,38 @@ public class QuinticHermiteSpline extends Spline {
         computeCoefficients();
     }
 
+    public QuinticHermiteSpline(double x0, double x1, double dx0, double dx1, double ddx0, double ddx1,
+                                double y0, double y1, double dy0, double dy1, double ddy0, double ddy1,
+                                double theta0, double theta1, double dtheta0, double dtheta1, double ddtheta0, double ddtheta1) {
+        this.x0 = x0;
+        this.x1 = x1;
+        this.dx0 = dx0;
+        this.dx1 = dx1;
+        this.ddx0 = ddx0;
+        this.ddx1 = ddx1;
+
+        this.y0 = y0;
+        this.y1 = y1;
+        this.dy0 = dy0;
+        this.dy1 = dy1;
+        this.ddy0 = ddy0;
+        this.ddy1 = ddy1;
+
+        this.theta0 = theta0;
+        this.theta1 = theta1;
+        this.dtheta0 = dtheta0;
+        this.dtheta1 = dtheta1;
+        this.ddtheta0 = ddtheta0;
+        this.ddtheta1 = ddtheta1;
+
+        computeCoefficients();
+    }
+
+
     /**
      * Re-arranges the spline into an at^5 + bt^4 + ... + f form for simpler computations
      */
-    private void computeCoefficients() {
+    public void computeCoefficients() {
         ax = -6 * x0 - 3 * dx0 - 0.5 * ddx0 + 0.5 * ddx1 - 3 * dx1 + 6 * x1;
         bx = 15 * x0 + 8 * dx0 + 1.5 * ddx0 - ddx1 + 7 * dx1 - 15 * x1;
         cx = -10 * x0 - 6 * dx0 - 1.5 * ddx0 + 0.5 * ddx1 - 4 * dx1 + 10 * x1;
@@ -77,6 +127,14 @@ public class QuinticHermiteSpline extends Spline {
         dy = 0.5 * ddy0;
         ey = dy0;
         fy = y0;
+
+        atheta = -6 * theta0 - 3 * dtheta0 - 0.5 * ddtheta0 + 0.5 * ddtheta1 - 3 * dtheta1 + 6 * theta1;
+        btheta = 15 * theta0 + 8 * dtheta0 + 1.5 * ddtheta0 - ddy1 + 7 * dtheta1 - 15 * theta1;
+        ctheta = -10 * theta0 - 6 * dtheta0 - 1.5 * ddtheta0 + 0.5 * ddtheta1 - 4 * dtheta1 + 10 * theta1;
+        dtheta = 0.5 * ddtheta0;
+        etheta = dtheta0;
+        ftheta = theta0;
+
     }
 
     public Pose2d getStartPose() {
@@ -142,12 +200,20 @@ public class QuinticHermiteSpline extends Spline {
     @Override
     public double getDCurvature(double t) {
         double dx2dy2 = (dx(t) * dx(t) + dy(t) * dy(t));
+        if (dx2dy2 == 0.0) {
+            return 0.0;
+        }
+
         double num = (dx(t) * dddy(t) - dddx(t) * dy(t)) * dx2dy2 - 3 * (dx(t) * ddy(t) - ddx(t) * dy(t)) * (dx(t) * ddx(t) + dy(t) * ddy(t));
         return num / (dx2dy2 * dx2dy2 * Math.sqrt(dx2dy2));
     }
 
     private double dCurvature2(double t) {
         double dx2dy2 = (dx(t) * dx(t) + dy(t) * dy(t));
+        if (dx2dy2 == 0.0) {
+            return 0.0;
+        }
+
         double num = (dx(t) * dddy(t) - dddx(t) * dy(t)) * dx2dy2 - 3 * (dx(t) * ddy(t) - ddx(t) * dy(t)) * (dx(t) * ddx(t) + dy(t) * ddy(t));
         return num * num / (dx2dy2 * dx2dy2 * dx2dy2 * dx2dy2 * dx2dy2);
     }
@@ -328,4 +394,95 @@ public class QuinticHermiteSpline extends Spline {
                 (p2.y() - p3.y()));
         return -B / (2 * A);
     }
+
+
+    public double getOrientation(double t) {
+        var theta =
+                atheta * t * t * t * t * t +
+                        btheta * t * t * t * t +
+                        ctheta * t * t * t +
+                        dtheta * t * t +
+                        etheta * t +
+                        ftheta;
+        return theta;
+    }
+
+    /**
+     * Subdivides a spline at point z [0,1]
+     * @param z Split point [0,1]
+     * @return List of two QuinticHermiteSpline
+     */
+    public List<QuinticHermiteSpline> subDivide(double z) {
+        var point = getPoint(z);
+
+        // Due to the change in parameterization, the derivatives need to be scaled appropriately.
+        // To retain the shape of the spline segments the k-th derivative of the first  sub-segment
+        // has to be scaled by z to the power of k, and the k-th derivative of the second sub-segment
+        // by (1-z) to the power of k.
+
+        List<QuinticHermiteSpline> segments = new ArrayList<>();
+        segments.add(
+                new QuinticHermiteSpline(
+                        x0, point.x(), dx0 * z, dx(z) * z, ddx0 * z * z, ddx(z) * z * z,
+                        y0, point.y(), dy0 * z, dy(z) * z, ddy0 * z * z, ddy(z) * z * z,
+                        theta0, theta1, dtheta0, ddtheta1, ddtheta0, ddtheta1));
+        segments.add(
+                new QuinticHermiteSpline(
+                        point.x(), x1, dx(z) * (1 - z), dx1 * (1 - z), ddx(z) * (1 - z) * (1 - z), ddx1 * (1 - z) * (1 - z),
+                        point.y(), y1, dy(z) * (1 - z), dy1 * (1 - z), ddy(z) * (1 - z) * (1 - z), ddy1 * (1 - z) * (1 - z),
+                        theta0, theta1, dtheta0, ddtheta1, ddtheta0, ddtheta1));
+        return segments;
+    }
+
+    /**
+     * Subdivides a spline at point z1, and z2 [0,1] where 0 < z1 <= z2 < 1.
+     * @param z1    Split point [0,1]
+     * @param z2    Split point [0,1] and z2 <= z1
+     * @return      List of QuinticHermiteSpline
+     */
+    public List<QuinticHermiteSpline> subDivide3(double z1, double z2) {
+        List<QuinticHermiteSpline> segments = new ArrayList<>();
+
+        if ((z1 == 0.0 || z1 == 1.0) && z2 == 0.0) {
+            segments.add(this);
+            return segments;
+        }
+
+        if (z1 != 0.0 && z2 == 0.0) {
+            return subDivide(z1);
+        }
+
+        if (z1 + (1 - z2) == 1.0) {
+            return subDivide(z1);
+        }
+
+        if (z1 == 0.0) {
+            return subDivide(z2);
+        }
+
+        var s1 = subDivide(z1);
+        // Scale z given recently created sub-segment is shorter.
+        var scale_factor = 1 - z1;
+
+        var s2 = s1.get(1).subDivide(z2 * scale_factor);
+        segments.add(s1.get(0));
+        segments.addAll(s2);
+        return segments;
+    }
+
+    @Override
+    public String toString() {
+        final DecimalFormat fmt = new DecimalFormat("#0.000");
+        return String.format(
+                "x0=%s y0=%s x1=%s, y1=%s, " +
+                        "theta0=%s, theta1=%s, " +
+                        "dtheta0=%s, dtheta1=%s, " +
+                        "ddtheta0=%s, ddtheta1=%s",
+                fmt.format(x0), fmt.format(y0),
+                fmt.format(x1), fmt.format(y1),
+                fmt.format(Math.toDegrees(theta0)), fmt.format(Math.toDegrees(theta1)),
+                fmt.format(dtheta0), fmt.format(dtheta1),
+                fmt.format(ddtheta0), fmt.format(ddtheta1));
+    }
 }
+

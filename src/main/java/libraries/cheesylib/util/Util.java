@@ -86,4 +86,26 @@ public class Util {
     public static double deadBand(double val, double deadband){
         return (Math.abs(val) > Math.abs(deadband)) ? val : 0.0;
     }
+
+    public static double getLineAngle(final List<Double> p1, final List<Double> p2) {
+        final double angle = Math.atan2(p2.get(1) - p1.get(1), p2.get(0) - p1.get(0));
+        return Util.normalize_angle_positive(angle);
+    }
+
+    public static double normalize_angle_positive(final double angle) {
+        return (angle % (2.0 * Math.PI) + 2.0 * Math.PI) % (2.0 * Math.PI);
+    }
+
+    public static double normalize_angle(final  double angle) {
+        var a = normalize_angle_positive(angle);
+        if (a > Math.PI) {
+            a -= 2.0 * Math.PI;
+        }
+
+        return a;
+    }
+
+    public static double shortest_angular_distance(final double from_angle, final double to_angle) {
+        return normalize_angle(to_angle - from_angle);
+    }
 }
