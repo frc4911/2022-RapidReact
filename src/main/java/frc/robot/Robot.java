@@ -7,6 +7,9 @@ package frc.robot;
 import java.util.Arrays;
 
 import edu.wpi.first.wpilibj.TimedRobot;
+import frc.robot.autos.AutoModeExecutor;
+import frc.robot.autos.AutoModeSelector;
+import frc.robot.paths.TrajectoryGenerator;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Collector;
 import frc.robot.subsystems.Indexer;
@@ -48,6 +51,10 @@ public class Robot extends TimedRobot {
   private Swerve           mSwerve;
   private RobotStateEstimator mRobotStateEstimator;
 
+  private TrajectoryGenerator mTrajectoryGenerator = TrajectoryGenerator.getInstance();
+  private AutoModeExecutor mAutoModeExecutor;
+  private AutoModeSelector mAutoModeSelector;
+
   private final double mLoopPeriod = .005;
   private Looper mSubsystemLooper = new Looper(mLoopPeriod,Thread.NORM_PRIORITY+1);
 
@@ -69,7 +76,7 @@ public class Robot extends TimedRobot {
           mJSticks,
           mSuperstructure,
           mSwerve,
-         mRobotStateEstimator
+          mRobotStateEstimator
         )
     );
 
@@ -84,15 +91,39 @@ public class Robot extends TimedRobot {
 			// mSwerve.startTracking(Constants.kDiskTargetHeight, new Translation2d(-6.0,
 			// 0.0), true, new Rotation2d());
 			mSwerve.stop();
-		}
 
+            mAutoModeSelector = new AutoModeSelector();
+            mTrajectoryGenerator.generateTrajectories();
+		}
   }
 
   @Override
   public void robotPeriodic() {}
 
   @Override
-  public void autonomousInit() {}
+  public void autonomousInit() {
+    System.out.println("AutonomousInit");
+		try {
+			autoConfig();
+
+			mSubsystemLooper.stop();
+			mSubsystemLooper.start();
+
+			mAutoModeExecutor.start();
+		} catch (Throwable t) {
+			CrashTracker.logThrowableCrash(t);
+			throw t;
+		}
+  }
+
+  public void autoConfig() {
+		if (mSwerve != null) {
+			mSwerve.zeroSensors();
+			// mSwerve.setNominalDriveOutput(0.0);
+			// mSwerve.requireModuleConfiguration();
+			// mSwerve.set10VoltRotationMode(true);
+		}
+	}
 
   @Override
   public void autonomousPeriodic() {}
@@ -121,10 +152,32 @@ public class Robot extends TimedRobot {
   public void teleopPeriodic() {}
 
   @Override
-  public void disabledInit() {}
+  public void disabledInit() {
+    try {
+			System.gc();
+			if (mAutoModeExecutor != null) {
+				mAutoModeExecutor.stop();
+			}
+
+			mAutoModeExecutor = new AutoModeExecutor();
+
+			mSubsystemLooper.stop();
+			mSubsystemLooper.start();
+		} catch (Throwable t) {
+			CrashTracker.logThrowableCrash(t);
+			throw t;
+		}
+  }
 
   @Override
-  public void disabledPeriodic() {}
+  public void disabledPeriodic() {
+    try {
+			mAutoModeExecutor.setAutoMode(mAutoModeSelector.getSelectedAutoMode());
+		} catch (Throwable t) {
+			CrashTracker.logThrowableCrash(t);
+			throw t;
+		}
+  }
 
   @Override
   public void testInit() {}

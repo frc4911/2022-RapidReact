@@ -86,7 +86,7 @@ public class SwerveDriveOdometry {
      * @return The new pose of the robot.
      */
     public Pose2d updateWithTime(
-            double currentTimeSeconds, Rotation2d gyroAngle, SwerveModuleState... moduleStates) {
+        double currentTimeSeconds, Rotation2d gyroAngle, SwerveModuleState... moduleStates) {
         double period = mPrevTimeSeconds >= 0 ? currentTimeSeconds - mPrevTimeSeconds : 0.0;
         mPrevTimeSeconds = currentTimeSeconds;
 
