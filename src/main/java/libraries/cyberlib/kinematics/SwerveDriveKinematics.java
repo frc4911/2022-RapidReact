@@ -14,7 +14,7 @@ import java.util.List;
  * <p>The inverse kinematics (converting from a desired chassis velocity to
  * individual module states) uses the relative locations of the modules with
  * respect to the center of rotation. The center of rotation for inverse
- * kinematics is also variable. This means that you can set your set your center
+ * kinematics is also variable. This means that you can set your center
  * of rotation in a corner of the robot to perform special evasion maneuvers.
  *
  * <p>Forward kinematics (converting an array of module states into the overall
@@ -23,7 +23,7 @@ import java.util.List;
  * we use a least-squares approximation.
  *
  * <p>The inverse kinematics: [moduleStates] = [moduleLocations] * [chassisSpeeds]
- * We take the Moore-Penrose pseudoinverse of [moduleLocations] and then
+ * We take the Moore-Penrose pseudo-inverse of [moduleLocations] and then
  * multiply by [moduleStates] to get our chassis speeds.
  *
  * <p>Forward kinematics is also used for odometry -- determining the position of
@@ -178,7 +178,7 @@ public class SwerveDriveKinematics {
     }
 
     /**
-     * Renormalizes the wheel speeds if any individual speed is above the specified maximum.
+     * Re-normalizes the wheel speeds if any individual speed is above the specified maximum.
      *
      * <p>Sometimes, after inverse kinematics, the requested speed from one or more modules may be
      * above the max attainable speed for the driving motor on that module. To fix this issue, one can

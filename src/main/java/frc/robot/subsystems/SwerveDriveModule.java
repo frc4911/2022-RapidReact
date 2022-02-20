@@ -47,7 +47,7 @@ public class SwerveDriveModule extends Subsystem {
 
         // Default steer reduction is Mk4_L2i value
         public double kSteerReduction = (14.0 / 50.0) * (10.0 / 60.0); // 1/21.43
-        public double kSteerTicksPerUnitDistance = (1.0 / 2048.0) * kSteerReduction * (2.0 * Math.PI); 
+        public double kSteerTicksPerUnitDistance = (1.0 / 2048.0) * kSteerReduction * (2.0 * Math.PI);
         public double kSteerTicksPerUnitVelocity = kSteerTicksPerUnitDistance * 10;  // Motor controller unit is ticks per 100 ms
 
 		// general Steer Motor
@@ -168,7 +168,7 @@ public class SwerveDriveModule extends Subsystem {
         // multiple (usually 2) sets were needed to set new encoder value
         double fxTicksBefore = mSteerMotor.getSelectedSensorPosition();
         double cancoderDegrees = mCANCoder.getAbsolutePosition();
-        double fxTicksTarget = degreesToEncoderUnits(cancoderDegrees);
+        double fxTicksTarget = degreesToEncUnits(cancoderDegrees);
         double fxTicksNow = fxTicksBefore;
         int loops = 0;
         final double acceptableTickErr = 10;
@@ -294,11 +294,9 @@ public class SwerveDriveModule extends Subsystem {
 	 */
 	public synchronized SwerveModuleState getState() {
         // Convert to encoder readings to SI units
-        double steerAngleInRadians = encoderUnitsToRadians(mPeriodicIO.steerPosition);
-        steerAngleInRadians %= 2.0 * Math.PI;
-        if (steerAngleInRadians < 0.0) {
-            steerAngleInRadians += 2.0 * Math.PI;
-        }
+        double steerAngleInRadians =
+                Angles.normalizeAngle(
+                encoderUnitsToRadians(mPeriodicIO.steerPosition));
 
 		return new SwerveModuleState(
                 encVelocityToMetersPerSecond(mPeriodicIO.driveDemand),
@@ -384,11 +382,11 @@ public class SwerveDriveModule extends Subsystem {
         return radians * mConstants.kSteerMotorTicksPerRadian;
     }
 
-    private int degreesToEncoderUnits(double degrees) {
+    private int degreesToEncUnits(double degrees) {
         return (int) radiansToEncoderUnits(Math.toRadians(degrees));
     }
 
-    private double encoderUnitsToDegrees(double encUnits) {
+    private double encUnitsToDegrees(double encUnits) {
         return Math.toDegrees(encoderUnitsToRadians(encUnits));
     }
 
@@ -419,6 +417,17 @@ public class SwerveDriveModule extends Subsystem {
 
     private double encVelocityToMetersPerSecond(double encUnitsPer100ms) {
         return encUnitsPer100ms * mConstants.kDriveTicksPerUnitVelocity;
+    }
+
+
+    /**
+     * Sets the mode of operation during neutral throttle output.
+     * <p>
+     * @param neutralMode  The desired mode of operation when the Talon FX
+     *                     Controller output throttle is neutral (ie brake/coast)
+     **/
+    public synchronized void setNeutralMode(NeutralMode neutralMode) {
+        mDriveMotor.setNeutralMode(neutralMode);
     }
 
     public synchronized void disable() {
@@ -535,14 +544,13 @@ public class SwerveDriveModule extends Subsystem {
         SmartDashboard.putNumber(mModuleName + " steerDemand", mPeriodicIO.steerDemand);
         SmartDashboard.putNumber(mModuleName + " steerPosition", mPeriodicIO.steerPosition);
         SmartDashboard.putNumber(mModuleName + " driveDemand", mPeriodicIO.driveDemand);
-        SmartDashboard.putNumber(mModuleName + " drivePosition", mPeriodicIO.drivePosition);
         // SmartDashboard.putNumber(mModuleName + "Steer", periodicIO.drivePosition);
         // SmartDashboard.putNumber(mModuleName + "Velocity", mDriveMotor.getSelectedSensorVelocity(0));
         //SmartDashboard.putNumber(mModuleName + "Velocity", encVelocityToInchesPerSecond(periodicIO.velocity));
         if(Constants.kDebuggingOutput) {
             SmartDashboard.putNumber(mModuleName + "Pulse Width", mSteerMotor.getSelectedSensorPosition(0));
             if(mSteerMotor.getControlMode() == ControlMode.MotionMagic)
-                SmartDashboard.putNumber(mModuleName + "Error", encoderUnitsToDegrees(mSteerMotor.getClosedLoopError(0)));
+                SmartDashboard.putNumber(mModuleName + "Error", encUnitsToDegrees(mSteerMotor.getClosedLoopError(0)));
             //SmartDashboard.putNumber(mModuleName + "X", position.x());
             //SmartDashboard.putNumber(mModuleName + "Y", position.y());
             SmartDashboard.putNumber(mModuleName + "Steer Speed", mSteerMotor.getSelectedSensorVelocity(0));
