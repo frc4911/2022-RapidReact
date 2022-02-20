@@ -297,7 +297,7 @@ public class SwerveDriveModule extends Subsystem {
         // to SI units and let  Rotation2d normalizes the angle between 0 and 2pi.
         Rotation2d currentAngle = Rotation2d.fromRadians(encoderUnitsToRadians(mPeriodicIO.steerPosition));
 
-		return new SwerveModuleState(encVelocityToMetersPerSecond(mPeriodicIO.driveDemand), currentAngle);
+		return new SwerveModuleState(encVelocityToMetersPerSecond(mPeriodicIO.drivePosition), currentAngle);
 	}
 
     /**
