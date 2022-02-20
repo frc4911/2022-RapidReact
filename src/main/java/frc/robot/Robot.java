@@ -92,10 +92,9 @@ public class Robot extends TimedRobot {
 			// 0.0), true, new Rotation2d());
 			mSwerve.stop();
 
-      mAutoModeSelector = new AutoModeSelector();
-      mTrajectoryGenerator.generateTrajectories();
+            mAutoModeSelector = new AutoModeSelector();
+            mTrajectoryGenerator.generateTrajectories();
 		}
-
   }
 
   @Override

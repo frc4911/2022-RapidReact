@@ -198,7 +198,7 @@ public class Constants {
 
     //Path following constants
     public static final double kPathLookaheadTime = 0.25;  // seconds to look ahead along the path for steering 0.4
-    public static final double kPathMinLookaheadDistance = 6.0;  // inches 24.0 (we've been using 3.0)
+    public static final double kPathMinLookaheadDistance = Units.inchesToMeters(6.0);  // inches 24.0 (we've been using 3.0)
 
     //Swerve Odometry Constants
     public static final double kSwerveWheelDiameter = 4.0901; //inches (actual diamter is closer to 3.87, but secondary algorithm prefers 4.0901) 3.76
