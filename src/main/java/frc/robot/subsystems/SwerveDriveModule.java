@@ -293,14 +293,11 @@ public class SwerveDriveModule extends Subsystem {
 	 * @return The current state of the module.
 	 */
 	public synchronized SwerveModuleState getState() {
-        // Convert to encoder readings to SI units
-        double steerAngleInRadians =
-                Angles.normalizeAngle(
-                encoderUnitsToRadians(mPeriodicIO.steerPosition));
+        // Note that Falcon is contiguous, so it can be larger than 2pi.  Convert to encoder readings
+        // to SI units and let  Rotation2d normalizes the angle between 0 and 2pi.
+        Rotation2d currentAngle = Rotation2d.fromRadians(encoderUnitsToRadians(mPeriodicIO.steerPosition));
 
-		return new SwerveModuleState(
-                encVelocityToMetersPerSecond(mPeriodicIO.driveDemand),
-				Rotation2d.fromRadians(steerAngleInRadians));
+		return new SwerveModuleState(encVelocityToMetersPerSecond(mPeriodicIO.driveDemand), currentAngle);
 	}
 
     /**
@@ -309,8 +306,8 @@ public class SwerveDriveModule extends Subsystem {
      * @param desiredState Desired state for the module.
      */
     public synchronized void setState(SwerveModuleState desiredState) {
-        // Note that Falcon is contiguous, so it can be larger than 2pi.
-        // The Rotation2d normalizes the angle by default between 0 and 2pi.
+        // Note that Falcon is contiguous, so it can be larger than 2pi.  Convert to encoder readings
+        // to SI units and let  Rotation2d normalizes the angle between 0 and 2pi.
         Rotation2d currentAngle = Rotation2d.fromRadians(encoderUnitsToRadians(mPeriodicIO.steerPosition));
 
         // Minimize the change in heading the desired swerve module state would require by potentially
