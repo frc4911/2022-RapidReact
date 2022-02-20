@@ -59,7 +59,7 @@ public class Swerve extends Subsystem {
 	private final SwerveDriveKinematics mKinematics;
 
     // Trajectory following
-    private DriveMotionPlanner mMotionPlanner;
+    private static DriveMotionPlanner mMotionPlanner;
     private boolean mOverrideTrajectory = false;
 
     private int mListIndex = -1;
@@ -70,6 +70,7 @@ public class Swerve extends Subsystem {
     public  static Swerve getInstance(String caller) {
         if (sInstance == null) {
             sInstance = new Swerve(caller);
+            mMotionPlanner = new DriveMotionPlanner();
         }
         else {
             printUsage(caller);
@@ -118,7 +119,7 @@ public class Swerve extends Subsystem {
 		mOdometry = new SwerveDriveOdometry(mKinematics, mPigeon.getRotation2dYaw());
         mPeriodicIO.robotPose = mOdometry.getPose();
 
-        mMotionPlanner = new DriveMotionPlanner();
+        // mMotionPlanner = new DriveMotionPlanner();
 
 //        generator = TrajectoryGenerator.getInstance();
     }

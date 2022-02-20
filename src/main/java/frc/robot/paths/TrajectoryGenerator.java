@@ -107,28 +107,29 @@ public class TrajectoryGenerator {
         }
 
         public final MirroredTrajectory testTrajectory;
-        public final MirroredTrajectory testTrajectoryBack;
+        // public final MirroredTrajectory testTrajectoryBack;
 
         private TrajectorySet() {
             testTrajectory = new MirroredTrajectory(getTestTrajectory());
-            testTrajectoryBack = new MirroredTrajectory(getTestTrajectoryBack());
+            // testTrajectoryBack = new MirroredTrajectory(getTestTrajectoryBack());
         }
 
         private Trajectory<TimedState<Pose2dWithCurvature>> getTestTrajectory() {
             List<Pose2d> waypoints = new ArrayList<>();
-            waypoints.add(new Pose2d(Translation2d.identity(), Rotation2d.fromDegrees(180)));
-            waypoints.add(new Pose2d(Units.inches_to_meters(-120), Units.inches_to_meters(120), Rotation2d.fromDegrees(90)));
+            waypoints.add(new Pose2d(Translation2d.identity(), Rotation2d.fromDegrees(0)));
+            waypoints.add(new Pose2d(Units.inches_to_meters(60), Units.inches_to_meters(0), Rotation2d.fromDegrees(0)));
             return generateTrajectory(false, waypoints,
                     Arrays.asList(new CentripetalAccelerationConstraint(60)),
-                    kMaxVelocity, kMaxAccel, kMaxDecel, kMaxVoltage, kMaxVelocity, 1);
+                    // kMaxVelocity, kMaxAccel, kMaxDecel, kMaxVoltage, kMaxVelocity, 1);
+                    Units.inches_to_meters(30.0), Units.inches_to_meters(30.0), Units.inches_to_meters(30.0), kMaxVoltage, Units.inches_to_meters(30.0), 1);
         }
 
-        private Trajectory<TimedState<Pose2dWithCurvature>> getTestTrajectoryBack() {
-            List<Pose2d> waypoints = new ArrayList<>();
-            waypoints.add(new Pose2d(Units.inches_to_meters(-120), Units.inches_to_meters(120), Rotation2d.fromDegrees(90)));
-            waypoints.add(new Pose2d(Translation2d.identity(), Rotation2d.fromDegrees(180)));
-            return generateTrajectory(true, waypoints, Arrays.asList(new CentripetalAccelerationConstraint(60)),
-                    kMaxVelocity, kMaxAccel, kMaxDecel, kMaxVoltage, kMaxVelocity, 1);
-        }
+        // private Trajectory<TimedState<Pose2dWithCurvature>> getTestTrajectoryBack() {
+        //     List<Pose2d> waypoints = new ArrayList<>();
+        //     waypoints.add(new Pose2d(Units.inches_to_meters(-120), Units.inches_to_meters(120), Rotation2d.fromDegrees(90)));
+        //     waypoints.add(new Pose2d(Translation2d.identity(), Rotation2d.fromDegrees(180)));
+        //     return generateTrajectory(true, waypoints, Arrays.asList(new CentripetalAccelerationConstraint(60)),
+        //             kMaxVelocity, kMaxAccel, kMaxDecel, kMaxVoltage, kMaxVelocity, 1);
+        // }
     }
 }

@@ -119,6 +119,7 @@ public class Robot extends TimedRobot {
   public void autoConfig() {
 		if (mSwerve != null) {
 			mSwerve.zeroSensors();
+      mSwerve.zeroSensors(new Pose2d());
 			// mSwerve.setNominalDriveOutput(0.0);
 			// mSwerve.requireModuleConfiguration();
 			// mSwerve.set10VoltRotationMode(true);

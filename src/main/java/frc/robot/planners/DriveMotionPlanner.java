@@ -25,6 +25,7 @@ public class DriveMotionPlanner implements CSVWritable {
     private static final double kMaxDx = Units.inches_to_meters(2.0);
     private static final double kMaxDy = Units.inches_to_meters(0.25);
     private static final double kMaxDTheta = Math.toRadians(5.0);
+    private Swerve mSwerve;
 
     private Translation2d followingCenter = Translation2d.identity();
 
@@ -76,6 +77,7 @@ public class DriveMotionPlanner implements CSVWritable {
     }
 
     public DriveMotionPlanner() {
+        mSwerve = Swerve.getInstance("DriveMotionPlanner");
     }
 
     public void setTrajectory(final TrajectoryIterator<TimedState<Pose2dWithCurvature>> trajectory) {
@@ -222,7 +224,7 @@ public class DriveMotionPlanner implements CSVWritable {
         double rotationVelocity = Angles.normalizeAngle(theta1 - theta0) / mDt;
 
         // Scale it to a percentage of max angular velocity as Swerve will scale it correctly
-        rotationVelocity /= Swerve.getInstance("DriveMotionPlanner").mSwerveConfiguration.maxSpeedInRadiansPerSecond;
+        rotationVelocity /= mSwerve.mSwerveConfiguration.maxSpeedInRadiansPerSecond;
 
         return Optional.of(new HolonomicDriveSignal(lookaheadTranslation, rotationVelocity, true));
     }
