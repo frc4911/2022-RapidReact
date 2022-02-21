@@ -4,6 +4,7 @@ import edu.wpi.first.math.util.Units;
 import frc.robot.Ports;
 import frc.robot.subsystems.SwerveConfiguration;
 import frc.robot.subsystems.SwerveDriveModule.SwerveModuleConstants;
+import frc.robot.subsystems.IMU.ImuType;
 
 import static frc.robot.Constants.kMK2_SteerReduction;
 import static frc.robot.Constants.kMK2_WheelDiameter;
@@ -124,5 +125,10 @@ public class Junior implements RobotConfiguration {
         backRightModuleConstants.kSteerMotorSlot0Kf = STEER_MOTOR_KF;
 
         return backRightModuleConstants;
+    }
+
+    @Override
+    public ImuType getImuType() {
+        return ImuType.PIGEON;
     }
 }

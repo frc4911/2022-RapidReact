@@ -2,6 +2,7 @@ package frc.robot.config;
 
 import frc.robot.Constants;
 import frc.robot.subsystems.SwerveConfiguration;
+import frc.robot.subsystems.IMU.ImuType;
 import frc.robot.subsystems.SwerveDriveModule.SwerveModuleConstants;
 
 public interface RobotConfiguration {
@@ -15,6 +16,8 @@ public interface RobotConfiguration {
     public SwerveModuleConstants getBackLeftModuleConstants();
 
     public SwerveModuleConstants getBackRightModuleConstants();
+
+    public ImuType getImuType();
 
     public static RobotConfiguration getRobotConfiguration(String robotName) {
         switch(robotName) {

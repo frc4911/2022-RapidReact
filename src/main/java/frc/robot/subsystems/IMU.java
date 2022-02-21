@@ -22,4 +22,19 @@ public interface IMU {
     public void setAngle(double angle);
 
     public void outputToSmartDashboard();
+
+    public enum ImuType {
+        PIGEON,
+        PIGEON2
+    }
+
+    public static IMU createImu(ImuType imuType) {
+        switch (imuType) {
+            case PIGEON:
+                return Pigeon.getInstance();
+            default:
+            case PIGEON2:
+                return PigeonTwo.getInstance();
+        }
+    }
 }
