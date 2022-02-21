@@ -2,6 +2,7 @@ package frc.robot.planners;
 
 import frc.robot.Constants;
 import frc.robot.subsystems.Swerve;
+import frc.robot.subsystems.SwerveConfiguration;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Pose2dWithCurvature;
 import libraries.cheesylib.geometry.Rotation2d;
@@ -76,8 +77,11 @@ public class DriveMotionPlanner implements CSVWritable {
         return kMaxSpeed * scalar;
     }
 
+    public SwerveConfiguration swerveConfiguration;
+
     public DriveMotionPlanner() {
         mSwerve = Swerve.getInstance("DriveMotionPlanner");
+        swerveConfiguration = mSwerve.mSwerveConfiguration;
     }
 
     public void setTrajectory(final TrajectoryIterator<TimedState<Pose2dWithCurvature>> trajectory) {
@@ -162,8 +166,7 @@ public class DriveMotionPlanner implements CSVWritable {
                 (reversed, new DistanceView<>(trajectory), kMaxDx, all_constraints,
                         start_vel, end_vel, max_vel, max_accel, max_decel, slowdown_chunks);
 
-        // TODO - the constant is off.
-        timed_trajectory.setDefaultVelocity(default_vel / Constants.kSwerveMaxSpeedInchesPerSecond);
+        timed_trajectory.setDefaultVelocity(default_vel / swerveConfiguration.maxSpeedInMetersPerSecond);
         return timed_trajectory;
     }
 

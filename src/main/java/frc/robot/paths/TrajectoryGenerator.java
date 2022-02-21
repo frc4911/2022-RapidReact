@@ -21,15 +21,14 @@ import edu.wpi.first.wpilibj.Timer;
 import libraries.cheesylib.util.Units;
 
 public class TrajectoryGenerator {
-    private boolean skipThisOne = false;
-    // TODO - Should use Swerve Configuration values here
-    private static final double kMaxVelocity = Units.inches_to_meters(120.0);
-    private static final double kMaxAccel = Units.inches_to_meters(60.0); //120.0;
-    private static final double kMaxDecel = Units.inches_to_meters(72.0); //72.0;
+    private static double kMaxVelocity = Units.inches_to_meters(120.0);
+    private static double kMaxAccel = Units.inches_to_meters(60.0); //120.0;
+    private static double kMaxDecel = Units.inches_to_meters(72.0); //72.0;
+    private static double kMaxCentriptalAccel = kMaxVelocity * kMaxVelocity; // assume unit radius of 1
     private static final double kMaxVoltage = 9.0;
 
 
-    private static TrajectoryGenerator mInstance = new TrajectoryGenerator();
+    private final static TrajectoryGenerator mInstance = new TrajectoryGenerator();
     private final DriveMotionPlanner mMotionPlanner;
     private TrajectorySet mTrajectorySet = null;
 
@@ -39,6 +38,10 @@ public class TrajectoryGenerator {
 
     private TrajectoryGenerator() {
         mMotionPlanner = new DriveMotionPlanner();
+        kMaxVelocity = mMotionPlanner.swerveConfiguration.maxSpeedInMetersPerSecond;
+        kMaxAccel = mMotionPlanner.swerveConfiguration.maxAccellerationInMetersPerSecondSq;
+        kMaxDecel = mMotionPlanner.swerveConfiguration.maxAccellerationInMetersPerSecondSq;
+        kMaxCentriptalAccel = mMotionPlanner.swerveConfiguration.kMaxCentriptalAccelerationInMetersPerSecondSq;
     }
 
     public void generateTrajectories() {
@@ -119,9 +122,9 @@ public class TrajectoryGenerator {
             waypoints.add(new Pose2d(Translation2d.identity(), Rotation2d.fromDegrees(0)));
             waypoints.add(new Pose2d(Units.inches_to_meters(60), Units.inches_to_meters(0), Rotation2d.fromDegrees(0)));
             return generateTrajectory(false, waypoints,
-                    Arrays.asList(new CentripetalAccelerationConstraint(60)),
-                    // kMaxVelocity, kMaxAccel, kMaxDecel, kMaxVoltage, kMaxVelocity, 1);
-                    Units.inches_to_meters(30.0), Units.inches_to_meters(30.0), Units.inches_to_meters(30.0), kMaxVoltage, Units.inches_to_meters(30.0), 1);
+                    Arrays.asList(new CentripetalAccelerationConstraint(kMaxCentriptalAccel)),
+                     kMaxVelocity, kMaxAccel, kMaxDecel, kMaxVoltage, kMaxVelocity, 1);
+//                    Units.inches_to_meters(30.0), Units.inches_to_meters(30.0), Units.inches_to_meters(30.0), kMaxVoltage, Units.inches_to_meters(30.0), 1);
         }
 
         // private Trajectory<TimedState<Pose2dWithCurvature>> getTestTrajectoryBack() {
