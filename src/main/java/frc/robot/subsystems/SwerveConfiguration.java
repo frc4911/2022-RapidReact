@@ -46,7 +46,7 @@ public class SwerveConfiguration {
         this.wheelbaseWidthInMeters = wheelbaseWidthInMeters;
         this.maxSpeedInMetersPerSecond = maxSpeedInMetersPerSecond;
         // TODO - make thsi a parameter.  For now default to max speed in 2s.
-        this.maxAccellerationInMetersPerSecondSq = maxSpeedInMetersPerSecond / 0.5;
+        this.maxAccellerationInMetersPerSecondSq = maxSpeedInMetersPerSecond * 0.5;
         var radiusInMeters =
                 Math.hypot(this.wheelbaseLengthInMeters / 2, this.wheelbaseWidthInMeters / 2);
         this.maxSpeedInRadiansPerSecond = maxSpeedInRadiansPerSecondLimit > 0.0 ?

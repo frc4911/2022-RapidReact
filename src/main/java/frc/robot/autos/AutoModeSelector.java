@@ -22,7 +22,7 @@ public class AutoModeSelector {
     public AutoModeSelector() {
         mModeChooser = new SendableChooser<DesiredMode>();
         mModeChooser.setDefaultOption("None", DesiredMode.DO_NOTHING);
-        mModeChooser.addOption("Test Trajectory Following Mode", DesiredMode.TEST_TRAJECTORY_FOLLOWING_MODE);
+        // mModeChooser.addOption("Test Trajectory Following Mode", DesiredMode.TEST_TRAJECTORY_FOLLOWING_MODE); brian temp until it works
         SmartDashboard.putData("Auto Mode", mModeChooser);
     }
 

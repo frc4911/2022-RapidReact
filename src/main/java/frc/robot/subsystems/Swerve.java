@@ -262,7 +262,7 @@ public class Swerve extends Subsystem {
                 case NEUTRAL:
                 case MANUAL:
                 case DISABLED:
-                    mPeriodicIO.schedDeltaDesired = 100;
+                    mPeriodicIO.schedDeltaDesired = 10; // this is a fast cycle used while testing
                     break;
 
                 case VISION_AIM:
@@ -515,7 +515,7 @@ public class Swerve extends Subsystem {
 
     @Override
     public int whenRunAgain () {
-        return mPeriodicIO.schedDeltaDesired;
+        return 20;//mPeriodicIO.schedDeltaDesired; (brian test)
     }
 
     @Override

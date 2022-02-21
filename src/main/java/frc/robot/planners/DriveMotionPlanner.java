@@ -228,8 +228,9 @@ public class DriveMotionPlanner implements CSVWritable {
 
         // Scale it to a percentage of max angular velocity as Swerve will scale it correctly
         rotationVelocity /= mSwerve.mSwerveConfiguration.maxSpeedInRadiansPerSecond;
-
-        return Optional.of(new HolonomicDriveSignal(lookaheadTranslation, rotationVelocity, true));
+        var signal = new HolonomicDriveSignal(lookaheadTranslation, rotationVelocity, true);
+        // System.out.println(signal.toString()); // brian leave until fixed
+        return Optional.of(signal);
     }
 
      public Optional<HolonomicDriveSignal> update(double timestamp, Pose2d current_state, ChassisSpeeds chassisSpeeds) {
