@@ -2,9 +2,10 @@ package frc.robot.config;
 
 import edu.wpi.first.math.util.Units;
 import frc.robot.Ports;
-import frc.robot.subsystems.IMU.ImuType;
+import frc.robot.sensors.IMU.ImuType;
 import frc.robot.subsystems.SwerveConfiguration;
 import frc.robot.subsystems.SwerveDriveModule.SwerveModuleConstants;
+
 
 import static frc.robot.Constants.*;
 
