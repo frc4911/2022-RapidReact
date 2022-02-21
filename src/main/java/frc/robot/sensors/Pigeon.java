@@ -1,4 +1,4 @@
-package frc.robot.subsystems;
+package frc.robot.sensors;
 
 import com.ctre.phoenix.sensors.PigeonIMU;
 import com.ctre.phoenix.sensors.PigeonIMU.PigeonState;

@@ -2,15 +2,14 @@ package frc.robot.config;
 
 import edu.wpi.first.math.util.Units;
 import frc.robot.Ports;
+import frc.robot.sensors.IMU.ImuType;
 import frc.robot.subsystems.SwerveConfiguration;
 import frc.robot.subsystems.SwerveDriveModule.SwerveModuleConstants;
-import frc.robot.subsystems.IMU.ImuType;
 
 import static frc.robot.Constants.kMK2_SteerReduction;
 import static frc.robot.Constants.kMK2_WheelDiameter;
 
 // New Swerve requires SI units
-
 public class Junior implements RobotConfiguration {
 
     private static final double FRONT_RIGHT_STEER_MOTOR_ENCODER_HOME_OFFSET = 883.0;

@@ -1,4 +1,4 @@
-package frc.robot.subsystems;
+package frc.robot.sensors;
 
 import libraries.cheesylib.geometry.Rotation2d;
 
