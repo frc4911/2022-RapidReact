@@ -2,13 +2,13 @@ package frc.robot.config;
 
 import edu.wpi.first.math.util.Units;
 import frc.robot.Ports;
+import frc.robot.subsystems.IMU.ImuType;
 import frc.robot.subsystems.SwerveConfiguration;
 import frc.robot.subsystems.SwerveDriveModule.SwerveModuleConstants;
 
 import static frc.robot.Constants.*;
 
 // New Swerve requires SI units
-
 public class Robot2022 implements RobotConfiguration {
 
     private static final double FRONT_RIGHT_STEER_MOTOR_ENCODER_HOME_OFFSET = 883.0;
@@ -127,5 +127,10 @@ public class Robot2022 implements RobotConfiguration {
         backRightModuleConstants.kSteerMotorSlot0Kf = STEER_MOTOR_KF;
 
         return backRightModuleConstants;
+    }
+
+    @Override
+    public ImuType getImuType() {
+        return ImuType.PIGEON2;
     }
 }

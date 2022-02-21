@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.ctre.phoenix.motorcontrol.NeutralMode;
+
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
@@ -53,7 +54,7 @@ public class Swerve extends Subsystem {
 	double lastUpdateTimestamp = 0;
 
 	// Swerve kinematics & odometry
-	private final IMU mIMU;
+	private IMU mIMU;
     private boolean mIsBrakeMode;
 	private Rotation2d mGyroOffset = Rotation2d.identity();
 
@@ -94,13 +95,13 @@ public class Swerve extends Subsystem {
 
         mRobotConfiguration = RobotConfiguration.getRobotConfiguration(RobotName.name);
 
-        mIMU = PigeonTwo.getInstance();
         mSwerveConfiguration = mRobotConfiguration.getSwerveConfiguration();
         mModules.add(mFrontRight = new SwerveDriveModule(mRobotConfiguration.getFrontRightModuleConstants(), mSwerveConfiguration.maxSpeedInMetersPerSecond));
         mModules.add(mFrontLeft = new SwerveDriveModule(mRobotConfiguration.getFrontLeftModuleConstants(), mSwerveConfiguration.maxSpeedInMetersPerSecond));
         mModules.add(mBackLeft = new SwerveDriveModule(mRobotConfiguration.getBackLeftModuleConstants(), mSwerveConfiguration.maxSpeedInMetersPerSecond));
         mModules.add(mBackRight = new SwerveDriveModule(mRobotConfiguration.getBackRightModuleConstants(), mSwerveConfiguration.maxSpeedInMetersPerSecond));
 
+        mIMU = IMU.createImu(mRobotConfiguration.getImuType());
         mKinematics = new SwerveDriveKinematics(mSwerveConfiguration.moduleLocations);
 		mOdometry = new SwerveDriveOdometry(mKinematics, mIMU.getYaw());
         mPeriodicIO.robotPose = mOdometry.getPose();
