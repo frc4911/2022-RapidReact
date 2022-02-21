@@ -209,26 +209,32 @@ public class DriveMotionPlanner implements CSVWritable {
 
         // A WCD would have to plot an arc.  Since this is Swerve, use a straight line.
         // Translate to lookahead position in the straight line formed by the two points: current and lookahead position
-        // Normalize to euclidian unit circle as Swerve Drive will scale speed properly
-        Translation2d lookaheadTranslation = new Translation2d(
-                current_state.getTranslation(), lookahead_state.state().getTranslation()).normalize();
 
+        var normalizedVelocity = lookahead_state.velocity() / swerveConfiguration.maxSpeedInMetersPerSecond;
+
+        // Now calculate velocities
+        Translation2d segmentVelocity = new Translation2d(
+                lookahead_state.state().getRotation().cos(),
+                lookahead_state.state().getRotation().sin()).scale(normalizedVelocity);
+
+        // Calculate the rotational velocity required to keep rotating  while translating.
+        // Get the rotation angle over the trajectory
+        // TODO:  Make constants and only calculate once
         var startAngle = mCurrentTrajectory.trajectory().getFirstState().state().getPose().getRotation().getRadians();
         var endAngle = mCurrentTrajectory.trajectory().getLastState().state().getPose().getRotation().getRadians();
-
-        // Get the rotation angle over the trajectory
         double totalAngle = Angles.shortest_angular_distance(startAngle, endAngle);
 
-        var theta1 = (totalAngle * getRotationSample()) + startAngle;
-        var theta0 = current_state.getRotation().getRadians();
+        // getMaxRotationSpeed() returns a trapezoidal ramp for rotation speed based on travelled trajectory.
+        var theta0 = (startAngle + (totalAngle * getRotationSample()));
+        var theta1 = lookahead_state.state().getRotation().getRadians();
 
-        // Distribute rotation
         // w = (theta(1) - theta(0)) / dt
         double rotationVelocity = Angles.normalizeAngle(theta1 - theta0) / mDt;
 
         // Scale it to a percentage of max angular velocity as Swerve will scale it correctly
         rotationVelocity /= mSwerve.mSwerveConfiguration.maxSpeedInRadiansPerSecond;
-        var signal = new HolonomicDriveSignal(lookaheadTranslation, rotationVelocity, true);
+
+        var signal = new HolonomicDriveSignal(segmentVelocity, rotationVelocity, true);
         // System.out.println(signal.toString()); // brian leave until fixed
         return Optional.of(signal);
     }
