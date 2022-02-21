@@ -5,7 +5,9 @@
 package frc.robot;
 
 import java.util.Arrays;
+import java.util.Optional;
 
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.TimedRobot;
 import frc.robot.autos.AutoModeExecutor;
 import frc.robot.autos.AutoModeSelector;
@@ -17,6 +19,7 @@ import frc.robot.subsystems.JSticks;
 import frc.robot.subsystems.RobotStateEstimator;
 import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.Swerve;
+import libraries.cheesylib.autos.AutoModeBase;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.loops.Looper;
 import libraries.cheesylib.subsystems.SubsystemManager;
@@ -93,12 +96,16 @@ public class Robot extends TimedRobot {
 			mSwerve.stop();
 
             mAutoModeSelector = new AutoModeSelector();
+            mAutoModeSelector.updateModeCreator();
+
             mTrajectoryGenerator.generateTrajectories();
 		}
   }
 
   @Override
-  public void robotPeriodic() {}
+  public void robotPeriodic() {
+      mAutoModeSelector.outputToSmartDashboard();
+  }
 
   @Override
   public void autonomousInit() {
@@ -119,6 +126,7 @@ public class Robot extends TimedRobot {
   public void autoConfig() {
 		if (mSwerve != null) {
 			mSwerve.zeroSensors();
+            mSwerve.zeroSensors(new Pose2d());
 			// mSwerve.setNominalDriveOutput(0.0);
 			// mSwerve.requireModuleConfiguration();
 			// mSwerve.set10VoltRotationMode(true);
@@ -131,7 +139,11 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopInit() {
     try {
-			mSubsystemLooper.stop();
+            if (mAutoModeExecutor != null) {
+                mAutoModeExecutor.stop();
+            }
+
+            mSubsystemLooper.stop();
 			mSubsystemLooper.start();
 			teleopConfig();
 			//robotState.enableXTarget(false);
@@ -149,17 +161,23 @@ public class Robot extends TimedRobot {
 	}
 
   @Override
-  public void teleopPeriodic() {}
+  public void teleopPeriodic() {
+      // This will send the Network Table data to DriveStation at a consistent rate.
+      // TODO:  Measure any network bandwidth issues because of this.
+      NetworkTableInstance.getDefault().flush();
+  }
 
   @Override
   public void disabledInit() {
     try {
 			System.gc();
-			if (mAutoModeExecutor != null) {
-				mAutoModeExecutor.stop();
-			}
-
-			mAutoModeExecutor = new AutoModeExecutor();
+            // Reset all auto mode state.
+            if (mAutoModeExecutor != null) {
+                mAutoModeExecutor.stop();
+            }
+            mAutoModeSelector.reset();
+            mAutoModeSelector.updateModeCreator();
+            mAutoModeExecutor = new AutoModeExecutor();
 
 			mSubsystemLooper.stop();
 			mSubsystemLooper.start();
@@ -172,8 +190,16 @@ public class Robot extends TimedRobot {
   @Override
   public void disabledPeriodic() {
     try {
-			mAutoModeExecutor.setAutoMode(mAutoModeSelector.getSelectedAutoMode());
-		} catch (Throwable t) {
+            // Update auto modes
+            mAutoModeSelector.updateModeCreator();
+
+            Optional<AutoModeBase> autoMode = mAutoModeSelector.getAutoMode();
+            if (autoMode.isPresent() && autoMode.get() != mAutoModeExecutor.getAutoMode()) {
+                System.out.println("Set auto mode to: " + autoMode.get().getClass().toString());
+                mAutoModeExecutor.setAutoMode(autoMode.get());
+            }
+
+    } catch (Throwable t) {
 			CrashTracker.logThrowableCrash(t);
 			throw t;
 		}

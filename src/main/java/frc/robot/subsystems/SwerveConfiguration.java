@@ -9,6 +9,8 @@ public class SwerveConfiguration {
     public final double wheelbaseLengthInMeters;
     public final double wheelbaseWidthInMeters;
     public final double maxSpeedInMetersPerSecond;
+    public final double maxAccellerationInMetersPerSecondSq;
+    public final double kMaxCentriptalAccelerationInMetersPerSecondSq;
     public final double maxSpeedInRadiansPerSecond;
     public final List<Translation2d> moduleLocations;
     // imu heading PID constants
@@ -43,11 +45,16 @@ public class SwerveConfiguration {
         this.wheelbaseLengthInMeters = wheelbaseLengthInMeters;
         this.wheelbaseWidthInMeters = wheelbaseWidthInMeters;
         this.maxSpeedInMetersPerSecond = maxSpeedInMetersPerSecond;
+        // TODO - make thsi a parameter.  For now default to max speed in 2s.
+        this.maxAccellerationInMetersPerSecondSq = maxSpeedInMetersPerSecond * 0.5;
         var radiusInMeters =
                 Math.hypot(this.wheelbaseLengthInMeters / 2, this.wheelbaseWidthInMeters / 2);
         this.maxSpeedInRadiansPerSecond = maxSpeedInRadiansPerSecondLimit > 0.0 ?
                 Math.min((this.maxSpeedInMetersPerSecond / radiusInMeters), maxSpeedInRadiansPerSecondLimit) :
                 (this.maxSpeedInMetersPerSecond / radiusInMeters);
+
+        // TODO: Verify this is correct
+        this.kMaxCentriptalAccelerationInMetersPerSecondSq = Math.pow(this.maxSpeedInMetersPerSecond, 2) / radiusInMeters;
 
         // CCW:  left positive, right negative, front positive, back negative
         Translation2d kFrontRightModuleLocation = new Translation2d(wheelbaseLengthInMeters / 2, -wheelbaseWidthInMeters / 2);

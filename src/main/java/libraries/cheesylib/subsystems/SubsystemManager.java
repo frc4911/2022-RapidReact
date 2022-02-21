@@ -187,6 +187,7 @@ public class SubsystemManager implements ILooper {
                 lLostTime = ((long)(Timer.getFPGATimestamp()*1000.0+.5))-lTicToc;
                 if ( lLostTime <= 0){
                     break;
+
                 }
             }
         }
