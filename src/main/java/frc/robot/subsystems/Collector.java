@@ -18,14 +18,15 @@ import libraries.cheesylib.subsystems.SubsystemManager;
 public class Collector extends Subsystem{
 
     //Hardware
-    private final TalonFX mFXCollector;
+    //private final TalonFX mFXCollector;
     private final Solenoid mSolenoid;
 
     //Subsystem Constants
+    private final double kCollectSpeed = 0.5;
 
     //Subsystem States
     public enum SolenoidState {
-        EXTEND(true),
+        EXTEND(true), // TODO: Need to test
         RETRACT(false);
 
         private final boolean state;
@@ -54,14 +55,9 @@ public class Collector extends Subsystem{
     private SystemState mSystemState;
     private WantedState mWantedState;
     private boolean mStateChanged;
-
-    //Logging
-    @SuppressWarnings("unused")
-    private final int mDefaultSchedDelta = 100; // axis updated every 100 msec
-    private int    schedDeltaDesired;
-    public  double schedDeltaActual;
-    public  double schedDuration;
-    private double lastSchedStart;
+    private PeriodicIO mPeriodicIO = new PeriodicIO();
+    private SolenoidState mSolenoidState;
+    private boolean mRunCollectorLoop;
 
     //Other
     private SubsystemManager mSubsystemManager;
@@ -88,31 +84,33 @@ public class Collector extends Subsystem{
     private Collector(String caller){
         sClassName = this.getClass().getSimpleName();
         printUsage(caller);
-        mFXCollector = TalonFXFactory.createDefaultTalon(Ports.COLLECTOR);
+        // mFXCollector = TalonFXFactory.createDefaultTalon(Ports.COLLECTOR);
         mSolenoid = new Solenoid(PneumaticsModuleType.CTREPCM, Ports.COLLECTOR_DEPLOY);
+        mSubsystemManager = SubsystemManager.getInstance(sClassName);
         configMotors();
     }
 
     private void configMotors(){
-        mFXCollector.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
-        mFXCollector.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
+        // mFXCollector.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
+        // mFXCollector.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
 
-        mFXCollector.setInverted(false);
+        // mFXCollector.setInverted(false); // TODO: Need to test
 
-        mFXCollector.setNeutralMode(NeutralMode.Coast);
+        // mFXCollector.setNeutralMode(NeutralMode.Coast);
     }
 
     private Loop mLoop = new Loop() {
         
         @Override
         public void onStart(Phase phase){
-            synchronized (Collector.this) {
+            synchronized (Collector.this) { // TODO Check if the key word synchronized is needed
                 mSystemState = SystemState.HOLDING;
                 mWantedState = WantedState.HOLD;
                 mStateChanged = true;
+                mRunCollectorLoop = false;
                 System.out.println(sClassName + " state " + mSystemState);
                 // this subsystem is "on demand" so
-                schedDeltaDesired = 0;
+                mPeriodicIO.schedDeltaDesired = 0;
                 stop(); // put into a known state
             }
         }
@@ -128,6 +126,7 @@ public class Collector extends Subsystem{
                 case BACKING:
                     newState = handleBacking();
                     break;
+                case HOLDING:
                 default:
                     newState = handleHolding();
                     break;
@@ -149,19 +148,7 @@ public class Collector extends Subsystem{
         }
 
     };
-
-    private SystemState handleHolding() {
-        return defaultStateTransfer();
-    }
     
-    private SystemState handleCollecting() {
-        return defaultStateTransfer();
-    }
-
-    private SystemState handleBacking() {
-        return defaultStateTransfer();
-    }
-
     public synchronized void setWantedState(WantedState state) {
         if (state != mWantedState) {
             mSubsystemManager.scheduleMe(mListIndex, 1, false);
@@ -171,12 +158,48 @@ public class Collector extends Subsystem{
         mWantedState = state;
     }
 
+    private SystemState handleHolding() {
+        if(mStateChanged) {
+            mPeriodicIO.collectorDemand = 0.0;
+            mPeriodicIO.solenoidDemand = SolenoidState.RETRACT;
+        }
+
+        return defaultStateTransfer();
+    }
+    
+    private SystemState handleCollecting() {
+        updateCollector(kCollectSpeed);
+
+        return defaultStateTransfer();
+    }
+
+    private SystemState handleBacking() {
+        updateCollector(-kCollectSpeed);
+
+        return defaultStateTransfer();
+    }
+
+    private void updateCollector(double speed){
+        // Run one loop after extending so wheels do not run while retracted
+        if(mRunCollectorLoop){
+            mPeriodicIO.collectorDemand = speed;
+            mPeriodicIO.schedDeltaDesired = 0;
+            mRunCollectorLoop = false;
+        }
+        if(mStateChanged) {
+            mPeriodicIO.solenoidDemand = SolenoidState.EXTEND;
+            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta; // run one more time in 100 ms for collector startup
+            mRunCollectorLoop = true;
+        }
+    }
+
     private SystemState defaultStateTransfer(){
         switch(mWantedState){
             case COLLECT:
                 return SystemState.COLLECTING;
             case BACK:
                 return SystemState.BACKING;
+            case HOLD:
             default:
                 return SystemState.HOLDING;
         }
@@ -185,20 +208,27 @@ public class Collector extends Subsystem{
     @Override
     public void readPeriodicInputs() {
         double now       = Timer.getFPGATimestamp();
-        schedDeltaActual = now - lastSchedStart;
-        lastSchedStart   = now;
+        mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
+        mPeriodicIO.lastSchedStart   = now;
     }
 
     @Override
     public void writePeriodicOutputs() {
-
+        if(mSolenoidState != mPeriodicIO.solenoidDemand){
+            mSolenoidState = mPeriodicIO.solenoidDemand;
+            mSolenoid.set(mPeriodicIO.solenoidDemand.get());
+        }
+        //mFXCollector.set(ControlMode.PercentOutput, mPeriodicIO.collectorDemand);
     }
 
 
     @Override
     public void stop() {
-        mFXCollector.set(ControlMode.PercentOutput, 0.0);
-        mSolenoid.set(SolenoidState.RETRACT.get());        
+        //mFXCollector.set(ControlMode.PercentOutput, 0.0);
+        mSolenoid.set(SolenoidState.RETRACT.get());   
+
+        mPeriodicIO.collectorDemand = 0.0;
+        mSolenoidState = SolenoidState.RETRACT;
     }
 
     @Override
@@ -208,11 +238,11 @@ public class Collector extends Subsystem{
 
     @Override
     public int whenRunAgain () {
-        if (mStateChanged && schedDeltaDesired == 0){
+        if (mStateChanged && mPeriodicIO.schedDeltaDesired == 0){
             return 1; // one more loop before going to sleep
         }
 
-        return schedDeltaDesired;
+        return mPeriodicIO.schedDeltaDesired;
     }
 
     @Override
@@ -231,6 +261,21 @@ public class Collector extends Subsystem{
     public void outputTelemetry() {
         // TODO Auto-generated method stub
         
+    }
+
+    public static class PeriodicIO{
+        //Logging
+        private final int mDefaultSchedDelta = 100; // axis updated every 100 msec
+        private int    schedDeltaDesired;
+        public  double schedDeltaActual;
+        public  double schedDuration;
+        private double lastSchedStart;
+
+        //Inputs
+
+        //Outputs
+        private double collectorDemand;
+        private SolenoidState solenoidDemand;
     }
 
 }

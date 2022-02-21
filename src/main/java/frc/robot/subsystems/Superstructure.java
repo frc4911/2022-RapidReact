@@ -8,38 +8,42 @@ import libraries.cheesylib.subsystems.Subsystem;
 public class Superstructure extends Subsystem{
     
     //Subsystem Instances
+    @SuppressWarnings("unused")
     private Swerve    mSwerve;
+    private Indexer   mIndexer;
+    private Collector mCollector;
+    private Shooter   mShooter;
+    private Climber   mClimber;
 
     //Superstructure States
     public enum SystemState{
         HOLDING,
         COLLECTING,
-        CLEARING,
+        BACKING,
         AUTO_SHOOTING,
         MANUAL_SHOOTING,
-        AUTO_CLIMBING,
-        MANUAL_CLIMBING
+        AUTO_CLIMBING
     }
     
     public enum WantedState{
         HOLD,
         COLLECT,
-        CLEAR,
+        BACK,
         AUTO_SHOOT,
         MANUAL_SHOOT,
-        AUTO_CLIMB,
-        MANUAL_CLIMB
+        AUTO_CLIMB
     }
 
     private SystemState mSystemState;
     private WantedState mWantedState;
     private boolean     mStateChanged;
+    private PeriodicIO  mPeriodicIO = new PeriodicIO();
+    private int         mFastCycle = 10;
+    private int         mSlowCycle = 100;
 
-    //Logging
-    private int schedDeltaDesired;
-    public  double schedDeltaActual;
-    public  double schedDuration;
-    private double lastSchedStart;
+    private final double kFlywheelIdleSpeed = 0.45;
+    private double  mManualDistance;
+    private boolean mShootSetup;
 
     private static String sClassName;
     private static int sInstanceCount;
@@ -62,6 +66,10 @@ public class Superstructure extends Subsystem{
         sClassName = this.getClass().getSimpleName();
         printUsage(caller);
         mSwerve =    Swerve.getInstance(sClassName);
+        mIndexer =   Indexer.getInstance(sClassName);
+        mCollector = Collector.getInstance(sClassName);
+        mShooter =   Shooter.getInstance(sClassName);
+        mClimber =   Climber.getInstance(sClassName);
     }
 
     // Looping methods for subsystem
@@ -76,10 +84,10 @@ public class Superstructure extends Subsystem{
                 System.out.println(sClassName + " state " + mSystemState);
                 switch (phase) {
                     case DISABLED:
-                        schedDeltaDesired = 0; // goto sleep
+                        mPeriodicIO.schedDeltaDesired = 0; // goto sleep
                         break;
                     default:
-                        schedDeltaDesired = 100;
+                        mPeriodicIO.schedDeltaDesired = 100;
                         break;
                 }
                 stop();
@@ -94,8 +102,8 @@ public class Superstructure extends Subsystem{
                     case COLLECTING:
                         newState = handleCollecting();
                         break;
-                    case CLEARING:
-                        newState = handleClearing();
+                    case BACKING:
+                        newState = handleBacking();
                         break;
                     case AUTO_SHOOTING:
                         newState = handleAutoShooting();
@@ -105,9 +113,6 @@ public class Superstructure extends Subsystem{
                         break;
                     case AUTO_CLIMBING:
                         newState = handleAutoClimbing();
-                        break;
-                    case MANUAL_CLIMBING:
-                        newState = handleManualClimbing();
                         break;
                     case HOLDING:
                     default:
@@ -133,49 +138,129 @@ public class Superstructure extends Subsystem{
 
     // Handling methods
     private SystemState handleHolding() {
+        if(mStateChanged){
+            mCollector.setWantedState(Collector.WantedState.HOLD);
+            mIndexer.setWantedState(Indexer.WantedState.HOLD);
+            mShooter.setWantedState(Shooter.WantedState.HOLD);
+            mClimber.setWantedState(Climber.WantedState.HOLD);
+            mPeriodicIO.schedDeltaDesired = mSlowCycle;
+        }
+
         return defaultStateTransfer();
     }
 
     private SystemState handleCollecting() {
+        if(mStateChanged){
+            mPeriodicIO.schedDeltaDesired = mFastCycle;
+        }
+        
+        if(!mIndexer.isFullyLoaded()){
+            mCollector.setWantedState(Collector.WantedState.COLLECT);
+            if(mIndexer.isBallEntering()){
+                mIndexer.setWantedState(Indexer.WantedState.LOAD);
+            } else {
+                mCollector.setWantedState(Collector.WantedState.HOLD);
+                mIndexer.setWantedState(Indexer.WantedState.HOLD);
+            }
+        } else {
+            mCollector.setWantedState(Collector.WantedState.HOLD);
+            mIndexer.setWantedState(Indexer.WantedState.HOLD);
+        }
+
         return collectingStateTransfer();
     }
 
-    private SystemState handleClearing() {
-        return clearingStateTransfer();
+    private SystemState handleBacking() {
+        if(mStateChanged){
+            mPeriodicIO.schedDeltaDesired = mSlowCycle;
+        }
+
+        mCollector.setWantedState(Collector.WantedState.BACK);
+        mIndexer.setWantedState(Indexer.WantedState.BACK);
+
+        return backingStateTransfer();
     }
 
+    // TODO: Get help with logic and limelight implementation - CURRENTLY UNUSED
+    // If time constrains, may not be complete by Week 1
     private SystemState handleAutoShooting() {
+        if(mStateChanged){
+            mShootSetup = true;
+            mPeriodicIO.schedDeltaDesired = mFastCycle;
+        }
+
+        if (mShooter.readyToShoot() || !mShootSetup) {
+            mIndexer.setWantedState(Indexer.WantedState.FEED);
+            mShootSetup = false;
+        } else {
+            mIndexer.setWantedState(Indexer.WantedState.HOLD);
+        }
+
         return shootingStateTransfer();
     }
 
     private SystemState handleManualShooting() {
+        if (mStateChanged) {
+            mShooter.setShootDistance(mManualDistance);
+            mShootSetup = true;
+            mPeriodicIO.schedDeltaDesired = mFastCycle;
+        }
+
+        if (mShooter.readyToShoot() || !mShootSetup) {
+            mIndexer.setWantedState(Indexer.WantedState.FEED);
+            mShootSetup = false;
+        } else {
+            mIndexer.setWantedState(Indexer.WantedState.HOLD);
+        }
+
         return shootingStateTransfer();
     }
 
+    // Unused: Lower priority in reference to other states
     private SystemState handleAutoClimbing() {
+        if(mStateChanged){
+            
+        }
+
         return climbingStateTransfer();
     }
 
-    private SystemState handleManualClimbing() {
-        return climbingStateTransfer();
-    }    
-
-    //State Transfers
-    //Executes subsystem actions before switching to another state
+    // State Transfers
+    // Executes subsystem actions before switching to another state
 
     private SystemState collectingStateTransfer() {
+        if(mSystemState != SystemState.COLLECTING){
+            mCollector.setWantedState(Collector.WantedState.HOLD);
+            mIndexer.setWantedState(Indexer.WantedState.HOLD);
+        }
+
         return defaultStateTransfer();
     }
 
-    private SystemState clearingStateTransfer() {
+    private SystemState backingStateTransfer() {
+        if(mSystemState != SystemState.BACKING){
+            mCollector.setWantedState(Collector.WantedState.HOLD);
+            mIndexer.setWantedState(Indexer.WantedState.HOLD);
+        }
+
         return defaultStateTransfer();
     }
 
     private SystemState shootingStateTransfer() {
+        if(mSystemState != SystemState.AUTO_SHOOTING || mSystemState != SystemState.MANUAL_SHOOTING){
+            mShooter.setWantedState(Shooter.WantedState.HOLD);
+            mIndexer.setWantedState(Indexer.WantedState.HOLD);
+            mShooter.setHoldSpeed(kFlywheelIdleSpeed);
+        }
+
         return defaultStateTransfer();
     }
 
     private SystemState climbingStateTransfer() {
+        if(mSystemState != SystemState.AUTO_CLIMBING){
+            mClimber.setWantedState(Climber.WantedState.HOLD);
+        }
+
         return defaultStateTransfer();
     }
 
@@ -183,16 +268,14 @@ public class Superstructure extends Subsystem{
         switch(mWantedState){
             case COLLECT:
                 return SystemState.COLLECTING;
-            case CLEAR:
-                return SystemState.CLEARING;
+            case BACK:
+                return SystemState.BACKING;
             case AUTO_SHOOT:
                 return SystemState.AUTO_SHOOTING;
             case MANUAL_SHOOT:
                 return SystemState.MANUAL_SHOOTING;
             case AUTO_CLIMB:
                 return SystemState.AUTO_CLIMBING;
-            case MANUAL_CLIMB:
-                return SystemState.AUTO_SHOOTING;
             case HOLD:
             default:
                 return SystemState.HOLDING;
@@ -202,9 +285,28 @@ public class Superstructure extends Subsystem{
     public synchronized void setWantedState(WantedState state) {
         if (mWantedState != state){
             System.out.println(state);
-            schedDeltaDesired = 2;
+            mPeriodicIO.schedDeltaDesired = 2;
         }
         mWantedState = state;
+    }
+
+
+    public WantedState getWantedState() {
+        return mWantedState;
+    }
+
+    public void setManualShootDistance(double distance){
+        mManualDistance = distance;
+        setWantedState(WantedState.MANUAL_SHOOT);
+    }
+
+    public void setOpenLoopClimb(double climbSpeed, int deploySlappyState){
+        mClimber.setClimbSpeed(climbSpeed);
+        if(deploySlappyState == 0){
+            mClimber.setSlappyStickState(true);
+        } else if(deploySlappyState == 1){
+            mClimber.setSlappyStickState(false);
+        }
     }
 
     @Override
@@ -213,10 +315,10 @@ public class Superstructure extends Subsystem{
 
     @Override
     public int whenRunAgain () {
-        if (mStateChanged && schedDeltaDesired == 0){
+        if (mStateChanged && mPeriodicIO.schedDeltaDesired == 0){
             return 1; // one more loop before going to sleep
         }
-        return schedDeltaDesired;
+        return mPeriodicIO.schedDeltaDesired;
     }
 
     @Override
@@ -228,8 +330,8 @@ public class Superstructure extends Subsystem{
     @Override
     public void readPeriodicInputs() {
         double now = Timer.getFPGATimestamp();
-        schedDeltaActual = now - lastSchedStart;
-        lastSchedStart = now;
+        mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
+        mPeriodicIO.lastSchedStart = now;
     }
 
     @Override
@@ -253,6 +355,14 @@ public class Superstructure extends Subsystem{
     public void outputTelemetry() {
         // TODO Auto-generated method stub
         
+    }
+
+    public static class PeriodicIO{
+        //Logging
+        private int schedDeltaDesired;
+        public  double schedDeltaActual;
+        public  double schedDuration;
+        private double lastSchedStart;
     }
 
 }
