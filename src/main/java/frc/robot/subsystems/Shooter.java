@@ -1,12 +1,15 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix.motorcontrol.ControlFrame;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
+import com.ctre.phoenix.motorcontrol.StatorCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.StatusFrame;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 import frc.robot.Ports;
 import libraries.cheesylib.drivers.TalonFXFactory;
@@ -20,15 +23,6 @@ public class Shooter extends Subsystem{
     //Hardware
     private final TalonFX mFXLeftFlyWheel, mFXRightFlyWheel;
     private final TalonFX mFXShooterHood; //TODO: Decide if hood adjustment will be controlled by SHOOTING state or by superstructure
-
-    //Subsystem Constants
-    private final double kMinShootDistance = 10.0; // TODO: Remeasure all constants
-    private final double kMidShootDistance = 15.0;
-    private final double kMaxShootDistance = 20.0;
-    private final double kMinShootSpeed = 4700.0;
-    private final double kMaxShootSpeed = 5200.0;
-    private final double kSpeedTolerance = 250.0;
-    private final double kShootRate = (kMaxShootSpeed - kMinShootSpeed) / (kMaxShootDistance - kMidShootDistance);
 
     //Subsystem States
     public enum SystemState {
@@ -89,7 +83,8 @@ public class Shooter extends Subsystem{
         mFXLeftFlyWheel.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, 20, Constants.kLongCANTimeoutMs);
 
         // If flywheel makes clicking sound, test config line for both motors
-        // .setControlFramePeriod(ControlFrame.Control_3_General,18);
+        mFXLeftFlyWheel.setControlFramePeriod(ControlFrame.Control_3_General,18);
+        mFXRightFlyWheel.setControlFramePeriod(ControlFrame.Control_3_General,18);
     
         mFXLeftFlyWheel.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
         mFXRightFlyWheel.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
@@ -100,11 +95,33 @@ public class Shooter extends Subsystem{
         mFXLeftFlyWheel.setInverted(true); // Need to test both
         mFXRightFlyWheel.setInverted(false);
 
-        mFXLeftFlyWheel.setSensorPhase(true);
-        mFXRightFlyWheel.setSensorPhase(false);
+        // mFXLeftFlyWheel.setSensorPhase(true);
+        // mFXRightFlyWheel.setSensorPhase(false);
 
         mFXLeftFlyWheel.setNeutralMode(NeutralMode.Coast);
         mFXRightFlyWheel.setNeutralMode(NeutralMode.Coast);   
+
+        // mFXLeftFlyWheel.configVoltageCompSaturation(0.0, Constants.kLongCANTimeoutMs);
+        // mFXLeftFlyWheel.enableVoltageCompensation(mConstants.kSteerMotorEnableVoltageCompensation);
+        // mFXLeftFlyWheel.configAllowableClosedloopError(0, mConstants.kSteerMotorClosedLoopAllowableError, Constants.kLongCANTimeoutMs);
+
+        // parameters are enable, current limit after triggering, trigger limit, time allowed to exceed trigger limit before triggering
+        mFXLeftFlyWheel.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, 10, 10,0));
+        mFXRightFlyWheel.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, 10, 10,0));
+
+        mFXLeftFlyWheel.follow(mFXRightFlyWheel);
+
+        mFXRightFlyWheel.selectProfileSlot(0, 0);
+
+        mFXRightFlyWheel.config_kP(0, .1, Constants.kLongCANTimeoutMs);
+        mFXRightFlyWheel.config_kI(0, 0, Constants.kLongCANTimeoutMs);
+        mFXRightFlyWheel.config_kD(0, 0, Constants.kLongCANTimeoutMs);
+        mFXRightFlyWheel.config_kF(0, .2, Constants.kLongCANTimeoutMs);
+        mFXRightFlyWheel.config_IntegralZone(0, 0, Constants.kLongCANTimeoutMs);
+        mFXRightFlyWheel.configClosedloopRamp(.5,Constants.kLongCANTimeoutMs);
+        mFXRightFlyWheel.configAllowableClosedloopError(0, 10, Constants.kLongCANTimeoutMs);
+
+        // SmartDashboard.getNumber("")
     }
 
     private Loop mLoop = new Loop() {
@@ -128,7 +145,7 @@ public class Shooter extends Subsystem{
                 SystemState newState;
                 switch (mSystemState) {
                 case SHOOTING:
-                    newState = handleShooting();
+                    newState = ();
                     break;
                 case HOLDING:
                 default:
