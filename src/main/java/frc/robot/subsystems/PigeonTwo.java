@@ -6,52 +6,64 @@ import frc.robot.Constants;
 import frc.robot.Ports;
 import libraries.cheesylib.geometry.Rotation2d;
 
-public class PigeonTwo{
+public class PigeonTwo implements IMU {
 
     private static PigeonTwo instance = null;
 
     private Pigeon2 pigeon;
 
-    private PigeonTwo(){
-        try{
+    private PigeonTwo() {
+        try {
             pigeon = new Pigeon2(Ports.PIGEON);
-        }catch(Exception e){
+        } catch (Exception e) {
             System.out.println(e);
         }
     }
 
-    public static PigeonTwo getInstance(){
-        if(instance == null){
+    public static PigeonTwo getInstance() {
+        if (instance == null) {
             instance = new PigeonTwo();
         }
         return instance;
     }
 
-    public double getYaw(){
-        return pigeon.getYaw();
+    @Override
+    public boolean isGood() {
+        // Unlike the original Pigeon, the Pigeon2 is always ready
+        return true;
     }
 
-    public Rotation2d getRotation2dYaw(){
+    @Override
+    public Rotation2d getYaw() {
         return Rotation2d.fromDegrees(pigeon.getYaw());
     }
 
-    public double getPitch(){
+    @Override
+    public double getPitch() {
         return pigeon.getPitch();
     }
 
-    public double getRoll(){
+    @Override
+    public double getRoll() {
         return pigeon.getRoll();
     }
 
-    public double[] getYPR(){
+    @Override
+    public double[] getYPR() {
         double[] ypr = new double[3];
         pigeon.getYawPitchRoll(ypr);
         return ypr;
     }
 
-    public void setAngle(double angle){
+    @Override
+    public void setAngle(double angle) {
         pigeon.setYaw(-angle, Constants.kLongCANTimeoutMs);
         System.out.println("Pigeon angle set to: " + angle);
+    }
+
+    @Override
+    public void outputToSmartDashboard() {
+        // no-op
     }
 
 }
