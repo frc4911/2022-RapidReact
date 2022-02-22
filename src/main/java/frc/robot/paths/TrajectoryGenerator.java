@@ -38,10 +38,10 @@ public class TrajectoryGenerator {
 
     private TrajectoryGenerator() {
         mMotionPlanner = new DriveMotionPlanner();
-        kMaxVelocity = mMotionPlanner.swerveConfiguration.maxSpeedInMetersPerSecond;
-        kMaxAccel = mMotionPlanner.swerveConfiguration.maxAccellerationInMetersPerSecondSq;
-        kMaxDecel = mMotionPlanner.swerveConfiguration.maxAccellerationInMetersPerSecondSq;
-        kMaxCentriptalAccel = mMotionPlanner.swerveConfiguration.kMaxCentriptalAccelerationInMetersPerSecondSq;
+        kMaxVelocity = mMotionPlanner.mSwerveConfiguration.maxSpeedInMetersPerSecond;
+        kMaxAccel = mMotionPlanner.mSwerveConfiguration.maxAccellerationInMetersPerSecondSq;
+        kMaxDecel = mMotionPlanner.mSwerveConfiguration.maxAccellerationInMetersPerSecondSq;
+        kMaxCentriptalAccel = mMotionPlanner.mSwerveConfiguration.kMaxCentriptalAccelerationInMetersPerSecondSq;
     }
 
     public void generateTrajectories() {

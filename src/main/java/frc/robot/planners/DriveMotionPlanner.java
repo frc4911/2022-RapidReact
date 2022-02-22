@@ -1,6 +1,5 @@
 package frc.robot.planners;
 
-import frc.robot.Constants;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.SwerveConfiguration;
 import libraries.cheesylib.geometry.Pose2d;
@@ -14,8 +13,8 @@ import libraries.cheesylib.trajectory.timing.TimingUtil;
 import libraries.cheesylib.util.CSVWritable;
 import libraries.cheesylib.util.Units;
 import libraries.cheesylib.util.Util;
+import libraries.cyberlib.control.*;
 import libraries.cyberlib.kinematics.ChassisSpeeds;
-import libraries.cyberlib.utils.Angles;
 import libraries.cyberlib.utils.HolonomicDriveSignal;
 
 import java.util.ArrayList;
@@ -28,17 +27,21 @@ public class DriveMotionPlanner implements CSVWritable {
     private static final double kMaxDTheta = Math.toRadians(5.0);
     private Swerve mSwerve;
 
+    TrajectoryFollower follower;
+
     private Translation2d followingCenter = Translation2d.identity();
 
     public enum FollowerType {
+        HOLONOMIC,
         PURE_PURSUIT
     }
 
-    FollowerType mFollowerType = FollowerType.PURE_PURSUIT;
+    FollowerType mFollowerType = FollowerType.HOLONOMIC;
 
     public void setFollowerType(FollowerType type) {
         mFollowerType = type;
     }
+
 
     TrajectoryIterator<TimedState<Pose2dWithCurvature>> mCurrentTrajectory;
     public Trajectory<TimedState<Pose2dWithCurvature>> getTrajectory() {
@@ -77,11 +80,26 @@ public class DriveMotionPlanner implements CSVWritable {
         return kMaxSpeed * scalar;
     }
 
-    public SwerveConfiguration swerveConfiguration;
+    public SwerveConfiguration mSwerveConfiguration;
 
     public DriveMotionPlanner() {
         mSwerve = Swerve.getInstance("DriveMotionPlanner");
-        swerveConfiguration = mSwerve.mSwerveConfiguration;
+        mSwerveConfiguration = mSwerve.mSwerveConfiguration;
+
+        if (mFollowerType == FollowerType.HOLONOMIC) {
+            // TODO:  Make these constants
+            follower = new HolonomicTrajectoryFollower(
+                    new PidGains(0.4, 0.0, 0.025),
+                    new PidGains(5.0, 0.0, 0.0),
+                    new HolonomicFeedforward(new SwerveDriveFeedforwardGains(
+                            0.289, //0.042746,
+                            0.0032181,
+                            0.30764
+                    )));
+        } else if (mFollowerType == FollowerType.PURE_PURSUIT) {
+           follower = new PurePursuitTrajectoryFollower(mSwerveConfiguration);
+        }
+
     }
 
     public void setTrajectory(final TrajectoryIterator<TimedState<Pose2dWithCurvature>> trajectory) {
@@ -166,7 +184,7 @@ public class DriveMotionPlanner implements CSVWritable {
                 (reversed, new DistanceView<>(trajectory), kMaxDx, all_constraints,
                         start_vel, end_vel, max_vel, max_accel, max_decel, slowdown_chunks);
 
-        timed_trajectory.setDefaultVelocity(default_vel / swerveConfiguration.maxSpeedInMetersPerSecond);
+        timed_trajectory.setDefaultVelocity(default_vel / mSwerveConfiguration.maxSpeedInMetersPerSecond);
         return timed_trajectory;
     }
 
@@ -181,62 +199,6 @@ public class DriveMotionPlanner implements CSVWritable {
     public String toCSV() {
 //        return mOutput.toCSV();
         return "";
-    }
-
-    protected Optional<HolonomicDriveSignal> updatePurePursuit(Pose2d current_state) {
-        double lookahead_time = Constants.kPathLookaheadTime;
-        final double kLookaheadSearchDt = 0.01;
-
-        TimedState<Pose2dWithCurvature> lookahead_state = mCurrentTrajectory.preview(lookahead_time).state();
-        double actual_lookahead_distance = mSetpoint.state().distance(lookahead_state.state());
-        while (actual_lookahead_distance < Constants.kPathMinLookaheadDistance &&
-                mCurrentTrajectory.getRemainingProgress() > lookahead_time) {
-            lookahead_time += kLookaheadSearchDt;
-            lookahead_state = mCurrentTrajectory.preview(lookahead_time).state();
-            actual_lookahead_distance = mSetpoint.state().distance(lookahead_state.state());
-        }
-        if (actual_lookahead_distance < Constants.kPathMinLookaheadDistance) {
-            lookahead_state = new TimedState<>(new Pose2dWithCurvature(lookahead_state.state()
-                    .getPose().transformBy(Pose2d.fromTranslation(new Translation2d(
-                            (mIsReversed ? -1.0 : 1.0) * (Constants.kPathMinLookaheadDistance -
-                                    actual_lookahead_distance), 0.0))), 0.0), lookahead_state.t()
-                    , lookahead_state.velocity(), lookahead_state.acceleration());
-        }
-
-//        SmartDashboard.putNumber("Path X", lookahead_state.state().getTranslation().x());
-//        SmartDashboard.putNumber("Path Y", lookahead_state.state().getTranslation().y());
-//        SmartDashboard.putNumber("Path Velocity", lookahead_state.velocity() / Constants.kSwerveMaxSpeedInchesPerSecond);
-
-        // A WCD would have to plot an arc.  Since this is Swerve, use a straight line.
-        // Translate to lookahead position in the straight line formed by the two points: current and lookahead position
-
-        var normalizedVelocity = lookahead_state.velocity() / swerveConfiguration.maxSpeedInMetersPerSecond;
-
-        // Now calculate velocities
-        Translation2d segmentVelocity = new Translation2d(
-                lookahead_state.state().getRotation().cos(),
-                lookahead_state.state().getRotation().sin()).scale(normalizedVelocity);
-
-        // Calculate the rotational velocity required to keep rotating  while translating.
-        // Get the rotation angle over the trajectory
-        // TODO:  Make constants and only calculate once
-        var startAngle = mCurrentTrajectory.trajectory().getFirstState().state().getPose().getRotation().getRadians();
-        var endAngle = mCurrentTrajectory.trajectory().getLastState().state().getPose().getRotation().getRadians();
-        double totalAngle = Angles.shortest_angular_distance(startAngle, endAngle);
-
-        // getMaxRotationSpeed() returns a trapezoidal ramp for rotation speed based on travelled trajectory.
-        var theta0 = (startAngle + (totalAngle * getRotationSample()));
-        var theta1 = lookahead_state.state().getRotation().getRadians();
-
-        // w = (theta(1) - theta(0)) / dt
-        double rotationVelocity = Angles.normalizeAngle(theta1 - theta0) / mDt;
-
-        // Scale it to a percentage of max angular velocity as Swerve will scale it correctly
-        rotationVelocity /= mSwerve.mSwerveConfiguration.maxSpeedInRadiansPerSecond;
-
-        var signal = new HolonomicDriveSignal(segmentVelocity, rotationVelocity, true);
-        // System.out.println(signal.toString()); // brian leave until fixed
-        return Optional.of(signal);
     }
 
      public Optional<HolonomicDriveSignal> update(double timestamp, Pose2d current_state, ChassisSpeeds chassisSpeeds) {
@@ -255,10 +217,13 @@ public class DriveMotionPlanner implements CSVWritable {
 
         if (!mCurrentTrajectory.isDone()) {
             mError = current_state.inverse().transformBy(mSetpoint.state().getPose());
+            var velocity = new Translation2d(chassisSpeeds.vxInMetersPerSecond, chassisSpeeds.vyInMetersPerSecond);
 
-            if (mFollowerType == FollowerType.PURE_PURSUIT) {
-                return updatePurePursuit(current_state);
-            }
+            return follower.update(current_state,
+                    velocity,
+                    chassisSpeeds.omegaInRadiansPerSecond,
+                    mLastTime,
+                    mDt);
         }
 
         return Optional.empty();
