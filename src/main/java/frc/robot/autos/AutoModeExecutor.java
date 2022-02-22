@@ -8,35 +8,39 @@ import libraries.cheesylib.util.CrashTrackingRunnable;
  * mode.
  */
 public class AutoModeExecutor {
-    private AutoModeBase m_auto_mode;
-    private Thread m_thread = null;
+    private AutoModeBase mAutoMode;
+    private Thread mThread = null;
 
     public void setAutoMode(AutoModeBase new_auto_mode) {
-        m_auto_mode = new_auto_mode;
+        mAutoMode = new_auto_mode;
     }
 
     public void start() {
-        if (m_thread == null) {
-            m_thread = new Thread(new CrashTrackingRunnable() {
+        if (mThread == null) {
+            mThread = new Thread(new CrashTrackingRunnable() {
                 @Override
                 public void runCrashTracked() {
-                    if (m_auto_mode != null) {
-                        m_auto_mode.run();
+                    if (mAutoMode != null) {
+                        mAutoMode.run();
                     }
                 }
             });
 
-            m_thread.start();
+            mThread.start();
         }
 
     }
 
     public void stop() {
-        if (m_auto_mode != null) {
-            m_auto_mode.stop();
+        if (mAutoMode != null) {
+            mAutoMode.stop();
         }
 
-        m_thread = null;
+        mThread = null;
+    }
+
+    public AutoModeBase getAutoMode() {
+        return mAutoMode;
     }
 
 }

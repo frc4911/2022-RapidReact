@@ -13,6 +13,7 @@ import frc.robot.Constants;
 import frc.robot.config.DeadEye;
 import frc.robot.config.Junior;
 import frc.robot.config.Robot2022;
+import frc.robot.config.RobotConfiguration;
 import frc.robot.planners.DriveMotionPlanner;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Pose2dWithCurvature;
@@ -39,6 +40,7 @@ public class Swerve extends Subsystem {
     private ControlState mControlState = ControlState.NEUTRAL;
 
     public SwerveConfiguration mSwerveConfiguration;
+    public RobotConfiguration mRobotConfiguration;
 
     PeriodicIO mPeriodicIO = new PeriodicIO();
     private int mDefaultSchedDelta = 20;
@@ -59,7 +61,7 @@ public class Swerve extends Subsystem {
 	private final SwerveDriveKinematics mKinematics;
 
     // Trajectory following
-    private DriveMotionPlanner mMotionPlanner;
+    private static DriveMotionPlanner mMotionPlanner;
     private boolean mOverrideTrajectory = false;
 
     private int mListIndex = -1;
@@ -70,6 +72,7 @@ public class Swerve extends Subsystem {
     public  static Swerve getInstance(String caller) {
         if (sInstance == null) {
             sInstance = new Swerve(caller);
+            mMotionPlanner = new DriveMotionPlanner();
         }
         else {
             printUsage(caller);
@@ -91,34 +94,19 @@ public class Swerve extends Subsystem {
 
 
         mPigeon = PigeonTwo.getInstance();
+        mRobotConfiguration = RobotConfiguration.getRobotConfiguration(RobotName.name);
 
-        if (RobotName.name.equals(Constants.kJuniorName)) {
-            mSwerveConfiguration = Junior.kSwerveConfiguration;
-            mModules.add(mFrontRight = new SwerveDriveModule(Junior.kFrontRightModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-            mModules.add(mFrontLeft = new SwerveDriveModule(Junior.kFrontLeftModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-            mModules.add(mBackLeft = new SwerveDriveModule(Junior.kBackLeftModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-            mModules.add(mBackRight = new SwerveDriveModule(Junior.kBackRightModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-        }
-        else if (RobotName.name.equals(Constants.kDeadEyeName)) {
-            mSwerveConfiguration = DeadEye.kSwerveConfiguration;
-            mModules.add(mFrontRight = new SwerveDriveModule(DeadEye.kFrontRightModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-            mModules.add(mFrontLeft = new SwerveDriveModule(DeadEye.kFrontLeftModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-            mModules.add(mBackLeft = new SwerveDriveModule(DeadEye.kBackLeftModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-            mModules.add(mBackRight = new SwerveDriveModule(DeadEye.kBackRightModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-        }
-        else if (RobotName.name.equals(Constants.kRobot2022Name)) {
-            mSwerveConfiguration = Robot2022.kSwerveConfiguration;
-            mModules.add(mFrontRight = new SwerveDriveModule(Robot2022.kFrontRightModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-            mModules.add(mFrontLeft = new SwerveDriveModule(Robot2022.kFrontLeftModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-            mModules.add(mBackLeft = new SwerveDriveModule(Robot2022.kBackLeftModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-            mModules.add(mBackRight = new SwerveDriveModule(Robot2022.kBackRightModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-        }
+        mSwerveConfiguration = mRobotConfiguration.getSwerveConfiguration();
+        mModules.add(mFrontRight = new SwerveDriveModule(mRobotConfiguration.getFrontRightModuleConstants(), mSwerveConfiguration.maxSpeedInMetersPerSecond));
+        mModules.add(mFrontLeft = new SwerveDriveModule(mRobotConfiguration.getFrontLeftModuleConstants(), mSwerveConfiguration.maxSpeedInMetersPerSecond));
+        mModules.add(mBackLeft = new SwerveDriveModule(mRobotConfiguration.getBackLeftModuleConstants(), mSwerveConfiguration.maxSpeedInMetersPerSecond));
+        mModules.add(mBackRight = new SwerveDriveModule(mRobotConfiguration.getBackRightModuleConstants(), mSwerveConfiguration.maxSpeedInMetersPerSecond));
 
         mKinematics = new SwerveDriveKinematics(mSwerveConfiguration.moduleLocations);
 		mOdometry = new SwerveDriveOdometry(mKinematics, mPigeon.getRotation2dYaw());
         mPeriodicIO.robotPose = mOdometry.getPose();
 
-        mMotionPlanner = new DriveMotionPlanner();
+        // mMotionPlanner = new DriveMotionPlanner();
 
 //        generator = TrajectoryGenerator.getInstance();
     }
@@ -261,7 +249,7 @@ public class Swerve extends Subsystem {
                 case NEUTRAL:
                 case MANUAL:
                 case DISABLED:
-                    mPeriodicIO.schedDeltaDesired = 100;
+                    mPeriodicIO.schedDeltaDesired = 10; // this is a fast cycle used while testing
                     break;
 
                 case VISION_AIM:
@@ -514,7 +502,7 @@ public class Swerve extends Subsystem {
 
     @Override
     public int whenRunAgain () {
-        return mPeriodicIO.schedDeltaDesired;
+        return 20;//mPeriodicIO.schedDeltaDesired; (brian test)
     }
 
     @Override

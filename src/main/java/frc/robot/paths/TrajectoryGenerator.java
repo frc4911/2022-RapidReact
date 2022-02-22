@@ -21,15 +21,14 @@ import edu.wpi.first.wpilibj.Timer;
 import libraries.cheesylib.util.Units;
 
 public class TrajectoryGenerator {
-    private boolean skipThisOne = false;
-    // TODO - Should use Swerve Configuration values here
-    private static final double kMaxVelocity = Units.inches_to_meters(120.0);
-    private static final double kMaxAccel = Units.inches_to_meters(60.0); //120.0;
-    private static final double kMaxDecel = Units.inches_to_meters(72.0); //72.0;
+    private static double kMaxVelocity = Units.inches_to_meters(120.0);
+    private static double kMaxAccel = Units.inches_to_meters(60.0); //120.0;
+    private static double kMaxDecel = Units.inches_to_meters(72.0); //72.0;
+    private static double kMaxCentriptalAccel = kMaxVelocity * kMaxVelocity; // assume unit radius of 1
     private static final double kMaxVoltage = 9.0;
 
 
-    private static TrajectoryGenerator mInstance = new TrajectoryGenerator();
+    private final static TrajectoryGenerator mInstance = new TrajectoryGenerator();
     private final DriveMotionPlanner mMotionPlanner;
     private TrajectorySet mTrajectorySet = null;
 
@@ -39,6 +38,10 @@ public class TrajectoryGenerator {
 
     private TrajectoryGenerator() {
         mMotionPlanner = new DriveMotionPlanner();
+        kMaxVelocity = mMotionPlanner.mSwerveConfiguration.maxSpeedInMetersPerSecond;
+        kMaxAccel = mMotionPlanner.mSwerveConfiguration.maxAccellerationInMetersPerSecondSq;
+        kMaxDecel = mMotionPlanner.mSwerveConfiguration.maxAccellerationInMetersPerSecondSq;
+        kMaxCentriptalAccel = mMotionPlanner.mSwerveConfiguration.kMaxCentriptalAccelerationInMetersPerSecondSq;
     }
 
     public void generateTrajectories() {
@@ -107,28 +110,29 @@ public class TrajectoryGenerator {
         }
 
         public final MirroredTrajectory testTrajectory;
-        public final MirroredTrajectory testTrajectoryBack;
+        // public final MirroredTrajectory testTrajectoryBack;
 
         private TrajectorySet() {
             testTrajectory = new MirroredTrajectory(getTestTrajectory());
-            testTrajectoryBack = new MirroredTrajectory(getTestTrajectoryBack());
+            // testTrajectoryBack = new MirroredTrajectory(getTestTrajectoryBack());
         }
 
         private Trajectory<TimedState<Pose2dWithCurvature>> getTestTrajectory() {
             List<Pose2d> waypoints = new ArrayList<>();
-            waypoints.add(new Pose2d(Translation2d.identity(), Rotation2d.fromDegrees(180)));
-            waypoints.add(new Pose2d(Units.inches_to_meters(-120), Units.inches_to_meters(120), Rotation2d.fromDegrees(90)));
+            waypoints.add(new Pose2d(Translation2d.identity(), Rotation2d.fromDegrees(0)));
+            waypoints.add(new Pose2d(Units.inches_to_meters(60), Units.inches_to_meters(0), Rotation2d.fromDegrees(0)));
             return generateTrajectory(false, waypoints,
-                    Arrays.asList(new CentripetalAccelerationConstraint(60)),
-                    kMaxVelocity, kMaxAccel, kMaxDecel, kMaxVoltage, kMaxVelocity, 1);
+                    Arrays.asList(new CentripetalAccelerationConstraint(kMaxCentriptalAccel)),
+                     kMaxVelocity, kMaxAccel, kMaxDecel, kMaxVoltage, kMaxVelocity, 1);
+//                    Units.inches_to_meters(30.0), Units.inches_to_meters(30.0), Units.inches_to_meters(30.0), kMaxVoltage, Units.inches_to_meters(30.0), 1);
         }
 
-        private Trajectory<TimedState<Pose2dWithCurvature>> getTestTrajectoryBack() {
-            List<Pose2d> waypoints = new ArrayList<>();
-            waypoints.add(new Pose2d(Units.inches_to_meters(-120), Units.inches_to_meters(120), Rotation2d.fromDegrees(90)));
-            waypoints.add(new Pose2d(Translation2d.identity(), Rotation2d.fromDegrees(180)));
-            return generateTrajectory(true, waypoints, Arrays.asList(new CentripetalAccelerationConstraint(60)),
-                    kMaxVelocity, kMaxAccel, kMaxDecel, kMaxVoltage, kMaxVelocity, 1);
-        }
+        // private Trajectory<TimedState<Pose2dWithCurvature>> getTestTrajectoryBack() {
+        //     List<Pose2d> waypoints = new ArrayList<>();
+        //     waypoints.add(new Pose2d(Units.inches_to_meters(-120), Units.inches_to_meters(120), Rotation2d.fromDegrees(90)));
+        //     waypoints.add(new Pose2d(Translation2d.identity(), Rotation2d.fromDegrees(180)));
+        //     return generateTrajectory(true, waypoints, Arrays.asList(new CentripetalAccelerationConstraint(60)),
+        //             kMaxVelocity, kMaxAccel, kMaxDecel, kMaxVoltage, kMaxVelocity, 1);
+        // }
     }
 }

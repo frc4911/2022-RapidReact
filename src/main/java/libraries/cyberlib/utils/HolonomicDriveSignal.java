@@ -27,4 +27,9 @@ public class HolonomicDriveSignal {
     public boolean isFieldOriented() {
         return fieldOriented;
     }
+
+    @Override
+    public String toString(){
+        return String.format("HolonomicDriveSignal T%s, R(%.3f), FieldOriented(%b)", translation.toString(), rotation, fieldOriented);
+    }
 }
