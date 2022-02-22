@@ -9,10 +9,6 @@ import libraries.cheesylib.util.LatchedBoolean;
 import libraries.cheesylib.util.TimeDelayedBoolean;
 import libraries.cyberlib.control.SwerveHeadingController;
 import libraries.cyberlib.io.CW;
-import libraries.cyberlib.io.LogitechExtreme;
-import libraries.cyberlib.io.Xbox;
-
-import libraries.cyberlib.io.CW;
 import libraries.cyberlib.io.Xbox;
 
 public class JSticks extends Subsystem{
@@ -21,7 +17,7 @@ public class JSticks extends Subsystem{
     private final SwerveHeadingController mHeadingController = SwerveHeadingController.getInstance();
     private final LatchedBoolean shouldChangeHeadingSetpoint = new LatchedBoolean();
     private final TimeDelayedBoolean mShouldMaintainHeading = new TimeDelayedBoolean();
-    
+
     public enum SystemState {
         READINGBUTTONS,
     }
@@ -34,13 +30,15 @@ public class JSticks extends Subsystem{
     private WantedState mWantedState = WantedState.READBUTTONS;
     @SuppressWarnings("unused")
     private boolean mStateChanged;
-    private PeriodicIO mPeriodicIO = new PeriodicIO();
-
     private CW mDriver;
     private CW mOperator;
+    private PeriodicIO mPeriodicIO = new PeriodicIO();
+
     private final double mDeadBand = 0.15; // for the turnigy (driver) swerve controls
 	private Superstructure mSuperstructure;
     private Swerve mSwerve;
+
+    private int mListIndex;
 
     private static String sClassName;
     private static int sInstanceCount;
@@ -68,9 +66,9 @@ public class JSticks extends Subsystem{
             mSwerve.mSwerveConfiguration.kSwerveHeadingKi,
             mSwerve.mSwerveConfiguration.kSwerveHeadingKd,
             mSwerve.mSwerveConfiguration.kSwerveHeadingKf);
-
         mDriver = new Xbox();
         mOperator = new Xbox();
+
         printUsage(caller);
     }
 
@@ -82,6 +80,7 @@ public class JSticks extends Subsystem{
                 mSystemState = SystemState.READINGBUTTONS;
                 mWantedState = WantedState.READBUTTONS;
                 mStateChanged = true;
+
                 // Force true on first iteration of teleop periodic
                 shouldChangeHeadingSetpoint.update(false);
 
@@ -141,19 +140,38 @@ public class JSticks extends Subsystem{
     public void teleopRoutines() {
         Superstructure.WantedState currentState = mSuperstructure.getWantedState();
 		Superstructure.WantedState previousState = currentState;
-        
-        //Swerve control
-		// double swerveYInput = mPeriodicIO.dr_LeftStickX_Translate;
-		// double swerveXInput = mPeriodicIO.dr_LeftStickY_Translate;
-		// double swerveRotationInput = mPeriodicIO.dr_RightStickX_Rotate;
 
-        // mSwerve.sendInput(swerveXInput, swerveYInput, swerveRotationInput, mPeriodicIO.dr_RightBumper_RobotOrient, false);
+        //Swerve control
+		double swerveYInput = mPeriodicIO.dr_LeftStickX_Translate;
+		double swerveXInput = mPeriodicIO.dr_LeftStickY_Translate;
+		double swerveRotationInput = mPeriodicIO.dr_RightStickX_Rotate;
+ 
+        // NEW SWERVE
+        boolean maintainHeading = mShouldMaintainHeading.update(swerveRotationInput == 0, 0.2);
+        boolean changeHeadingSetpoint = shouldChangeHeadingSetpoint.update(maintainHeading);
+
+        if (!maintainHeading) {
+            mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.OFF);
+        } else if (changeHeadingSetpoint) {
+            mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.MAINTAIN);
+            mHeadingController.setGoal(mSwerve.getHeading().getDegrees());
+        }
+
+        var isFieldOriented = !mPeriodicIO.dr_RightBumper_RobotOrient;
+        if (mHeadingController.getHeadingControllerState() != SwerveHeadingController.HeadingControllerState.OFF) {
+            mSwerve.setTeleopInputs(swerveXInput, swerveYInput, mHeadingController.update(),
+                    false, isFieldOriented, true);
+        } else {
+            mSwerve.setTeleopInputs(swerveXInput, swerveYInput, swerveRotationInput,
+                    false, isFieldOriented, false);
+        }
 
 		if (mPeriodicIO.dr_YButton_ResetIMU) {
-			// mSwerve.temporarilyDisableHeadingController();
-			mSwerve.zeroSensors(Constants.kRobotStartingPose);
-			// mSwerve.resetAveragedDirection();
+            // Seems safest to disable heading controller if were resetting IMU.
+            mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.OFF);
+            mSwerve.zeroSensors(Constants.kRobotStartingPose);
 		}
+        // END NEW SWERVE
 
         // -1: Do nothing
         //  0: Extend
@@ -167,38 +185,38 @@ public class JSticks extends Subsystem{
 		mSuperstructure.setOpenLoopClimb(mPeriodicIO.op_LeftStickY_ClimberElevator, deploySlappyState);
         
         currentState = activeBtnIsReleased(currentState);
-		if (currentState == Superstructure.WantedState.HOLD) {
-			if (mPeriodicIO.op_POV0_ManualShot_Fender) {
-				// mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT);
+        if (currentState == Superstructure.WantedState.HOLD) {
+            if (mPeriodicIO.op_POV0_ManualShot_Fender) {
                 mSuperstructure.setManualShootDistance(0);
-			} else if (mPeriodicIO.op_RightTrigger_Collect) {
-				mSuperstructure.setWantedState(Superstructure.WantedState.COLLECT);
-			} else if (mPeriodicIO.op_LeftTrigger_Back) {
+                mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT);
+            } else if (mPeriodicIO.op_RightTrigger_Collect) {
+                mSuperstructure.setWantedState(Superstructure.WantedState.COLLECT);
+            } else if (mPeriodicIO.op_LeftTrigger_Back) {
                 mSuperstructure.setWantedState(Superstructure.WantedState.BACK);
             } else if (previousState != currentState) {
-				mSuperstructure.setWantedState(Superstructure.WantedState.HOLD);
-			}
+                // mSuperstructure.setWantedState(Superstructure.WantedState.HOLD);
+            }
 
         }
-
 	}
 
     private Superstructure.WantedState activeBtnIsReleased(Superstructure.WantedState currentState) {
-		switch (currentState) {
-			case MANUAL_SHOOT:
-				return !mPeriodicIO.op_POV0_ManualShot_Fender ? Superstructure.WantedState.HOLD : currentState;
-			case COLLECT:
-				return !mPeriodicIO.op_RightTrigger_Collect ? Superstructure.WantedState.HOLD : currentState;
-			// case MANUAL_SHOOT:                                                                                         IDK ABOUT THIS EITHER -CALEB WEST
-			// 	if (!mPeriodicIO.opPOV0_MANUAL10 && !mPeriodicIO.opPOV90_MANUAL15 && !mPeriodicIO.opPOV180_MANUAL20 && !mPeriodicIO.opPOV270_MANUAL25) {
-			// 		return Superstructure.WantedState.HOLD;
-			// 	}
-			// 	return currentState;
-			case BACK:
+        switch (currentState) {
+            case MANUAL_SHOOT:
+                return !mPeriodicIO.op_POV0_ManualShot_Fender ? Superstructure.WantedState.HOLD : currentState;
+            case COLLECT:
+                return !mPeriodicIO.op_RightTrigger_Collect ? Superstructure.WantedState.HOLD : currentState;
+            // case MANUAL_SHOOT: IDK ABOUT THIS EITHER -CALEB WEST
+            // if (!mPeriodicIO.opPOV0_MANUAL10 && !mPeriodicIO.opPOV90_MANUAL15 &&
+            // !mPeriodicIO.opPOV180_MANUAL20 && !mPeriodicIO.opPOV270_MANUAL25) {
+            // return Superstructure.WantedState.HOLD;
+            // }
+            // return currentState;
+            case BACK:
                 return !mPeriodicIO.op_LeftTrigger_Back ? Superstructure.WantedState.HOLD : currentState;
-			default:
+            default:
                 return Superstructure.WantedState.HOLD;
-	}
+        }
     }
 
     @Override
@@ -222,6 +240,7 @@ public class JSticks extends Subsystem{
         mPeriodicIO.op_XButton_RetractSlappySticks = mOperator.getButton(Xbox.X_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.op_YButton_ExtendSlappySticks = mOperator.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.op_POV0_ManualShot_Fender = mOperator.getButton(Xbox.POV0_0, CW.PRESSED_EDGE); // Test if needs Pressed_edge or level
+
     }
 
     private SystemState defaultStateTransfer() {
@@ -234,7 +253,7 @@ public class JSticks extends Subsystem{
 
     @Override
     public void registerEnabledLoops(ILooper enabledLooper) {
-        enabledLooper.register(mLoop);
+        mListIndex = enabledLooper.register(mLoop);
     }
 
     @Override

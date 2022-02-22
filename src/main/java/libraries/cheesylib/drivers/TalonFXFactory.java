@@ -162,6 +162,7 @@ public class TalonFXFactory {
         // talon.setStatusFramePeriod(StatusFrameEnhanced.Status_8_PulseWidth,
         //         config.PULSE_WIDTH_STATUS_FRAME_RATE_MS, kTimeoutMs);
 
+        // brian may want to remove this one
         talon.setControlFramePeriod(ControlFrame.Control_3_General, config.CONTROL_FRAME_PERIOD_MS);
 
         return talon;

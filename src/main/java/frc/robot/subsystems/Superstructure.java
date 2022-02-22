@@ -41,9 +41,9 @@ public class Superstructure extends Subsystem{
     private int         mFastCycle = 10;
     private int         mSlowCycle = 100;
 
-    private final double kFlywheelIdleSpeed = 0.45;
     private double  mManualDistance;
     private boolean mShootSetup;
+    private int mListIndex;
 
     private static String sClassName;
     private static int sInstanceCount;
@@ -202,13 +202,12 @@ public class Superstructure extends Subsystem{
     private SystemState handleManualShooting() {
         if (mStateChanged) {
             mShooter.setShootDistance(mManualDistance);
-            mShootSetup = true;
+            mShooter.setWantedState(Shooter.WantedState.SHOOT);
             mPeriodicIO.schedDeltaDesired = mFastCycle;
         }
 
-        if (mShooter.readyToShoot() || !mShootSetup) {
+        if (mShooter.readyToShoot()) {
             mIndexer.setWantedState(Indexer.WantedState.FEED);
-            mShootSetup = false;
         } else {
             mIndexer.setWantedState(Indexer.WantedState.HOLD);
         }
@@ -247,10 +246,9 @@ public class Superstructure extends Subsystem{
     }
 
     private SystemState shootingStateTransfer() {
-        if(mSystemState != SystemState.AUTO_SHOOTING || mSystemState != SystemState.MANUAL_SHOOTING){
+        if(mSystemState != SystemState.AUTO_SHOOTING && mSystemState != SystemState.MANUAL_SHOOTING){
             mShooter.setWantedState(Shooter.WantedState.HOLD);
             mIndexer.setWantedState(Indexer.WantedState.HOLD);
-            mShooter.setHoldSpeed(kFlywheelIdleSpeed);
         }
 
         return defaultStateTransfer();
@@ -284,7 +282,7 @@ public class Superstructure extends Subsystem{
 
     public synchronized void setWantedState(WantedState state) {
         if (mWantedState != state){
-            System.out.println(state);
+            System.out.println(sClassName + " to " +state);
             mPeriodicIO.schedDeltaDesired = 2;
         }
         mWantedState = state;
@@ -297,7 +295,6 @@ public class Superstructure extends Subsystem{
 
     public void setManualShootDistance(double distance){
         mManualDistance = distance;
-        setWantedState(WantedState.MANUAL_SHOOT);
     }
 
     public void setOpenLoopClimb(double climbSpeed, int deploySlappyState){
@@ -336,7 +333,7 @@ public class Superstructure extends Subsystem{
 
     @Override
     public void registerEnabledLoops(ILooper enabledLooper) {
-        enabledLooper.register(mLoop);
+        mListIndex = enabledLooper.register(mLoop);
     }
 
     @Override

@@ -233,7 +233,7 @@ public class Collector extends Subsystem{
 
     @Override
     public void registerEnabledLoops(ILooper enabledLooper) {
-        enabledLooper.register(mLoop);
+        mListIndex = enabledLooper.register(mLoop);
     }
 
     @Override

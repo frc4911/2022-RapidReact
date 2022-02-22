@@ -17,6 +17,7 @@ import frc.robot.subsystems.Collector;
 import frc.robot.subsystems.Indexer;
 import frc.robot.subsystems.JSticks;
 import frc.robot.subsystems.RobotStateEstimator;
+import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.Swerve;
 import libraries.cheesylib.autos.AutoModeBase;
@@ -43,7 +44,7 @@ public class Robot extends TimedRobot {
 // is the name used if no RobotName.txt file is found.
 // in the src\main\deploy directory of VS is a RobotName.txt file
 // this file is downloaded to the deploy directory with each deploy of the robot jar file
-   RobotName robotName = new RobotName("2022Robot");
+  RobotName robotName = new RobotName("2022Robot");
 
   private String mClassName;
 
@@ -52,6 +53,8 @@ public class Robot extends TimedRobot {
   private Superstructure   mSuperstructure;
   private JSticks          mJSticks;
   private Swerve           mSwerve;
+  private Shooter          mShooter;
+  private Indexer          mIndexer;
   private RobotStateEstimator mRobotStateEstimator;
 
   private TrajectoryGenerator mTrajectoryGenerator = TrajectoryGenerator.getInstance();
@@ -69,6 +72,8 @@ public class Robot extends TimedRobot {
     mJSticks = JSticks.getInstance(mClassName);
     mSuperstructure = Superstructure.getInstance(mClassName);
     mSwerve = Swerve.getInstance(mClassName);
+    mShooter = Shooter.getInstance(mClassName);
+    mIndexer = Indexer.getInstance(mClassName);
     mRobotStateEstimator = RobotStateEstimator.getInstance(mClassName);
 
     //Create subsystem manager and add all subsystems it will manage
@@ -79,6 +84,8 @@ public class Robot extends TimedRobot {
           mJSticks,
           mSuperstructure,
           mSwerve,
+          mShooter,
+          mIndexer,
           mRobotStateEstimator
         )
     );

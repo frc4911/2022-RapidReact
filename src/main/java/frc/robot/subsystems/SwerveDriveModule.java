@@ -534,12 +534,11 @@ public class SwerveDriveModule extends Subsystem {
     @Override
     public void outputTelemetry() {
         // SmartDashboard.putNumber(mModuleName + "Steer velocity", mSteerMotor.getSelectedSensorVelocity(0));
-        SmartDashboard.putNumber(mModuleName + " cancoder", mCANCoder.getAbsolutePosition());
-        SmartDashboard.putNumber(mModuleName + " steerPosition", mPeriodicIO.steerPosition);
-        SmartDashboard.putNumber(mModuleName + " steerDemand", mPeriodicIO.steerDemand);
-        SmartDashboard.putNumber(mModuleName + " drivePosition", mPeriodicIO.drivePosition);
-        SmartDashboard.putNumber(mModuleName + " drivePosition", mPeriodicIO.driveVelocity);
-        SmartDashboard.putNumber(mModuleName + " driveDemand", mPeriodicIO.driveDemand);
+        // SmartDashboard.putNumber(mModuleName + "Steer (cancoder)", enc.getAbsolutePosition()-cancoderOffsetDegrees);
+        // SmartDashboard.putNumber(mModuleName + " cancoder", mCANCoder.getAbsolutePosition());
+        // SmartDashboard.putNumber(mModuleName + " steerDemand", mPeriodicIO.steerDemand);
+        // SmartDashboard.putNumber(mModuleName + " steerPosition", mPeriodicIO.steerPosition);
+        // SmartDashboard.putNumber(mModuleName + " driveDemand", mPeriodicIO.driveDemand);
         // SmartDashboard.putNumber(mModuleName + "Steer", periodicIO.drivePosition);
         // SmartDashboard.putNumber(mModuleName + "Velocity", mDriveMotor.getSelectedSensorVelocity(0));
         // SmartDashboard.putNumber(mModuleName + "Velocity", encVelocityToInchesPerSecond(periodicIO.velocity));
