@@ -51,6 +51,7 @@ public class Robot extends TimedRobot {
   private JSticks          mJSticks;
   private Swerve           mSwerve;
   private Shooter          mShooter;
+  private Indexer          mIndexer;
   private RobotStateEstimator mRobotStateEstimator;
 
   private TrajectoryGenerator mTrajectoryGenerator = TrajectoryGenerator.getInstance();
@@ -69,6 +70,7 @@ public class Robot extends TimedRobot {
     mSuperstructure = Superstructure.getInstance(mClassName);
     mSwerve = Swerve.getInstance(mClassName);
     mShooter = Shooter.getInstance(mClassName);
+    mIndexer = Indexer.getInstance(mClassName);
     mRobotStateEstimator = RobotStateEstimator.getInstance(mClassName);
 
     //Create subsystem manager and add all subsystems it will manage
@@ -80,6 +82,7 @@ public class Robot extends TimedRobot {
           mSuperstructure,
           mSwerve,
           mShooter,
+          mIndexer,
           mRobotStateEstimator
         )
     );

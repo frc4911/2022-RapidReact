@@ -23,9 +23,9 @@ public class Indexer extends Subsystem{
     private final AnalogInput mAIBallExiting;
 
     //Subsystem Constants
-    private final double kFeedSpeed = 0.70;
+    private final double kFeedSpeed = 0.40;
     private final double kLoadSpeed = 0.25; // Need to tune
-    private final double kBackSpeed = 0.60; // Speed is kept as a magnitude; must make negative for backward
+    private final double kBackSpeed = 0.50; // Speed is kept as a magnitude; must make negative for backward
 
     private final double kBeamBreakThreshold = 3.0;
 
@@ -87,7 +87,7 @@ public class Indexer extends Subsystem{
         mFXIndexer.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
         mFXIndexer.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
 
-        mFXIndexer.setInverted(false); // Need to test
+        mFXIndexer.setInverted(true);
         mFXIndexer.setSensorPhase(false);
 
         mFXIndexer.setNeutralMode(NeutralMode.Brake);
@@ -235,7 +235,7 @@ public class Indexer extends Subsystem{
 
     @Override
     public void registerEnabledLoops(ILooper enabledLooper) {
-        enabledLooper.register(mLoop);
+        mListIndex = enabledLooper.register(mLoop);
     }
 
     @Override

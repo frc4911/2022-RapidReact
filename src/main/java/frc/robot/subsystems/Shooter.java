@@ -22,7 +22,29 @@ public class Shooter extends Subsystem{
 
     //Hardware
     private final TalonFX mFXLeftFlyWheel, mFXRightFlyWheel;
-    private final TalonFX mFXShooterHood; //TODO: Decide if hood adjustment will be controlled by SHOOTING state or by superstructure
+    private final TalonFX mFXHood; // TODO: Decide if hood adjustment will be controlled by SHOOTING state or by superstructure
+
+    //Subsystem Constants
+    private final double kMinShootDistance = 0; // Fender shot is 0
+    private final double kMaxShootDistance = 146; // Approximate distance from fender to launch pad (the shooter's location in inches)
+    private final double kMinShootSpeed = 12000; // Ticks per 100Ms
+    private final double kMaxShootSpeed = 20500;
+    private final double kFlywheelSlope = (kMaxShootSpeed - kMinShootSpeed) / (kMaxShootDistance - kMinShootDistance);
+
+    private final double kMinHoodPosition = 0; // Hood at lower hard stop
+    private final double kMaxHoodPosition = 27800; // Hood at max hard stop
+    private final double kHoodSlope = (kMaxHoodPosition - kMinHoodPosition) / (kMaxShootDistance - kMinShootDistance);
+
+    //Configuration Constants
+    private final double kFlywheelKp = 0.1;
+    private final double kFlywheelKi = 0.0;
+    private final double kFlywheelKd = 0.0;
+    private final double kFlywheelKf = 0.05;
+    private final double kClosedRamp = 0.5;
+    private final double kClosedError = 50.0;
+
+    private final double kFlywheelCurrentLimit = 40;
+    private final double kHoodCurrentLimit = 5;
 
     //Subsystem States
     public enum SystemState {
@@ -70,7 +92,7 @@ public class Shooter extends Subsystem{
         printUsage(caller);
         mFXLeftFlyWheel = TalonFXFactory.createDefaultTalon(Ports.LEFT_FLYWHEEL);
         mFXRightFlyWheel = TalonFXFactory.createDefaultTalon(Ports.RIGHT_FLYWHEEL);
-        mFXShooterHood = TalonFXFactory.createDefaultTalon(Ports.SHOOTER_HOOD);
+        mFXHood = TalonFXFactory.createDefaultTalon(Ports.SHOOTER_HOOD);
         mSubsystemManager = SubsystemManager.getInstance(sClassName);
         configMotors();
     }
@@ -78,50 +100,66 @@ public class Shooter extends Subsystem{
     private void configMotors(){
         mFXLeftFlyWheel.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor, 0, Constants.kLongCANTimeoutMs);
         mFXRightFlyWheel.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor, 0, Constants.kLongCANTimeoutMs);
+        mFXHood.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor, 0, Constants.kLongCANTimeoutMs);
 
         // only one encoder is needed
         mFXLeftFlyWheel.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, 20, Constants.kLongCANTimeoutMs);
+        mFXHood.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, 20, Constants.kLongCANTimeoutMs);
 
         // If flywheel makes clicking sound, test config line for both motors
         mFXLeftFlyWheel.setControlFramePeriod(ControlFrame.Control_3_General,18);
         mFXRightFlyWheel.setControlFramePeriod(ControlFrame.Control_3_General,18);
+        mFXHood.setControlFramePeriod(ControlFrame.Control_3_General,18);
     
         mFXLeftFlyWheel.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
         mFXRightFlyWheel.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
+        mFXHood.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
 
         mFXLeftFlyWheel.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
         mFXRightFlyWheel.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
+        mFXHood.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
 
-        mFXLeftFlyWheel.setInverted(true); // Need to test both
+        mFXLeftFlyWheel.setInverted(true);
         mFXRightFlyWheel.setInverted(false);
-
-        // mFXLeftFlyWheel.setSensorPhase(true);
-        // mFXRightFlyWheel.setSensorPhase(false);
+        mFXHood.setInverted(true);
 
         mFXLeftFlyWheel.setNeutralMode(NeutralMode.Coast);
-        mFXRightFlyWheel.setNeutralMode(NeutralMode.Coast);   
-
-        // mFXLeftFlyWheel.configVoltageCompSaturation(0.0, Constants.kLongCANTimeoutMs);
-        // mFXLeftFlyWheel.enableVoltageCompensation(mConstants.kSteerMotorEnableVoltageCompensation);
-        // mFXLeftFlyWheel.configAllowableClosedloopError(0, mConstants.kSteerMotorClosedLoopAllowableError, Constants.kLongCANTimeoutMs);
+        mFXRightFlyWheel.setNeutralMode(NeutralMode.Coast);  
+        mFXHood.setNeutralMode(NeutralMode.Coast);
 
         // parameters are enable, current limit after triggering, trigger limit, time allowed to exceed trigger limit before triggering
-        mFXLeftFlyWheel.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, 10, 10,0));
-        mFXRightFlyWheel.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, 10, 10,0));
-
-        mFXLeftFlyWheel.follow(mFXRightFlyWheel);
+        mFXLeftFlyWheel.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kFlywheelCurrentLimit, kFlywheelCurrentLimit, 0));
+        mFXRightFlyWheel.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kFlywheelCurrentLimit, kFlywheelCurrentLimit, 0));
+        mFXHood.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kHoodCurrentLimit, kHoodCurrentLimit, 0));
 
         mFXRightFlyWheel.selectProfileSlot(0, 0);
+        mFXLeftFlyWheel.selectProfileSlot(0, 0);
+        mFXHood.selectProfileSlot(0, 0);
 
-        mFXRightFlyWheel.config_kP(0, .1, Constants.kLongCANTimeoutMs);
-        mFXRightFlyWheel.config_kI(0, 0, Constants.kLongCANTimeoutMs);
-        mFXRightFlyWheel.config_kD(0, 0, Constants.kLongCANTimeoutMs);
-        mFXRightFlyWheel.config_kF(0, .2, Constants.kLongCANTimeoutMs);
+        mFXLeftFlyWheel.config_kP(0, kFlywheelKp, Constants.kLongCANTimeoutMs);
+        mFXLeftFlyWheel.config_kI(0, kFlywheelKi, Constants.kLongCANTimeoutMs);
+        mFXLeftFlyWheel.config_kD(0, kFlywheelKd, Constants.kLongCANTimeoutMs);
+        mFXLeftFlyWheel.config_kF(0, kFlywheelKf, Constants.kLongCANTimeoutMs);
+        mFXLeftFlyWheel.config_IntegralZone(0, 0, Constants.kLongCANTimeoutMs);
+        mFXLeftFlyWheel.configClosedloopRamp(kClosedRamp, Constants.kLongCANTimeoutMs);
+        mFXLeftFlyWheel.configAllowableClosedloopError(0, kClosedError, Constants.kLongCANTimeoutMs);
+
+        mFXRightFlyWheel.config_kP(0, kFlywheelKp, Constants.kLongCANTimeoutMs);
+        mFXRightFlyWheel.config_kI(0, kFlywheelKi, Constants.kLongCANTimeoutMs);
+        mFXRightFlyWheel.config_kD(0, kFlywheelKd, Constants.kLongCANTimeoutMs);
+        mFXRightFlyWheel.config_kF(0, kFlywheelKf, Constants.kLongCANTimeoutMs);
         mFXRightFlyWheel.config_IntegralZone(0, 0, Constants.kLongCANTimeoutMs);
-        mFXRightFlyWheel.configClosedloopRamp(.5,Constants.kLongCANTimeoutMs);
-        mFXRightFlyWheel.configAllowableClosedloopError(0, 10, Constants.kLongCANTimeoutMs);
+        mFXRightFlyWheel.configClosedloopRamp(kClosedRamp, Constants.kLongCANTimeoutMs);
+        mFXRightFlyWheel.configAllowableClosedloopError(0, kClosedError, Constants.kLongCANTimeoutMs);
 
-        // SmartDashboard.getNumber("")
+        mFXHood.config_kP(0, 0.5, Constants.kLongCANTimeoutMs); //May need to tune more?
+        mFXHood.config_kI(0, 0, Constants.kLongCANTimeoutMs);
+        mFXHood.config_kD(0, 0, Constants.kLongCANTimeoutMs);
+        mFXHood.config_kF(0, 0, Constants.kLongCANTimeoutMs);
+        mFXHood.config_IntegralZone(0, 0, Constants.kLongCANTimeoutMs);
+        mFXHood.configClosedloopRamp(kClosedRamp, Constants.kLongCANTimeoutMs);
+        mFXHood.configAllowableClosedloopError(0, kClosedError, Constants.kLongCANTimeoutMs);
+
     }
 
     private Loop mLoop = new Loop() {
@@ -135,6 +173,7 @@ public class Shooter extends Subsystem{
                 System.out.println(sClassName + " state " + mSystemState);
                 // this subsystem is "on demand" so
                 mPeriodicIO.schedDeltaDesired = 0;
+                mFXHood.setSelectedSensorPosition(0.0); // TODO: Create homing sequence instead
                 stop(); // put into a known state
             }
         }
@@ -145,7 +184,7 @@ public class Shooter extends Subsystem{
                 SystemState newState;
                 switch (mSystemState) {
                 case SHOOTING:
-                    newState = ();
+                    newState = handleShooting();
                     break;
                 case HOLDING:
                 default:
@@ -180,13 +219,17 @@ public class Shooter extends Subsystem{
     }
 
     private SystemState handleHolding() {
-        mPeriodicIO.flywheelPercentDemand = mHoldSpeed;
+        mPeriodicIO.hoodDemand = mPeriodicIO.hoodPosition;
 
         return defaultStateTransfer();
     }
     
     private SystemState handleShooting() {
-        mPeriodicIO.flywheelVelocityDemand = rpmToTicksPer100Ms(getDistanceToVelocityRPM(mDistance));
+        if(mStateChanged){
+            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
+        }
+        mPeriodicIO.flywheelVelocityDemand = distanceToTicksPer100Ms(mDistance);
+        mPeriodicIO.hoodDemand = distanceToHoodPos(mDistance);
 
         return defaultStateTransfer();
     }
@@ -202,58 +245,35 @@ public class Shooter extends Subsystem{
     }
 
     public synchronized boolean readyToShoot() {
-        return mPeriodicIO.reachedDesiredSpeed;
+        return mPeriodicIO.reachedDesiredSpeed && mPeriodicIO.reachedDesiredHoodPosition;
     }
 
     public synchronized void setShootDistance(double distance) {
-        if (mSystemState != SystemState.SHOOTING) {
-            mWantedState = WantedState.SHOOT;
+        if(distance != mDistance){
+            mPeriodicIO.reachedDesiredSpeed = false;
+            mPeriodicIO.reachedDesiredHoodPosition = false;
+            mDistance = Math.max(kMinShootDistance, Math.min(distance, kMaxShootDistance));
         }
-        if (mSystemState != SystemState.SHOOTING || distance != mDistance) {
-            mSubsystemManager.scheduleMe(mListIndex, 1, false);
-            System.out.println("waking " + sClassName);
-        }
-
-        mDistance = Math.max(kMinShootDistance, Math.min(distance, 35.0));
+        
     }
 
-    public synchronized void setHoldSpeed(double speed) {
-        if (speed != mHoldSpeed && mSystemState == SystemState.HOLDING) {
-            mSubsystemManager.scheduleMe(mListIndex, 1, false);
-            System.out.println("waking " + sClassName);
-        }
-
-        mHoldSpeed = speed;
+    // TODO: Confirm if distance to flywheel velocity relation is linear
+    private double distanceToTicksPer100Ms(double distance){
+        return (kFlywheelSlope * distance) + kMinShootSpeed;
     }
 
-    // TODO: Figure out what units parameter will be in - potentially an angle?
-    // Convert angle (or other unit) to falcon ticks
-    // Find out gear ratio for hood - how many falcon rotations per angle are needed
-    public void setFlywheelHood(double position){
-        mPeriodicIO.hoodDemand = degreesToTicks(position);
-    }
-
-    // TODO: Determine if midshoot distance is needed
-    private double getDistanceToVelocityRPM(double distance) {
-        return kShootRate * Math.abs(distance - kMidShootDistance) + kMinShootSpeed;
+    // Hood range is from 0 to 27800 ticks - TODO: Verify range
+    // Hood range is from 15.82 degrees to 35.82 degrees 
+    // 1390 falcon ticks per degree
+    private double distanceToHoodPos(double distance){
+        return (kHoodSlope * distance) + kMinHoodPosition;
     }
 
     // Motor to flywheel pulley ratio is 60/16 (15/4 reduced)
     // Multiply by 2048 (falcon ticks per revolution) to get 7567.5
-    private double ticksPer100MsToRPM(double speed) {
-        return speed / 7567.5 * 1000.0 / 100.0 * 60.0;
-    }
-
-    private double rpmToTicksPer100Ms(double speed) {
-        return speed * 7567.5 / 1000.0 * 100.0 / 60.0;
-    }
-
-    // TODO: Find shooter hood conversion between angle and motor ticks
-    // Motor to hood angle gear ratio is
-    // Multiply gear ratios by 2048 to get 
-    private double degreesToTicks(double degrees) {
-        return degrees;
-    }
+    // private double ticksPer100MsToRPM(double speed) {
+    //     return speed / 7567.5 * 1000.0 / 100.0 * 60.0;
+    // }
 
     @Override
     public void readPeriodicInputs() {
@@ -261,21 +281,21 @@ public class Shooter extends Subsystem{
         mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
         mPeriodicIO.lastSchedStart   = now;
         
-        mPeriodicIO.flywheelRPM = ticksPer100MsToRPM(mFXLeftFlyWheel.getSelectedSensorVelocity());
-        mPeriodicIO.reachedDesiredSpeed = mPeriodicIO.flywheelRPM >= ticksPer100MsToRPM(mPeriodicIO.flywheelVelocityDemand) - kSpeedTolerance;
+        mPeriodicIO.flywheelVelocity = mFXLeftFlyWheel.getSelectedSensorVelocity();
+        mPeriodicIO.reachedDesiredSpeed = mFXLeftFlyWheel.getClosedLoopError() <= (kClosedError * 2); // mPeriodicIO.flywheelVelocity >= mPeriodicIO.flywheelVelocityDemand;
+        
+        mPeriodicIO.hoodPosition = mFXHood.getSelectedSensorPosition();
+        mPeriodicIO.reachedDesiredHoodPosition = mFXHood.getClosedLoopError() <= (kClosedError * 2);
     }
 
-    // TODO: Double check if the shooter motors will run using velocity control
-    // Motors did not function from velocity when testing on the test board
     @Override
     public void writePeriodicOutputs() {
         if(mSystemState == SystemState.SHOOTING){
+            System.out.println(mPeriodicIO.flywheelVelocityDemand);
             mFXLeftFlyWheel.set(ControlMode.Velocity, mPeriodicIO.flywheelVelocityDemand);  
-            mFXRightFlyWheel.set(ControlMode.Velocity, mPeriodicIO.flywheelVelocityDemand); 
-        } else {
-            mFXLeftFlyWheel.set(ControlMode.PercentOutput, mPeriodicIO.flywheelPercentDemand);
-            mFXRightFlyWheel.set(ControlMode.PercentOutput, mPeriodicIO.flywheelPercentDemand);
+            mFXRightFlyWheel.set(ControlMode.Velocity, mPeriodicIO.flywheelVelocityDemand);
         }
+        mFXHood.set(ControlMode.Position, mPeriodicIO.hoodDemand);
     }
 
 
@@ -283,14 +303,15 @@ public class Shooter extends Subsystem{
     public void stop() {
         mFXLeftFlyWheel.set(ControlMode.PercentOutput, 0.0);
         mFXRightFlyWheel.set(ControlMode.PercentOutput, 0.0);
+        mFXHood.set(ControlMode.PercentOutput, 0.0);
 
         mPeriodicIO.flywheelVelocityDemand = 0.0;
-        mPeriodicIO.flywheelPercentDemand = 0.0;
+        mPeriodicIO.hoodDemand = mPeriodicIO.hoodPosition;
     }
 
     @Override
     public void registerEnabledLoops(ILooper enabledLooper) {
-        enabledLooper.register(mLoop);
+        mListIndex = enabledLooper.register(mLoop);
     }
 
     @Override
@@ -305,25 +326,26 @@ public class Shooter extends Subsystem{
     @Override
     public String getLogHeaders() {
         // TODO Auto-generated method stub
-        return "Collector";
+        return "Shooter";
     }
 
     @Override
     public String getLogValues(boolean telemetry) {
         // TODO Auto-generated method stub
-        return "Collector.Values";
+        return "Shooter.Values";
     }
 
     @Override
     public void outputTelemetry() {
-        // TODO Auto-generated method stub
-        
+        SmartDashboard.putNumber("Hood Position", mPeriodicIO.hoodPosition);
+        SmartDashboard.putNumber("Flywheel Speed", mPeriodicIO.flywheelVelocity);
+        SmartDashboard.putNumber("Right Stator Current", mFXRightFlyWheel.getStatorCurrent());
+        SmartDashboard.putNumber("Left Stator Current", mFXLeftFlyWheel.getStatorCurrent());        
     }
 
     public static class PeriodicIO{
         //Logging
-        @SuppressWarnings("unused")
-        private final int mDefaultSchedDelta = 100; // axis updated every 100 msec
+        private final int mDefaultSchedDelta = 20; // axis updated every 20 msec
         private int    schedDeltaDesired;
         public  double schedDeltaActual;
         public  double schedDuration;
@@ -331,12 +353,12 @@ public class Shooter extends Subsystem{
 
         //Inputs
         private boolean reachedDesiredSpeed;
-        private double flywheelRPM;
+        private boolean reachedDesiredHoodPosition;
+        private double flywheelVelocity;
         private double hoodPosition;
 
         //Outputs
         private double flywheelVelocityDemand;
-        private double flywheelPercentDemand;
         private double hoodDemand;
     }
 
