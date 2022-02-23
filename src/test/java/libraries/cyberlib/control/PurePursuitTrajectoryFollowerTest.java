@@ -44,7 +44,8 @@ class PurePursuitTrajectoryFollowerTest {
         System.out.println(String.format("trajectoryTime: %f", trajectoryTime));
         System.out.println(trajectory.toString());
 
-        var mServeConfiguration = Robot2022.kSwerveConfiguration;
+        var mRobotConfiguration = new Robot2022();
+        var mServeConfiguration = mRobotConfiguration.getSwerveConfiguration();
 
         var follower = new PurePursuitTrajectoryFollower(mServeConfiguration);
         follower.follow(new TrajectoryIterator<TimedState<Pose2dWithCurvature>>(trajectory.getIndexView()));
