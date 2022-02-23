@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix.motorcontrol.ControlFrame;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
@@ -7,6 +8,7 @@ import com.ctre.phoenix.motorcontrol.can.TalonFX;
 
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 import frc.robot.Ports;
 import libraries.cheesylib.drivers.TalonFXFactory;
@@ -49,6 +51,8 @@ public class Indexer extends Subsystem{
     private boolean mStateChanged;
     private PeriodicIO mPeriodicIO = new PeriodicIO();
 
+    double indexSpeed;
+
     //Other
     private SubsystemManager mSubsystemManager;
     private int              mListIndex;
@@ -78,11 +82,17 @@ public class Indexer extends Subsystem{
         mAIBallEntering = new AnalogInput(Ports.ENTRANCE_BEAM_BREAK);
         mAIBallExiting = new AnalogInput(Ports.EXIT_BEAM_BREAK);
         mSubsystemManager = SubsystemManager.getInstance(sClassName);
+        indexSpeed = SmartDashboard.getNumber("Indexing Speed", -1.0);
+        if(indexSpeed == -1){
+            SmartDashboard.putNumber("Indexing Speed", 0.0);
+        }
         configMotors();
     }
 
     private void configMotors(){
         mFXIndexer.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor, 0, Constants.kLongCANTimeoutMs);
+
+        mFXIndexer.setControlFramePeriod(ControlFrame.Control_3_General,18);
 
         mFXIndexer.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
         mFXIndexer.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
@@ -175,7 +185,8 @@ public class Indexer extends Subsystem{
     private SystemState handleFeeding() {
         if(mStateChanged){
             mPeriodicIO.controlMode = ControlMode.PercentOutput; // TODO: Change to position
-            mPeriodicIO.indexerDemand = kFeedSpeed; // TODO: Update demand to move balls out of indexer by position
+            indexSpeed = SmartDashboard.getNumber("Indexing Speed", 0.0);
+            mPeriodicIO.indexerDemand = indexSpeed; // kFeedSpeed; // TODO: Update demand to move balls out of indexer by position
         }
 
         return defaultStateTransfer();

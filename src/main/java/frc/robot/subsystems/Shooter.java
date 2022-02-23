@@ -27,13 +27,13 @@ public class Shooter extends Subsystem{
     //Subsystem Constants
     private final double kMinShootDistance = 0; // Fender shot is 0
     private final double kMaxShootDistance = 146; // Approximate distance from fender to launch pad (the shooter's location in inches)
-    private final double kMinShootSpeed = 12000; // Ticks per 100Ms
+    private double kMinShootSpeed = 12000; // Ticks per 100Ms
     private final double kMaxShootSpeed = 20500;
-    private final double kFlywheelSlope = (kMaxShootSpeed - kMinShootSpeed) / (kMaxShootDistance - kMinShootDistance);
+    private double kFlywheelSlope = (kMaxShootSpeed - kMinShootSpeed) / (kMaxShootDistance - kMinShootDistance);
 
-    private final double kMinHoodPosition = 0; // Hood at lower hard stop
+    private double kMinHoodPosition = 0; // Hood at lower hard stop
     private final double kMaxHoodPosition = 27800; // Hood at max hard stop
-    private final double kHoodSlope = (kMaxHoodPosition - kMinHoodPosition) / (kMaxShootDistance - kMinShootDistance);
+    private double kHoodSlope = (kMaxHoodPosition - kMinHoodPosition) / (kMaxShootDistance - kMinShootDistance);
 
     //Configuration Constants
     private final double kFlywheelKp = 0.1;
@@ -41,7 +41,7 @@ public class Shooter extends Subsystem{
     private final double kFlywheelKd = 0.0;
     private final double kFlywheelKf = 0.05;
     private final double kClosedRamp = 0.5;
-    private final double kClosedError = 50.0;
+    private final double kClosedError = 25.0;
 
     private final double kFlywheelCurrentLimit = 40;
     private final double kHoodCurrentLimit = 5;
@@ -50,11 +50,13 @@ public class Shooter extends Subsystem{
     public enum SystemState {
         HOLDING,
         SHOOTING,
+        HOMING
     }
 
     public enum WantedState {
         HOLD,
         SHOOT,
+        HOME
     }
 
     private SystemState mSystemState;
@@ -62,8 +64,10 @@ public class Shooter extends Subsystem{
     private boolean mStateChanged;
     private PeriodicIO mPeriodicIO = new PeriodicIO();
 
+    double minSpeed;
+    double minHood;
+
     private double mDistance;
-    private double mHoldSpeed;
 
     //Other
     private SubsystemManager mSubsystemManager;
@@ -94,6 +98,14 @@ public class Shooter extends Subsystem{
         mFXRightFlyWheel = TalonFXFactory.createDefaultTalon(Ports.RIGHT_FLYWHEEL);
         mFXHood = TalonFXFactory.createDefaultTalon(Ports.SHOOTER_HOOD);
         mSubsystemManager = SubsystemManager.getInstance(sClassName);
+        double minSpeed = SmartDashboard.getNumber("Minimum Shoot Speed", -1.0);
+        double minHood = SmartDashboard.getNumber("Minimum Hood Angle", -1.0);
+        if(minSpeed == -1.0){
+            SmartDashboard.putNumber("Minimum Shoot Speed", 0.0);
+        }
+        if(minHood == -1.0){
+            SmartDashboard.putNumber("Minimum Hood Angle", 0.0);
+        }
         configMotors();
     }
 
@@ -186,6 +198,9 @@ public class Shooter extends Subsystem{
                 case SHOOTING:
                     newState = handleShooting();
                     break;
+                case HOMING:
+                    newState = handleHoming();
+                    break;
                 case HOLDING:
                 default:
                     newState = handleHolding();
@@ -228,8 +243,27 @@ public class Shooter extends Subsystem{
         if(mStateChanged){
             mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
         }
-        mPeriodicIO.flywheelVelocityDemand = distanceToTicksPer100Ms(mDistance);
-        mPeriodicIO.hoodDemand = distanceToHoodPos(mDistance);
+        // mPeriodicIO.flywheelVelocityDemand = distanceToTicksPer100Ms(mDistance);
+        // mPeriodicIO.hoodDemand =             distanceToHoodPos(mDistance);
+        minSpeed = SmartDashboard.getNumber("Minimum Shoot Speed", 0.0);
+        minHood = SmartDashboard.getNumber("Minimum Hood Angle", 0.0);
+        mPeriodicIO.flywheelVelocityDemand = minSpeed;
+        mPeriodicIO.hoodDemand = minHood;
+
+        return defaultStateTransfer();
+    }
+
+    private SystemState handleHoming() {
+        if(mStateChanged) {
+            mPeriodicIO.hoodDemand = -30000;
+            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
+        }
+
+        if(mPeriodicIO.hoodCurrent >= 5.0) {
+            mFXHood.setSelectedSensorPosition(0.0);
+            mPeriodicIO.hoodDemand = 0;
+            mPeriodicIO.schedDeltaDesired = 0;
+        }
 
         return defaultStateTransfer();
     }
@@ -238,6 +272,8 @@ public class Shooter extends Subsystem{
         switch(mWantedState){
             case SHOOT:
                 return SystemState.SHOOTING;
+            case HOME:
+                return SystemState.HOMING;
             case HOLD:
             default:
                 return SystemState.HOLDING;
@@ -245,7 +281,7 @@ public class Shooter extends Subsystem{
     }
 
     public synchronized boolean readyToShoot() {
-        return mPeriodicIO.reachedDesiredSpeed && mPeriodicIO.reachedDesiredHoodPosition;
+        return mSystemState == SystemState.SHOOTING && (mPeriodicIO.reachedDesiredSpeed && mPeriodicIO.reachedDesiredHoodPosition);
     }
 
     public synchronized void setShootDistance(double distance) {
@@ -282,16 +318,16 @@ public class Shooter extends Subsystem{
         mPeriodicIO.lastSchedStart   = now;
         
         mPeriodicIO.flywheelVelocity = mFXLeftFlyWheel.getSelectedSensorVelocity();
-        mPeriodicIO.reachedDesiredSpeed = mFXLeftFlyWheel.getClosedLoopError() <= (kClosedError * 2); // mPeriodicIO.flywheelVelocity >= mPeriodicIO.flywheelVelocityDemand;
+        mPeriodicIO.reachedDesiredSpeed = mFXLeftFlyWheel.getClosedLoopError() <= (300); // mPeriodicIO.flywheelVelocity >= mPeriodicIO.flywheelVelocityDemand;
         
         mPeriodicIO.hoodPosition = mFXHood.getSelectedSensorPosition();
-        mPeriodicIO.reachedDesiredHoodPosition = mFXHood.getClosedLoopError() <= (kClosedError * 2);
+        mPeriodicIO.hoodCurrent = mFXHood.getStatorCurrent();
+        mPeriodicIO.reachedDesiredHoodPosition = mFXHood.getClosedLoopError() <= (100);
     }
 
     @Override
     public void writePeriodicOutputs() {
         if(mSystemState == SystemState.SHOOTING){
-            System.out.println(mPeriodicIO.flywheelVelocityDemand);
             mFXLeftFlyWheel.set(ControlMode.Velocity, mPeriodicIO.flywheelVelocityDemand);  
             mFXRightFlyWheel.set(ControlMode.Velocity, mPeriodicIO.flywheelVelocityDemand);
         }
@@ -339,6 +375,8 @@ public class Shooter extends Subsystem{
     public void outputTelemetry() {
         SmartDashboard.putNumber("Hood Position", mPeriodicIO.hoodPosition);
         SmartDashboard.putNumber("Flywheel Speed", mPeriodicIO.flywheelVelocity);
+        SmartDashboard.putBoolean("Reached Desired Speed", mPeriodicIO.reachedDesiredSpeed);
+        SmartDashboard.putBoolean("Reached Desired Hood", mPeriodicIO.reachedDesiredHoodPosition);
         SmartDashboard.putNumber("Right Stator Current", mFXRightFlyWheel.getStatorCurrent());
         SmartDashboard.putNumber("Left Stator Current", mFXLeftFlyWheel.getStatorCurrent());        
     }
@@ -356,6 +394,7 @@ public class Shooter extends Subsystem{
         private boolean reachedDesiredHoodPosition;
         private double flywheelVelocity;
         private double hoodPosition;
+        private double hoodCurrent;
 
         //Outputs
         private double flywheelVelocityDemand;

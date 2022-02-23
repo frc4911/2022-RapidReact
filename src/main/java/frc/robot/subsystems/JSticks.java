@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 import libraries.cheesylib.loops.ILooper;
 import libraries.cheesylib.loops.Loop;
@@ -38,6 +39,7 @@ public class JSticks extends Subsystem{
 	private Superstructure mSuperstructure;
     private Swerve mSwerve;
 
+    @SuppressWarnings("unused")
     private int mListIndex;
 
     private static String sClassName;
@@ -66,6 +68,10 @@ public class JSticks extends Subsystem{
             mSwerve.mSwerveConfiguration.kSwerveHeadingKi,
             mSwerve.mSwerveConfiguration.kSwerveHeadingKd,
             mSwerve.mSwerveConfiguration.kSwerveHeadingKf);
+        // double testKp = SmartDashboard.getNumber("kP", -1.0);
+        // if(testKp == -1.0){
+        //     SmartDashboard.putNumber("kP", 0.0);
+        // }
         mDriver = new Xbox();
         mOperator = new Xbox();
 
@@ -127,8 +133,7 @@ public class JSticks extends Subsystem{
 
     @Override
     public void stop() {
-        // TODO Auto-generated method stub
-        
+
     }
 
     private SystemState handleReadingButtons() {
@@ -146,6 +151,15 @@ public class JSticks extends Subsystem{
 		double swerveXInput = mPeriodicIO.dr_LeftStickY_Translate;
 		double swerveRotationInput = mPeriodicIO.dr_RightStickX_Rotate;
  
+        
+        // double testKp = SmartDashboard.getNumber("kP", 0.01);
+
+        mHeadingController.setPIDFConstants(
+            mSwerve.mSwerveConfiguration.kSwerveHeadingKp, // testKp,
+            mSwerve.mSwerveConfiguration.kSwerveHeadingKi,
+            mSwerve.mSwerveConfiguration.kSwerveHeadingKd,
+            mSwerve.mSwerveConfiguration.kSwerveHeadingKf);
+
         // NEW SWERVE
         boolean maintainHeading = mShouldMaintainHeading.update(swerveRotationInput == 0, 0.2);
         boolean changeHeadingSetpoint = shouldChangeHeadingSetpoint.update(maintainHeading);
@@ -173,6 +187,7 @@ public class JSticks extends Subsystem{
 		}
         // END NEW SWERVE
 
+        // CLIMBER CONTROL
         // -1: Do nothing
         //  0: Extend
         //  1: Retract
@@ -184,6 +199,7 @@ public class JSticks extends Subsystem{
         }
 		mSuperstructure.setOpenLoopClimb(mPeriodicIO.op_LeftStickY_ClimberElevator, deploySlappyState);
         
+        // Will add clauses for different shoot distances, aimed/auto shooting, auto climbing, and others
         currentState = activeBtnIsReleased(currentState);
         if (currentState == Superstructure.WantedState.HOLD) {
             if (mPeriodicIO.op_POV0_ManualShot_Fender) {
@@ -194,7 +210,7 @@ public class JSticks extends Subsystem{
             } else if (mPeriodicIO.op_LeftTrigger_Back) {
                 mSuperstructure.setWantedState(Superstructure.WantedState.BACK);
             } else if (previousState != currentState) {
-                // mSuperstructure.setWantedState(Superstructure.WantedState.HOLD);
+                mSuperstructure.setWantedState(Superstructure.WantedState.HOLD);
             }
 
         }
@@ -206,12 +222,6 @@ public class JSticks extends Subsystem{
                 return !mPeriodicIO.op_POV0_ManualShot_Fender ? Superstructure.WantedState.HOLD : currentState;
             case COLLECT:
                 return !mPeriodicIO.op_RightTrigger_Collect ? Superstructure.WantedState.HOLD : currentState;
-            // case MANUAL_SHOOT: IDK ABOUT THIS EITHER -CALEB WEST
-            // if (!mPeriodicIO.opPOV0_MANUAL10 && !mPeriodicIO.opPOV90_MANUAL15 &&
-            // !mPeriodicIO.opPOV180_MANUAL20 && !mPeriodicIO.opPOV270_MANUAL25) {
-            // return Superstructure.WantedState.HOLD;
-            // }
-            // return currentState;
             case BACK:
                 return !mPeriodicIO.op_LeftTrigger_Back ? Superstructure.WantedState.HOLD : currentState;
             default:
@@ -239,7 +249,7 @@ public class JSticks extends Subsystem{
         mPeriodicIO.op_BButton_StopShooter = mOperator.getButton(Xbox.B_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.op_XButton_RetractSlappySticks = mOperator.getButton(Xbox.X_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.op_YButton_ExtendSlappySticks = mOperator.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
-        mPeriodicIO.op_POV0_ManualShot_Fender = mOperator.getButton(Xbox.POV0_0, CW.PRESSED_EDGE); // Test if needs Pressed_edge or level
+        mPeriodicIO.op_POV0_ManualShot_Fender = mOperator.getButton(Xbox.POV0_0, CW.PRESSED_LEVEL); // Test if needs Pressed_edge or level
 
     }
 
@@ -258,19 +268,16 @@ public class JSticks extends Subsystem{
 
     @Override
     public String getLogHeaders() {
-        // TODO Auto-generated method stub
         return "Jsticks";
     }
 
     @Override
     public String getLogValues(boolean telemetry) {
-        // TODO Auto-generated method stub
         return "Jsticks.Values";
     }
 
     @Override
     public void outputTelemetry() {
-        // TODO Auto-generated method stub
         
     }   
 

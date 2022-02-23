@@ -34,7 +34,7 @@ public class Robot2022 implements RobotConfiguration {
                 Units.inchesToMeters(20.75),
                 Units.feetToMeters(1.0), // Max speed in feet per second: Theoretical max is 17.065 ft per second
                 Math.toRadians(270), // Max change in degrees per second
-                .018, 0, 0, 0 // kSwerveHeadingKp,kSwerveHeadingKi,kSwerveHeadingKp,kSwerveHeadingKf
+                0.01, 0, 0, 0 // kSwerveHeadingKp,kSwerveHeadingKi,kSwerveHeadingKp,kSwerveHeadingKf
         );
     }
 
