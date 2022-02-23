@@ -56,9 +56,9 @@ public class PigeonTwo implements IMU {
     }
 
     @Override
-    public void setAngle(double angle) {
-        pigeon.setYaw(-angle, Constants.kLongCANTimeoutMs);
-        System.out.println("Pigeon angle set to: " + angle);
+    public void setAngle(double angleInDegrees) {
+        pigeon.setYaw(-angleInDegrees, Constants.kLongCANTimeoutMs);
+        System.out.println("Pigeon angle set to: " + angleInDegrees);
     }
 
     @Override

@@ -66,10 +66,10 @@ public class Pigeon implements IMU {
     }
 
     @Override
-    public void setAngle(double angle) {
-        pigeon.setFusedHeading(-angle * 64.0, Constants.kLongCANTimeoutMs);
-        pigeon.setYaw(-angle, Constants.kLongCANTimeoutMs);
-        System.out.println("Pigeon angle set to: " + angle);
+    public void setAngle(double angleInDegrees) {
+        pigeon.setFusedHeading(-angleInDegrees * 64.0, Constants.kLongCANTimeoutMs);
+        pigeon.setYaw(-angleInDegrees, Constants.kLongCANTimeoutMs);
+        System.out.println("Pigeon angle set to: " + angleInDegrees);
     }
 
     @Override
