@@ -330,22 +330,20 @@ public class Swerve extends Subsystem {
     }
 
     private void updatePathFollower(double now) {
+        HolonomicDriveSignal driveSignal = null;
         if (mControlState == ControlState.PATH_FOLLOWING) {
-            // Get updated drive signal
-            HolonomicDriveSignal driveSignal = null;
 
-            Optional<HolonomicDriveSignal> trajectorySignal = mMotionPlanner.update(now, mPeriodicIO.robotPose, mPeriodicIO.chassisSpeeds);
+            // Get updated drive signal
+            var trajectorySignal = mMotionPlanner.update(now, mPeriodicIO.robotPose, mPeriodicIO.chassisSpeeds);
             mPeriodicIO.error = mMotionPlanner.error();
             mPeriodicIO.path_setpoint = mMotionPlanner.setpoint();
 
             if (!mOverrideTrajectory) {
-                if (trajectorySignal.isPresent()) {
-                    driveSignal = trajectorySignal.get();
+                if (trajectorySignal != null) {
+                    driveSignal = trajectorySignal;
                 }
             }
-
             setPathFollowingVelocity(driveSignal);
-
         } else {
             DriverStation.reportError("Swerve is not in path following state.", false);
         }
