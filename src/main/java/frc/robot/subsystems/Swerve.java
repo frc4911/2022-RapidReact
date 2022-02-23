@@ -46,8 +46,10 @@ public class Swerve extends Subsystem {
 
 	// Module declaration
 	private final List<SwerveDriveModule> mModules = new ArrayList<>();
-	public SwerveDriveModule mFrontRight=null;
-	private SwerveDriveModule mFrontLeft=null, mBackLeft=null, mBackRight=null;
+	private final SwerveDriveModule mFrontRight;
+    private final SwerveDriveModule mFrontLeft;
+    private final SwerveDriveModule mBackLeft;
+    private final SwerveDriveModule mBackRight;
 
 	double lastUpdateTimestamp = 0;
 
@@ -86,10 +88,6 @@ public class Swerve extends Subsystem {
     private Swerve(String caller) {
         sClassName = this.getClass().getSimpleName();
         printUsage(caller);
-        int m0 = 0;
-        int m1 = 0;
-        int m2 = 0;
-        int m3 = 0;
 
         mRobotConfiguration = RobotConfiguration.getRobotConfiguration(RobotName.name);
 
@@ -104,9 +102,7 @@ public class Swerve extends Subsystem {
 		mOdometry = new SwerveDriveOdometry(mKinematics, mIMU.getYaw());
         mPeriodicIO.robotPose = mOdometry.getPose();
 
-        // mMotionPlanner = new DriveMotionPlanner();
-
-//        generator = TrajectoryGenerator.getInstance();
+         mMotionPlanner = new DriveMotionPlanner();
     }
 
     private final Loop loop = new Loop() {
@@ -288,11 +284,10 @@ public class Swerve extends Subsystem {
 
     /**
      * Updates the field relative position of the robot.
-     *
+     * <p>
      * @param timestamp The current time
      */
     private void updateOdometry(double timestamp) {
-
         var frontRight = mFrontRight.getState();
         var frontLeft = mFrontLeft.getState();
         var backLeft = mBackLeft.getState();
@@ -302,7 +297,6 @@ public class Swerve extends Subsystem {
         mPeriodicIO.chassisSpeeds = mKinematics.toChassisSpeeds(frontRight, frontLeft, backLeft, backRight);
         mPeriodicIO.robotPose = mOdometry.updateWithTime(timestamp, getAngle(), frontRight, frontLeft, backLeft, backRight);
     }
-
 
     /**
      * Gets whether path following is done or not.  Typically, called in autonomous actions.
@@ -359,6 +353,8 @@ public class Swerve extends Subsystem {
 
     /**
      * Configure modules for open loop control
+     * <p>
+     * @param signal The HolonomicDriveSignal to apply
      */
     public synchronized void setOpenLoop(HolonomicDriveSignal signal) {
         if (mControlState != ControlState.MANUAL) {
@@ -370,6 +366,8 @@ public class Swerve extends Subsystem {
 
     /**
      * Configure modules for path following.
+     * <p>
+     * @param signal The HolonomicDriveSignal to apply
      */
     public synchronized void setPathFollowingVelocity(HolonomicDriveSignal signal) {
         if (mControlState != ControlState.PATH_FOLLOWING) {
@@ -407,7 +405,7 @@ public class Swerve extends Subsystem {
 
     /**
      * Sets inputs from driver in teleop mode.
-     *
+     * <p>
      * @param forward percent to drive forwards/backwards (as double [-1.0,1.0]).
      * @param strafe percent to drive sideways left/right (as double [-1.0,1.0]).
      * @param rotation percent to rotate chassis (as double [-1.0,1.0]).
@@ -546,7 +544,7 @@ public class Swerve extends Subsystem {
 
         // Updated as part of trajectory following
         public Pose2d error = Pose2d.identity();
-        public TimedState<Pose2dWithCurvature> path_setpoint = new TimedState<Pose2dWithCurvature>(Pose2dWithCurvature.identity());
+        public TimedState<Pose2dWithCurvature> path_setpoint = new TimedState<>(Pose2dWithCurvature.identity());
 
 
         // Inputs

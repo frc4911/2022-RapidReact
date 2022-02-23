@@ -43,7 +43,8 @@ class HolonomicTrajectoryFollowerTest {
         System.out.println(String.format("trajectoryTime: %f", trajectoryTime));
         System.out.println(trajectory.toString());
 
-        var mServeConfiguration = Robot2022.kSwerveConfiguration;
+        var mRobotConfiguration = new Robot2022();
+        var mServeConfiguration = mRobotConfiguration.getSwerveConfiguration();
 
         var follower = new HolonomicTrajectoryFollower(
                 new PidGains(0.4, 0.0, 0.025),
@@ -99,7 +100,6 @@ class HolonomicTrajectoryFollowerTest {
             // Now update odometry (assume swerve modules execute perfectly )
             position = m_odometry.updateWithTime(currentTime, gyro, swerveModuleStates);
             System.out.printf("time: %.2f - %s%n", currentTime, position.toString());
-
-        }
+       }
     }
 }
