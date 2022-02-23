@@ -79,7 +79,7 @@ public class SwerveDriveModule extends Subsystem {
 		public int kSteerMotorContinuousCurrentLimit = 20; // amps
 		public int kSteerMotorPeakCurrentLimit = 60; // amps
 		public int kSteerMotorPeakCurrentDuration = 200; // ms
-		public boolean kSteerMotorEnableCurrentLimit = true;
+		public boolean kSteerMotorEnableCurrentLimit = false;
 		public double kSteerMotorMaxVoltage = 7.0; // volts
 		public boolean kSteerMotorEnableVoltageCompensation = false;
 		public int kSteerMotorVoltageMeasurementFilter = 8; // # of samples in rolling average
@@ -105,7 +105,7 @@ public class SwerveDriveModule extends Subsystem {
 		public int kDriveContinuousCurrentLimit = 30; // amps
 		public int kDrivePeakCurrentLimit = 50; // amps
 		public int kDrivePeakCurrentDuration = 200; // ms
-		public boolean kDriveEnableCurrentLimit = true;
+		public boolean kDriveEnableCurrentLimit = false;
 		public double kDriveMaxVoltage = 12.0; // 10 //volts
 		public double kDriveNominalVoltage = 0.0; //volts
 		public int kDriveVoltageMeasurementFilter = 8; // # of samples in rolling average
@@ -201,6 +201,7 @@ public class SwerveDriveModule extends Subsystem {
 
             mSteerMotor.configGetSupplyCurrentLimit(supplyCurrLimit, Constants.kLongCANTimeoutMs);
         }
+        //mSteerMotor.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, 30, 30, 0));
 
         // TODO: Set these correctly
         mSteerMotor.configMotionAcceleration(0.9 * mConstants.kSteerTicksPerUnitVelocity * 0.25, Constants.kLongCANTimeoutMs);
@@ -263,6 +264,8 @@ public class SwerveDriveModule extends Subsystem {
 
             mDriveMotor.configGetSupplyCurrentLimit(supplyCurrLimit, Constants.kLongCANTimeoutMs);
         }
+
+        mDriveMotor.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, 90, 90, 0));
 
 //        // Slot 0 is reserved for MotionMagic
 //        mDriveMotor.selectProfileSlot(0, 0);
@@ -542,6 +545,7 @@ public class SwerveDriveModule extends Subsystem {
         // SmartDashboard.putNumber(mModuleName + "Steer", periodicIO.drivePosition);
         // SmartDashboard.putNumber(mModuleName + "Velocity", mDriveMotor.getSelectedSensorVelocity(0));
         // SmartDashboard.putNumber(mModuleName + "Velocity", encVelocityToInchesPerSecond(periodicIO.velocity));
+        // SmartDashboard.putNumber(mModuleName + ": Current", mSteerMotor.getStatorCurrent());
         if(Constants.kDebuggingOutput) {
             SmartDashboard.putNumber(mModuleName + "Pulse Width", mSteerMotor.getSelectedSensorPosition(0));
             if(mSteerMotor.getControlMode() == ControlMode.MotionMagic)

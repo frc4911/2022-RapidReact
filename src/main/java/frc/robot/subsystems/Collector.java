@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix.motorcontrol.ControlFrame;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
@@ -7,6 +8,7 @@ import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 import frc.robot.Ports;
 import libraries.cheesylib.drivers.TalonFXFactory;
@@ -18,7 +20,7 @@ import libraries.cheesylib.subsystems.SubsystemManager;
 public class Collector extends Subsystem{
 
     //Hardware
-    //private final TalonFX mFXCollector;
+    private final TalonFX mFXCollector;
     private final Solenoid mSolenoid;
 
     //Subsystem Constants
@@ -59,6 +61,8 @@ public class Collector extends Subsystem{
     private SolenoidState mSolenoidState;
     private boolean mRunCollectorLoop;
 
+    double collectSpeed;
+
     //Other
     private SubsystemManager mSubsystemManager;
     private int              mListIndex;
@@ -84,19 +88,25 @@ public class Collector extends Subsystem{
     private Collector(String caller){
         sClassName = this.getClass().getSimpleName();
         printUsage(caller);
-        // mFXCollector = TalonFXFactory.createDefaultTalon(Ports.COLLECTOR);
+        mFXCollector = TalonFXFactory.createDefaultTalon(Ports.COLLECTOR);
         mSolenoid = new Solenoid(PneumaticsModuleType.CTREPCM, Ports.COLLECTOR_DEPLOY);
         mSubsystemManager = SubsystemManager.getInstance(sClassName);
+        collectSpeed = SmartDashboard.getNumber("Collecting Speed", -1.0);
+        if(collectSpeed == -1){
+            SmartDashboard.putNumber("Collecting Speed", 0.0);
+        }
         configMotors();
     }
 
     private void configMotors(){
-        // mFXCollector.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
-        // mFXCollector.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
+        mFXCollector.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
+        mFXCollector.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
 
-        // mFXCollector.setInverted(false); // TODO: Need to test
+        mFXCollector.setControlFramePeriod(ControlFrame.Control_3_General,18);
 
-        // mFXCollector.setNeutralMode(NeutralMode.Coast);
+        mFXCollector.setInverted(false); // TODO: Need to test
+
+        mFXCollector.setNeutralMode(NeutralMode.Coast);
     }
 
     private Loop mLoop = new Loop() {
@@ -168,7 +178,9 @@ public class Collector extends Subsystem{
     }
     
     private SystemState handleCollecting() {
-        updateCollector(kCollectSpeed);
+        collectSpeed = SmartDashboard.getNumber("Collecting Speed", 0.0);
+        updateCollector(collectSpeed);
+        // updateCollector(kCollectSpeed);
 
         return defaultStateTransfer();
     }
@@ -218,13 +230,13 @@ public class Collector extends Subsystem{
             mSolenoidState = mPeriodicIO.solenoidDemand;
             mSolenoid.set(mPeriodicIO.solenoidDemand.get());
         }
-        //mFXCollector.set(ControlMode.PercentOutput, mPeriodicIO.collectorDemand);
+        mFXCollector.set(ControlMode.PercentOutput, mPeriodicIO.collectorDemand);
     }
 
 
     @Override
     public void stop() {
-        //mFXCollector.set(ControlMode.PercentOutput, 0.0);
+        mFXCollector.set(ControlMode.PercentOutput, 0.0);
         mSolenoid.set(SolenoidState.RETRACT.get());   
 
         mPeriodicIO.collectorDemand = 0.0;
@@ -247,19 +259,16 @@ public class Collector extends Subsystem{
 
     @Override
     public String getLogHeaders() {
-        // TODO Auto-generated method stub
         return "Collector";
     }
 
     @Override
     public String getLogValues(boolean telemetry) {
-        // TODO Auto-generated method stub
         return "Collector.Values";
     }
 
     @Override
     public void outputTelemetry() {
-        // TODO Auto-generated method stub
         
     }
 
