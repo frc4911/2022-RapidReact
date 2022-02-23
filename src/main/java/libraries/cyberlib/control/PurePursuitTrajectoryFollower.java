@@ -1,7 +1,6 @@
 package libraries.cyberlib.control;
 
 import frc.robot.Constants;
-import frc.robot.subsystems.SwerveConfiguration;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Pose2dWithCurvature;
 import libraries.cheesylib.geometry.Translation2d;
@@ -17,10 +16,8 @@ public class PurePursuitTrajectoryFollower extends TrajectoryFollower<HolonomicD
     private boolean mIsReversed = false;
     private boolean mIsReversedCalulated = false;
     private boolean mFinished = false;
-    private final SwerveConfiguration mSwerveConfiguration;
 
-    public PurePursuitTrajectoryFollower(SwerveConfiguration swerveConfiguration) {
-        this.mSwerveConfiguration = swerveConfiguration;
+    public PurePursuitTrajectoryFollower() {
     }
 
     @Override
@@ -51,7 +48,7 @@ public class PurePursuitTrajectoryFollower extends TrajectoryFollower<HolonomicD
                     , lookahead_state.velocity(), lookahead_state.acceleration());
         }
 
-        var normalizedVelocity = lookahead_state.velocity() / mSwerveConfiguration.maxSpeedInMetersPerSecond;
+        var normalizedVelocity = lookahead_state.velocity();
 
         // Now calculate velocities
         Translation2d segmentVelocity = new Translation2d(
@@ -72,11 +69,8 @@ public class PurePursuitTrajectoryFollower extends TrajectoryFollower<HolonomicD
         // w = (theta(1) - theta(0)) / dt
         double rotationVelocity = Angles.normalizeAngle(theta1 - theta0) / dt;
 
-        // Scale it to a percentage of max angular velocity as Swerve will scale it correctly
-        rotationVelocity /= mSwerveConfiguration.maxSpeedInRadiansPerSecond;
-
         var signal = new HolonomicDriveSignal(segmentVelocity, rotationVelocity, true);
-        System.out.println(signal); // brian leave until fixed
+
         return signal;
     }
 

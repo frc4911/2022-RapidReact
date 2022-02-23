@@ -47,7 +47,7 @@ class PurePursuitTrajectoryFollowerTest {
         var mRobotConfiguration = new Robot2022();
         var mServeConfiguration = mRobotConfiguration.getSwerveConfiguration();
 
-        var follower = new PurePursuitTrajectoryFollower(mServeConfiguration);
+        var follower = new PurePursuitTrajectoryFollower();
         follower.follow(new TrajectoryIterator<TimedState<Pose2dWithCurvature>>(trajectory.getIndexView()));
 
         var chassisSpeeds = new ChassisSpeeds();

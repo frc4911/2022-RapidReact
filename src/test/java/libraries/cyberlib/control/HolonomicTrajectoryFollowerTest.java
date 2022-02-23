@@ -100,7 +100,6 @@ class HolonomicTrajectoryFollowerTest {
             // Now update odometry (assume swerve modules execute perfectly )
             position = m_odometry.updateWithTime(currentTime, gyro, swerveModuleStates);
             System.out.printf("time: %.2f - %s%n", currentTime, position.toString());
-
-        }
+       }
     }
 }
