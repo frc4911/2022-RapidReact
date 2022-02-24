@@ -51,7 +51,7 @@ class TrajectoryGeneratorTest {
         return TrajectoryGenerator.generateTrajectory(waypoints, config);
     }
 
-//    @Test
+    @Test
     @SuppressWarnings("LocalVariableName")
     void testGenerationAndConstraints() {
         // TODO:  INVESTIGATE WHY THIS FAILS
@@ -63,6 +63,7 @@ class TrajectoryGeneratorTest {
 
         while (t < duration) {
             var point = trajectory.sample(t);
+            System.out.println(point.toString());
             t += dt;
             assertAll(
                     () -> assertTrue(Math.abs(point.velocityMetersPerSecond) < feetToMeters(12.0) + 0.05),

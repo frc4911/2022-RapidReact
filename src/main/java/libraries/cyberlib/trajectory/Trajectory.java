@@ -366,6 +366,10 @@ public class Trajectory {
             // TODO:  Consider explicitly calculating angular velocity and acceleration like translational
             //  was above verses simply using lerp below.
 
+            final double newThetaV = angularVelocityRadiansPerSecond + (angularAccelerationRadiansPerSecondSq * deltaT);
+            final double newThetaDelta = (angularVelocityRadiansPerSecond * deltaT
+                    + 0.5 * angularAccelerationRadiansPerSecondSq * Math.pow(deltaT, 2)) * (reversing ? -1.0 : 1.0);
+
             // Return the new state. To find the new position for the new state, we need
             // to interpolate between the two endpoint poses. The fraction for
             // interpolation is the change in position (delta s) divided by the total
@@ -378,8 +382,10 @@ public class Trajectory {
                     lerp(poseMeters, endValue.poseMeters, interpolationFrac),
                     lerp(curvatureRadPerMeter, endValue.curvatureRadPerMeter, interpolationFrac),
                     lerpAngle(orientationRadians, endValue.orientationRadians, interpolationFrac),
-                    lerp(angularVelocityRadiansPerSecond, endValue.angularVelocityRadiansPerSecond, interpolationFrac),
-                    lerp(accelerationMetersPerSecondSq, endValue.accelerationMetersPerSecondSq, interpolationFrac)
+//                    lerp(angularVelocityRadiansPerSecond, endValue.angularVelocityRadiansPerSecond, interpolationFrac),
+//                    newThetaDelta,
+                    newThetaV,
+                    angularAccelerationRadiansPerSecondSq
             );
         }
 

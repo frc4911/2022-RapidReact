@@ -7,10 +7,7 @@ import libraries.cheesylib.trajectory.TrajectoryIterator;
 import libraries.cheesylib.trajectory.TrajectorySamplePoint;
 import libraries.cheesylib.trajectory.timing.TimedState;
 import libraries.cheesylib.util.Util;
-import libraries.cyberlib.control.HolonomicFeedforward;
-import libraries.cyberlib.control.HolonomicTrajectoryFollower;
-import libraries.cyberlib.control.PidGains;
-import libraries.cyberlib.control.SwerveDriveFeedforwardGains;
+import libraries.cyberlib.control.*;
 import libraries.cyberlib.kinematics.ChassisSpeeds;
 import libraries.cyberlib.utils.HolonomicDriveSignal;
 
@@ -38,7 +35,7 @@ public class SwerveDriveMotionPlanner {
         mFollowerType = type;
     }
 
-    HolonomicTrajectoryFollower follower;
+    TrajectoryFollower follower;
 
 
     public SwerveDriveMotionPlanner() {

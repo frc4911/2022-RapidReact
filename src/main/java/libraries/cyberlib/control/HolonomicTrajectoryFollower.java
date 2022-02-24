@@ -80,6 +80,6 @@ public class HolonomicTrajectoryFollower extends TrajectoryFollower<HolonomicDri
         mStrafeController.reset();
         mRotationController.reset();
 
-        mFinished = false;
+            mFinished = false;
     }
 }
