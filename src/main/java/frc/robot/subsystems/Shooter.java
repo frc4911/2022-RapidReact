@@ -23,7 +23,7 @@ public class Shooter extends Subsystem{
 
     //Hardware
     private final TalonFX mFXLeftFlyWheel, mFXRightFlyWheel;
-    private final TalonFX mFXHood; // TODO: Decide if hood adjustment will be controlled by SHOOTING state or by superstructure
+    private final TalonFX mFXHood;
 
     //Subsystem Constants
     private final double kMinShootDistance = 0; // Fender shot is 0
@@ -50,14 +50,12 @@ public class Shooter extends Subsystem{
     //Subsystem States
     public enum SystemState {
         HOLDING,
-        SHOOTING,
-        HOMING
+        SHOOTING
     }
 
     public enum WantedState {
         HOLD,
         SHOOT,
-        HOME
     }
 
     private SystemState mSystemState;
@@ -65,6 +63,10 @@ public class Shooter extends Subsystem{
     private boolean mStateChanged;
     private LatchedBoolean mSystemStateChange = new LatchedBoolean();
     private PeriodicIO mPeriodicIO = new PeriodicIO();
+    private boolean hoodHomed;
+    private final double hoodMovementThreshhold = 5;
+    private final int hoodMovementSampleCnt = 10;
+    private int hoodMovementLowCnt = hoodMovementSampleCnt;
 
     double minSpeed;
     double minHood;
@@ -100,14 +102,14 @@ public class Shooter extends Subsystem{
         mFXRightFlyWheel = TalonFXFactory.createDefaultTalon(Ports.RIGHT_FLYWHEEL);
         mFXHood = TalonFXFactory.createDefaultTalon(Ports.SHOOTER_HOOD);
         mSubsystemManager = SubsystemManager.getInstance(sClassName);
-        double minSpeed = SmartDashboard.getNumber("Set Shoot Speed", -1.0);
-        double minHood = SmartDashboard.getNumber("Set Hood Angle", -1.0);
-        if(minSpeed == -1.0){
-            SmartDashboard.putNumber("Set Shoot Speed", 0.0);
-        }
-        if(minHood == -1.0){
-            SmartDashboard.putNumber("Set Hood Angle", 0.0);
-        }
+        // double minSpeed = SmartDashboard.getNumber("Set Shoot Speed", -1.0);
+        // double minHood = SmartDashboard.getNumber("Set Hood Angle", -1.0);
+        // if(minSpeed == -1.0){
+        //     SmartDashboard.putNumber("Set Shoot Speed", 0.0);
+        // }
+        // if(minHood == -1.0){
+        //     SmartDashboard.putNumber("Set Hood Angle", 0.0);
+        // }
         configMotors();
     }
 
@@ -185,10 +187,17 @@ public class Shooter extends Subsystem{
                 mWantedState = WantedState.HOLD;
                 mStateChanged = true;
                 System.out.println(sClassName + " state " + mSystemState);
-                // this subsystem is "on demand" so
-                mPeriodicIO.schedDeltaDesired = 0;
-                mFXHood.setSelectedSensorPosition(0.0); // TODO: Create homing sequence instead
-                stop(); // put into a known state
+                switch (phase) {
+                    case DISABLED:
+                    case AUTONOMOUS: 
+                        mPeriodicIO.schedDeltaDesired = 0; // goto sleep
+                        break;
+                    default:
+                        mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
+                        break;
+                }
+                hoodHomed = false;
+                hoodMovementLowCnt = hoodMovementSampleCnt;
             }
         }
 
@@ -200,9 +209,6 @@ public class Shooter extends Subsystem{
                     switch (mSystemState) {
                     case SHOOTING:
                         newState = handleShooting();
-                        break;
-                    case HOMING:
-                        newState = handleHoming();
                         break;
                     case HOLDING:
                     default:
@@ -241,9 +247,6 @@ public class Shooter extends Subsystem{
         if(mDistance == -1){
             setShootDistance(0);
         }
-        if(mStateChanged){
-            mPeriodicIO.schedDeltaDesired = 0;
-        }
 
         return defaultStateTransfer();
     }
@@ -263,29 +266,10 @@ public class Shooter extends Subsystem{
         return defaultStateTransfer();
     }
 
-    private SystemState handleHoming() {
-        if(mStateChanged) {
-            mWantedState = WantedState.HOME;
-            mPeriodicIO.hoodDemand = -30000;
-            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
-        }
-
-        if(mPeriodicIO.hoodCurrent >= 5.0) {
-            mFXHood.setSelectedSensorPosition(0.0);
-            mPeriodicIO.hoodDemand = 0;
-            mPeriodicIO.schedDeltaDesired = 0;
-            System.out.println(sClassName + ": Homing sequence complete");
-        }
-
-        return defaultStateTransfer();
-    }
-
     private SystemState defaultStateTransfer(){
         switch(mWantedState){
             case SHOOT:
                 return SystemState.SHOOTING;
-            case HOME:
-                return SystemState.HOMING;
             case HOLD:
             default:
                 return SystemState.HOLDING;
@@ -307,8 +291,14 @@ public class Shooter extends Subsystem{
         mPeriodicIO.flywheelVelocityDemand = distanceToTicksPer100Ms(mDistance);
         mPeriodicIO.reachedDesiredSpeed = Math.abs(mPeriodicIO.flywheelVelocity - mPeriodicIO.flywheelVelocityDemand) <= 300;
 
-        mPeriodicIO.hoodDemand = distanceToHoodPos(mDistance);
-        mPeriodicIO.reachedDesiredHoodPosition = Math.abs(mPeriodicIO.hoodPosition - mPeriodicIO.hoodDemand) <= 100;
+        if (hoodHomed){
+            mPeriodicIO.hoodDemand = distanceToHoodPos(mDistance);
+            mPeriodicIO.reachedDesiredHoodPosition = Math.abs(mPeriodicIO.hoodPosition - mPeriodicIO.hoodDemand) <= 100;
+        }
+        else {
+            mPeriodicIO.hoodDemand = -30000;
+            mPeriodicIO.reachedDesiredHoodPosition = false;
+        }
     }
 
     // TODO: Confirm if distance to flywheel velocity relation is linear
@@ -334,6 +324,19 @@ public class Shooter extends Subsystem{
         mPeriodicIO.hoodCurrent = mFXHood.getStatorCurrent();
 
         updateShooterStatus();
+        if (!hoodHomed){
+            double distance = Math.abs(mPeriodicIO.hoodPosition - mPeriodicIO.lastHoodPosition);
+            if (distance < hoodMovementThreshhold){
+                if(--hoodMovementLowCnt<=0){
+                    mFXHood.setSelectedSensorPosition(0);
+                    hoodHomed = true;
+                }
+            }
+            else{
+                hoodMovementLowCnt = hoodMovementSampleCnt;
+            }
+            mPeriodicIO.lastHoodPosition = mPeriodicIO.hoodPosition;
+        }
     }
 
     @Override
@@ -361,10 +364,6 @@ public class Shooter extends Subsystem{
 
     @Override
     public int whenRunAgain () {
-        if (mStateChanged && mPeriodicIO.schedDeltaDesired == 0){
-            return 1; // one more loop before going to sleep
-        }
-
         return mPeriodicIO.schedDeltaDesired;
     }
 
@@ -408,6 +407,9 @@ public class Shooter extends Subsystem{
         //Outputs
         private double flywheelVelocityDemand;
         private double hoodDemand;
+
+        // Other
+        private double lastHoodPosition;
     }
 
 }
