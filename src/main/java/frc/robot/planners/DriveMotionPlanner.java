@@ -98,6 +98,7 @@ public class DriveMotionPlanner implements CSVWritable {
                 break;
             }
         }
+        follower.follow(mCurrentTrajectory);
     }
 
     public void reset() {
