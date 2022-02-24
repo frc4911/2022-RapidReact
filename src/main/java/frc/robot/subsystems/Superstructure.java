@@ -4,6 +4,7 @@ import edu.wpi.first.wpilibj.Timer;
 import libraries.cheesylib.loops.ILooper;
 import libraries.cheesylib.loops.Loop;
 import libraries.cheesylib.subsystems.Subsystem;
+import libraries.cheesylib.util.LatchedBoolean;
 
 public class Superstructure extends Subsystem{
     
@@ -34,12 +35,13 @@ public class Superstructure extends Subsystem{
         AUTO_CLIMB
     }
 
-    private SystemState mSystemState;
-    private WantedState mWantedState;
-    private boolean     mStateChanged;
-    private PeriodicIO  mPeriodicIO = new PeriodicIO();
-    private int         mFastCycle = 10;
-    private int         mSlowCycle = 100;
+    private SystemState    mSystemState;
+    private WantedState    mWantedState;
+    private boolean        mStateChanged;
+    private LatchedBoolean mSystemStateChange = new LatchedBoolean();
+    private PeriodicIO     mPeriodicIO = new PeriodicIO();
+    private int            mFastCycle = 10;
+    private int            mSlowCycle = 100;
 
     private double  mManualDistance;
     private boolean mShootSetup;
@@ -97,35 +99,37 @@ public class Superstructure extends Subsystem{
         @Override
         public void onLoop(double timestamp){
             synchronized(Superstructure.this) {
-                SystemState newState;
-                switch(mSystemState) {
-                    case COLLECTING:
-                        newState = handleCollecting();
-                        break;
-                    case BACKING:
-                        newState = handleBacking();
-                        break;
-                    case AUTO_SHOOTING:
-                        newState = handleAutoShooting();
-                        break;
-                    case MANUAL_SHOOTING:
-                        newState = handleManualShooting();
-                        break;
-                    case AUTO_CLIMBING:
-                        newState = handleAutoClimbing();
-                        break;
-                    case HOLDING:
-                    default:
-                        newState = handleHolding();
-                }
+                do{
+                    SystemState newState;
+                    switch(mSystemState) {
+                        case COLLECTING:
+                            newState = handleCollecting();
+                            break;
+                        case BACKING:
+                            newState = handleBacking();
+                            break;
+                        case AUTO_SHOOTING:
+                            newState = handleAutoShooting();
+                            break;
+                        case MANUAL_SHOOTING:
+                            newState = handleManualShooting();
+                            break;
+                        case AUTO_CLIMBING:
+                            newState = handleAutoClimbing();
+                            break;
+                        case HOLDING:
+                        default:
+                            newState = handleHolding();
+                    }
 
-                if (newState != mSystemState) {
-                    System.out.println(sClassName + " state " + mSystemState + " to " + newState + " (" + timestamp + ")");
-                    mSystemState = newState;
-                    mStateChanged = true;
-                } else {
-                    mStateChanged = false;
-                }
+                    if (newState != mSystemState) {
+                        System.out.println(sClassName + " state " + mSystemState + " to " + newState + " (" + timestamp + ")");
+                        mSystemState = newState;
+                        mStateChanged = true;
+                    } else {
+                        mStateChanged = false;
+                    }
+                } while(mSystemStateChange.update(mStateChanged));
             }
         }
 
@@ -203,7 +207,7 @@ public class Superstructure extends Subsystem{
         if (mStateChanged) {
             mShooter.setShootDistance(mManualDistance);
             mShooter.setWantedState(Shooter.WantedState.SHOOT);
-            mPeriodicIO.schedDeltaDesired = mFastCycle;
+            mPeriodicIO.schedDeltaDesired = 20; // Set aligned with shooter frequency
         }
 
         if (mShooter.readyToShoot()) {
