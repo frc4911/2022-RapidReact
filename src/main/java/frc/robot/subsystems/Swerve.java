@@ -10,11 +10,9 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
-import frc.robot.config.DeadEye;
-import frc.robot.config.Junior;
-import frc.robot.config.Robot2022;
-//import frc.robot.planners.DriveMotionPlanner;
-import frc.robot.planners.SwerveDriveMotionPlanner;
+import frc.robot.config.RobotConfiguration;
+import frc.robot.planners.DriveMotionPlanner;
+import frc.robot.sensors.IMU;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Pose2dWithCurvature;
 import libraries.cheesylib.geometry.Rotation2d;
@@ -40,19 +38,22 @@ public class Swerve extends Subsystem {
     private ControlState mControlState = ControlState.NEUTRAL;
 
     public SwerveConfiguration mSwerveConfiguration;
+    public RobotConfiguration mRobotConfiguration;
 
     PeriodicIO mPeriodicIO = new PeriodicIO();
     private int mDefaultSchedDelta = 20;
 
 	// Module declaration
 	private final List<SwerveDriveModule> mModules = new ArrayList<>();
-	public SwerveDriveModule mFrontRight=null;
-	private SwerveDriveModule mFrontLeft=null, mBackLeft=null, mBackRight=null;
+	private final SwerveDriveModule mFrontRight;
+    private final SwerveDriveModule mFrontLeft;
+    private final SwerveDriveModule mBackLeft;
+    private final SwerveDriveModule mBackRight;
 
 	double lastUpdateTimestamp = 0;
 
 	// Swerve kinematics & odometry
-	private final PigeonTwo mPigeon;
+	private IMU mIMU;
     private boolean mIsBrakeMode;
 	private Rotation2d mGyroOffset = Rotation2d.identity();
 
@@ -60,7 +61,7 @@ public class Swerve extends Subsystem {
 	private final SwerveDriveKinematics mKinematics;
 
     // Trajectory following
-    private SwerveDriveMotionPlanner mMotionPlanner;
+    private DriveMotionPlanner mMotionPlanner;
     private boolean mOverrideTrajectory = false;
 
     private int mListIndex = -1;
@@ -85,41 +86,21 @@ public class Swerve extends Subsystem {
     private Swerve(String caller) {
         sClassName = this.getClass().getSimpleName();
         printUsage(caller);
-        int m0 = 0;
-        int m1 = 0;
-        int m2 = 0;
-        int m3 = 0;
 
+        mRobotConfiguration = RobotConfiguration.getRobotConfiguration(RobotName.name);
 
-        mPigeon = PigeonTwo.getInstance();
+        mSwerveConfiguration = mRobotConfiguration.getSwerveConfiguration();
+        mModules.add(mFrontRight = new SwerveDriveModule(mRobotConfiguration.getFrontRightModuleConstants(), mSwerveConfiguration.maxSpeedInMetersPerSecond));
+        mModules.add(mFrontLeft = new SwerveDriveModule(mRobotConfiguration.getFrontLeftModuleConstants(), mSwerveConfiguration.maxSpeedInMetersPerSecond));
+        mModules.add(mBackLeft = new SwerveDriveModule(mRobotConfiguration.getBackLeftModuleConstants(), mSwerveConfiguration.maxSpeedInMetersPerSecond));
+        mModules.add(mBackRight = new SwerveDriveModule(mRobotConfiguration.getBackRightModuleConstants(), mSwerveConfiguration.maxSpeedInMetersPerSecond));
 
-        if (RobotName.name.equals(Constants.kJuniorName)) {
-            mSwerveConfiguration = Junior.kSwerveConfiguration;
-            mModules.add(mFrontRight = new SwerveDriveModule(Junior.kFrontRightModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-            mModules.add(mFrontLeft = new SwerveDriveModule(Junior.kFrontLeftModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-            mModules.add(mBackLeft = new SwerveDriveModule(Junior.kBackLeftModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-            mModules.add(mBackRight = new SwerveDriveModule(Junior.kBackRightModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-        }
-        else if (RobotName.name.equals(Constants.kDeadEyeName)) {
-            mSwerveConfiguration = DeadEye.kSwerveConfiguration;
-            mModules.add(mFrontRight = new SwerveDriveModule(DeadEye.kFrontRightModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-            mModules.add(mFrontLeft = new SwerveDriveModule(DeadEye.kFrontLeftModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-            mModules.add(mBackLeft = new SwerveDriveModule(DeadEye.kBackLeftModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-            mModules.add(mBackRight = new SwerveDriveModule(DeadEye.kBackRightModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-        }
-        else if (RobotName.name.equals(Constants.kRobot2022Name)) {
-            mSwerveConfiguration = Robot2022.kSwerveConfiguration;
-            mModules.add(mFrontRight = new SwerveDriveModule(Robot2022.kFrontRightModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-            mModules.add(mFrontLeft = new SwerveDriveModule(Robot2022.kFrontLeftModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-            mModules.add(mBackLeft = new SwerveDriveModule(Robot2022.kBackLeftModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-            mModules.add(mBackRight = new SwerveDriveModule(Robot2022.kBackRightModuleConstants, mSwerveConfiguration.maxSpeedInMetersPerSecond));
-        }
-
+        mIMU = IMU.createImu(mRobotConfiguration.getImuType());
         mKinematics = new SwerveDriveKinematics(mSwerveConfiguration.moduleLocations);
-		mOdometry = new SwerveDriveOdometry(mKinematics, mPigeon.getRotation2dYaw());
+		mOdometry = new SwerveDriveOdometry(mKinematics, mIMU.getYaw());
         mPeriodicIO.robotPose = mOdometry.getPose();
 
-        mMotionPlanner = new SwerveDriveMotionPlanner();
+        mMotionPlanner = new DriveMotionPlanner();
 
 //        generator = TrajectoryGenerator.getInstance();
     }
@@ -280,7 +261,7 @@ public class Swerve extends Subsystem {
      * @return The angle of the robot (CCW).
      */
     private synchronized Rotation2d getAngle() {
-        return mPigeon.getRotation2dYaw();
+        return mIMU.getYaw();
     }
 
     public Pose2d getPose() {
@@ -297,17 +278,16 @@ public class Swerve extends Subsystem {
      * @param pose The (x,y,theta) position.
      */
     public synchronized void setRobotPosition(Pose2d pose) {
-        mOdometry.resetPosition(pose, mPigeon.getRotation2dYaw());
+        mOdometry.resetPosition(pose, mIMU.getYaw());
         mPeriodicIO.robotPose = mOdometry.getPose();
     }
 
     /**
      * Updates the field relative position of the robot.
-     *
+     * <p>
      * @param timestamp The current time
      */
     private void updateOdometry(double timestamp) {
-
         var frontRight = mFrontRight.getState();
         var frontLeft = mFrontLeft.getState();
         var backLeft = mBackLeft.getState();
@@ -317,7 +297,6 @@ public class Swerve extends Subsystem {
         mPeriodicIO.chassisSpeeds = mKinematics.toChassisSpeeds(frontRight, frontLeft, backLeft, backRight);
         mPeriodicIO.robotPose = mOdometry.updateWithTime(timestamp, getAngle(), frontRight, frontLeft, backLeft, backRight);
     }
-
 
     /**
      * Gets whether path following is done or not.  Typically, called in autonomous actions.
@@ -351,22 +330,20 @@ public class Swerve extends Subsystem {
     }
 
     private void updatePathFollower(double now) {
+        HolonomicDriveSignal driveSignal = null;
         if (mControlState == ControlState.PATH_FOLLOWING) {
-            // Get updated drive signal
-            HolonomicDriveSignal driveSignal = null;
 
-            Optional<HolonomicDriveSignal> trajectorySignal = mMotionPlanner.update(now, mPeriodicIO.robotPose, mPeriodicIO.chassisSpeeds);
+            // Get updated drive signal
+            var trajectorySignal = mMotionPlanner.update(now, mPeriodicIO.robotPose, mPeriodicIO.chassisSpeeds);
             mPeriodicIO.error = mMotionPlanner.error();
             mPeriodicIO.path_setpoint = mMotionPlanner.setpoint();
 
             if (!mOverrideTrajectory) {
-                if (trajectorySignal.isPresent()) {
-                    driveSignal = trajectorySignal.get();
+                if (trajectorySignal != null) {
+                    driveSignal = trajectorySignal;
                 }
             }
-
             setPathFollowingVelocity(driveSignal);
-
         } else {
             DriverStation.reportError("Swerve is not in path following state.", false);
         }
@@ -374,6 +351,8 @@ public class Swerve extends Subsystem {
 
     /**
      * Configure modules for open loop control
+     * <p>
+     * @param signal The HolonomicDriveSignal to apply
      */
     public synchronized void setOpenLoop(HolonomicDriveSignal signal) {
         if (mControlState != ControlState.MANUAL) {
@@ -385,6 +364,8 @@ public class Swerve extends Subsystem {
 
     /**
      * Configure modules for path following.
+     * <p>
+     * @param signal The HolonomicDriveSignal to apply
      */
     public synchronized void setPathFollowingVelocity(HolonomicDriveSignal signal) {
         if (mControlState != ControlState.PATH_FOLLOWING) {
@@ -416,13 +397,13 @@ public class Swerve extends Subsystem {
     /** Zeroes the drive motors, and sets the robot's internal position and heading to match that of the fed pose */
     public synchronized void zeroSensors(Pose2d startingPose) {
         setRobotPosition(startingPose);
-        mPigeon.setAngle(startingPose.getRotation().getUnboundedDegrees());
+        mIMU.setAngle(startingPose.getRotation().getUnboundedDegrees());
         // mModules.forEach((m) -> m.zeroSensors(startingPose));
     }
 
     /**
      * Sets inputs from driver in teleop mode.
-     *
+     * <p>
      * @param forward percent to drive forwards/backwards (as double [-1.0,1.0]).
      * @param strafe percent to drive sideways left/right (as double [-1.0,1.0]).
      * @param rotation percent to rotate chassis (as double [-1.0,1.0]).
@@ -496,7 +477,7 @@ public class Swerve extends Subsystem {
         double now                   = Timer.getFPGATimestamp();
         mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
         mPeriodicIO.lastSchedStart   = now;
-        mPeriodicIO.gyro_heading     = Rotation2d.fromDegrees(mPigeon.getRotation2dYaw().getDegrees()).rotateBy(mGyroOffset);
+        mPeriodicIO.gyro_heading     = Rotation2d.fromDegrees(mIMU.getYaw().getDegrees()).rotateBy(mGyroOffset);
 
         // read modules
         mModules.forEach((m) -> m.readPeriodicInputs());
@@ -544,7 +525,7 @@ public class Swerve extends Subsystem {
             SmartDashboard.putNumber("Swerve/Rotational Velocity rad/s",
                     mPeriodicIO.chassisSpeeds.omegaInRadiansPerSecond);
 
-            SmartDashboard.putNumberArray("Swerve/Pigeon YPR", mPigeon.getYPR());
+            SmartDashboard.putNumberArray("Swerve/Pigeon YPR", mIMU.getYPR());
         }
     }
 
@@ -561,7 +542,7 @@ public class Swerve extends Subsystem {
 
         // Updated as part of trajectory following
         public Pose2d error = Pose2d.identity();
-        public TimedState<Pose2dWithCurvature> path_setpoint = new TimedState<Pose2dWithCurvature>(Pose2dWithCurvature.identity());
+        public TimedState<Pose2dWithCurvature> path_setpoint = new TimedState<>(Pose2dWithCurvature.identity());
 
 
         // Inputs

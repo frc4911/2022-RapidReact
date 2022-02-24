@@ -5,15 +5,22 @@
 package frc.robot;
 
 import java.util.Arrays;
+import java.util.Optional;
 
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.TimedRobot;
+import frc.robot.autos.AutoModeExecutor;
+import frc.robot.autos.AutoModeSelector;
+import frc.robot.paths.TrajectoryGenerator;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Collector;
 import frc.robot.subsystems.Indexer;
 import frc.robot.subsystems.JSticks;
 import frc.robot.subsystems.RobotStateEstimator;
+import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.Swerve;
+import libraries.cheesylib.autos.AutoModeBase;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.loops.Looper;
 import libraries.cheesylib.subsystems.SubsystemManager;
@@ -37,7 +44,7 @@ public class Robot extends TimedRobot {
 // is the name used if no RobotName.txt file is found.
 // in the src\main\deploy directory of VS is a RobotName.txt file
 // this file is downloaded to the deploy directory with each deploy of the robot jar file
-   RobotName robotName = new RobotName("2022Robot");
+  RobotName robotName = new RobotName("2022Robot");
 
   private String mClassName;
 
@@ -46,7 +53,15 @@ public class Robot extends TimedRobot {
   private Superstructure   mSuperstructure;
   private JSticks          mJSticks;
   private Swerve           mSwerve;
+  private Shooter          mShooter;
+  private Indexer          mIndexer;
+  private Climber          mClimber;
+  private Collector        mCollector;
   private RobotStateEstimator mRobotStateEstimator;
+
+  private TrajectoryGenerator mTrajectoryGenerator = TrajectoryGenerator.getInstance();
+  private AutoModeExecutor mAutoModeExecutor;
+  private AutoModeSelector mAutoModeSelector;
 
   private final double mLoopPeriod = .005;
   private Looper mSubsystemLooper = new Looper(mLoopPeriod,Thread.NORM_PRIORITY+1);
@@ -59,6 +74,10 @@ public class Robot extends TimedRobot {
     mJSticks = JSticks.getInstance(mClassName);
     mSuperstructure = Superstructure.getInstance(mClassName);
     mSwerve = Swerve.getInstance(mClassName);
+    mShooter = Shooter.getInstance(mClassName);
+    mIndexer = Indexer.getInstance(mClassName);
+    // mClimber = Climber.getInstance(mClassName);
+    mCollector = Collector.getInstance(mClassName);
     mRobotStateEstimator = RobotStateEstimator.getInstance(mClassName);
 
     //Create subsystem manager and add all subsystems it will manage
@@ -69,7 +88,11 @@ public class Robot extends TimedRobot {
           mJSticks,
           mSuperstructure,
           mSwerve,
-         mRobotStateEstimator
+          mShooter,
+          mIndexer,
+          // mClimber,
+          mCollector,
+          mRobotStateEstimator
         )
     );
 
@@ -84,15 +107,44 @@ public class Robot extends TimedRobot {
 			// mSwerve.startTracking(Constants.kDiskTargetHeight, new Translation2d(-6.0,
 			// 0.0), true, new Rotation2d());
 			mSwerve.stop();
-		}
 
+            mAutoModeSelector = new AutoModeSelector();
+            mAutoModeSelector.updateModeCreator();
+
+            mTrajectoryGenerator.generateTrajectories();
+		}
   }
 
   @Override
-  public void robotPeriodic() {}
+  public void robotPeriodic() {
+      mAutoModeSelector.outputToSmartDashboard();
+  }
 
   @Override
-  public void autonomousInit() {}
+  public void autonomousInit() {
+    System.out.println("AutonomousInit");
+		try {
+			autoConfig();
+
+			mSubsystemLooper.stop();
+			mSubsystemLooper.start();
+
+			mAutoModeExecutor.start();
+		} catch (Throwable t) {
+			CrashTracker.logThrowableCrash(t);
+			throw t;
+		}
+  }
+
+  public void autoConfig() {
+		if (mSwerve != null) {
+			mSwerve.zeroSensors();
+            mSwerve.zeroSensors(new Pose2d());
+			// mSwerve.setNominalDriveOutput(0.0);
+			// mSwerve.requireModuleConfiguration();
+			// mSwerve.set10VoltRotationMode(true);
+		}
+	}
 
   @Override
   public void autonomousPeriodic() {}
@@ -100,7 +152,11 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopInit() {
     try {
-			mSubsystemLooper.stop();
+            if (mAutoModeExecutor != null) {
+                mAutoModeExecutor.stop();
+            }
+
+            mSubsystemLooper.stop();
 			mSubsystemLooper.start();
 			teleopConfig();
 			//robotState.enableXTarget(false);
@@ -118,13 +174,49 @@ public class Robot extends TimedRobot {
 	}
 
   @Override
-  public void teleopPeriodic() {}
+  public void teleopPeriodic() {
+      // This will send the Network Table data to DriveStation at a consistent rate.
+      // TODO:  Measure any network bandwidth issues because of this.
+      NetworkTableInstance.getDefault().flush();
+  }
 
   @Override
-  public void disabledInit() {}
+  public void disabledInit() {
+    try {
+			System.gc();
+            // Reset all auto mode state.
+            if (mAutoModeExecutor != null) {
+                mAutoModeExecutor.stop();
+            }
+            mAutoModeSelector.reset();
+            mAutoModeSelector.updateModeCreator();
+            mAutoModeExecutor = new AutoModeExecutor();
+
+			mSubsystemLooper.stop();
+			mSubsystemLooper.start();
+		} catch (Throwable t) {
+			CrashTracker.logThrowableCrash(t);
+			throw t;
+		}
+  }
 
   @Override
-  public void disabledPeriodic() {}
+  public void disabledPeriodic() {
+    try {
+            // Update auto modes
+            mAutoModeSelector.updateModeCreator();
+
+            Optional<AutoModeBase> autoMode = mAutoModeSelector.getAutoMode();
+            if (autoMode.isPresent() && autoMode.get() != mAutoModeExecutor.getAutoMode()) {
+                System.out.println("Set auto mode to: " + autoMode.get().getClass().toString());
+                mAutoModeExecutor.setAutoMode(autoMode.get());
+            }
+
+    } catch (Throwable t) {
+			CrashTracker.logThrowableCrash(t);
+			throw t;
+		}
+  }
 
   @Override
   public void testInit() {}

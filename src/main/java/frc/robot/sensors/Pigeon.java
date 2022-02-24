@@ -1,4 +1,4 @@
-package frc.robot.subsystems;
+package frc.robot.sensors;
 
 import com.ctre.phoenix.sensors.PigeonIMU;
 import com.ctre.phoenix.sensors.PigeonIMU.PigeonState;
@@ -8,33 +8,35 @@ import frc.robot.Constants;
 import frc.robot.Ports;
 import libraries.cheesylib.geometry.Rotation2d;
 
-public class Pigeon {
+public class Pigeon implements IMU {
 
     private static Pigeon instance = null;
 
     private PigeonIMU pigeon;
 
-    private Pigeon(){
-        try{
+    private Pigeon() {
+        try {
             pigeon = new PigeonIMU(Ports.PIGEON);
-        }catch(Exception e){
+        } catch (Exception e) {
             System.out.println(e);
         }
     }
 
-    public static Pigeon getInstance(){
-        if(instance == null){
+    public static Pigeon getInstance() {
+        if (instance == null) {
             instance = new Pigeon();
         }
         return instance;
     }
 
-    public boolean isGood(){
+    @Override
+    public boolean isGood() {
         return (pigeon.getState() == PigeonState.Ready) ? true : false;
     }
 
-    public Rotation2d getYaw(){
-        double [] ypr = new double[3];
+    @Override
+    public Rotation2d getYaw() {
+        double[] ypr = new double[3];
         pigeon.getYawPitchRoll(ypr);
         PigeonIMU.FusionStatus fusionStatus = new PigeonIMU.FusionStatus();
         // brian temp debug please move to somewhere better
@@ -42,31 +44,36 @@ public class Pigeon {
         return Rotation2d.fromDegrees(pigeon.getFusedHeading(fusionStatus)/*-ypr[0]*/);
     }
 
-    public double getPitch(){
-        double [] ypr = new double[3];
+    @Override
+    public double getPitch() {
+        double[] ypr = new double[3];
         pigeon.getYawPitchRoll(ypr);
         return ypr[1];
     }
 
-    public double getRoll(){
-        double [] ypr = new double[3];
+    @Override
+    public double getRoll() {
+        double[] ypr = new double[3];
         pigeon.getYawPitchRoll(ypr);
         return ypr[2];
     }
 
-    public double[] getYPR(){
+    @Override
+    public double[] getYPR() {
         double[] ypr = new double[3];
         pigeon.getYawPitchRoll(ypr);
         return ypr;
     }
 
-    public void setAngle(double angle){
-        pigeon.setFusedHeading(-angle * 64.0, Constants.kLongCANTimeoutMs);
-        pigeon.setYaw(-angle, Constants.kLongCANTimeoutMs);
-        System.out.println("Pigeon angle set to: " + angle);
+    @Override
+    public void setAngle(double angleInDegrees) {
+        pigeon.setFusedHeading(-angleInDegrees * 64.0, Constants.kLongCANTimeoutMs);
+        pigeon.setYaw(-angleInDegrees, Constants.kLongCANTimeoutMs);
+        System.out.println("Pigeon angle set to: " + angleInDegrees);
     }
 
-    public void outputToSmartDashboard(){
+    @Override
+    public void outputToSmartDashboard() {
         SmartDashboard.putString("Pigeon Good", pigeon.getState().toString());
     }
 

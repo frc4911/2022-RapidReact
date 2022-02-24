@@ -1,7 +1,7 @@
 package frc.robot.planners;
 
-import frc.robot.Constants;
-import frc.robot.subsystems.Swerve;
+import frc.robot.config.RobotConfiguration;
+import frc.robot.subsystems.SwerveConfiguration;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Pose2dWithCurvature;
 import libraries.cheesylib.geometry.Rotation2d;
@@ -13,9 +13,10 @@ import libraries.cheesylib.trajectory.timing.TimingUtil;
 import libraries.cheesylib.util.CSVWritable;
 import libraries.cheesylib.util.Units;
 import libraries.cheesylib.util.Util;
+import libraries.cyberlib.control.*;
 import libraries.cyberlib.kinematics.ChassisSpeeds;
-import libraries.cyberlib.utils.Angles;
 import libraries.cyberlib.utils.HolonomicDriveSignal;
+import libraries.cyberlib.utils.RobotName;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,28 +27,35 @@ public class DriveMotionPlanner implements CSVWritable {
     private static final double kMaxDy = Units.inches_to_meters(0.25);
     private static final double kMaxDTheta = Math.toRadians(5.0);
 
+    TrajectoryFollower follower;
+    private HolonomicDriveSignal driveSignal = null;
+
     private Translation2d followingCenter = Translation2d.identity();
 
     public enum FollowerType {
+        HOLONOMIC,
         PURE_PURSUIT
     }
 
-    FollowerType mFollowerType = FollowerType.PURE_PURSUIT;
+    FollowerType mFollowerType = FollowerType.HOLONOMIC;
 
     public void setFollowerType(FollowerType type) {
         mFollowerType = type;
     }
 
+
     TrajectoryIterator<TimedState<Pose2dWithCurvature>> mCurrentTrajectory;
-    public Trajectory<TimedState<Pose2dWithCurvature>> getTrajectory(){
+    public Trajectory<TimedState<Pose2dWithCurvature>> getTrajectory() {
         return mCurrentTrajectory.trajectory();
     }
-    public double getRemainingProgress(){
-        if(mCurrentTrajectory != null){
+
+    public double getRemainingProgress() {
+        if (mCurrentTrajectory != null) {
             return mCurrentTrajectory.getRemainingProgress();
         }
         return 0.0;
     }
+
     boolean mIsReversed = false;
     double mLastTime = Double.POSITIVE_INFINITY;
     public TimedState<Pose2dWithCurvature> mSetpoint = new TimedState<>(Pose2dWithCurvature.identity());
@@ -57,25 +65,24 @@ public class DriveMotionPlanner implements CSVWritable {
 
     double mDt = 0.0;
 
-    public double getRotationSample() {
-        final double kStartPoint = 0.2;
-        final double kPivotPoint = 0.5;
-        final double kEndPoint = 0.8;
-        final double kMaxSpeed = 1.0;
-        double normalizedProgress = mCurrentTrajectory.getProgress() / currentTrajectoryLength;
-        double scalar = 0.0;
-        if(kStartPoint <= normalizedProgress && normalizedProgress <= kEndPoint){
-            if(normalizedProgress <= kPivotPoint){
-                scalar = (normalizedProgress - kStartPoint) / (kPivotPoint - kStartPoint);
-            }else{
-                scalar = 1.0 - ((normalizedProgress - kPivotPoint) / (kEndPoint - kPivotPoint));
-            }
-        }
-
-        return kMaxSpeed * scalar;
-    }
+    public SwerveConfiguration mSwerveConfiguration;
 
     public DriveMotionPlanner() {
+        RobotConfiguration mRobotConfiguration = RobotConfiguration.getRobotConfiguration(RobotName.name);
+        mSwerveConfiguration =  mRobotConfiguration.getSwerveConfiguration();
+        if (mFollowerType == FollowerType.HOLONOMIC) {
+            // TODO:  Make these constants
+            follower = new HolonomicTrajectoryFollower(
+                    new PidGains(0.4, 0.0, 0.025),
+                    new PidGains(5.0, 0.0, 0.0),
+                    new HolonomicFeedforward(new SwerveDriveFeedforwardGains(
+                            0.289, //0.042746,
+                            0.0032181,
+                            0.30764
+                    )));
+        } else if (mFollowerType == FollowerType.PURE_PURSUIT) {
+           follower = new PurePursuitTrajectoryFollower();
+        }
     }
 
     public void setTrajectory(final TrajectoryIterator<TimedState<Pose2dWithCurvature>> trajectory) {
@@ -91,6 +98,7 @@ public class DriveMotionPlanner implements CSVWritable {
                 break;
             }
         }
+        follower.follow(mCurrentTrajectory);
     }
 
     public void reset() {
@@ -103,8 +111,8 @@ public class DriveMotionPlanner implements CSVWritable {
             boolean reversed,
             final List<Pose2d> waypoints,
             final List<TimingConstraint<Pose2dWithCurvature>> constraints,
-            double max_vel,  // inches/s
-            double max_accel,  // inches/s^2
+            double max_vel,  // meters/s
+            double max_accel,  // meters/s^2
             double max_decel,
             double max_voltage,
             double default_vel,
@@ -119,8 +127,8 @@ public class DriveMotionPlanner implements CSVWritable {
             final List<TimingConstraint<Pose2dWithCurvature>> constraints,
             double start_vel,
             double end_vel,
-            double max_vel,  // inches/s
-            double max_accel,  // inches/s^2
+            double max_vel,  // meters/s
+            double max_accel,  // meters/s^2
             double max_decel,
             double max_voltage,
             double default_vel,
@@ -160,7 +168,7 @@ public class DriveMotionPlanner implements CSVWritable {
                 (reversed, new DistanceView<>(trajectory), kMaxDx, all_constraints,
                         start_vel, end_vel, max_vel, max_accel, max_decel, slowdown_chunks);
 
-        timed_trajectory.setDefaultVelocity(default_vel / Constants.kSwerveMaxSpeedInchesPerSecond);
+        timed_trajectory.setDefaultVelocity(default_vel / mSwerveConfiguration.maxSpeedInMetersPerSecond);
         return timed_trajectory;
     }
 
@@ -168,7 +176,7 @@ public class DriveMotionPlanner implements CSVWritable {
      * @param followingCenter the followingCenter to set (relative to the robot's center)
      */
     public void setFollowingCenter(Translation2d followingCenter) {
-        this.followingCenter = followingCenter;
+//        this.followingCenter = followingCenter;
     }
 
     @Override
@@ -177,61 +185,11 @@ public class DriveMotionPlanner implements CSVWritable {
         return "";
     }
 
-    protected Optional<HolonomicDriveSignal> updatePurePursuit(Pose2d current_state) {
-        double lookahead_time = Constants.kPathLookaheadTime;
-        final double kLookaheadSearchDt = 0.01;
+     public HolonomicDriveSignal update(double timestamp, Pose2d current_state, ChassisSpeeds chassisSpeeds) {
+         HolonomicDriveSignal driveSignal;
 
-        TimedState<Pose2dWithCurvature> lookahead_state = mCurrentTrajectory.preview(lookahead_time).state();
-        double actual_lookahead_distance = mSetpoint.state().distance(lookahead_state.state());
-
-        while (actual_lookahead_distance < Constants.kPathMinLookaheadDistance &&
-                mCurrentTrajectory.getRemainingProgress() > lookahead_time) {
-            lookahead_time += kLookaheadSearchDt;
-            lookahead_state = mCurrentTrajectory.preview(lookahead_time).state();
-            actual_lookahead_distance = mSetpoint.state().distance(lookahead_state.state());
-        }
-
-        if (actual_lookahead_distance < Constants.kPathMinLookaheadDistance) {
-            lookahead_state = new TimedState<>(new Pose2dWithCurvature(lookahead_state.state()
-                    .getPose().transformBy(Pose2d.fromTranslation(new Translation2d(
-                            (mIsReversed ? -1.0 : 1.0) * (Constants.kPathMinLookaheadDistance -
-                                    actual_lookahead_distance), 0.0))), 0.0), lookahead_state.t()
-                    , lookahead_state.velocity(), lookahead_state.acceleration());
-        }
-
-//        SmartDashboard.putNumber("Path X", lookahead_state.state().getTranslation().x());
-//        SmartDashboard.putNumber("Path Y", lookahead_state.state().getTranslation().y());
-//        SmartDashboard.putNumber("Path Velocity", lookahead_state.velocity() / Constants.kSwerveMaxSpeedInchesPerSecond);
-
-        // A WCD would have to plot an arc.  Since this is Swerve, use a straight line.
-        // Translate to lookahead position in the straight line formed by the two points: current and lookahead position
-        // Normalize to euclidian unit circle as Swerve Drive will scale speed properly
-        Translation2d lookaheadTranslation = new Translation2d(
-                current_state.getTranslation(), lookahead_state.state().getTranslation()).normalize();
-
-        var startAngle = mCurrentTrajectory.trajectory().getFirstState().state().getPose().getRotation().getRadians();
-        var endAngle = mCurrentTrajectory.trajectory().getLastState().state().getPose().getRotation().getRadians();
-
-        // Get the rotation angle over the trajectory
-        double totalAngle = Angles.shortest_angular_distance(startAngle, endAngle);
-
-        var theta1 = (totalAngle * getRotationSample()) + startAngle;
-        var theta0 = current_state.getRotation().getRadians();
-
-        // Distribute rotation
-        // w = (theta(1) - theta(0)) / dt
-        double rotationVelocity = (Angles.normalizeAngle(theta1 - theta0) / mDt);
-
-        // Scale it to a percentage of max angular velocity as Swerve will scale it correctly
-        rotationVelocity /= Swerve.getInstance("DriveMotionPlanner").mSwerveConfiguration.maxSpeedInRadiansPerSecond;
-
-        return Optional.of(new HolonomicDriveSignal(lookaheadTranslation, rotationVelocity, true));
-    }
-
-     public Optional<HolonomicDriveSignal> update(double timestamp, Pose2d current_state, ChassisSpeeds chassisSpeeds) {
-        if (mCurrentTrajectory == null){
-
-            return Optional.empty();
+        if (mCurrentTrajectory == null) {
+            return null;
         }
 
         if (mCurrentTrajectory.getProgress() == 0.0 && !Double.isFinite(mLastTime)) {
@@ -240,46 +198,39 @@ public class DriveMotionPlanner implements CSVWritable {
 
         mDt = timestamp - mLastTime;
         mLastTime = timestamp;
-
-        current_state = current_state.transformBy(Pose2d.fromTranslation(followingCenter));
-        double searchStepSize = 1.0;
-        double previewQuantity = 0.0;
-        double searchDirection = 1.0;
-        double forwardDistance = distance(current_state, previewQuantity + searchStepSize);
-        double reverseDistance = distance(current_state, previewQuantity - searchStepSize);
-        searchDirection = Math.signum(reverseDistance - forwardDistance);
-
-        while(searchStepSize > 0.001){
-            if(Util.epsilonEquals(distance(current_state, previewQuantity), 0.0, 0.001)) break;
-            while(/* next point is closer than current point */ distance(current_state, previewQuantity + searchStepSize*searchDirection) <
-                    distance(current_state, previewQuantity)) {
-                /* move to next point */
-                previewQuantity += searchStepSize*searchDirection;
-            }
-            searchStepSize /= 10.0;
-            searchDirection *= -1;
-        }
-
-        TrajectorySamplePoint<TimedState<Pose2dWithCurvature>> sample_point = mCurrentTrajectory.advance(previewQuantity);
+        TrajectorySamplePoint<TimedState<Pose2dWithCurvature>> sample_point = mCurrentTrajectory.advance(mDt);
         mSetpoint = sample_point.state();
-        /*SmartDashboard.putNumber("Path X", mSetpoint.state().getTranslation().x());
-        SmartDashboard.putNumber("Path Y", mSetpoint.state().getTranslation().y());
-        SmartDashboard.putNumber("Path Velocity", mSetpoint.velocity() / Constants.kSwerveMaxSpeedFeetPerSecond);*/
 
         if (!mCurrentTrajectory.isDone()) {
             mError = current_state.inverse().transformBy(mSetpoint.state().getPose());
+            var velocity = new Translation2d(chassisSpeeds.vxInMetersPerSecond, chassisSpeeds.vyInMetersPerSecond);
 
-            if (mFollowerType == FollowerType.PURE_PURSUIT) {
-                return updatePurePursuit(current_state);
+            Optional<HolonomicDriveSignal> trajectorySignal = follower.update(current_state,
+                    velocity,
+                    chassisSpeeds.omegaInRadiansPerSecond,
+                    mLastTime,
+                    mDt);
+
+            if (trajectorySignal.isPresent()) {
+                driveSignal = trajectorySignal.get();
+                // Scale inputs as Swerve scales them.
+                driveSignal = new HolonomicDriveSignal(
+                        driveSignal.getTranslation().scale(1 / mSwerveConfiguration.maxSpeedInMetersPerSecond),
+                        driveSignal.getRotation() / mSwerveConfiguration.maxSpeedInRadiansPerSecond,
+                        driveSignal.isFieldOriented()
+                );
+            } else {
+                driveSignal = this.driveSignal;
             }
+            return driveSignal;
         }
 
-        return Optional.empty();
+        return null;
     }
 
-    private double distance(Pose2d current_state, double additional_progress){
-        return mCurrentTrajectory.preview(additional_progress).state().state().getPose().distance(current_state);
-    }
+//    private double distance(Pose2d current_state, double additional_progress) {
+//        return mCurrentTrajectory.preview(additional_progress).state().state().getPose().distance(current_state);
+//    }
 
     public boolean isDone() {
         return mCurrentTrajectory != null && mCurrentTrajectory.isDone();

@@ -1,11 +1,13 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 import frc.robot.Ports;
 import libraries.cheesylib.drivers.TalonFXFactory;
@@ -18,36 +20,42 @@ public class Climber extends Subsystem{
 
     //Hardware
     private final TalonFX mFXLeftClimber, mFXRightClimber;
-    private final Solenoid mSolenoid;
+    private final Solenoid mSlapSticks;
 
     //Subsystem Constants
 
     //Subsystem States
+    public enum SolenoidState {
+        EXTEND(true), // Need to test
+        RETRACT(false);
+
+        private final boolean state;
+
+        private SolenoidState(boolean state) {
+            this.state = state;
+        }
+
+        public boolean get() {
+            return state;
+        }
+    }
+
     public enum SystemState {
-        RESTING,
-        EXTENDING,
-        RETRACTING,
-        LEVELING
+        HOLDING,
+        CLIMBING
     }
 
     public enum WantedState {
-        REST,
-        EXTEND,
-        RETRACT,
-        LEVEL
+        HOLD,
+        CLIMB
     }
 
-    private SystemState mSystemState;
-    private WantedState mWantedState;
-    private boolean mStateChanged;
-
-    //Logging
-    @SuppressWarnings("unused")
-    private final int mDefaultSchedDelta = 100; // axis updated every 100 msec
-    private int    schedDeltaDesired;
-    public  double schedDeltaActual;
-    public  double schedDuration;
-    private double lastSchedStart;
+    private SystemState   mSystemState;
+    private WantedState   mWantedState;
+    private boolean       mStateChanged;
+    private PeriodicIO    mPeriodicIO = new PeriodicIO();
+    private SolenoidState mSolenoidState;
+    private int           mDefaultSchedDelta = 20;
 
     //Other
     private SubsystemManager mSubsystemManager;
@@ -76,12 +84,15 @@ public class Climber extends Subsystem{
         printUsage(caller);
         mFXLeftClimber = TalonFXFactory.createDefaultTalon(Ports.LEFT_CLIMBER);
         mFXRightClimber = TalonFXFactory.createDefaultTalon(Ports.RIGHT_CLIMBER);
-        mSolenoid = new Solenoid(PneumaticsModuleType.CTREPCM, Ports.CLIMBER_STAGE);
+        mSlapSticks = new Solenoid(PneumaticsModuleType.CTREPCM, Ports.CLIMBER_STAGE);
+        mSubsystemManager = SubsystemManager.getInstance(sClassName);
         configMotors();
     }
 
     private void configMotors(){
 
+        //Current limit motors
+        
         mFXLeftClimber.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
         mFXLeftClimber.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
 
@@ -89,7 +100,7 @@ public class Climber extends Subsystem{
         mFXRightClimber.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
 
         mFXLeftClimber.setInverted(false);
-        mFXRightClimber.setInverted(false);
+        mFXRightClimber.setInverted(true);
         
         mFXLeftClimber.setNeutralMode(NeutralMode.Coast);
         mFXRightClimber.setNeutralMode(NeutralMode.Coast);
@@ -101,12 +112,12 @@ public class Climber extends Subsystem{
         @Override
         public void onStart(Phase phase){
             synchronized (Climber.this) {
-                mSystemState = SystemState.RESTING;
-                mWantedState = WantedState.REST;
+                mSystemState = SystemState.HOLDING;
+                mWantedState = WantedState.HOLD;
                 mStateChanged = true;
                 System.out.println(sClassName + " state " + mSystemState);
                 // this subsystem is "on demand" so
-                schedDeltaDesired = 0;
+                mPeriodicIO.schedDeltaDesired = 0;
                 stop(); // put into a known state
             }
         }
@@ -116,15 +127,10 @@ public class Climber extends Subsystem{
             synchronized (Climber.this) {
                 SystemState newState;
                 switch (mSystemState) {
-                case EXTENDING:
-                    newState = handleLoading();
+                case CLIMBING:
+                    newState = handleClimbing();
                     break;
-                case RETRACTING:
-                    newState = handleBacking();
-                    break;
-                case LEVELING:
-                    newState = handleFeeding();
-                    break;
+                case HOLDING:
                 default:
                     newState = handleHolding();
                     break;
@@ -147,22 +153,6 @@ public class Climber extends Subsystem{
 
     };
 
-    private SystemState handleHolding() {
-        return defaultStateTransfer();
-    }
-    
-    private SystemState handleLoading() {
-        return defaultStateTransfer();
-    }
-
-    private SystemState handleBacking() {
-        return defaultStateTransfer();
-    }
-
-    private SystemState handleFeeding() {
-        return defaultStateTransfer();
-    }
-
     public synchronized void setWantedState(WantedState state) {
         if (state != mWantedState) {
             mSubsystemManager.scheduleMe(mListIndex, 1, false);
@@ -172,29 +162,77 @@ public class Climber extends Subsystem{
         mWantedState = state;
     }
 
+    private SystemState handleHolding() {
+        if(mStateChanged){
+            System.out.println("climber demand 0");
+            mPeriodicIO.climberDemand = 0.0;
+            mPeriodicIO.slappyDemand = SolenoidState.RETRACT;
+            mPeriodicIO.schedDeltaDesired = 0;
+        }
+
+        return defaultStateTransfer();
+    }
+    
+    private SystemState handleClimbing() {
+        if(mStateChanged){
+            mPeriodicIO.slappyDemand = SolenoidState.RETRACT;
+            mPeriodicIO.schedDeltaDesired = mDefaultSchedDelta; // stay awake
+        }
+
+        return defaultStateTransfer();
+    }
+
     private SystemState defaultStateTransfer(){
         switch(mWantedState){
-            case EXTEND:
-                return SystemState.EXTENDING;
-            case RETRACT:
-                return SystemState.RETRACTING;
-            case LEVEL:
-                return SystemState.LEVELING;
+            case CLIMB:
+                return SystemState.CLIMBING;
+            case HOLD:
             default:
-                return SystemState.RESTING;
+                return SystemState.HOLDING;
+        }
+    }
+
+    public void setClimbSpeed(double speed){
+        mPeriodicIO.climberDemand = speed;
+        if(speed == 0.0){
+            setWantedState(WantedState.HOLD);
+        } else {
+            setWantedState(WantedState.CLIMB);
+        }
+    }
+
+    public void setSlappyStickState(boolean state){
+        if(state){
+            mPeriodicIO.slappyDemand = SolenoidState.EXTEND;
+        } else {
+            mPeriodicIO.slappyDemand = SolenoidState.RETRACT;
         }
     }
 
     @Override
     public void readPeriodicInputs() {
         double now       = Timer.getFPGATimestamp();
-        schedDeltaActual = now - lastSchedStart;
-        lastSchedStart   = now;
+        mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
+        mPeriodicIO.lastSchedStart   = now;
     }
 
     @Override
     public void writePeriodicOutputs() {
+        // TODO: Change to Position control, moving elevator to max height or lowest height with a controlled velocity
+        // Will still need to monitor encoder values, but it should prevent elevator from going too high
+        if(mSystemState == SystemState.CLIMBING){
+            mFXLeftClimber.set(ControlMode.PercentOutput, mPeriodicIO.climberDemand);
+            mFXRightClimber.set(ControlMode.PercentOutput, mPeriodicIO.climberDemand);
+        } else {
+            // TODO Use pid to keep climber in place?
+            mFXLeftClimber.set(ControlMode.PercentOutput, mPeriodicIO.climberDemand);
+            mFXRightClimber.set(ControlMode.PercentOutput, mPeriodicIO.climberDemand);
+        }
 
+        if(mSolenoidState != mPeriodicIO.slappyDemand){
+            mSolenoidState = mPeriodicIO.slappyDemand;
+            mSlapSticks.set(mPeriodicIO.slappyDemand.get());
+        }
     }
 
 
@@ -206,16 +244,16 @@ public class Climber extends Subsystem{
 
     @Override
     public void registerEnabledLoops(ILooper enabledLooper) {
-        enabledLooper.register(mLoop);
+        mListIndex = enabledLooper.register(mLoop);
     }
 
     @Override
     public int whenRunAgain () {
-        if (mStateChanged && schedDeltaDesired == 0){
+        if (mStateChanged && mPeriodicIO.schedDeltaDesired == 0){
             return 1; // one more loop before going to sleep
         }
 
-        return schedDeltaDesired;
+        return 20; //mPeriodicIO.schedDeltaDesired;
     }
 
     @Override
@@ -232,8 +270,20 @@ public class Climber extends Subsystem{
 
     @Override
     public void outputTelemetry() {
-        // TODO Auto-generated method stub
-        
+        SmartDashboard.putNumber("Left Climber Encoder", mFXLeftClimber.getSelectedSensorPosition());        
+    }
+
+    public static class PeriodicIO{
+        //Logging
+        @SuppressWarnings("unused")
+        private final int mDefaultSchedDelta = 100; // axis updated every 100 msec
+        private int    schedDeltaDesired;
+        public  double schedDeltaActual;
+        public  double schedDuration;
+        private double lastSchedStart;
+
+        private double climberDemand;
+        private SolenoidState slappyDemand;
     }
 
 }

@@ -1,11 +1,14 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix.motorcontrol.ControlFrame;
+import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 import frc.robot.Ports;
 import libraries.cheesylib.drivers.TalonFXFactory;
@@ -18,10 +21,15 @@ public class Indexer extends Subsystem{
 
     //Hardware
     private final TalonFX mFXIndexer;
-    private final AnalogInput mBallEntering;
-    private final AnalogInput mBallExiting;
+    private final AnalogInput mAIBallEntering;
+    private final AnalogInput mAIBallExiting;
 
     //Subsystem Constants
+    private final double kFeedSpeed = 0.40;
+    private final double kLoadSpeed = 0.25; // Need to tune
+    private final double kBackSpeed = 0.50; // Speed is kept as a magnitude; must make negative for backward
+
+    private final double kBeamBreakThreshold = 3.0;
 
     //Subsystem States
     public enum SystemState {
@@ -41,14 +49,9 @@ public class Indexer extends Subsystem{
     private SystemState mSystemState;
     private WantedState mWantedState;
     private boolean mStateChanged;
+    private PeriodicIO mPeriodicIO = new PeriodicIO();
 
-    //Logging
-    @SuppressWarnings("unused")
-    private final int mDefaultSchedDelta = 100; // axis updated every 100 msec
-    private int    schedDeltaDesired;
-    public  double schedDeltaActual;
-    public  double schedDuration;
-    private double lastSchedStart;
+    double indexSpeed;
 
     //Other
     private SubsystemManager mSubsystemManager;
@@ -76,21 +79,28 @@ public class Indexer extends Subsystem{
         sClassName = this.getClass().getSimpleName();
         printUsage(caller);
         mFXIndexer = TalonFXFactory.createDefaultTalon(Ports.INDEXER);
-        mBallEntering = new AnalogInput(Ports.ENTRANCE_BEAM_BREAK);
-        mBallExiting = new AnalogInput(Ports.EXIT_BEAM_BREAK);
+        mAIBallEntering = new AnalogInput(Ports.ENTRANCE_BEAM_BREAK);
+        mAIBallExiting = new AnalogInput(Ports.EXIT_BEAM_BREAK);
+        mSubsystemManager = SubsystemManager.getInstance(sClassName);
+        indexSpeed = SmartDashboard.getNumber("Indexing Speed", -1.0);
+        if(indexSpeed == -1){
+            SmartDashboard.putNumber("Indexing Speed", 0.0);
+        }
         configMotors();
     }
 
     private void configMotors(){
         mFXIndexer.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor, 0, Constants.kLongCANTimeoutMs);
 
+        mFXIndexer.setControlFramePeriod(ControlFrame.Control_3_General,18);
+
         mFXIndexer.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
         mFXIndexer.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
 
-        mFXIndexer.setInverted(false);
+        mFXIndexer.setInverted(true);
         mFXIndexer.setSensorPhase(false);
 
-        mFXIndexer.setNeutralMode(NeutralMode.Coast);
+        mFXIndexer.setNeutralMode(NeutralMode.Brake);
     }
 
     private Loop mLoop = new Loop() {
@@ -103,7 +113,7 @@ public class Indexer extends Subsystem{
                 mStateChanged = true;
                 System.out.println(sClassName + " state " + mSystemState);
                 // this subsystem is "on demand" so
-                schedDeltaDesired = 0;
+                mPeriodicIO.schedDeltaDesired = 0;
                 stop(); // put into a known state
             }
         }
@@ -122,6 +132,7 @@ public class Indexer extends Subsystem{
                 case BACKING:
                     newState = handleBacking();
                     break;
+                case HOLDING:
                 default:
                     newState = handleHolding();
                     break;
@@ -144,22 +155,6 @@ public class Indexer extends Subsystem{
 
     };
 
-    private SystemState handleHolding() {
-        return defaultStateTransfer();
-    }
-    
-    private SystemState handleLoading() {
-        return defaultStateTransfer();
-    }
-
-    private SystemState handleFeeding() {
-        return defaultStateTransfer();
-    }
-
-    private SystemState handleBacking() {
-        return defaultStateTransfer();
-    }
-
     public synchronized void setWantedState(WantedState state) {
         if (state != mWantedState) {
             mSubsystemManager.scheduleMe(mListIndex, 1, false);
@@ -167,6 +162,43 @@ public class Indexer extends Subsystem{
         }
 
         mWantedState = state;
+    }
+
+    private SystemState handleHolding() {
+        if(mStateChanged){
+            mPeriodicIO.controlMode = ControlMode.PercentOutput;
+            mPeriodicIO.indexerDemand = 0.0;
+        }
+
+        return defaultStateTransfer();
+    }
+    
+    private SystemState handleLoading() {
+        if(mStateChanged){
+            mPeriodicIO.controlMode = ControlMode.PercentOutput;
+            mPeriodicIO.indexerDemand = kLoadSpeed;
+        }
+
+        return defaultStateTransfer();
+    }
+
+    private SystemState handleFeeding() {
+        if(mStateChanged){
+            mPeriodicIO.controlMode = ControlMode.PercentOutput; // TODO: Change to position
+            indexSpeed = SmartDashboard.getNumber("Indexing Speed", 0.0);
+            mPeriodicIO.indexerDemand = indexSpeed; // kFeedSpeed; // TODO: Update demand to move balls out of indexer by position
+        }
+
+        return defaultStateTransfer();
+    }
+
+    private SystemState handleBacking() {
+        if(mStateChanged){
+            mPeriodicIO.controlMode = ControlMode.PercentOutput;
+            mPeriodicIO.indexerDemand = -kBackSpeed;
+        }
+
+        return defaultStateTransfer();
     }
 
     private SystemState defaultStateTransfer(){
@@ -177,42 +209,53 @@ public class Indexer extends Subsystem{
                 return SystemState.FEEDING;
             case BACK:
                 return SystemState.BACKING;
+            case HOLD:
             default:
                 return SystemState.HOLDING;
         }
     }
 
+    //Called in superstructure to manage loading balls
+    public boolean isBallEntering(){
+        return mAIBallEntering.getVoltage() < kBeamBreakThreshold;
+    }
+
+    public boolean isFullyLoaded(){
+        return mAIBallExiting.getVoltage() < kBeamBreakThreshold;
+    }
+
     @Override
     public void readPeriodicInputs() {
         double now       = Timer.getFPGATimestamp();
-        schedDeltaActual = now - lastSchedStart;
-        lastSchedStart   = now;
+        mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
+        mPeriodicIO.lastSchedStart   = now;
     }
 
     @Override
     public void writePeriodicOutputs() {
-
+        mFXIndexer.set(mPeriodicIO.controlMode, mPeriodicIO.indexerDemand);
     }
 
 
     @Override
     public void stop() {
-        // TODO Auto-generated method stub
-        
+        mFXIndexer.set(ControlMode.PercentOutput, 0.0);
+
+        mPeriodicIO.indexerDemand = 0.0;
     }
 
     @Override
     public void registerEnabledLoops(ILooper enabledLooper) {
-        enabledLooper.register(mLoop);
+        mListIndex = enabledLooper.register(mLoop);
     }
 
     @Override
     public int whenRunAgain () {
-        if (mStateChanged && schedDeltaDesired == 0){
+        if (mStateChanged && mPeriodicIO.schedDeltaDesired == 0){
             return 1; // one more loop before going to sleep
         }
 
-        return schedDeltaDesired;
+        return mPeriodicIO.schedDeltaDesired;
     }
 
     @Override
@@ -231,6 +274,22 @@ public class Indexer extends Subsystem{
     public void outputTelemetry() {
         // TODO Auto-generated method stub
         
+    }
+
+    public static class PeriodicIO{
+            //Logging
+        @SuppressWarnings("unused")
+        private final int mDefaultSchedDelta = 100; // axis updated every 100 msec
+        private int    schedDeltaDesired;
+        public  double schedDeltaActual;
+        public  double schedDuration;
+        private double lastSchedStart;
+
+        //Inputs
+
+        //Outputs
+        private ControlMode controlMode;
+        private double indexerDemand;
     }
 
 }

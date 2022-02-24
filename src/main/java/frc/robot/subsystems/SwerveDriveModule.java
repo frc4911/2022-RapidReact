@@ -79,7 +79,7 @@ public class SwerveDriveModule extends Subsystem {
 		public int kSteerMotorContinuousCurrentLimit = 20; // amps
 		public int kSteerMotorPeakCurrentLimit = 60; // amps
 		public int kSteerMotorPeakCurrentDuration = 200; // ms
-		public boolean kSteerMotorEnableCurrentLimit = true;
+		public boolean kSteerMotorEnableCurrentLimit = false;
 		public double kSteerMotorMaxVoltage = 7.0; // volts
 		public boolean kSteerMotorEnableVoltageCompensation = false;
 		public int kSteerMotorVoltageMeasurementFilter = 8; // # of samples in rolling average
@@ -105,7 +105,7 @@ public class SwerveDriveModule extends Subsystem {
 		public int kDriveContinuousCurrentLimit = 30; // amps
 		public int kDrivePeakCurrentLimit = 50; // amps
 		public int kDrivePeakCurrentDuration = 200; // ms
-		public boolean kDriveEnableCurrentLimit = true;
+		public boolean kDriveEnableCurrentLimit = false;
 		public double kDriveMaxVoltage = 12.0; // 10 //volts
 		public double kDriveNominalVoltage = 0.0; //volts
 		public int kDriveVoltageMeasurementFilter = 8; // # of samples in rolling average
@@ -201,6 +201,7 @@ public class SwerveDriveModule extends Subsystem {
 
             mSteerMotor.configGetSupplyCurrentLimit(supplyCurrLimit, Constants.kLongCANTimeoutMs);
         }
+        //mSteerMotor.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, 30, 30, 0));
 
         // TODO: Set these correctly
         mSteerMotor.configMotionAcceleration(0.9 * mConstants.kSteerTicksPerUnitVelocity * 0.25, Constants.kLongCANTimeoutMs);
@@ -264,6 +265,8 @@ public class SwerveDriveModule extends Subsystem {
             mDriveMotor.configGetSupplyCurrentLimit(supplyCurrLimit, Constants.kLongCANTimeoutMs);
         }
 
+        mDriveMotor.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, 90, 90, 0));
+
 //        // Slot 0 is reserved for MotionMagic
 //        mDriveMotor.selectProfileSlot(0, 0);
 //        mDriveMotor.config_kP(0, 2.0, Constants.kLongCANTimeoutMs);
@@ -297,7 +300,7 @@ public class SwerveDriveModule extends Subsystem {
         // to SI units and let  Rotation2d normalizes the angle between 0 and 2pi.
         Rotation2d currentAngle = Rotation2d.fromRadians(encoderUnitsToRadians(mPeriodicIO.steerPosition));
 
-        return new SwerveModuleState(encVelocityToMetersPerSecond(mPeriodicIO.driveDemand), currentAngle);
+		return new SwerveModuleState(encVelocityToMetersPerSecond(mPeriodicIO.driveVelocity), currentAngle);
 	}
 
     /**
@@ -310,9 +313,9 @@ public class SwerveDriveModule extends Subsystem {
         // to SI units and let  Rotation2d normalizes the angle between 0 and 2pi.
         Rotation2d currentAngle = Rotation2d.fromRadians(encoderUnitsToRadians(mPeriodicIO.steerPosition));
 
-        // Minimize the change in heading the desired swerve module state would require by potentially
-        // reversing the direction the wheel spins. Odometry will still be accurate as both steer angle
-        // and wheel speeds will have their signs "flipped."
+        // Minimizing the change in heading for the swerve module potentially requires reversing the
+        // direction the wheel spins. Odometry will still be accurate as both steer angle and wheel
+        // speeds will have their signs "flipped."
         var state = SwerveModuleState.optimize(desiredState, currentAngle);
 
         // Converts the velocity in SI units (meters per second) to a
@@ -328,7 +331,7 @@ public class SwerveDriveModule extends Subsystem {
      * @param referenceAngleRadians goal angle in radians
      */
     private void setReferenceAngle(double referenceAngleRadians) {
-        // Note that Falcon is contiguous, so it can be larger then 2pi.
+        // Note that Falcon is contiguous, so it can be larger than 2pi.
         double currentAngleRadians = encoderUnitsToRadians(mPeriodicIO.steerPosition);
 
         // Map onto (0, 2pi)
@@ -338,7 +341,7 @@ public class SwerveDriveModule extends Subsystem {
         // Get the shortest angular distance between current and reference angles.
         double shortestDistance = Angles.shortest_angular_distance(currentAngleRadiansMod, referenceAngleRadians);
 
-        // Adjust by adding the shortest distance to current angle (which can be in  multiples of 2pi)
+        // Adjust by adding the shortest distance to current angle (which can be in multiples of 2pi)
         double adjustedReferenceAngleRadians = currentAngleRadians + shortestDistance;
 
         // mPeriodicIO.steerControlMode = ControlMode.MotionMagic;
@@ -510,6 +513,7 @@ public class SwerveDriveModule extends Subsystem {
     public synchronized void readPeriodicInputs() {
         mPeriodicIO.steerPosition = (int) mSteerMotor.getSelectedSensorPosition(0);
         mPeriodicIO.drivePosition = (int) mDriveMotor.getSelectedSensorPosition(0);
+        mPeriodicIO.driveVelocity = mDriveMotor.getSelectedSensorVelocity(0);
     }
 
     @Override
@@ -532,18 +536,20 @@ public class SwerveDriveModule extends Subsystem {
 
     @Override
     public void outputTelemetry() {
-        // SmartDashboard.putNumber(mModuleName + "Angle", getModuleAngle().getDegrees());
-        // SmartDashboard.putNumber(mModuleName + "Inches Driven", getDriveDistanceInches());
-        // SmartDashboard.putNumber(mModuleName + "Steer", periodicIO.steerPosition);
         // SmartDashboard.putNumber(mModuleName + "Steer velocity", mSteerMotor.getSelectedSensorVelocity(0));
         // SmartDashboard.putNumber(mModuleName + "Steer (cancoder)", enc.getAbsolutePosition()-cancoderOffsetDegrees);
+        // SmartDashboard.putNumber(mModuleName + " cancoder", mCANCoder.getAbsolutePosition());
+        // SmartDashboard.putNumber(mModuleName + " steerDemand", mPeriodicIO.steerDemand);
+        // SmartDashboard.putNumber(mModuleName + " steerPosition", mPeriodicIO.steerPosition);
+        // SmartDashboard.putNumber(mModuleName + " driveDemand", mPeriodicIO.driveDemand);
         SmartDashboard.putNumber(mModuleName + " cancoder", mCANCoder.getAbsolutePosition());
         SmartDashboard.putNumber(mModuleName + " steerDemand", mPeriodicIO.steerDemand);
         SmartDashboard.putNumber(mModuleName + " steerPosition", mPeriodicIO.steerPosition);
         SmartDashboard.putNumber(mModuleName + " driveDemand", mPeriodicIO.driveDemand);
         // SmartDashboard.putNumber(mModuleName + "Steer", periodicIO.drivePosition);
         // SmartDashboard.putNumber(mModuleName + "Velocity", mDriveMotor.getSelectedSensorVelocity(0));
-        //SmartDashboard.putNumber(mModuleName + "Velocity", encVelocityToInchesPerSecond(periodicIO.velocity));
+        // SmartDashboard.putNumber(mModuleName + "Velocity", encVelocityToInchesPerSecond(periodicIO.velocity));
+        // SmartDashboard.putNumber(mModuleName + ": Current", mSteerMotor.getStatorCurrent());
         if(Constants.kDebuggingOutput) {
             SmartDashboard.putNumber(mModuleName + "Pulse Width", mSteerMotor.getSelectedSensorPosition(0));
             if(mSteerMotor.getControlMode() == ControlMode.MotionMagic)
@@ -559,6 +565,7 @@ public class SwerveDriveModule extends Subsystem {
         public int moduleID;
         public int steerPosition;
         public int drivePosition;
+        public double driveVelocity;
         public double steerCurrent;
         public double driveCurrent;
         public String steerFaults;
