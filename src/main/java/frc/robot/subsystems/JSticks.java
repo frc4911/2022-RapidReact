@@ -205,6 +205,9 @@ public class JSticks extends Subsystem{
             if (mPeriodicIO.op_POV0_ManualShot_Fender) {
                 mSuperstructure.setManualShootDistance(0);
                 mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT);
+            } else if (mPeriodicIO.op_POV90_ManualShot_Tarmac) {
+                mSuperstructure.setManualShootDistance(60); //5 feet away: temporary test value
+                mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT);
             } else if (mPeriodicIO.op_RightTrigger_Collect) {
                 mSuperstructure.setWantedState(Superstructure.WantedState.COLLECT);
             } else if (mPeriodicIO.op_LeftTrigger_Back) {
@@ -249,8 +252,8 @@ public class JSticks extends Subsystem{
         mPeriodicIO.op_BButton_StopShooter = mOperator.getButton(Xbox.B_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.op_XButton_RetractSlappySticks = mOperator.getButton(Xbox.X_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.op_YButton_ExtendSlappySticks = mOperator.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
-        mPeriodicIO.op_POV0_ManualShot_Fender = mOperator.getButton(Xbox.POV0_0, CW.PRESSED_LEVEL); // Test if needs Pressed_edge or level
-
+        mPeriodicIO.op_POV0_ManualShot_Fender = mOperator.getButton(Xbox.POV0_0, CW.PRESSED_LEVEL);
+        mPeriodicIO.op_POV90_ManualShot_Tarmac = mOperator.getButton(Xbox.POV0_90, CW.PRESSED_LEVEL);
     }
 
     private SystemState defaultStateTransfer() {
@@ -311,6 +314,7 @@ public class JSticks extends Subsystem{
         public boolean op_XButton_RetractSlappySticks = false;
         public boolean op_YButton_ExtendSlappySticks = false;
         public boolean op_POV0_ManualShot_Fender = false;
+        public boolean op_POV90_ManualShot_Tarmac = false;
         public boolean op_ManualShoot = false; // Move to Pov once read
 
     }
