@@ -149,9 +149,9 @@ public class Swerve extends Subsystem {
 
         @Override
         public void onStop(double timestamp) {
-            synchronized(Swerve.this) {
+//            synchronized(Swerve.this) {
                 stop();
-            }
+//            }
         }
     };
 
