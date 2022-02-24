@@ -15,6 +15,7 @@ import frc.robot.Ports;
 import libraries.cheesylib.drivers.TalonFXFactory;
 import libraries.cheesylib.loops.ILooper;
 import libraries.cheesylib.loops.Loop;
+import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.subsystems.SubsystemManager;
 import libraries.cheesylib.util.LatchedBoolean;
@@ -178,63 +179,54 @@ public class Shooter extends Subsystem{
 
     }
 
-    private Loop mLoop = new Loop() {
+    @Override
+    public void onStart(Phase phase){
+        synchronized (Shooter.this) {
+            mSystemState = SystemState.HOLDING;
+            mWantedState = WantedState.HOLD;
+            mStateChanged = true;
+            System.out.println(sClassName + " state " + mSystemState);
+            switch (phase) {
+                case DISABLED:
+                case AUTONOMOUS: 
+                    mPeriodicIO.schedDeltaDesired = 0; // goto sleep
+                    break;
+                default:
+                    mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
+                    break;
+            }
+            hoodHomed = false;
+            hoodMovementLowCnt = hoodMovementSampleCnt;
+        }
+    }
 
-        @Override
-        public void onStart(Phase phase){
-            synchronized (Shooter.this) {
-                mSystemState = SystemState.HOLDING;
-                mWantedState = WantedState.HOLD;
-                mStateChanged = true;
-                System.out.println(sClassName + " state " + mSystemState);
-                switch (phase) {
-                    case DISABLED:
-                    case AUTONOMOUS: 
-                        mPeriodicIO.schedDeltaDesired = 0; // goto sleep
-                        break;
-                    default:
-                        mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
-                        break;
+    @Override
+    public void onLoop(double timestamp){
+        synchronized (Shooter.this) {
+            do{
+                SystemState newState;
+                switch (mSystemState) {
+                case SHOOTING:
+                    newState = handleShooting();
+                    break;
+                case HOLDING:
+                default:
+                    newState = handleHolding();
+                    break;
                 }
-                hoodHomed = false;
-                hoodMovementLowCnt = hoodMovementSampleCnt;
-            }
+
+                if (newState != mSystemState) {
+                    System.out.println(sClassName + " state " + mSystemState + " to " + newState + " (" + timestamp + ")");
+                    mSystemState = newState;
+                    mStateChanged = true;
+                } else {
+                    mStateChanged = false;
+                }
+            } while(mSystemStateChange.update(mStateChanged));
         }
+    }
 
-        @Override
-        public void onLoop(double timestamp){
-            synchronized (Shooter.this) {
-                do{
-                    SystemState newState;
-                    switch (mSystemState) {
-                    case SHOOTING:
-                        newState = handleShooting();
-                        break;
-                    case HOLDING:
-                    default:
-                        newState = handleHolding();
-                        break;
-                    }
-
-                    if (newState != mSystemState) {
-                        System.out.println(sClassName + " state " + mSystemState + " to " + newState + " (" + timestamp + ")");
-                        mSystemState = newState;
-                        mStateChanged = true;
-                    } else {
-                        mStateChanged = false;
-                    }
-                } while(mSystemStateChange.update(mStateChanged));
-            }
-        }
-
-        @Override
-        public void onStop(double timestamp){
-            stop();
-        }
-
-    };
-
-    public synchronized void setWantedState(WantedState state) {
+        public synchronized void setWantedState(WantedState state) {
         if (state != mWantedState) {
             mSubsystemManager.scheduleMe(mListIndex, 1, false);
             System.out.println("waking " + sClassName);
@@ -356,10 +348,10 @@ public class Shooter extends Subsystem{
         mPeriodicIO.flywheelVelocityDemand = 0.0;
         mPeriodicIO.hoodDemand = mPeriodicIO.hoodPosition;
     }
-
+    
     @Override
-    public void registerEnabledLoops(ILooper enabledLooper) {
-        mListIndex = enabledLooper.register(mLoop);
+    public void passInIndex(int listIndex) {
+        mListIndex = listIndex;
     }
 
     @Override

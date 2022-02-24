@@ -3,6 +3,7 @@ package frc.robot.subsystems;
 import edu.wpi.first.wpilibj.Timer;
 import libraries.cheesylib.loops.ILooper;
 import libraries.cheesylib.loops.Loop;
+import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.util.LatchedBoolean;
 
@@ -74,71 +75,61 @@ public class Superstructure extends Subsystem{
         mClimber =   Climber.getInstance(sClassName);
     }
 
-    // Looping methods for subsystem
-    private Loop mLoop = new Loop(){
-        
-        @Override
-        public void onStart(Phase phase){
-            synchronized(Superstructure.this) {
-                mSystemState = SystemState.HOLDING;
-                mWantedState = WantedState.HOLD;
-                mStateChanged = true;
-                System.out.println(sClassName + " state " + mSystemState);
-                switch (phase) {
-                    case DISABLED:
-                        mPeriodicIO.schedDeltaDesired = 0; // goto sleep
-                        break;
-                    default:
-                        mPeriodicIO.schedDeltaDesired = 100;
-                        break;
-                }
-                stop();
+    @Override
+    public void onStart(Phase phase){
+        synchronized(Superstructure.this) {
+            mSystemState = SystemState.HOLDING;
+            mWantedState = WantedState.HOLD;
+            mStateChanged = true;
+            System.out.println(sClassName + " state " + mSystemState);
+            switch (phase) {
+                case DISABLED:
+                    mPeriodicIO.schedDeltaDesired = 0; // goto sleep
+                    break;
+                default:
+                    mPeriodicIO.schedDeltaDesired = 100;
+                    break;
             }
-        }
-
-        @Override
-        public void onLoop(double timestamp){
-            synchronized(Superstructure.this) {
-                do{
-                    SystemState newState;
-                    switch(mSystemState) {
-                        case COLLECTING:
-                            newState = handleCollecting();
-                            break;
-                        case BACKING:
-                            newState = handleBacking();
-                            break;
-                        case AUTO_SHOOTING:
-                            newState = handleAutoShooting();
-                            break;
-                        case MANUAL_SHOOTING:
-                            newState = handleManualShooting();
-                            break;
-                        case AUTO_CLIMBING:
-                            newState = handleAutoClimbing();
-                            break;
-                        case HOLDING:
-                        default:
-                            newState = handleHolding();
-                    }
-
-                    if (newState != mSystemState) {
-                        System.out.println(sClassName + " state " + mSystemState + " to " + newState + " (" + timestamp + ")");
-                        mSystemState = newState;
-                        mStateChanged = true;
-                    } else {
-                        mStateChanged = false;
-                    }
-                } while(mSystemStateChange.update(mStateChanged));
-            }
-        }
-
-        @Override
-        public void onStop(double timestamp){
             stop();
         }
+    }
 
-    };
+    @Override
+    public void onLoop(double timestamp){
+        synchronized(Superstructure.this) {
+            do{
+                SystemState newState;
+                switch(mSystemState) {
+                    case COLLECTING:
+                        newState = handleCollecting();
+                        break;
+                    case BACKING:
+                        newState = handleBacking();
+                        break;
+                    case AUTO_SHOOTING:
+                        newState = handleAutoShooting();
+                        break;
+                    case MANUAL_SHOOTING:
+                        newState = handleManualShooting();
+                        break;
+                    case AUTO_CLIMBING:
+                        newState = handleAutoClimbing();
+                        break;
+                    case HOLDING:
+                    default:
+                        newState = handleHolding();
+                }
+
+                if (newState != mSystemState) {
+                    System.out.println(sClassName + " state " + mSystemState + " to " + newState + " (" + timestamp + ")");
+                    mSystemState = newState;
+                    mStateChanged = true;
+                } else {
+                    mStateChanged = false;
+                }
+            } while(mSystemStateChange.update(mStateChanged));
+        }
+    }
 
     // Handling methods
     private SystemState handleHolding() {
@@ -316,9 +307,6 @@ public class Superstructure extends Subsystem{
 
     @Override
     public int whenRunAgain () {
-        if (mStateChanged && mPeriodicIO.schedDeltaDesired == 0){
-            return 1; // one more loop before going to sleep
-        }
         return mPeriodicIO.schedDeltaDesired;
     }
 
@@ -336,8 +324,8 @@ public class Superstructure extends Subsystem{
     }
 
     @Override
-    public void registerEnabledLoops(ILooper enabledLooper) {
-        mListIndex = enabledLooper.register(mLoop);
+    public void passInIndex(int listIndex) {
+        mListIndex = listIndex;
     }
 
     @Override
