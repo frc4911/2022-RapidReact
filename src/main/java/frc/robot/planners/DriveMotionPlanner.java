@@ -184,9 +184,11 @@ public class DriveMotionPlanner implements CSVWritable {
         return "";
     }
 
-     public Optional<HolonomicDriveSignal> update(double timestamp, Pose2d current_state, ChassisSpeeds chassisSpeeds) {
+     public HolonomicDriveSignal update(double timestamp, Pose2d current_state, ChassisSpeeds chassisSpeeds) {
+         HolonomicDriveSignal driveSignal;
+
         if (mCurrentTrajectory == null) {
-            return Optional.empty();
+            return null;
         }
 
         if (mCurrentTrajectory.getProgress() == 0.0 && !Double.isFinite(mLastTime)) {
@@ -202,7 +204,6 @@ public class DriveMotionPlanner implements CSVWritable {
             mError = current_state.inverse().transformBy(mSetpoint.state().getPose());
             var velocity = new Translation2d(chassisSpeeds.vxInMetersPerSecond, chassisSpeeds.vyInMetersPerSecond);
 
-            HolonomicDriveSignal driveSignal;
             Optional<HolonomicDriveSignal> trajectorySignal = follower.update(current_state,
                     velocity,
                     chassisSpeeds.omegaInRadiansPerSecond,
@@ -220,9 +221,10 @@ public class DriveMotionPlanner implements CSVWritable {
             } else {
                 driveSignal = this.driveSignal;
             }
-            return Optional.of(driveSignal);
+            return driveSignal;
         }
-        return Optional.empty();
+
+        return null;
     }
 
 //    private double distance(Pose2d current_state, double additional_progress) {
