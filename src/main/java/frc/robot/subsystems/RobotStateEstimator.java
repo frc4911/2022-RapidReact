@@ -1,8 +1,6 @@
 package frc.robot.subsystems;
 
 import frc.robot.RobotState;
-import libraries.cheesylib.loops.ILooper;
-import libraries.cheesylib.loops.Loop;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 

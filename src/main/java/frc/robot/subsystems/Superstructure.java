@@ -1,8 +1,6 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj.Timer;
-import libraries.cheesylib.loops.ILooper;
-import libraries.cheesylib.loops.Loop;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.util.LatchedBoolean;
@@ -48,6 +46,7 @@ public class Superstructure extends Subsystem{
 
     private double  mManualDistance;
     private boolean mShootSetup;
+    @SuppressWarnings("unused")
     private int mListIndex;
 
     private static String sClassName;

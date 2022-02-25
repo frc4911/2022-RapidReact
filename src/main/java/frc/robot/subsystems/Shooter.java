@@ -12,10 +12,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 import frc.robot.Ports;
-import frc.robot.subsystems.Climber.WantedState;
 import libraries.cheesylib.drivers.TalonFXFactory;
-import libraries.cheesylib.loops.ILooper;
-import libraries.cheesylib.loops.Loop;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.subsystems.SubsystemManager;
@@ -30,13 +27,13 @@ public class Shooter extends Subsystem{
     //Subsystem Constants
     private final double kMinShootDistance = 0; // Fender shot is 0
     private final double kMaxShootDistance = 146; // Approximate distance from fender to launch pad (the shooter's location in inches)
-    private double kMinShootSpeed = 10400; // Ticks per 100Ms
+    private final double kMinShootSpeed = 10400; // Ticks per 100Ms
     private final double kMaxShootSpeed = 20500;
-    private double kFlywheelSlope = (kMaxShootSpeed - kMinShootSpeed) / (kMaxShootDistance - kMinShootDistance);
+    private final double kFlywheelSlope = (kMaxShootSpeed - kMinShootSpeed) / (kMaxShootDistance - kMinShootDistance);
 
-    private double kMinHoodPosition = 2000; // Hood at lower hard stop
+    private final double kMinHoodPosition = 2000; // Hood at lower hard stop
     private final double kMaxHoodPosition = 27800; // Hood at max hard stop
-    private double kHoodSlope = (kMaxHoodPosition - kMinHoodPosition) / (kMaxShootDistance - kMinShootDistance);
+    private final double kHoodSlope = (kMaxHoodPosition - kMinHoodPosition) / (kMaxShootDistance - kMinShootDistance);
 
     //Configuration Constants
     private final double kFlywheelKp = 0.1;
@@ -70,15 +67,15 @@ public class Shooter extends Subsystem{
     private LatchedBoolean mSystemStateChange = new LatchedBoolean();
     private PeriodicIO mPeriodicIO = new PeriodicIO();
 
-    // hood homing state variables
-    // homing is done by sending the hood to a negative position
-    // while watching for the hood encoder to stop changing for a sufficient amount of time
-    private boolean hoodHomed; // global flag
+    // Hood homing state variables
+    // Homing is done by sending the hood to a negative position
+    // While watching for the hood encoder to stop changing for a sufficient amount of time
     private final double hoodMovementThreshhold = 5; // encoder movements below this threshhold are considered stopped
     private final double hoodNonMovementDuration = .25; // reading below threshhold encoder reads for this long is considered stopped
+    private final double hoodHomingDemand = -2 * kMaxHoodPosition; // a number negative enough to drive past 0 regardless of where started
+    private boolean hoodHomed; // global flag
     private double hoodNonMovementTimeout; // timestamp of when low readings are sufficient
     private WantedState wantedStateAfterHoming = WantedState.HOLD; // state to transition to after homed
-    private final double hoodHomingDemand = -2 * kMaxHoodPosition; // a number negative enough to drive past 0 regardless of where started
 
     double minSpeed;
     double minHood;
@@ -242,7 +239,6 @@ public class Shooter extends Subsystem{
                 } else {
                     mStateChanged = false;
                 }
-                loopCount++;
             } while(mSystemStateChange.update(mStateChanged));
         }
     }
