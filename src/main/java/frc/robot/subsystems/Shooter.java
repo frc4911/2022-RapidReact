@@ -27,7 +27,7 @@ public class Shooter extends Subsystem{
     //Subsystem Constants
     private final double kMinShootDistance = 0; // Fender shot is 0
     private final double kMaxShootDistance = 146; // Approximate distance from fender to launch pad (the shooter's location in inches)
-    private final double kMinShootSpeed = 10400; // Ticks per 100Ms
+    private final double kMinShootSpeed = 0;//10400; // Ticks per 100Ms
     private final double kMaxShootSpeed = 20500;
     private final double kFlywheelSlope = (kMaxShootSpeed - kMinShootSpeed) / (kMaxShootDistance - kMinShootDistance);
 
