@@ -12,8 +12,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 import frc.robot.Ports;
 import libraries.cheesylib.drivers.TalonFXFactory;
-import libraries.cheesylib.loops.ILooper;
-import libraries.cheesylib.loops.Loop;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.subsystems.SubsystemManager;
@@ -170,8 +168,9 @@ public class Indexer extends Subsystem{
     
     private SystemState handleLoading() {
         if(mStateChanged){
-            mPeriodicIO.controlMode = ControlMode.PercentOutput;
-            mPeriodicIO.indexerDemand = kLoadSpeed;
+            mPeriodicIO.controlMode = ControlMode.PercentOutput; // TODO:: Change to position
+            indexSpeed = SmartDashboard.getNumber("Indexing Speed", 0.0);
+            mPeriodicIO.indexerDemand = indexSpeed; // kLoadSpeed;
         }
 
         return defaultStateTransfer();
@@ -180,8 +179,7 @@ public class Indexer extends Subsystem{
     private SystemState handleFeeding() {
         if(mStateChanged){
             mPeriodicIO.controlMode = ControlMode.PercentOutput; // TODO: Change to position
-            indexSpeed = SmartDashboard.getNumber("Indexing Speed", 0.0);
-            mPeriodicIO.indexerDemand = indexSpeed; // kFeedSpeed; // TODO: Update demand to move balls out of indexer by position
+            mPeriodicIO.indexerDemand = kFeedSpeed; // TODO: Update demand to move balls out of indexer by position in one set
         }
 
         return defaultStateTransfer();
@@ -246,20 +244,18 @@ public class Indexer extends Subsystem{
 
     @Override
     public String getLogHeaders() {
-        // TODO Auto-generated method stub
         return "Indexer";
     }
 
     @Override
     public String getLogValues(boolean telemetry) {
-        // TODO Auto-generated method stub
         return "Indexer.Values";
     }
 
     @Override
     public void outputTelemetry() {
-        // TODO Auto-generated method stub
-        
+        SmartDashboard.putBoolean("Ball Entering", isBallEntering());
+        SmartDashboard.putBoolean("Fully Loaded", isFullyLoaded());        
     }
 
     public static class PeriodicIO{
