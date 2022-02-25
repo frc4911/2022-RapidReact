@@ -74,10 +74,8 @@ public class Shooter extends Subsystem{
     private final double hoodNonMovementThreshhold = 5; // encoder movements below this threshhold are considered stopped
     private final double hoodNonMovementDuration = .25; // reading below threshhold encoder reads for this long is considered stopped
     private final double hoodHomingDemand = -2 * kMaxHoodPosition; // a number negative enough to drive past 0 regardless of where started
-    private boolean hoodHomed; // global flag
     private double hoodNonMovementTimeout; // timestamp of when low readings are sufficient
     private WantedState wantedStateAfterHoming = WantedState.HOLD; // state to transition to after homed
-    private final double hoodHomingDemand = -2 * kMaxHoodPosition; // a number negative enough to drive past 0 regardless of where started
     private double hoodEncoderOffset = 0; // used after homing to avoid resetting encoder position
 
     double minSpeed;
