@@ -12,10 +12,10 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 import frc.robot.Ports;
 import libraries.cheesylib.drivers.TalonFXFactory;
-import libraries.cheesylib.loops.ILooper;
-import libraries.cheesylib.loops.Loop;
+import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.subsystems.SubsystemManager;
+import libraries.cheesylib.util.LatchedBoolean;
 
 public class Collector extends Subsystem{
 
@@ -58,6 +58,7 @@ public class Collector extends Subsystem{
     private WantedState mWantedState;
     private boolean mStateChanged;
     private PeriodicIO mPeriodicIO = new PeriodicIO();
+    private LatchedBoolean mSystemStateChange = new LatchedBoolean();
     private SolenoidState mSolenoidState;
     private boolean mRunCollectorLoop;
 
@@ -109,25 +110,24 @@ public class Collector extends Subsystem{
         mFXCollector.setNeutralMode(NeutralMode.Coast);
     }
 
-    private Loop mLoop = new Loop() {
-        
-        @Override
-        public void onStart(Phase phase){
-            synchronized (Collector.this) { // TODO Check if the key word synchronized is needed
-                mSystemState = SystemState.HOLDING;
-                mWantedState = WantedState.HOLD;
-                mStateChanged = true;
-                mRunCollectorLoop = false;
-                System.out.println(sClassName + " state " + mSystemState);
-                // this subsystem is "on demand" so
-                mPeriodicIO.schedDeltaDesired = 0;
-                stop(); // put into a known state
-            }
+    @Override
+    public void onStart(Phase phase){
+        synchronized (Collector.this) { // TODO Check if the key word synchronized is needed
+            mSystemState = SystemState.HOLDING;
+            mWantedState = WantedState.HOLD;
+            mStateChanged = true;
+            mRunCollectorLoop = false;
+            System.out.println(sClassName + " state " + mSystemState);
+            // this subsystem is "on demand" so
+            mPeriodicIO.schedDeltaDesired = 0;
+            stop(); // put into a known state
         }
+    }
 
-        @Override
-        public void onLoop(double timestamp){
-            synchronized (Collector.this) {
+    @Override
+    public void onLoop(double timestamp){
+        synchronized (Collector.this) {
+            do{
                 SystemState newState;
                 switch (mSystemState) {
                 case COLLECTING:
@@ -149,16 +149,10 @@ public class Collector extends Subsystem{
                 } else {
                     mStateChanged = false;
                 }
-            }
+            } while(mSystemStateChange.update(mStateChanged));
         }
+    }
 
-        @Override
-        public void onStop(double timestamp){
-            stop();
-        }
-
-    };
-    
     public synchronized void setWantedState(WantedState state) {
         if (state != mWantedState) {
             mSubsystemManager.scheduleMe(mListIndex, 1, false);
@@ -244,16 +238,12 @@ public class Collector extends Subsystem{
     }
 
     @Override
-    public void registerEnabledLoops(ILooper enabledLooper) {
-        mListIndex = enabledLooper.register(mLoop);
+    public void passInIndex(int listIndex) {
+        mListIndex = listIndex;
     }
 
     @Override
     public int whenRunAgain () {
-        if (mStateChanged && mPeriodicIO.schedDeltaDesired == 0){
-            return 1; // one more loop before going to sleep
-        }
-
         return mPeriodicIO.schedDeltaDesired;
     }
 

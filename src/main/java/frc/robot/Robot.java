@@ -76,7 +76,7 @@ public class Robot extends TimedRobot {
     mSwerve = Swerve.getInstance(mClassName);
     mShooter = Shooter.getInstance(mClassName);
     mIndexer = Indexer.getInstance(mClassName);
-    // mClimber = Climber.getInstance(mClassName);
+    mClimber = Climber.getInstance(mClassName);
     mCollector = Collector.getInstance(mClassName);
     mRobotStateEstimator = RobotStateEstimator.getInstance(mClassName);
 
@@ -90,7 +90,7 @@ public class Robot extends TimedRobot {
           mSwerve,
           mShooter,
           mIndexer,
-          // mClimber,
+          mClimber,
           mCollector,
           mRobotStateEstimator
         )
