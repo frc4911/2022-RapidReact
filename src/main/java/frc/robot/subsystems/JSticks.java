@@ -1,10 +1,7 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
-import libraries.cheesylib.loops.ILooper;
-import libraries.cheesylib.loops.Loop;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.util.LatchedBoolean;
@@ -71,10 +68,6 @@ public class JSticks extends Subsystem{
             mSwerve.mSwerveConfiguration.kSwerveHeadingKi,
             mSwerve.mSwerveConfiguration.kSwerveHeadingKd,
             mSwerve.mSwerveConfiguration.kSwerveHeadingKf);
-        // double testKp = SmartDashboard.getNumber("kP", -1.0);
-        // if(testKp == -1.0){
-        //     SmartDashboard.putNumber("kP", 0.0);
-        // }
         mDriver = new Xbox();
         mOperator = new Xbox();
 
@@ -157,15 +150,6 @@ public class JSticks extends Subsystem{
 		double swerveYInput = mPeriodicIO.dr_LeftStickX_Translate;
 		double swerveXInput = mPeriodicIO.dr_LeftStickY_Translate;
 		double swerveRotationInput = mPeriodicIO.dr_RightStickX_Rotate;
- 
-        
-        // double testKp = SmartDashboard.getNumber("kP", 0.01);
-
-        mHeadingController.setPIDFConstants(
-            mSwerve.mSwerveConfiguration.kSwerveHeadingKp, // testKp,
-            mSwerve.mSwerveConfiguration.kSwerveHeadingKi,
-            mSwerve.mSwerveConfiguration.kSwerveHeadingKd,
-            mSwerve.mSwerveConfiguration.kSwerveHeadingKf);
 
         // NEW SWERVE
         boolean maintainHeading = mShouldMaintainHeading.update(swerveRotationInput == 0, 0.2);

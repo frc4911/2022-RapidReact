@@ -2,6 +2,7 @@ package frc.robot.subsystems;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
+import com.ctre.phoenix.motorcontrol.StatorCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
@@ -11,8 +12,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 import frc.robot.Ports;
 import libraries.cheesylib.drivers.TalonFXFactory;
-import libraries.cheesylib.loops.ILooper;
-import libraries.cheesylib.loops.Loop;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.subsystems.SubsystemManager;
@@ -25,6 +24,7 @@ public class Climber extends Subsystem{
     private final Solenoid mSlapSticks;
 
     //Subsystem Constants
+    private final double kClimberCurrentLimit = 60;
 
     //Subsystem States
     public enum SolenoidState {
@@ -44,12 +44,14 @@ public class Climber extends Subsystem{
 
     public enum SystemState {
         HOLDING,
-        CLIMBING
+        CLIMBING,
+        HOMING
     }
 
     public enum WantedState {
         HOLD,
-        CLIMB
+        CLIMB,
+        HOME
     }
 
     private SystemState   mSystemState;
@@ -59,6 +61,16 @@ public class Climber extends Subsystem{
     private LatchedBoolean mSystemStateChange = new LatchedBoolean();
     private SolenoidState mSolenoidState;
     private int           mDefaultSchedDelta = 20;
+
+    // Climber homing state variables
+    // Homing is done by sending the Climber to a negative position
+    // While watching for the climber encoder to stop changing for a sufficient amount of time
+    private final double climberMovementThreshhold = 5; // encoder movements below this threshhold are considered stopped
+    private final double climberNonMovementDuration = .25; // reading below threshhold encoder reads for this long is considered stopped
+    private final double climberHomingDemand = -2 * 100000; // a number negative enough to drive past 0 regardless of where started
+    private boolean climberHomed = true; // global flag
+    private double climberNonMovementTimeout; // timestamp of when low readings are sufficient
+    private WantedState wantedStateAfterHoming = WantedState.HOLD; // state to transition to after homed
 
     //Other
     private SubsystemManager mSubsystemManager;
@@ -104,8 +116,11 @@ public class Climber extends Subsystem{
         mFXLeftClimber.setInverted(false);
         mFXRightClimber.setInverted(true);
         
-        mFXLeftClimber.setNeutralMode(NeutralMode.Coast);
-        mFXRightClimber.setNeutralMode(NeutralMode.Coast);
+        mFXLeftClimber.setNeutralMode(NeutralMode.Brake);
+        mFXRightClimber.setNeutralMode(NeutralMode.Brake);
+
+        mFXLeftClimber.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kClimberCurrentLimit, kClimberCurrentLimit, 0));
+        mFXRightClimber.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kClimberCurrentLimit, kClimberCurrentLimit, 0));
 
     }
 
@@ -131,6 +146,8 @@ public class Climber extends Subsystem{
                 case CLIMBING:
                     newState = handleClimbing();
                     break;
+                case HOMING:
+                    newState = handleHoming();
                 case HOLDING:
                 default:
                     newState = handleHolding();
@@ -159,19 +176,52 @@ public class Climber extends Subsystem{
 
     private SystemState handleHolding() {
         if(mStateChanged){
-            System.out.println("climber demand 0");
-            mPeriodicIO.climberDemand = 0.0;
-            mPeriodicIO.slappyDemand = SolenoidState.RETRACT;
-            mPeriodicIO.schedDeltaDesired = 0;
+            if (climberHomed){
+                System.out.println("climber demand 0");
+                mPeriodicIO.climberDemand = 0.0;
+                // mPeriodicIO.slappyDemand = SolenoidState.RETRACT;
+                mPeriodicIO.schedDeltaDesired = 0;
+            } else {
+                mWantedState = WantedState.HOME;
+                wantedStateAfterHoming = WantedState.HOLD;
+            }
         }
 
         return defaultStateTransfer();
     }
     
     private SystemState handleClimbing() {
+        if (mStateChanged){
+            if(climberHomed) {
+                mPeriodicIO.schedDeltaDesired = mDefaultSchedDelta; // stay awake
+            } else {
+                mWantedState = WantedState.HOME;
+                wantedStateAfterHoming = WantedState.CLIMB;
+            }
+        }
+
+        return defaultStateTransfer();
+    }
+
+    private SystemState handleHoming() {
+        double now = Timer.getFPGATimestamp();
         if(mStateChanged){
-            mPeriodicIO.slappyDemand = SolenoidState.RETRACT;
-            mPeriodicIO.schedDeltaDesired = mDefaultSchedDelta; // stay awake
+            climberHomed = false;
+            climberNonMovementTimeout = now+climberNonMovementDuration;
+            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
+        }
+
+        double distance = Math.abs(mPeriodicIO.climberPosition - mPeriodicIO.lastClimberPosition);
+        if (distance > climberMovementThreshhold){
+            climberNonMovementTimeout = now+climberNonMovementDuration;
+        }
+
+        if (now > climberNonMovementTimeout){
+            mFXRightClimber.setSelectedSensorPosition(0);
+            mFXLeftClimber.setSelectedSensorPosition(0);
+
+            climberHomed = true;
+            mWantedState = wantedStateAfterHoming;
         }
 
         return defaultStateTransfer();
@@ -181,6 +231,8 @@ public class Climber extends Subsystem{
         switch(mWantedState){
             case CLIMB:
                 return SystemState.CLIMBING;
+            case HOME:
+                return SystemState.HOMING;
             case HOLD:
             default:
                 return SystemState.HOLDING;
@@ -189,6 +241,7 @@ public class Climber extends Subsystem{
 
     public void setClimbSpeed(double speed){
         mPeriodicIO.climberDemand = speed;
+        System.out.println(mPeriodicIO.climberDemand);
         if(speed == 0.0){
             mWantedState = WantedState.HOLD;
         } else {
@@ -239,7 +292,8 @@ public class Climber extends Subsystem{
 
     @Override
     public int whenRunAgain () {
-        return mPeriodicIO.schedDeltaDesired;
+        //return mPeriodicIO.schedDeltaDesired;
+        return 20;
     }
 
     @Override
@@ -256,7 +310,10 @@ public class Climber extends Subsystem{
 
     @Override
     public void outputTelemetry() {
-        SmartDashboard.putNumber("Left Climber Encoder", mFXLeftClimber.getSelectedSensorPosition());        
+        SmartDashboard.putNumber("Left Climber Encoder", mFXLeftClimber.getSelectedSensorPosition()); 
+        SmartDashboard.putNumber("Left Climb Current", mFXLeftClimber.getStatorCurrent());        
+        SmartDashboard.putNumber("Right Climb Current", mFXRightClimber.getStatorCurrent());        
+       
     }
 
     public static class PeriodicIO{
@@ -268,8 +325,16 @@ public class Climber extends Subsystem{
         public  double schedDuration;
         private double lastSchedStart;
 
+        //Inputs
+        private double climberPosition;
+
+        //Outputs
         private double climberDemand;
         private SolenoidState slappyDemand;
+
+        //Other
+        private double lastClimberPosition;
+
     }
 
 }
