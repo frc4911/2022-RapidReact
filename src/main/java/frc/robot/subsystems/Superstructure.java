@@ -19,6 +19,7 @@ public class Superstructure extends Subsystem{
 
     //Superstructure States
     public enum SystemState{
+        DISABLING,
         HOLDING,
         COLLECTING,
         BACKING,
@@ -28,6 +29,7 @@ public class Superstructure extends Subsystem{
     }
     
     public enum WantedState{
+        DISABLE,
         HOLD,
         COLLECT,
         BACK,
@@ -78,19 +80,20 @@ public class Superstructure extends Subsystem{
     @Override
     public void onStart(Phase phase){
         synchronized(Superstructure.this) {
-            mSystemState = SystemState.HOLDING;
-            mWantedState = WantedState.HOLD;
             mStateChanged = true;
-            System.out.println(sClassName + " state " + mSystemState);
             switch (phase) {
                 case DISABLED:
+                    mSystemState = SystemState.DISABLING;
+                    mWantedState = WantedState.DISABLE;
                     mPeriodicIO.schedDeltaDesired = 0; // goto sleep
                     break;
                 default:
+                    mSystemState = SystemState.HOLDING;
+                    mWantedState = WantedState.HOLD;
                     mPeriodicIO.schedDeltaDesired = 100;
                     break;
             }
-            stop();
+            System.out.println(sClassName + " state " + mSystemState);
         }
     }
 
@@ -115,6 +118,9 @@ public class Superstructure extends Subsystem{
                     case AUTO_CLIMBING:
                         newState = handleAutoClimbing();
                         break;
+                    case DISABLING:
+                        newState = handleDisabling();
+                        break;
                     case HOLDING:
                     default:
                         newState = handleHolding();
@@ -132,6 +138,14 @@ public class Superstructure extends Subsystem{
     }
 
     // Handling methods
+    private SystemState handleDisabling() {
+        if(mStateChanged){
+            mPeriodicIO.schedDeltaDesired = mSlowCycle;
+        }
+
+        return defaultStateTransfer();
+    }
+
     private SystemState handleHolding() {
         if(mStateChanged){
             mCollector.setWantedState(Collector.WantedState.HOLD);
@@ -148,19 +162,19 @@ public class Superstructure extends Subsystem{
         if(mStateChanged){
             mPeriodicIO.schedDeltaDesired = mFastCycle;
         }
-        
-        if(!mIndexer.isFullyLoaded()){
-            mCollector.setWantedState(Collector.WantedState.COLLECT);
-            if(mIndexer.isBallEntering()){
-                mIndexer.setWantedState(Indexer.WantedState.LOAD);
-            } else {
-                mCollector.setWantedState(Collector.WantedState.HOLD);
-                mIndexer.setWantedState(Indexer.WantedState.HOLD);
-            }
-        } else {
-            mCollector.setWantedState(Collector.WantedState.HOLD);
-            mIndexer.setWantedState(Indexer.WantedState.HOLD);
-        }
+        mCollector.setWantedState(Collector.WantedState.COLLECT);
+        // if(!mIndexer.isFullyLoaded()){
+        //     mCollector.setWantedState(Collector.WantedState.COLLECT);
+        //     if(mIndexer.isBallEntering()){
+        //         mIndexer.setWantedState(Indexer.WantedState.LOAD);
+        //     } else {
+        //         mCollector.setWantedState(Collector.WantedState.HOLD);
+        //         mIndexer.setWantedState(Indexer.WantedState.HOLD);
+        //     }
+        // } else {
+        //     mCollector.setWantedState(Collector.WantedState.HOLD);
+        //     mIndexer.setWantedState(Indexer.WantedState.HOLD);
+        // }
 
         return collectingStateTransfer();
     }
@@ -259,6 +273,8 @@ public class Superstructure extends Subsystem{
 
     private SystemState defaultStateTransfer() {
         switch(mWantedState){
+            case DISABLE:
+                return SystemState.DISABLING;
             case COLLECT:
                 return SystemState.COLLECTING;
             case BACK:

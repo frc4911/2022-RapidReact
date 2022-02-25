@@ -22,10 +22,12 @@ public class JSticks extends Subsystem{
 
     public enum SystemState {
         READINGBUTTONS,
+        DISABLING,
     }
 
     public enum WantedState {
         READBUTTONS,
+        DISABLE,
     }
 
     private SystemState mSystemState = SystemState.READINGBUTTONS;
@@ -83,23 +85,25 @@ public class JSticks extends Subsystem{
     @Override
     public void onStart(Phase phase){
         synchronized (JSticks.this) {
-            mSystemState = SystemState.READINGBUTTONS;
-            mWantedState = WantedState.READBUTTONS;
             mStateChanged = true;
 
             // Force true on first iteration of teleop periodic
             shouldChangeHeadingSetpoint.update(false);
 
-            System.out.println(sClassName + " state " + mSystemState);
             switch (phase) {
                 case DISABLED:
                 case AUTONOMOUS: 
                     mPeriodicIO.schedDeltaDesired = 0; // goto sleep
+                    mSystemState = SystemState.DISABLING;
+                    mWantedState = WantedState.DISABLE;
                     break;
                 default:
+                    mSystemState = SystemState.READINGBUTTONS;
+                    mWantedState = WantedState.READBUTTONS;
                     mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
                     break;
             }
+            System.out.println(sClassName + " state " + mSystemState);
         }
     }
 
@@ -109,10 +113,13 @@ public class JSticks extends Subsystem{
             do{
                 SystemState newState;
                 switch (mSystemState) {
-                case READINGBUTTONS:
-                default:
-                    newState = handleReadingButtons();
-                    break;
+                    case DISABLING:
+                        newState = handleDisabling();
+                        break;
+                    case READINGBUTTONS:
+                    default:
+                        newState = handleReadingButtons();
+                        break;
                 }
 
                 if (newState != mSystemState) {
@@ -130,6 +137,11 @@ public class JSticks extends Subsystem{
     @Override
     public void stop() {
 
+    }
+
+    private SystemState handleDisabling() {
+        
+        return defaultStateTransfer();
     }
 
     private SystemState handleReadingButtons() {
@@ -231,6 +243,7 @@ public class JSticks extends Subsystem{
     @Override
     public void readPeriodicInputs() {
         double now       = Timer.getFPGATimestamp();
+
         mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
         mPeriodicIO.lastSchedStart   = now;
 
@@ -254,9 +267,11 @@ public class JSticks extends Subsystem{
 
     private SystemState defaultStateTransfer() {
         switch (mWantedState) {
-        case READBUTTONS:
-        default:
-            return SystemState.READINGBUTTONS;
+            case DISABLE:
+                return SystemState.DISABLING;
+            case READBUTTONS:
+            default:
+                return SystemState.READINGBUTTONS;
         }
     }
 
