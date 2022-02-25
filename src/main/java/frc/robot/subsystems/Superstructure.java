@@ -48,7 +48,6 @@ public class Superstructure extends Subsystem{
 
     private double  mManualDistance;
     private boolean mShootSetup;
-    private int mListIndex;
 
     private static String sClassName;
     private static int sInstanceCount;
@@ -337,11 +336,6 @@ public class Superstructure extends Subsystem{
         double now = Timer.getFPGATimestamp();
         mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
         mPeriodicIO.lastSchedStart = now;
-    }
-
-    @Override
-    public void passInIndex(int listIndex) {
-        mListIndex = listIndex;
     }
 
     @Override

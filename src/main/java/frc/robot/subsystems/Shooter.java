@@ -12,10 +12,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 import frc.robot.Ports;
-import frc.robot.subsystems.Climber.WantedState;
 import libraries.cheesylib.drivers.TalonFXFactory;
-import libraries.cheesylib.loops.ILooper;
-import libraries.cheesylib.loops.Loop;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.subsystems.SubsystemManager;
@@ -30,7 +27,7 @@ public class Shooter extends Subsystem{
     //Subsystem Constants
     private final double kMinShootDistance = 0; // Fender shot is 0
     private final double kMaxShootDistance = 146; // Approximate distance from fender to launch pad (the shooter's location in inches)
-    private double kMinShootSpeed = 10400; // Ticks per 100Ms
+    private double kMinShootSpeed = 0;//10400; // Ticks per 100Ms
     private final double kMaxShootSpeed = 20500;
     private double kFlywheelSlope = (kMaxShootSpeed - kMinShootSpeed) / (kMaxShootDistance - kMinShootDistance);
 
@@ -74,21 +71,19 @@ public class Shooter extends Subsystem{
     // homing is done by sending the hood to a negative position
     // while watching for the hood encoder to stop changing for a sufficient amount of time
     private boolean hoodHomed; // global flag
-    private final double hoodMovementThreshhold = 5; // encoder movements below this threshhold are considered stopped
+    private final double hoodNonMovementThreshhold = 5; // encoder movements below this threshhold are considered stopped
     private final double hoodNonMovementDuration = .25; // reading below threshhold encoder reads for this long is considered stopped
     private double hoodNonMovementTimeout; // timestamp of when low readings are sufficient
     private WantedState wantedStateAfterHoming = WantedState.HOLD; // state to transition to after homed
     private final double hoodHomingDemand = -2 * kMaxHoodPosition; // a number negative enough to drive past 0 regardless of where started
-
+    private double hoodEncoderOffset = 0; // used after homing to avoid resetting encoder position
     double minSpeed;
     double minHood;
 
     private double mDistance = -1;
 
     //Other
-    private SubsystemManager mSubsystemManager;
-    private int              mListIndex;
-    private boolean alreadyScheduled = false;    
+    private SubsystemManager mSubsystemManager; 
     //Subsystem Creation
     private static String sClassName;
     private static int sInstanceCount;
@@ -188,6 +183,10 @@ public class Shooter extends Subsystem{
         mFXHood.configClosedloopRamp(0/*kClosedRamp*/, Constants.kLongCANTimeoutMs);
         mFXHood.configAllowableClosedloopError(0, kClosedError, Constants.kLongCANTimeoutMs);
 
+        mFXHood.configMotionCruiseVelocity(5000); // 10000 ticks/second
+        mFXHood.configMotionAcceleration(1000);  // 2500 ticks/(sec^2)
+        mFXHood.configMotionSCurveStrength(0); // trapizoidal curve
+
     }
 
     @Override
@@ -205,7 +204,6 @@ public class Shooter extends Subsystem{
                 case TELEOP:
                     mSystemState = SystemState.HOLDING;
                     mWantedState = WantedState.HOLD;
-                    hoodHomed = false;
                     setShootDistance(0);
                     mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
                     break;
@@ -242,11 +240,14 @@ public class Shooter extends Subsystem{
                 } else {
                     mStateChanged = false;
                 }
-                loopCount++;
+                // this do/while does a second run through so state changes take place in one onLoop call
             } while(mSystemStateChange.update(mStateChanged));
         }
     }
 
+    // this method should only be used by external subsystems.
+    // if you want to change your own wantedState then simply set
+    // it directly
     public synchronized void setWantedState(WantedState state) {
         if (state != mWantedState) {
             mWantedState = state;
@@ -272,12 +273,14 @@ public class Shooter extends Subsystem{
         }
 
         double distance = Math.abs(mPeriodicIO.hoodPosition - mPeriodicIO.lastHoodPosition);
-        if (distance > hoodMovementThreshhold){
+        if (distance > hoodNonMovementThreshhold){
             hoodNonMovementTimeout = now+hoodNonMovementDuration;
         }
 
         if (now > hoodNonMovementTimeout){
-            mFXHood.setSelectedSensorPosition(0);
+            // instead of resetting the sensor the code remembers the offset
+            // mFXHood.setSelectedSensorPosition(0); 
+            hoodEncoderOffset = mPeriodicIO.hoodPosition;
             hoodHomed = true;
             mWantedState = wantedStateAfterHoming;
         }
@@ -350,12 +353,11 @@ public class Shooter extends Subsystem{
         }
     }
 
-    // TODO: Confirm if distance to flywheel velocity relation is linear
     private double distanceToTicksPer100Ms(double distance){
         return (kFlywheelSlope * distance) + kMinShootSpeed;
     }
 
-    // Hood range is from 0 to 27800 ticks - TODO: Verify range
+    // Hood range is from 0 to 27800 ticks
     // Hood range is from 15.82 degrees to 35.82 degrees 
     // 1390 falcon ticks per degree
     private double distanceToHoodPos(double distance){
@@ -370,9 +372,20 @@ public class Shooter extends Subsystem{
 
         mPeriodicIO.flywheelVelocity = mFXLeftFlyWheel.getSelectedSensorVelocity();
         mPeriodicIO.lastHoodPosition = mPeriodicIO.hoodPosition;      
-        mPeriodicIO.hoodPosition = mFXHood.getSelectedSensorPosition();
+        mPeriodicIO.hoodPosition = adjustHoodEncoderPosition(mFXHood.getSelectedSensorPosition());
 
         updateShooterStatus();
+    }
+
+    // these next two methods are used in liew of resetting the encoder.
+    // resetting the encoder can take a few milliseconds which could
+    // cause unexpected behavior if the encoder values jump while PID'ing
+    private double adjustHoodEncoderPosition(double rawPosition){
+        return rawPosition-hoodEncoderOffset;
+    }
+
+    private double unadjustHoodEncoderPosition(double adjustedPosition){
+        return adjustedPosition+hoodEncoderOffset;
     }
 
     @Override
@@ -383,7 +396,7 @@ public class Shooter extends Subsystem{
     private void setWheels(double flyDemand, double hoodDemand){
         mFXLeftFlyWheel.set(ControlMode.Velocity, flyDemand);  
         mFXRightFlyWheel.set(ControlMode.Velocity, flyDemand);
-        mFXHood.set(ControlMode.Position, hoodDemand);
+        mFXHood.set(/*ControlMode.Position*/ ControlMode.MotionMagic, unadjustHoodEncoderPosition(hoodDemand));
     }
 
     @Override
@@ -394,21 +407,10 @@ public class Shooter extends Subsystem{
         setWheels(mPeriodicIO.flywheelVelocityDemand, mPeriodicIO.hoodDemand);
     }
     
-    @Override
-    public void passInIndex(int listIndex) {
-        mListIndex = listIndex;
-        System.out.println(sClassName+" listIndex = "+mListIndex);
-    }
 
     @Override
     public int whenRunAgain () {
-        if (alreadyScheduled){
-            alreadyScheduled = false;
-            return 0;
-        }
-        else{
-            return mPeriodicIO.schedDeltaDesired;
-        }
+        return mPeriodicIO.schedDeltaDesired;
     }
 
     @Override
@@ -432,6 +434,8 @@ public class Shooter extends Subsystem{
         SmartDashboard.putBoolean("Reached Desired Speed", mPeriodicIO.reachedDesiredSpeed);
         SmartDashboard.putBoolean("Reached Desired Hood", mPeriodicIO.reachedDesiredHoodPosition);
         SmartDashboard.putBoolean("Ready To Shoot", readyToShoot());
+        // these next values are bypassing readPeriodicInputs to reduce the ctre errors in
+        // riolog
         SmartDashboard.putNumber("Flywheel Right Current", mPeriodicIO.flyRightCurrent);
         SmartDashboard.putNumber("Flywheel Left Current", mPeriodicIO.flyLeftCurrent);  
         SmartDashboard.putNumber("Hood Current", mPeriodicIO.hoodCurrent);    
@@ -439,7 +443,7 @@ public class Shooter extends Subsystem{
 
     public static class PeriodicIO{
         //Logging
-        private final int mDefaultSchedDelta = 60;//20; // loop run every 20 msec
+        private final int mDefaultSchedDelta = 20; // loop run every 20 msec
         private int    schedDeltaDesired;
         public  double schedDeltaActual;
         public  double schedDuration;

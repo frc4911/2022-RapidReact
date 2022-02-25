@@ -14,6 +14,8 @@ import libraries.cheesylib.loops.Loop.Phase;
  * instantializing all member components at the start of the match.
  */
 public abstract class Subsystem {
+    protected int mListIndex;
+
     // Optional design pattern for caching periodic reads to avoid hammering the HAL/CAN.
     public void readPeriodicInputs() {}
 
@@ -22,11 +24,9 @@ public abstract class Subsystem {
 
     public int whenRunAgain () {return 20;}
 
-    public void passInIndex(int listIndex){}
-
-    // public void registerEnabledLoops(ILooper mEnabledLooper) {}
-
-    // public void registerLoggingLoops(ILooper mLoggingLooper) {}
+    public void passInIndex(int listIndex){
+        mListIndex = listIndex;
+    }
 
     public void onStart(Phase phase){}
 

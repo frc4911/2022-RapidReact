@@ -26,7 +26,6 @@ public class RobotStateEstimator extends Subsystem {
     RobotState robotState;// = RobotState.getInstance();
     Swerve mSwerve;
     @SuppressWarnings("unused")
-    private int mListIndex;
 
     private static String sClassName;
     private static int sInstanceCount;
@@ -104,11 +103,6 @@ public class RobotStateEstimator extends Subsystem {
 
     @Override
     public void stop() {
-    }
-
-    @Override
-    public void passInIndex(int listIndex) {
-        mListIndex = listIndex;
     }
 
     @Override

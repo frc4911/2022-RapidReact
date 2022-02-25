@@ -68,7 +68,6 @@ public class Collector extends Subsystem{
 
     //Other
     private SubsystemManager mSubsystemManager;
-    private int              mListIndex;
     
     //Subsystem Creation
     private static String sClassName;
@@ -237,11 +236,6 @@ public class Collector extends Subsystem{
 
         mPeriodicIO.collectorDemand = 0.0;
         mSolenoidState = SolenoidState.RETRACT;
-    }
-
-    @Override
-    public void passInIndex(int listIndex) {
-        mListIndex = listIndex;
     }
 
     @Override
