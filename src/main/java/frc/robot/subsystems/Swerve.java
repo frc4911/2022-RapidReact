@@ -64,8 +64,6 @@ public class Swerve extends Subsystem {
     private static DriveMotionPlanner mMotionPlanner;
     private boolean mOverrideTrajectory = false;
 
-    private int mListIndex = -1;
-
     private static String sClassName;
     private static int sInstanceCount;
     private static Swerve sInstance = null;
@@ -155,12 +153,6 @@ public class Swerve extends Subsystem {
     public synchronized void zeroSensors() {
         zeroSensors(Constants.kRobotStartingPose);
     }
-
-    @Override
-    public void passInIndex(int listIndex) {
-        mListIndex = listIndex;
-    }
-
 
     /**
      * Handles MANUAL state which corresponds to joy stick inputs.

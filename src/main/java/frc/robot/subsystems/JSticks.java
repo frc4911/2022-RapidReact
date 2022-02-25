@@ -40,7 +40,6 @@ public class JSticks extends Subsystem{
     private Swerve mSwerve;
 
     @SuppressWarnings("unused")
-    private int mListIndex;
     private LatchedBoolean mSystemStateChange = new LatchedBoolean();
 
     private static String sClassName;
@@ -257,11 +256,6 @@ public class JSticks extends Subsystem{
             default:
                 return SystemState.READINGBUTTONS;
         }
-    }
-
-    @Override
-    public void passInIndex(int listIndex) {
-        mListIndex = listIndex;
     }
 
     @Override

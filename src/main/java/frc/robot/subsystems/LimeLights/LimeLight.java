@@ -84,7 +84,6 @@ public abstract class LimeLight extends Subsystem {
     private double mLastStart;
     private int mDefaultSchedDelta = 20;
     @SuppressWarnings("unused")
-    private int mListIndex;
     private RobotState mRobotState;
 
     public LimeLight(LimelightConstants constants) {
@@ -222,11 +221,6 @@ public abstract class LimeLight extends Subsystem {
         setPipeline(0);
         setLed(LedMode.OFF);
         mOutputsHaveChanged = true;
-    }
-
-    @Override
-    public void passInIndex(int listIndex) {
-        mListIndex = listIndex;
     }
 
     public Pose2d getSubsystemToLens() {

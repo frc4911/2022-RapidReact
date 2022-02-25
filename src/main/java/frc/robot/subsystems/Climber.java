@@ -74,7 +74,6 @@ public class Climber extends Subsystem{
 
     //Other
     private SubsystemManager mSubsystemManager;
-    private int              mListIndex;
     
     //Subsystem Creation
     private static String sClassName;
@@ -289,11 +288,6 @@ public class Climber extends Subsystem{
     public void stop() {
         // TODO Auto-generated method stub
         
-    }
-
-    @Override
-    public void passInIndex(int listIndex) {
-        mListIndex = listIndex;
     }
 
     @Override

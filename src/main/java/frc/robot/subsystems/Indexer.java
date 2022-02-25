@@ -56,7 +56,6 @@ public class Indexer extends Subsystem{
 
     //Other
     private SubsystemManager mSubsystemManager;
-    private int              mListIndex;
     
     //Subsystem Creation
     private static String sClassName;
@@ -236,11 +235,6 @@ public class Indexer extends Subsystem{
         mFXIndexer.set(ControlMode.PercentOutput, 0.0);
 
         mPeriodicIO.indexerDemand = 0.0;
-    }
-
-    @Override
-    public void passInIndex(int listIndex) {
-        mListIndex = listIndex;
     }
 
     @Override

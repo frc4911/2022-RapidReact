@@ -238,13 +238,6 @@ public class SubsystemManager implements ILooper {
         looper2.register(mTheLoop);
     }
 
-    // each subsystem calls this to register its loop and is returned its scheduling slot
-    @Override
-    public int register(Loop loop) {
-        //mLoops.add(loop);
-        return 0;//mLoops.size()-1;
-    }
-
     // unused
     @Override
     public void start(){}
@@ -256,4 +249,10 @@ public class SubsystemManager implements ILooper {
     // unused
     @Override
     public void stop() {}
+
+    @Override
+    public int register(Loop loop) {
+        // TODO Auto-generated method stub
+        return 0;
+    }
  }
