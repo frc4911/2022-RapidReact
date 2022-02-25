@@ -217,7 +217,6 @@ public class Shooter extends Subsystem{
     @Override
     public void onLoop(double timestamp){
         synchronized (Shooter.this) {
-            int loopCount = 0;
             do{
                 SystemState newState;
                 switch (mSystemState) {
@@ -245,16 +244,13 @@ public class Shooter extends Subsystem{
                 }
                 loopCount++;
             } while(mSystemStateChange.update(mStateChanged));
-            if (loopCount>1){
-                System.out.println(sClassName+" onLoop loops "+loopCount);
-            }
         }
     }
 
     public synchronized void setWantedState(WantedState state) {
         if (state != mWantedState) {
             mWantedState = state;
-            mSubsystemManager.scheduleMe(mListIndex, 12, true);
+            mSubsystemManager.scheduleMe(mListIndex, 1, true);
             System.out.println("waking " + sClassName + " to "+state);
         }
     }
@@ -376,9 +372,6 @@ public class Shooter extends Subsystem{
         mPeriodicIO.lastHoodPosition = mPeriodicIO.hoodPosition;      
         mPeriodicIO.hoodPosition = mFXHood.getSelectedSensorPosition();
 
-        if (!hoodHomed){
-            System.out.println("readIO  currentPos: "+mPeriodicIO.hoodPosition+" now: "+now+" index: "+mListIndex);
-        }
         updateShooterStatus();
     }
 
