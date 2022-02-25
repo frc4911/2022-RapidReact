@@ -12,7 +12,9 @@ import libraries.cheesylib.geometry.Rotation2d;
 import libraries.cheesylib.geometry.Translation2d;
 import libraries.cheesylib.loops.ILooper;
 import libraries.cheesylib.loops.Loop;
+import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
+import libraries.cheesylib.util.LatchedBoolean;
 import libraries.cheesylib.vision.TargetInfo;
 
 import java.util.ArrayList;
@@ -62,6 +64,7 @@ public abstract class LimeLight extends Subsystem {
     private WantedState mWantedState = WantedState.HOLD;
     private PeriodicIO mPeriodicIO;
     private boolean mStateChanged;
+    private LatchedBoolean mSystemStateChange = new LatchedBoolean();
 
     protected NetworkTable mNetworkTable;
     protected LimelightConstants mConstants = null;
@@ -101,29 +104,29 @@ public abstract class LimeLight extends Subsystem {
         return mNetworkTable.getEntry("tv").getDouble(-1.0) != -1.0;
     }
 
-    private Loop mLoop = new Loop() {
-        @Override
-        public void onStart(Phase phase) {
-            synchronized(LimeLight.this) {
-                mSystemState = SystemState.HOLDING;
-                mWantedState = WantedState.HOLD;
-                mStateChanged = true;
-                System.out.println(mConstants.kName + " state " + mSystemState);
-                switch (phase) {
-                    case DISABLED:
-                        mPeriodicIO.schedDeltaDesired = 0; // goto sleep
-                        break;
-                    default:
-                        mPeriodicIO.schedDeltaDesired = mDefaultSchedDelta;
-                        break;
-                }
-                stop();
+    @Override
+    public void onStart(Phase phase) {
+        synchronized(LimeLight.this) {
+            mSystemState = SystemState.HOLDING;
+            mWantedState = WantedState.HOLD;
+            mStateChanged = true;
+            System.out.println(mConstants.kName + " state " + mSystemState);
+            switch (phase) {
+                case DISABLED:
+                    mPeriodicIO.schedDeltaDesired = 0; // goto sleep
+                    break;
+                default:
+                    mPeriodicIO.schedDeltaDesired = mDefaultSchedDelta;
+                    break;
             }
+            stop();
         }
+    }
 
-        @Override
-        public void onLoop(double timestamp) {
-            synchronized(LimeLight.this) {
+    @Override
+    public void onLoop(double timestamp) {
+        synchronized(LimeLight.this) {
+            do{
                 SystemState newState;
                 switch(mSystemState) {
                     case TARGETING:
@@ -144,14 +147,9 @@ public abstract class LimeLight extends Subsystem {
                 } else {
                     mStateChanged = false;
                 }
-            }
+            } while(mSystemStateChange.update(mStateChanged));
         }
-
-        @Override
-        public void onStop(double timestamp) {
-            stop();
-        }
-    };
+    }
 
     private SystemState defaultStateTransfer() {
         switch (mWantedState) {
@@ -227,10 +225,9 @@ public abstract class LimeLight extends Subsystem {
     }
 
     @Override
-    public void registerEnabledLoops(ILooper enabledLooper) {
-        mListIndex = enabledLooper.register(mLoop);
+    public void passInIndex(int listIndex) {
+        mListIndex = listIndex;
     }
-
 
     public Pose2d getSubsystemToLens() {
         return mConstants.kSubsystemToLens;
@@ -589,9 +586,6 @@ public abstract class LimeLight extends Subsystem {
     int delta = 1;
     @Override
     public int whenRunAgain () {
-        if (mStateChanged && mPeriodicIO.schedDeltaDesired==0){
-            return 1; // one more loop before going to sleep
-        }
         return mPeriodicIO.schedDeltaDesired;
     }
 

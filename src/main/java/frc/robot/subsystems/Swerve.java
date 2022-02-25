@@ -20,6 +20,7 @@ import libraries.cheesylib.geometry.Rotation2d;
 import libraries.cheesylib.geometry.Translation2d;
 import libraries.cheesylib.loops.ILooper;
 import libraries.cheesylib.loops.Loop;
+import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.trajectory.TrajectoryIterator;
 import libraries.cheesylib.trajectory.timing.TimedState;
@@ -105,55 +106,46 @@ public class Swerve extends Subsystem {
          mMotionPlanner = new DriveMotionPlanner();
     }
 
-    private final Loop loop = new Loop() {
-        @Override
-        public void onStart(Phase phase) {
-            synchronized(Swerve.this) {
-                stop();
-                lastUpdateTimestamp = Timer.getFPGATimestamp();
-                switch (phase) {
-                    case DISABLED:
-                        mPeriodicIO.schedDeltaDesired = 0; // goto sleep
-                        break;
-                    default:
-                        mPeriodicIO.schedDeltaDesired = mDefaultSchedDelta;
-                        break;
-                }
+    @Override
+    public void onStart(Phase phase) {
+        synchronized(Swerve.this) {
+            stop();
+            lastUpdateTimestamp = Timer.getFPGATimestamp();
+            switch (phase) {
+                case DISABLED:
+                    mPeriodicIO.schedDeltaDesired = 0; // goto sleep
+                    break;
+                default:
+                    mPeriodicIO.schedDeltaDesired = mDefaultSchedDelta;
+                    break;
             }
         }
+    }
 
-        @Override
-        public void onLoop(double timestamp) {
-            synchronized(Swerve.this) {
-                lastUpdateTimestamp = timestamp;
+    @Override
+    public void onLoop(double timestamp) {
+        synchronized(Swerve.this) {
+            lastUpdateTimestamp = timestamp;
 
-                // Update odometry in every loop before any other actions.
-                updateOdometry(lastUpdateTimestamp);
+            // Update odometry in every loop before any other actions.
+            updateOdometry(lastUpdateTimestamp);
 
-                switch (mControlState) {
-                    case MANUAL:
-                        handleManual();
-                        break;
-                    case PATH_FOLLOWING:
-                        updatePathFollower(lastUpdateTimestamp);
-                        break;
-                    case NEUTRAL:
-                        stop();
-                        break;
-                    case DISABLED:
-                    default:
-                        break;
-                }
+            switch (mControlState) {
+                case MANUAL:
+                    handleManual();
+                    break;
+                case PATH_FOLLOWING:
+                    updatePathFollower(lastUpdateTimestamp);
+                    break;
+                case NEUTRAL:
+                    stop();
+                    break;
+                case DISABLED:
+                default:
+                    break;
             }
         }
-
-        @Override
-        public void onStop(double timestamp) {
-            synchronized(Swerve.this) {
-                stop();
-            }
-        }
-    };
+    }
 
     @Override
     public synchronized void stop() {
@@ -167,9 +159,10 @@ public class Swerve extends Subsystem {
     }
 
     @Override
-    public void registerEnabledLoops(ILooper enabledLooper) {
-        mListIndex = enabledLooper.register(loop);
+    public void passInIndex(int listIndex) {
+        mListIndex = listIndex;
     }
+
 
     /**
      * Handles MANUAL state which corresponds to joy stick inputs.

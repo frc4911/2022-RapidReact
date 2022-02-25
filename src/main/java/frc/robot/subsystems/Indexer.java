@@ -14,8 +14,10 @@ import frc.robot.Ports;
 import libraries.cheesylib.drivers.TalonFXFactory;
 import libraries.cheesylib.loops.ILooper;
 import libraries.cheesylib.loops.Loop;
+import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.subsystems.SubsystemManager;
+import libraries.cheesylib.util.LatchedBoolean;
 
 public class Indexer extends Subsystem{
 
@@ -50,6 +52,7 @@ public class Indexer extends Subsystem{
     private WantedState mWantedState;
     private boolean mStateChanged;
     private PeriodicIO mPeriodicIO = new PeriodicIO();
+    private LatchedBoolean mSystemStateChange = new LatchedBoolean();
 
     double indexSpeed;
 
@@ -103,24 +106,23 @@ public class Indexer extends Subsystem{
         mFXIndexer.setNeutralMode(NeutralMode.Brake);
     }
 
-    private Loop mLoop = new Loop() {
-        
-        @Override
-        public void onStart(Phase phase){
-            synchronized (Indexer.this) {
-                mSystemState = SystemState.HOLDING;
-                mWantedState = WantedState.HOLD;
-                mStateChanged = true;
-                System.out.println(sClassName + " state " + mSystemState);
-                // this subsystem is "on demand" so
-                mPeriodicIO.schedDeltaDesired = 0;
-                stop(); // put into a known state
-            }
+    @Override
+    public void onStart(Phase phase){
+        synchronized (Indexer.this) {
+            mSystemState = SystemState.HOLDING;
+            mWantedState = WantedState.HOLD;
+            mStateChanged = true;
+            System.out.println(sClassName + " state " + mSystemState);
+            // this subsystem is "on demand" so
+            mPeriodicIO.schedDeltaDesired = 0;
+            stop(); // put into a known state
         }
+    }
 
-        @Override
-        public void onLoop(double timestamp){
-            synchronized (Indexer.this) {
+    @Override
+    public void onLoop(double timestamp){
+        synchronized (Indexer.this) {
+            do{
                 SystemState newState;
                 switch (mSystemState) {
                 case LOADING:
@@ -145,15 +147,9 @@ public class Indexer extends Subsystem{
                 } else {
                     mStateChanged = false;
                 }
-            }
+            } while(mSystemStateChange.update(mStateChanged));
         }
-
-        @Override
-        public void onStop(double timestamp){
-            stop();
-        }
-
-    };
+    }
 
     public synchronized void setWantedState(WantedState state) {
         if (state != mWantedState) {
@@ -245,16 +241,12 @@ public class Indexer extends Subsystem{
     }
 
     @Override
-    public void registerEnabledLoops(ILooper enabledLooper) {
-        mListIndex = enabledLooper.register(mLoop);
+    public void passInIndex(int listIndex) {
+        mListIndex = listIndex;
     }
 
     @Override
     public int whenRunAgain () {
-        if (mStateChanged && mPeriodicIO.schedDeltaDesired == 0){
-            return 1; // one more loop before going to sleep
-        }
-
         return mPeriodicIO.schedDeltaDesired;
     }
 

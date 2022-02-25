@@ -5,6 +5,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 import libraries.cheesylib.loops.ILooper;
 import libraries.cheesylib.loops.Loop;
+import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.util.LatchedBoolean;
 import libraries.cheesylib.util.TimeDelayedBoolean;
@@ -21,10 +22,12 @@ public class JSticks extends Subsystem{
 
     public enum SystemState {
         READINGBUTTONS,
+        DISABLING,
     }
 
     public enum WantedState {
         READBUTTONS,
+        DISABLE,
     }
 
     private SystemState mSystemState = SystemState.READINGBUTTONS;
@@ -41,6 +44,7 @@ public class JSticks extends Subsystem{
 
     @SuppressWarnings("unused")
     private int mListIndex;
+    private LatchedBoolean mSystemStateChange = new LatchedBoolean();
 
     private static String sClassName;
     private static int sInstanceCount;
@@ -77,41 +81,45 @@ public class JSticks extends Subsystem{
 
         printUsage(caller);
     }
-
-    private Loop mLoop = new Loop(){
         
-        @Override
-        public void onStart(Phase phase){
-            synchronized (JSticks.this) {
-                mSystemState = SystemState.READINGBUTTONS;
-                mWantedState = WantedState.READBUTTONS;
-                mStateChanged = true;
+    @Override
+    public void onStart(Phase phase){
+        synchronized (JSticks.this) {
+            mStateChanged = true;
 
-                // Force true on first iteration of teleop periodic
-                shouldChangeHeadingSetpoint.update(false);
+            // Force true on first iteration of teleop periodic
+            shouldChangeHeadingSetpoint.update(false);
 
-                System.out.println(sClassName + " state " + mSystemState);
-                switch (phase) {
-                    case DISABLED:
-                    case AUTONOMOUS: 
-                        mPeriodicIO.schedDeltaDesired = 0; // goto sleep
-                        break;
-                    default:
-                        mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
-                        break;
-                }
+            switch (phase) {
+                case DISABLED:
+                case AUTONOMOUS: 
+                    mPeriodicIO.schedDeltaDesired = 0; // goto sleep
+                    mSystemState = SystemState.DISABLING;
+                    mWantedState = WantedState.DISABLE;
+                    break;
+                default:
+                    mSystemState = SystemState.READINGBUTTONS;
+                    mWantedState = WantedState.READBUTTONS;
+                    mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
+                    break;
             }
+            System.out.println(sClassName + " state " + mSystemState);
         }
+    }
 
-        @Override
-        public void onLoop(double timestamp){
-            synchronized (JSticks.this) {
+    @Override
+    public void onLoop(double timestamp){
+        synchronized (JSticks.this) {
+            do{
                 SystemState newState;
                 switch (mSystemState) {
-                case READINGBUTTONS:
-                default:
-                    newState = handleReadingButtons();
-                    break;
+                    case DISABLING:
+                        newState = handleDisabling();
+                        break;
+                    case READINGBUTTONS:
+                    default:
+                        newState = handleReadingButtons();
+                        break;
                 }
 
                 if (newState != mSystemState) {
@@ -121,19 +129,19 @@ public class JSticks extends Subsystem{
                 } else {
                     mStateChanged = false;
                 }
-            }
+            } while(mSystemStateChange.update(mStateChanged));
         }
+    }
 
-        @Override
-        public void onStop(double timestamp){
-            stop();
-        }
-
-    };
 
     @Override
     public void stop() {
 
+    }
+
+    private SystemState handleDisabling() {
+        
+        return defaultStateTransfer();
     }
 
     private SystemState handleReadingButtons() {
@@ -235,6 +243,7 @@ public class JSticks extends Subsystem{
     @Override
     public void readPeriodicInputs() {
         double now       = Timer.getFPGATimestamp();
+
         mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
         mPeriodicIO.lastSchedStart   = now;
 
@@ -258,15 +267,17 @@ public class JSticks extends Subsystem{
 
     private SystemState defaultStateTransfer() {
         switch (mWantedState) {
-        case READBUTTONS:
-        default:
-            return SystemState.READINGBUTTONS;
+            case DISABLE:
+                return SystemState.DISABLING;
+            case READBUTTONS:
+            default:
+                return SystemState.READINGBUTTONS;
         }
     }
 
     @Override
-    public void registerEnabledLoops(ILooper enabledLooper) {
-        mListIndex = enabledLooper.register(mLoop);
+    public void passInIndex(int listIndex) {
+        mListIndex = listIndex;
     }
 
     @Override
