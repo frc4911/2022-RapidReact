@@ -31,11 +31,7 @@ public class Shooter extends Subsystem{
     private final double kMaxShootSpeed = 20500;
     private final double kFlywheelSlope = (kMaxShootSpeed - kMinShootSpeed) / (kMaxShootDistance - kMinShootDistance);
 
-<<<<<<< HEAD
-    private final double kMinHoodPosition = 3000; // Hood at lower hard stop
-=======
-    private final double kMinHoodPosition = 4000;//4000; // Hood at lower hard stop
->>>>>>> main
+    private final double kMinHoodPosition = 4000; // Hood at lower hard stop
     private final double kMaxHoodPosition = 27800; // Hood at max hard stop
     private final double kHoodSlope = (kMaxHoodPosition - kMinHoodPosition) / (kMaxShootDistance - kMinShootDistance);
 
@@ -471,9 +467,9 @@ public class Shooter extends Subsystem{
         SmartDashboard.putBoolean("Ready To Shoot", readyToShoot());
         // these next values are bypassing readPeriodicInputs to reduce the ctre errors in
         // riolog
-        // SmartDashboard.putNumber("Flywheel Right Current", mPeriodicIO.flyRightCurrent);
-        // SmartDashboard.putNumber("Flywheel Left Current", mPeriodicIO.flyLeftCurrent);  
-        // SmartDashboard.putNumber("Hood Current", mPeriodicIO.hoodCurrent);    
+        SmartDashboard.putNumber("Flywheel Right Current", mPeriodicIO.flyRightCurrent);
+        SmartDashboard.putNumber("Flywheel Left Current", mPeriodicIO.flyLeftCurrent);  
+        SmartDashboard.putNumber("Hood Current", mPeriodicIO.hoodCurrent);    
     }
 
     public static class PeriodicIO{
