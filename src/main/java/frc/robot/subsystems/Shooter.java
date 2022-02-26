@@ -82,6 +82,7 @@ public class Shooter extends Subsystem{
     double minHood;
 
     private double mDistance = -1;
+    private boolean turnOffFlywheel = false;
 
     //Other
     private SubsystemManager mSubsystemManager; 
@@ -299,7 +300,7 @@ public class Shooter extends Subsystem{
         }
         updateShooterStatus();
 
-        return defaultStateTransfer();
+        return holdingStateTransfer();
     }
     
     private SystemState handleShooting() {
@@ -315,7 +316,14 @@ public class Shooter extends Subsystem{
         return defaultStateTransfer();
     }
 
-    private SystemState defaultStateTransfer(){
+    private SystemState holdingStateTransfer() {
+        if (mWantedState != WantedState.HOLD) {
+            turnOffFlywheel = false;
+        }
+        return defaultStateTransfer();
+    }
+
+    private SystemState defaultStateTransfer() {
         switch(mWantedState){
             case SHOOT:
                 return SystemState.SHOOTING;
@@ -351,6 +359,12 @@ public class Shooter extends Subsystem{
         else {
             mPeriodicIO.hoodDemand = hoodHomingDemand;
             mPeriodicIO.reachedDesiredHoodPosition = false;
+        }
+    }
+
+    public void stopFlywheel(){
+        if(mSystemState == SystemState.HOLDING){
+            turnOffFlywheel = true;
         }
     }
 
@@ -391,7 +405,8 @@ public class Shooter extends Subsystem{
 
     @Override
     public void writePeriodicOutputs() {
-        setWheels(mPeriodicIO.flywheelVelocityDemand, mPeriodicIO.hoodDemand);
+        double velocity = turnOffFlywheel? 0.0:mPeriodicIO.flywheelVelocityDemand;       
+        setWheels(velocity, mPeriodicIO.hoodDemand);
     }
 
     private void setWheels(double flyDemand, double hoodDemand){
@@ -437,9 +452,9 @@ public class Shooter extends Subsystem{
         SmartDashboard.putBoolean("Ready To Shoot", readyToShoot());
         // these next values are bypassing readPeriodicInputs to reduce the ctre errors in
         // riolog
-        SmartDashboard.putNumber("Flywheel Right Current", mPeriodicIO.flyRightCurrent);
-        SmartDashboard.putNumber("Flywheel Left Current", mPeriodicIO.flyLeftCurrent);  
-        SmartDashboard.putNumber("Hood Current", mPeriodicIO.hoodCurrent);    
+        // SmartDashboard.putNumber("Flywheel Right Current", mPeriodicIO.flyRightCurrent);
+        // SmartDashboard.putNumber("Flywheel Left Current", mPeriodicIO.flyLeftCurrent);  
+        // SmartDashboard.putNumber("Hood Current", mPeriodicIO.hoodCurrent);    
     }
 
     public static class PeriodicIO{

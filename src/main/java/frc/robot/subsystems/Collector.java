@@ -61,6 +61,7 @@ public class Collector extends Subsystem{
     private LatchedBoolean mSystemStateChange = new LatchedBoolean();
     private SolenoidState mSolenoidState;
     private boolean mRunCollectorLoop;
+    private double lastBackingTimestamp;
 
     double collectSpeed;
 
@@ -179,7 +180,19 @@ public class Collector extends Subsystem{
     }
 
     private SystemState handleBacking() {
-        updateCollector(-kCollectSpeed);
+        if(mStateChanged){
+            lastBackingTimestamp = Timer.getFPGATimestamp();
+            mPeriodicIO.schedDeltaDesired = 20;
+        }
+        double now = Timer.getFPGATimestamp();
+
+        if(now - lastBackingTimestamp < 0.5) {
+            updateCollector(kCollectSpeed);
+            System.out.println("Deploying collector");
+        } else {
+            updateCollector(-kCollectSpeed);
+            System.out.println("Backing collector");
+        }
 
         return defaultStateTransfer();
     }
@@ -188,7 +201,7 @@ public class Collector extends Subsystem{
         // Run one loop after extending so wheels do not run while retracted
         if(mRunCollectorLoop){
             mPeriodicIO.collectorDemand = speed;
-            mPeriodicIO.schedDeltaDesired = 0;
+            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
             mRunCollectorLoop = false;
         }
         if(mStateChanged) {

@@ -38,6 +38,7 @@ public class JSticks extends Subsystem{
     private final double mDeadBand = 0.15; // for the turnigy (driver) swerve controls
 	private Superstructure mSuperstructure;
     private Swerve mSwerve;
+    private Shooter mShooter;
 
     @SuppressWarnings("unused")
     private LatchedBoolean mSystemStateChange = new LatchedBoolean();
@@ -63,6 +64,7 @@ public class JSticks extends Subsystem{
         sClassName = this.getClass().getSimpleName();
         mSuperstructure = Superstructure.getInstance(sClassName);
         mSwerve = Swerve.getInstance(sClassName);
+        mShooter = Shooter.getInstance(sClassName);
         mHeadingController.setPIDFConstants(
             mSwerve.mSwerveConfiguration.kSwerveHeadingKp,
             mSwerve.mSwerveConfiguration.kSwerveHeadingKi,
@@ -183,13 +185,17 @@ public class JSticks extends Subsystem{
         //  0: Extend
         //  1: Retract
         int deploySlappyState = -1;
-        if(mPeriodicIO.op_YButton_ExtendSlappySticks){
+        if(mPeriodicIO.op_YButton_ExtendSlappySticks) {
             deploySlappyState = 0;
-        } else if(mPeriodicIO.op_XButton_RetractSlappySticks){
+        } else if(mPeriodicIO.op_XButton_RetractSlappySticks) {
             deploySlappyState = 1;
         }
 		mSuperstructure.setOpenLoopClimb(mPeriodicIO.op_LeftStickY_ClimberElevator, deploySlappyState);
         
+        if(mPeriodicIO.op_BButton_StopShooter) {
+            mShooter.stopFlywheel();
+        }
+
         // Will add clauses for different shoot distances, aimed/auto shooting, auto climbing, and others
         currentState = activeBtnIsReleased(currentState);
         if (currentState == Superstructure.WantedState.HOLD) {

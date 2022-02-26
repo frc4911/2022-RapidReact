@@ -241,7 +241,6 @@ public class Climber extends Subsystem{
 
     public void setClimbSpeed(double speed){
         mPeriodicIO.climberDemand = speed;
-        System.out.println(mPeriodicIO.climberDemand);
         if(speed == 0.0){
             mWantedState = WantedState.HOLD;
         } else {
@@ -313,7 +312,6 @@ public class Climber extends Subsystem{
         SmartDashboard.putNumber("Left Climber Encoder", mFXLeftClimber.getSelectedSensorPosition()); 
         SmartDashboard.putNumber("Left Climb Current", mFXLeftClimber.getStatorCurrent());        
         SmartDashboard.putNumber("Right Climb Current", mFXRightClimber.getStatorCurrent());        
-       
     }
 
     public static class PeriodicIO{
