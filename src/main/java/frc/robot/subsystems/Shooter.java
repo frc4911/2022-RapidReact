@@ -31,7 +31,7 @@ public class Shooter extends Subsystem{
     private final double kMaxShootSpeed = 20500;
     private final double kFlywheelSlope = (kMaxShootSpeed - kMinShootSpeed) / (kMaxShootDistance - kMinShootDistance);
 
-    private final double kMinHoodPosition = 2000; // Hood at lower hard stop
+    private final double kMinHoodPosition = 3000; // Hood at lower hard stop
     private final double kMaxHoodPosition = 27800; // Hood at max hard stop
     private final double kHoodSlope = (kMaxHoodPosition - kMinHoodPosition) / (kMaxShootDistance - kMinShootDistance);
 

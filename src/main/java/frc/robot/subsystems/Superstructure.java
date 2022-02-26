@@ -159,19 +159,14 @@ public class Superstructure extends Subsystem{
         if(mStateChanged){
             mPeriodicIO.schedDeltaDesired = mFastCycle;
         }
-        mCollector.setWantedState(Collector.WantedState.COLLECT);
-        // if(!mIndexer.isFullyLoaded()){
-        //     mCollector.setWantedState(Collector.WantedState.COLLECT);
-        //     if(mIndexer.isBallEntering()){
-        //         mIndexer.setWantedState(Indexer.WantedState.LOAD);
-        //     } else {
-        //         mCollector.setWantedState(Collector.WantedState.HOLD);
-        //         mIndexer.setWantedState(Indexer.WantedState.HOLD);
-        //     }
-        // } else {
-        //     mCollector.setWantedState(Collector.WantedState.HOLD);
-        //     mIndexer.setWantedState(Indexer.WantedState.HOLD);
-        // }
+        
+        if(mIndexer.getBallCount() < 2) {
+            mCollector.setWantedState(Collector.WantedState.COLLECT);
+            mIndexer.setWantedState(Indexer.WantedState.LOAD);
+        } else {
+            mCollector.setWantedState(Collector.WantedState.HOLD);
+            mIndexer.setWantedState(Indexer.WantedState.HOLD);
+        }
 
         return collectingStateTransfer();
     }
@@ -350,8 +345,7 @@ public class Superstructure extends Subsystem{
 
     @Override
     public void outputTelemetry() {
-        // TODO Auto-generated method stub
-        
+
     }
 
     public static class PeriodicIO{

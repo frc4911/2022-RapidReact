@@ -188,10 +188,10 @@ public class Collector extends Subsystem{
 
         if(now - lastBackingTimestamp < 0.5) {
             updateCollector(kCollectSpeed);
-            System.out.println("Deploying collector");
+            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
+            mRunCollectorLoop = true;
         } else {
             updateCollector(-kCollectSpeed);
-            System.out.println("Backing collector");
         }
 
         return defaultStateTransfer();
@@ -201,7 +201,7 @@ public class Collector extends Subsystem{
         // Run one loop after extending so wheels do not run while retracted
         if(mRunCollectorLoop){
             mPeriodicIO.collectorDemand = speed;
-            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
+            mPeriodicIO.schedDeltaDesired = 0;
             mRunCollectorLoop = false;
         }
         if(mStateChanged) {
