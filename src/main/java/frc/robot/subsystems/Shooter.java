@@ -31,7 +31,11 @@ public class Shooter extends Subsystem{
     private final double kMaxShootSpeed = 20500;
     private final double kFlywheelSlope = (kMaxShootSpeed - kMinShootSpeed) / (kMaxShootDistance - kMinShootDistance);
 
+<<<<<<< HEAD
     private final double kMinHoodPosition = 3000; // Hood at lower hard stop
+=======
+    private final double kMinHoodPosition = 4000;//4000; // Hood at lower hard stop
+>>>>>>> main
     private final double kMaxHoodPosition = 27800; // Hood at max hard stop
     private final double kHoodSlope = (kMaxHoodPosition - kMinHoodPosition) / (kMaxShootDistance - kMinShootDistance);
 
@@ -265,11 +269,12 @@ public class Shooter extends Subsystem{
 
         return defaultStateTransfer();
     }
-    
+
     private SystemState handleHomingHood() {
         double now = Timer.getFPGATimestamp();
         if(mStateChanged){
             hoodHomed = false;
+            hoodEncoderOffset = 0;
             hoodNonMovementTimeout = now+hoodNonMovementDuration;
             mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
         }
@@ -281,7 +286,7 @@ public class Shooter extends Subsystem{
 
         if (now > hoodNonMovementTimeout){
             // instead of resetting the sensor the code remembers the offset
-            // mFXHood.setSelectedSensorPosition(0); 
+            // mFXHood.setSelectedSensorPosition(0);  // brian
             hoodEncoderOffset = mPeriodicIO.hoodPosition;
             hoodHomed = true;
             mWantedState = wantedStateAfterHoming;
@@ -292,11 +297,14 @@ public class Shooter extends Subsystem{
     
     private SystemState handleHolding() {
         if(mStateChanged){
+            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
             if (!hoodHomed){
                 wantedStateAfterHoming = WantedState.HOLD;
                 mWantedState = WantedState.HOMEHOOD;
+                // if updatestatus is called it will start a magicmotion
+                // move that cannot be aborted
+                return defaultStateTransfer();
             }
-            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
         }
         updateShooterStatus();
 
@@ -305,11 +313,14 @@ public class Shooter extends Subsystem{
     
     private SystemState handleShooting() {
         if(mStateChanged){
+            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
             if (!hoodHomed){
                 wantedStateAfterHoming = WantedState.SHOOT;
                 mWantedState = WantedState.HOMEHOOD;
+                // if updatestatus is called it will start a magicmotion
+                // move that cannot be aborted
+                return defaultStateTransfer();
             }
-            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
         }
         updateShooterStatus();
 
@@ -412,7 +423,15 @@ public class Shooter extends Subsystem{
     private void setWheels(double flyDemand, double hoodDemand){
         mFXLeftFlyWheel.set(ControlMode.Velocity, flyDemand);  
         mFXRightFlyWheel.set(ControlMode.Velocity, flyDemand);
-        mFXHood.set(/*ControlMode.Position*/ ControlMode.MotionMagic, unadjustHoodEncoderPosition(hoodDemand));
+        // TODO: see if there is a better way to "flush" a magicmotion path
+        // w/o this the hood sits at the bottom ofter homing for 2 to 6 seconds
+        // until moving up
+        if (mSystemState == SystemState.HOMINGHOOD){
+            mFXHood.set(ControlMode.Position, unadjustHoodEncoderPosition(hoodDemand));
+        }
+        else{
+            mFXHood.set(ControlMode.MotionMagic, unadjustHoodEncoderPosition(hoodDemand));
+        }
     }
 
     @Override

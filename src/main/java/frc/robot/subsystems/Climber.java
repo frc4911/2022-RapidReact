@@ -177,7 +177,6 @@ public class Climber extends Subsystem{
     private SystemState handleHolding() {
         if(mStateChanged){
             if (climberHomed){
-                System.out.println("climber demand 0");
                 mPeriodicIO.climberDemand = 0.0;
                 // mPeriodicIO.slappyDemand = SolenoidState.RETRACT;
                 mPeriodicIO.schedDeltaDesired = 0;

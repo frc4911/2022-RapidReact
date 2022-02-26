@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
 public class DriveMotionPlanner implements CSVWritable {
     private static final double kMaxDx = Units.inches_to_meters(2.0);
     private static final double kMaxDy = Units.inches_to_meters(0.25);
@@ -70,17 +72,84 @@ public class DriveMotionPlanner implements CSVWritable {
     public DriveMotionPlanner() {
         RobotConfiguration mRobotConfiguration = RobotConfiguration.getRobotConfiguration(RobotName.name);
         mSwerveConfiguration =  mRobotConfiguration.getSwerveConfiguration();
+        double transKP=.6;
+        double transKD=0.025;
+        double rotKP=0;
+        double rotKD=0;
+        double ff0=0.1;
+        double ff1=0.1;
+        double ff2=0;
+
+        // transKP = SmartDashboard.getNumber("transKP", -1);
+        // if (transKP == -1){
+        //     SmartDashboard.putNumber("transKP", 0);
+        //     transKP = 0;
+        // }
+
+        // transKD = SmartDashboard.getNumber("transKD", -1);
+        // if (transKD == -1){
+        //     SmartDashboard.putNumber("transKD", 0);
+        //     transKD = 0;
+        // }
+
+        // rotKP = SmartDashboard.getNumber("rotKP", -1);
+        // if (rotKP == -1){
+        //     SmartDashboard.putNumber("rotKP", 0);
+        //     rotKP = 0;
+        // }
+
+        // rotKD = SmartDashboard.getNumber("rotKD", -1);
+        // if (rotKD == -1){
+        //     SmartDashboard.putNumber("rotKD", 0);
+        //     rotKD = 0;
+        // }
+
+        // ff0 = SmartDashboard.getNumber("ff0", -1);
+        // if (ff0 == -1){
+        //     SmartDashboard.putNumber("ff0", 0);
+        //     ff0 = 0;
+        // }
+
+        // ff1 = SmartDashboard.getNumber("ff1", -1);
+        // if (ff1 == -1){
+        //     SmartDashboard.putNumber("ff1", 0);
+        //     ff1 = 0;
+        // }
+
+        // ff2 = SmartDashboard.getNumber("ff2", -1);
+        // if (ff2 == -1){
+        //     SmartDashboard.putNumber("ff2", 0);
+        //     ff2 = 0;
+        // }
+
+        System.out.println("transKP = " + transKP);
+        System.out.println("transKD = " + transKD);
+        System.out.println("rotKP = " + rotKP);
+        System.out.println("rotKD = " + rotKD);
+        System.out.println("ff0 = " + ff0);
+        System.out.println("ff1 = " + ff1);
+        System.out.println("ff2 = " + ff2);
+        
         if (mFollowerType == FollowerType.HOLONOMIC) {
             // TODO:  Make these constants
-            follower = new HolonomicTrajectoryFollower(
-                    new PidGains(0.4, 0.0, 0.025),
-                    new PidGains(5.0, 0.0, 0.0),
+            // follower = new HolonomicTrajectoryFollower(
+            //         new PidGains(0.4, 0.0, 0.025),
+            //         new PidGains(5.0, 0.0, 0.0),
+            //         new HolonomicFeedforward(new SwerveDriveFeedforwardGains(
+            //                 0.289, //0.042746,
+            //                 0.0032181,
+            //                 0.30764
+            //         )));
+            System.out.println("applied----------------------------------------");
+                follower = new HolonomicTrajectoryFollower(
+                    new PidGains(transKP, 0.0, transKD),
+                    new PidGains(rotKP, 0.0, rotKD),
                     new HolonomicFeedforward(new SwerveDriveFeedforwardGains(
-                            0.289, //0.042746,
-                            0.0032181,
-                            0.30764
+                            ff0, //0.042746,
+                            ff1,
+                            ff2
                     )));
-        } else if (mFollowerType == FollowerType.PURE_PURSUIT) {
+            } else if (mFollowerType == FollowerType.PURE_PURSUIT) {
            follower = new PurePursuitTrajectoryFollower();
         }
     }
