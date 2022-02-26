@@ -205,7 +205,6 @@ public class Shooter extends Subsystem{
                 case TELEOP:
                     mSystemState = SystemState.HOLDING;
                     mWantedState = WantedState.HOLD;
-                    hoodHomed = false; // brian temporary
                     setShootDistance(0);
                     mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
                     break;
