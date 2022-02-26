@@ -21,7 +21,7 @@ public class CentripetalAccelerationConstraint implements TrajectoryConstraint {
      * Returns the max velocity given the current pose and curvature.
      *
      * @param state                                     The pose at the current point in the trajectory.
-     * @param curvatureRadPerMeter                      The curvature at the current point in the trajectory.
+     * @param curvatureInRadPerMeter                      The curvature at the current point in the trajectory.
      * @param translationalVelocityInMetersPerSecond    The translational velocity at the current point in the
      *                                                  trajectory before constraints are applied.
      * @param rotationalVelocityInRadiansPerSecond      The rotational velocity at the current point in the
@@ -31,7 +31,7 @@ public class CentripetalAccelerationConstraint implements TrajectoryConstraint {
     @Override
     public double getMaxVelocity(
             PoseWithCurvatureAndOrientation state,
-            double curvatureRadPerMeter,
+            double curvatureInRadPerMeter,
             double translationalVelocityInMetersPerSecond,
             double rotationalVelocityInRadiansPerSecond)
     {
@@ -55,7 +55,7 @@ public class CentripetalAccelerationConstraint implements TrajectoryConstraint {
         //
         //  Special case when following a line, centripetal acceleration is 0 so don't constrain velocity
 
-        double curvature = Math.abs(curvatureRadPerMeter);
+        double curvature = Math.abs(curvatureInRadPerMeter);
         if (curvature < kEpsilon) {
             return MinMaxAcceleration.kNoLimits.getMaxAcceleration();
         } else {
@@ -68,7 +68,7 @@ public class CentripetalAccelerationConstraint implements TrajectoryConstraint {
      * given pose, curvature, and speed.
      *
      * @param state                                     The pose at the current point in the trajectory.
-     * @param curvatureRadPerMeter                      The curvature at the current point in the trajectory.
+     * @param curvatureInRadPerMeter                      The curvature at the current point in the trajectory.
      * @param translationalVelocityInMetersPerSecond    The translational velocity at the current point in the
      *                                                  trajectory before constraints are applied.
      * @param rotationalVelocityInRadiansPerSecond      The rotational velocity at the current point in the
@@ -78,7 +78,7 @@ public class CentripetalAccelerationConstraint implements TrajectoryConstraint {
     @Override
     public MinMaxAcceleration getMinMaxAcceleration(
             PoseWithCurvatureAndOrientation state,
-            double curvatureRadPerMeter,
+            double curvatureInRadPerMeter,
             double translationalVelocityInMetersPerSecond,
             double rotationalVelocityInRadiansPerSecond)
     {

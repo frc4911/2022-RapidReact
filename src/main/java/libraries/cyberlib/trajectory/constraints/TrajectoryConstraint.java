@@ -9,7 +9,7 @@ public interface TrajectoryConstraint {
      * Returns the max velocity given the current pose and curvature.
      *
      * @param state                                     The pose at the current point in the trajectory.
-     * @param curvatureRadPerMeter                      The curvature at the current point in the trajectory.
+     * @param curvatureInRadPerMeter                      The curvature at the current point in the trajectory.
      * @param translationalVelocityInMetersPerSecond    The translational velocity at the current point in the
      *                                                  trajectory before constraints are applied.
      * @param rotationalVelocityInRadiansPerSecond      The rotational velocity at the current point in the
@@ -17,7 +17,7 @@ public interface TrajectoryConstraint {
      * @return The absolute maximum velocity.
      */
     double getMaxVelocity(PoseWithCurvatureAndOrientation state,
-                          double curvatureRadPerMeter,
+                          double curvatureInRadPerMeter,
                           double translationalVelocityInMetersPerSecond,
                           double rotationalVelocityInRadiansPerSecond);
 
@@ -27,7 +27,7 @@ public interface TrajectoryConstraint {
      * given pose, curvature, and speed.
      *
      * @param state                                     The pose at the current point in the trajectory.
-     * @param curvatureRadPerMeter                      The curvature at the current point in the trajectory.
+     * @param curvatureInRadPerMeter                      The curvature at the current point in the trajectory.
      * @param translationalVelocityInMetersPerSecond    The translational velocity at the current point in the
      *                                                  trajectory before constraints are applied.
      * @param rotationalVelocityInRadiansPerSecond      The rotational velocity at the current point in the
@@ -36,7 +36,7 @@ public interface TrajectoryConstraint {
      */
     MinMaxAcceleration getMinMaxAcceleration(
             PoseWithCurvatureAndOrientation state,
-            double curvatureRadPerMeter,
+            double curvatureInRadPerMeter,
             double translationalVelocityInMetersPerSecond,
             double rotationalVelocityInRadiansPerSecond);
 
@@ -44,28 +44,28 @@ public interface TrajectoryConstraint {
      * Represents a minimum and maximum acceleration.
      */
     public static class MinMaxAcceleration {
-        protected final double mMinAcceleration;
-        protected final double mMaxAcceleration;
+        protected final double mMinAccelerationInMetersPerSecondSq;
+        protected final double mMaxAccelerationInMetersPerSecondSq;
 
         public static MinMaxAcceleration kNoLimits = new MinMaxAcceleration();
 
         public MinMaxAcceleration() {
             // No limits.
-            mMinAcceleration = Double.NEGATIVE_INFINITY;
-            mMaxAcceleration = Double.POSITIVE_INFINITY;
+            mMinAccelerationInMetersPerSecondSq = -Double.MAX_VALUE;
+            mMaxAccelerationInMetersPerSecondSq = Double.MAX_VALUE;
         }
 
-        public MinMaxAcceleration(double minAcceleration, double maxAcceleration) {
-            mMinAcceleration = minAcceleration;
-            mMaxAcceleration = maxAcceleration;
+        public MinMaxAcceleration(double minAccelerationInMetersPerSecondSq, double maxAccelerationInMetersPerSecondSq) {
+            mMinAccelerationInMetersPerSecondSq = minAccelerationInMetersPerSecondSq;
+            mMaxAccelerationInMetersPerSecondSq = maxAccelerationInMetersPerSecondSq;
         }
 
         public double getMinAcceleration() {
-            return mMinAcceleration;
+            return mMinAccelerationInMetersPerSecondSq;
         }
 
         public double getMaxAcceleration() {
-            return mMaxAcceleration;
+            return mMaxAccelerationInMetersPerSecondSq;
         }
 
         public boolean isValid() {

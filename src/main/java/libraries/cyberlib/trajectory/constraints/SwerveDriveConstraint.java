@@ -21,9 +21,10 @@ public class SwerveDriveConstraint implements TrajectoryConstraint {
      * @param maxSpeedInMetersPerSecond The max speed that a side of the robot can travel at.
      * @param maxAngularSpeedInRadiansPerSecond The max speed that a side of the robot can travel at.
      */
-    public SwerveDriveConstraint(final SwerveDriveKinematics kinematics,
-                                 final double maxSpeedInMetersPerSecond,
-                                 final double maxAngularSpeedInRadiansPerSecond) {
+    public SwerveDriveConstraint(
+			final SwerveDriveKinematics kinematics,
+	        final double maxSpeedInMetersPerSecond,
+	        final double maxAngularSpeedInRadiansPerSecond) {
         mMaxSpeedInMetersPerSecond = maxSpeedInMetersPerSecond;
         mMaxAngularSpeedInRadiansPerSecond = maxAngularSpeedInRadiansPerSecond;
         mKinematics = kinematics;
@@ -34,7 +35,7 @@ public class SwerveDriveConstraint implements TrajectoryConstraint {
      * rotational velocities.
      *
      * @param state                                  The pose and curvature at the current point in the trajectory.
-     * @param curvatureRadPerMeter                   The curvature at the current point in the trajectory.
+     * @param curvatureInRadPerMeter                   The curvature at the current point in the trajectory.
      * @param translationalVelocityInMetersPerSecond The translational velocity at the current point in the
      *                                               trajectory the before constraints are applied.
      * @param rotationalVelocityInRadiansPerSecond   The rotational velocity at the current point in the
@@ -44,7 +45,7 @@ public class SwerveDriveConstraint implements TrajectoryConstraint {
     @Override
     public double getMaxVelocity(
             PoseWithCurvatureAndOrientation state,
-            double curvatureRadPerMeter,
+            double curvatureInRadPerMeter,
             double translationalVelocityInMetersPerSecond,
             double rotationalVelocityInRadiansPerSecond) {
         // Represents the velocity of the chassis in the x direction
@@ -77,7 +78,7 @@ public class SwerveDriveConstraint implements TrajectoryConstraint {
      * given pose, curvature, and speed.
      *
      * @param state                                  The pose and curvature at the current point in the trajectory.
-     * @param curvatureRadPerMeter                   The curvature at the current point in the trajectory.
+     * @param curvatureInRadPerMeter                   The curvature at the current point in the trajectory.
      * @param translationalVelocityInMetersPerSecond The translational velocity at the current point in the
      *                                               trajectory before constraints are applied.
      * @param rotationalVelocityInRadiansPerSecond   The rotational velocity at the current point in the
@@ -87,7 +88,7 @@ public class SwerveDriveConstraint implements TrajectoryConstraint {
     @Override
     public MinMaxAcceleration getMinMaxAcceleration(
             PoseWithCurvatureAndOrientation state,
-            double curvatureRadPerMeter,
+            double curvatureInRadPerMeter,
             double translationalVelocityInMetersPerSecond,
             double rotationalVelocityInRadiansPerSecond) {
         return MinMaxAcceleration.kNoLimits;

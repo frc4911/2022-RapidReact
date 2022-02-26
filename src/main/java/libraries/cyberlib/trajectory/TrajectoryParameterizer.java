@@ -84,12 +84,6 @@ public final class TrajectoryParameterizer {
                     .getDistance(predecessor.pose.poseMeters.getTranslation());
             constrainedState.distanceMeters = predecessor.distanceMeters + ds;
 
-            constrainedState.maxAccelerationMetersPerSecondSq = maxAccelerationMetersPerSecondSq;
-            constrainedState.minAccelerationMetersPerSecondSq = -maxAccelerationMetersPerSecondSq;
-            constrainedState.maxAngularVelocityRadiansPerSecond = maxAngularVelocityRadiansPerSecond;
-            constrainedState.minAngularAccelerationRadiansPerSecondSq = -maxAngularAccelerationRadiansPerSecondSq;
-            constrainedState.maxAngularAccelerationRadiansPerSecondSq = maxAngularAccelerationRadiansPerSecondSq;
-
             // Calculate max allowable velocity that meets translational and rotational bounds
             // The bounds can be treated as additional isolated constraints for v(i-1) and v(i)
             // and they are therefore easily integrated into the first phase of velocity profile
@@ -102,18 +96,20 @@ public final class TrajectoryParameterizer {
                     maxAccelerationMetersPerSecondSq,
                     maxAngularAccelerationRadiansPerSecondSq);
 
-            predecessor.maxVelocityMetersPerSecond =
-                    Math.min(maxVelocityMetersPerSecond, vOverlap1);
+//            predecessor.maxVelocityMetersPerSecond = Math.min(maxVelocityMetersPerSecond, vOverlap1);
 
             // Calculate overlap for v(i)
-            var vOverlap2 = calculateMaxAllowableVelocity(ds,
-                    predecessor.pose.curvatureRadPerMeter,
-                    constrainedState.pose.curvatureRadPerMeter,
-                    maxAccelerationMetersPerSecondSq,
-                    maxAngularAccelerationRadiansPerSecondSq);
+//            var vOverlap2 = calculateMaxAllowableVelocity(ds,
+//                    predecessor.pose.curvatureRadPerMeter,
+//                    constrainedState.pose.curvatureRadPerMeter,
+//                    maxAccelerationMetersPerSecondSq,
+//                    maxAngularAccelerationRadiansPerSecondSq);
 
-            constrainedState.maxVelocityMetersPerSecond =
-                    Math.min(maxVelocityMetersPerSecond, vOverlap2);
+//            constrainedState.maxVelocityMetersPerSecond = Math.min(maxVelocityMetersPerSecond, vOverlap1);
+
+            var calculated_maxVelocityMetersPerSecond = Math.min(maxVelocityMetersPerSecond, vOverlap1);
+
+            constrainedState.maxVelocityMetersPerSecond = calculated_maxVelocityMetersPerSecond;
 
 //            System.out.printf("vOverlap1=%f, vOverlap2=%f %n", vOverlap1, vOverlap2);
 
@@ -130,22 +126,15 @@ public final class TrajectoryParameterizer {
                                 + predecessor.maxAccelerationMetersPerSecondSq * ds * 2.0)
                 );
 
-//                System.out.println(String.format("i = %d, ds = %f", i, ds));
-
-//                System.out.printf("vOverlap=%f, constrained max=%f, predecessor %f%n", vOverlap, constrainedState.maxVelocityMetersPerSecond, predecessor.maxVelocityMetersPerSecond);
-
-//                System.out.printf("(a)predecessor.maxVelocityMetersPerSecond=%.2f,%n", predecessor.maxVelocityMetersPerSecond);
-//                System.out.printf("(b)predecessor.maxAccelerationMetersPerSecondSq=%f.2%n", predecessor.maxAccelerationMetersPerSecondSq);
-//                System.out.printf("(c)global accel limit=%f%n", Math.sqrt(
-//                        predecessor.maxVelocityMetersPerSecond * predecessor.maxVelocityMetersPerSecond
-//                                + predecessor.maxAccelerationMetersPerSecondSq * ds * 2.0));
-//                System.out.printf("(d)constrainedState.maxVelocityMetersPerSecond=%f.2%n", constrainedState.maxVelocityMetersPerSecond);
+//                System.out.println(String.format(
+//                        "%d =, maxVelocityMetersPerSecond = %.3f, vOverlap1 = %.3f, predecessor = %.3f, vOverlap2 = %.3f, constrainedState = %.3f",
+//                        i, maxVelocityMetersPerSecond, vOverlap1, predecessor.maxVelocityMetersPerSecond, vOverlap2, constrainedState.maxVelocityMetersPerSecond));
 
 
                 // Limit rotational velocity based on first theta derivative at planning point s(i)
-                double vTheta = constrainedState.maxAngularVelocityRadiansPerSecond < 1E-6 ?
-                        Double.POSITIVE_INFINITY :
-                        maxAngularVelocityRadiansPerSecond / Math.abs(constrainedState.maxAngularVelocityRadiansPerSecond);
+//                double vTheta = constrainedState.maxAngularVelocityRadiansPerSecond < 1E-6 ?
+//                        Double.POSITIVE_INFINITY :
+//                        maxAngularVelocityRadiansPerSecond / Math.abs(constrainedState.maxAngularVelocityRadiansPerSecond);
 //
 //                constrainedState.maxVelocityMetersPerSecond =
 //                        Math.min(constrainedState.maxVelocityMetersPerSecond, vTheta);
@@ -169,6 +158,13 @@ public final class TrajectoryParameterizer {
 //                        );
                 // At this point, the constrained state is fully constructed apart from
                 // all the custom-defined user constraints.
+
+                constrainedState.maxAccelerationMetersPerSecondSq = maxAccelerationMetersPerSecondSq;
+                constrainedState.minAccelerationMetersPerSecondSq = -maxAccelerationMetersPerSecondSq;
+                constrainedState.maxAngularVelocityRadiansPerSecond = maxAngularVelocityRadiansPerSecond;
+                constrainedState.minAngularAccelerationRadiansPerSecondSq = -maxAngularAccelerationRadiansPerSecondSq;
+                constrainedState.maxAngularAccelerationRadiansPerSecondSq = maxAngularAccelerationRadiansPerSecondSq;
+
                 for (final var constraint : constraints) {
                     constrainedState.maxVelocityMetersPerSecond =
                         Math.min(
@@ -547,7 +543,7 @@ public final class TrajectoryParameterizer {
                     precond,
                     Math.sqrt(
                             (-2 * ds * Math.pow((c_cur * a_trans_max - a_rot_max), 2)) /
-                                ((c_prev - c_cur) * ((c_prev + c_cur) * a_trans_max + 2 * a_rot_max))));
+                                ((c_prev - c_cur) * ((c_prev + c_cur) * a_trans_max - 2 * a_rot_max))));
 
             thresh_tmp = Math.max(thresh_tmp, Math.sqrt(2 * ds * a_trans_max));
             thresh = Math.min(thresh_tmp, vtwostarpos);
@@ -606,6 +602,9 @@ public final class TrajectoryParameterizer {
         }
 
 //        System.out.println(String.format("thresh {%.2f}", thresh));
-        return thresh;
+        if (Double.isFinite(thresh)) {
+            return thresh;
+        }
+        return thresh == Double.POSITIVE_INFINITY ?Double.MAX_VALUE : Double.MIN_VALUE;
     }
 }

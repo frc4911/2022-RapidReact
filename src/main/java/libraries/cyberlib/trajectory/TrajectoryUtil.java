@@ -22,6 +22,7 @@ public class TrajectoryUtil {
 
     /**
      * Imports a Trajectory from a JSON file.
+     *
      * @param path the path of the json file to import from
      * @return The trajectory represented by the file.
      * @throws IOException if reading from the file fails
@@ -35,6 +36,7 @@ public class TrajectoryUtil {
 
     /**
      * Exports a Trajectory to a JSON file.
+     *
      * @param trajectory the trajectory to export
      * @param path the path of the file to export to
      * @throws IOException if writing to the file fails
@@ -48,6 +50,7 @@ public class TrajectoryUtil {
 
     /**
      * Deserializes a Trajectory from JSON.
+     *
      * @param json the string containing the serialized JSON
      * @return the trajectory represented by the JSON
      * @throws JsonProcessingException if deserializing the JSON fails
@@ -59,6 +62,7 @@ public class TrajectoryUtil {
 
     /**
      * Serializes a Trajectory to JSON.
+     *
      * @param trajectory the trajectory to export
      * @return the string containing the serialized JSON
      * @throws JsonProcessingException if serializing the Trajectory fails

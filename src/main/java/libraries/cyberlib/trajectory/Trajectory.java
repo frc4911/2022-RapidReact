@@ -145,8 +145,9 @@ public class Trajectory {
             return sample;
         }
         // Interpolate between the two states for the state that we want.
-        return prevSample.interpolate(sample,
-                (timeSeconds - prevSample.timeSeconds) / (sample.timeSeconds - prevSample.timeSeconds));
+        return prevSample.interpolate(
+			sample,
+            (timeSeconds - prevSample.timeSeconds) / (sample.timeSeconds - prevSample.timeSeconds));
     }
 
     /**
@@ -157,7 +158,6 @@ public class Trajectory {
      * @param transform The transform to transform the trajectory by.
      * @return The transformed trajectory.
      */
-    @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
     public Trajectory transformBy(Transform2d transform) {
         var firstState = m_states.get(0);
         var firstPose = firstState.poseMeters;
@@ -166,9 +166,13 @@ public class Trajectory {
         var newFirstPose = firstPose.plus(transform);
         List<State> newStates = new ArrayList<>();
 
-        newStates.add(new State(
-                firstState.timeSeconds, firstState.velocityMetersPerSecond,
-                firstState.accelerationMetersPerSecondSq, newFirstPose, firstState.curvatureRadPerMeter,
+        newStates.add(
+			new State(
+                firstState.timeSeconds, 
+				firstState.velocityMetersPerSecond,
+                firstState.accelerationMetersPerSecondSq, 
+				newFirstPose, 
+				firstState.curvatureRadPerMeter,
                 firstState.orientationRadians,
                 firstState.angularVelocityRadiansPerSecond,
                 firstState.angularAccelerationRadiansPerSecondSq
@@ -177,7 +181,8 @@ public class Trajectory {
         for (int i = 1; i < m_states.size(); i++) {
             var state = m_states.get(i);
             // We are transforming relative to the coordinate frame of the new initial pose.
-            newStates.add(new State(
+            newStates.add(
+				new State(
                     state.timeSeconds, state.velocityMetersPerSecond,
                     state.accelerationMetersPerSecondSq, newFirstPose.plus(state.poseMeters.minus(firstPose)),
                     state.curvatureRadPerMeter,
@@ -200,12 +205,18 @@ public class Trajectory {
      * @return The transformed trajectory.
      */
     public Trajectory relativeTo(Pose2d pose) {
-        return new Trajectory(m_states.stream().map(state -> new State(state.timeSeconds,
-                state.velocityMetersPerSecond, state.accelerationMetersPerSecondSq,
-                state.poseMeters.relativeTo(pose), state.curvatureRadPerMeter,
-                state.orientationRadians,
-                state.angularVelocityRadiansPerSecond,
-                state.angularAccelerationRadiansPerSecondSq))
+        return new Trajectory(
+			m_states.stream()
+				.map(state -> 
+					new State(
+						state.timeSeconds,
+                		state.velocityMetersPerSecond, 
+						state.accelerationMetersPerSecondSq,
+                		state.poseMeters.relativeTo(pose), 
+						state.curvatureRadPerMeter,
+		                state.orientationRadians,
+        		        state.angularVelocityRadiansPerSecond,
+                		state.angularAccelerationRadiansPerSecondSq))
                 .collect(Collectors.toList()));
     }
 
@@ -217,7 +228,6 @@ public class Trajectory {
      * @param other The trajectory to concatenate.
      * @return The concatenated trajectory.
      */
-    @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
     public Trajectory concatenate(Trajectory other) {
         // If this is a default constructed trajectory with no states, then we can
         // simply return the rhs trajectory.
@@ -262,16 +272,15 @@ public class Trajectory {
         return new Trajectory(states);
     }
 
-    /**
-     * Represents a time-parameterized trajectory. The trajectory contains of
-     * various States that represent the pose, curvature, time elapsed, velocity,
-     * and acceleration at that point.
-     */
-    @SuppressWarnings("MemberName")
-    public static class State {
-        // The time elapsed since the beginning of the trajectory.
-        @JsonProperty("time")
-        public double timeSeconds;
+  /**
+   * Represents a time-parameterized trajectory. The trajectory contains of various States that
+   * represent the pose, curvature, time elapsed, velocity, and acceleration at that point.
+   */
+  @SuppressWarnings("MemberName")
+  public static class State {
+    // The time elapsed since the beginning of the trajectory.
+    @JsonProperty("time")
+    public double timeSeconds;
 
         // The speed at that point of the trajectory.
         @JsonProperty("velocity")
@@ -314,12 +323,15 @@ public class Trajectory {
          * @param poseMeters                    The pose at that point of the trajectory.
          * @param curvatureRadPerMeter          The curvature at that point of the trajectory.
          */
-        public State(double timeSeconds, double velocityMetersPerSecond,
-                     double accelerationMetersPerSecondSq, Pose2d poseMeters,
-                     double curvatureRadPerMeter,
-                     double orientationRadians,
-                     double angularVelocityRadiansPerSecond,
-                     double angularAccelerationRadiansPerSecondSq) {
+        public State(
+				double timeSeconds, 
+				double velocityMetersPerSecond,
+	            double accelerationMetersPerSecondSq, 
+				Pose2d poseMeters,
+	            double curvatureRadPerMeter,
+	            double orientationRadians,
+	            double angularVelocityRadiansPerSecond,
+	            double angularAccelerationRadiansPerSecondSq) {
             this.timeSeconds = timeSeconds;
             this.velocityMetersPerSecond = velocityMetersPerSecond;
             this.accelerationMetersPerSecondSq = accelerationMetersPerSecondSq;
@@ -351,7 +363,8 @@ public class Trajectory {
             }
 
             // Check whether the robot is reversing at this stage.
-            final boolean reversing = velocityMetersPerSecond < 0
+            final boolean reversing = 
+				velocityMetersPerSecond < 0
                     || Math.abs(velocityMetersPerSecond) < 1E-9 && accelerationMetersPerSecondSq < 0;
 
             // Calculate the new velocity
@@ -360,8 +373,10 @@ public class Trajectory {
 
             // Calculate the change in position.
             // delta_s = v_0 t + 0.5 at^2
-            final double newS = (velocityMetersPerSecond * deltaT
-                    + 0.5 * accelerationMetersPerSecondSq * Math.pow(deltaT, 2)) * (reversing ? -1.0 : 1.0);
+            final double newS = 
+				(velocityMetersPerSecond * deltaT
+                    	+ 0.5 * accelerationMetersPerSecondSq * Math.pow(deltaT, 2)) 
+					* (reversing ? -1.0 : 1.0);
 
             // TODO:  Consider explicitly calculating angular velocity and acceleration like translational
             //  was above verses simply using lerp below.
@@ -374,11 +389,13 @@ public class Trajectory {
             // to interpolate between the two endpoint poses. The fraction for
             // interpolation is the change in position (delta s) divided by the total
             // distance between the two endpoints.
-            final double interpolationFrac = newS
-                    / endValue.poseMeters.getTranslation().getDistance(poseMeters.getTranslation());
+            final double interpolationFrac = 
+				newS / endValue.poseMeters.getTranslation().getDistance(poseMeters.getTranslation());
 
             return new State(
-                    newT, newV, accelerationMetersPerSecondSq,
+                    newT, 
+					newV, 
+					accelerationMetersPerSecondSq,
                     lerp(poseMeters, endValue.poseMeters, interpolationFrac),
                     lerp(curvatureRadPerMeter, endValue.curvatureRadPerMeter, interpolationFrac),
                     lerpAngle(orientationRadians, endValue.orientationRadians, interpolationFrac),
@@ -420,9 +437,15 @@ public class Trajectory {
 
         @Override
         public int hashCode() {
-            return Objects.hash(timeSeconds, velocityMetersPerSecond,
-                    accelerationMetersPerSecondSq, poseMeters, curvatureRadPerMeter,
-                    orientationRadians, angularVelocityRadiansPerSecond, angularAccelerationRadiansPerSecondSq);
+            return Objects.hash(
+				timeSeconds, 
+				velocityMetersPerSecond,
+                accelerationMetersPerSecondSq, 
+				poseMeters, 
+				curvatureRadPerMeter,
+                orientationRadians, 
+				angularVelocityRadiansPerSecond, 
+				angularAccelerationRadiansPerSecondSq);
         }
     }
 

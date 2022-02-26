@@ -9,6 +9,9 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.trajectory.Trajectory;
+import edu.wpi.first.math.trajectory.TrajectoryConfig;
+import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.math.trajectory.constraint.TrajectoryConstraint;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,7 +20,8 @@ import org.junit.jupiter.api.Test;
 
 
 class WPILIBTragectoryGeneratorTest {
-    static Trajectory getTrajectory(List<? extends TrajectoryConstraint> constraints) {
+    static Trajectory getTrajectory(
+            List<? extends TrajectoryConstraint> constraints) {
         final double maxVelocity = feetToMeters(12.0);
         final double maxAccel = feetToMeters(12);
 
@@ -41,7 +45,9 @@ class WPILIBTragectoryGeneratorTest {
         waypoints.add(crossScale);
 
         TrajectoryConfig config =
-                new TrajectoryConfig(maxVelocity, maxAccel).setReversed(true).addConstraints((List<? extends libraries.cyberlib.trajectory.constraints.TrajectoryConstraint>) constraints);
+                new TrajectoryConfig(maxVelocity,maxAccel)
+                    .setReversed(true)
+                    .addConstraints(constraints);
 
         return TrajectoryGenerator.generateTrajectory(waypoints, config);
     }
@@ -50,6 +56,8 @@ class WPILIBTragectoryGeneratorTest {
     @SuppressWarnings("LocalVariableName")
     void testGenerationAndConstraints() {
         Trajectory trajectory = getTrajectory(new ArrayList<>());
+        System.out.println(trajectory.toString());
+        System.out.println();
 
         double duration = trajectory.getTotalTimeSeconds();
         double t = 0.0;

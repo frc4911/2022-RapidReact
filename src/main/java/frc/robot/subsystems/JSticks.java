@@ -1,8 +1,8 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
+import frc.robot.config.RobotConfiguration;
 import libraries.cheesylib.loops.ILooper;
 import libraries.cheesylib.loops.Loop;
 import libraries.cheesylib.subsystems.Subsystem;
@@ -11,6 +11,7 @@ import libraries.cheesylib.util.TimeDelayedBoolean;
 import libraries.cyberlib.control.SwerveHeadingController;
 import libraries.cyberlib.io.CW;
 import libraries.cyberlib.io.Xbox;
+import libraries.cyberlib.utils.RobotName;
 
 public class JSticks extends Subsystem{
 
@@ -36,8 +37,8 @@ public class JSticks extends Subsystem{
     private PeriodicIO mPeriodicIO = new PeriodicIO();
 
     private final double mDeadBand = 0.15; // for the turnigy (driver) swerve controls
-	private Superstructure mSuperstructure;
-    private Swerve mSwerve;
+	private final Superstructure mSuperstructure;
+    private final Swerve mSwerve;
 
     @SuppressWarnings("unused")
     private int mListIndex;
@@ -63,11 +64,12 @@ public class JSticks extends Subsystem{
         sClassName = this.getClass().getSimpleName();
         mSuperstructure = Superstructure.getInstance(sClassName);
         mSwerve = Swerve.getInstance(sClassName);
+        var mSwerveConfiguration = RobotConfiguration.getRobotConfiguration(RobotName.name).getSwerveConfiguration();
         mHeadingController.setPIDFConstants(
-            mSwerve.mSwerveConfiguration.kSwerveHeadingKp,
-            mSwerve.mSwerveConfiguration.kSwerveHeadingKi,
-            mSwerve.mSwerveConfiguration.kSwerveHeadingKd,
-            mSwerve.mSwerveConfiguration.kSwerveHeadingKf);
+            mSwerveConfiguration.kSwerveHeadingKp,
+            mSwerveConfiguration.kSwerveHeadingKi,
+            mSwerveConfiguration.kSwerveHeadingKd,
+            mSwerveConfiguration.kSwerveHeadingKf);
         // double testKp = SmartDashboard.getNumber("kP", -1.0);
         // if(testKp == -1.0){
         //     SmartDashboard.putNumber("kP", 0.0);
@@ -151,15 +153,6 @@ public class JSticks extends Subsystem{
 		double swerveXInput = mPeriodicIO.dr_LeftStickY_Translate;
 		double swerveRotationInput = mPeriodicIO.dr_RightStickX_Rotate;
  
-        
-        // double testKp = SmartDashboard.getNumber("kP", 0.01);
-
-        mHeadingController.setPIDFConstants(
-            mSwerve.mSwerveConfiguration.kSwerveHeadingKp, // testKp,
-            mSwerve.mSwerveConfiguration.kSwerveHeadingKi,
-            mSwerve.mSwerveConfiguration.kSwerveHeadingKd,
-            mSwerve.mSwerveConfiguration.kSwerveHeadingKf);
-
         // NEW SWERVE
         boolean maintainHeading = mShouldMaintainHeading.update(swerveRotationInput == 0, 0.2);
         boolean changeHeadingSetpoint = shouldChangeHeadingSetpoint.update(maintainHeading);

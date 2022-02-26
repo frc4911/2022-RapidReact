@@ -34,10 +34,9 @@ public class TrajectoryConfig {
      * @param maxVelocityMetersPerSecond       The max translational velocity for the trajectory.
      * @param maxAccelerationMetersPerSecondSq The max translational acceleration for the trajectory.
      */
-    public TrajectoryConfig(final double maxVelocityMetersPerSecond,
-                            final double maxAccelerationMetersPerSecondSq) {
-        this(maxVelocityMetersPerSecond, maxAccelerationMetersPerSecondSq,
-                0.0, 0.0);
+    public TrajectoryConfig(
+		final double maxVelocityMetersPerSecond, final double maxAccelerationMetersPerSecondSq) {
+        this(maxVelocityMetersPerSecond, maxAccelerationMetersPerSecondSq, 0.0, 0.0);
     }
 
     /**
@@ -72,6 +71,7 @@ public class TrajectoryConfig {
 
     /**
      * Adds all user-defined constraints from a list to the trajectory.
+     * <p>
      * @param constraints List of user-defined constraints.
      * @return Instance of the current config object.
      */
@@ -114,7 +114,7 @@ public class TrajectoryConfig {
 
     /**
      * Returns the end translational velocity of the trajectory.
-     *
+     * <p>
      * @return The end translational velocity of the trajectory.
      */
     public double getEndVelocity() {

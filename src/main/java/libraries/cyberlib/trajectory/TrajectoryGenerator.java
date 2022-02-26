@@ -7,13 +7,12 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
 public final class TrajectoryGenerator {
     private static final Trajectory kDoNothingTrajectory =
-            new Trajectory(Arrays.asList(new Trajectory.State()));
+            new Trajectory(List.of(new Trajectory.State()));
 
     /**
      * Private constructor because this is a utility class.
@@ -46,8 +45,7 @@ public final class TrajectoryGenerator {
             Spline3D.ControlVector initial,
             List<Translation2d> interiorWaypoints,
             Spline3D.ControlVector end,
-            TrajectoryConfig config
-    ) {
+            TrajectoryConfig config) {
         final var flip = new Transform2d(new Translation2d(), Rotation2d.fromDegrees(180.0));
 
         // Clone the control vectors.
@@ -67,10 +65,9 @@ public final class TrajectoryGenerator {
         // Get the spline points
         List<PoseWithCurvatureAndOrientation> points;
         try {
-            points = splinePointsFromSplines(Spline3DHelper.getCubicSplinesFromControlVectors(
-                    newInitial,
-                    interiorWaypoints.toArray(new Translation2d[0]),
-                    newEnd));
+            points = 
+				splinePointsFromSplines(Spline3DHelper.getCubicSplinesFromControlVectors(
+                    newInitial, interiorWaypoints.toArray(new Translation2d[0]), newEnd));
         } catch (Spline3DParameterizer.MalformedSplineException ex) {
 //            reportError(ex.getMessage(), ex.getStackTrace());
             return kDoNothingTrajectory;
@@ -85,13 +82,17 @@ public final class TrajectoryGenerator {
         }
 
         // Generate and return trajectory.
-        return TrajectoryParameterizer.timeParameterizeTrajectory(points, config.getConstraints(),
-                config.getStartVelocity(), config.getEndVelocity(), config.getMaxVelocity(),
-                config.getMaxAcceleration(),
-                config.getStartAngularVelocity(), config.getEndAngularVelocity(),
-                config.getMaxAngularVelocity(),
-                config.getMaxAngularAcceleration(),
-                config.isReversed());
+        return TrajectoryParameterizer.timeParameterizeTrajectory(
+			points, 
+			config.getConstraints(),
+            config.getStartVelocity(), 
+			config.getEndVelocity(), 
+			config.getMaxVelocity(),
+			config.getMaxAcceleration(),
+            config.getStartAngularVelocity(), config.getEndAngularVelocity(),
+            config.getMaxAngularVelocity(),
+            config.getMaxAngularAcceleration(),
+            config.isReversed());
     }
 
     /**
@@ -99,6 +100,7 @@ public final class TrajectoryGenerator {
      * cubic splines -- a method in which the initial pose, final pose, and interior waypoints
      * are provided.  The headings are automatically determined at the interior points to
      * ensure continuous curvature.
+     *
      * @param start             The starting pose.
      * @param interiorWaypoints The interior waypoints.
      * @param end               The ending pose.
@@ -106,9 +108,10 @@ public final class TrajectoryGenerator {
      * @return The generated trajectory.
      */
     public static Trajectory generateTrajectory(
-            Pose2d start, List<Translation2d> interiorWaypoints, Pose2d end,
-            TrajectoryConfig config
-    ) {
+            Pose2d start, 
+            List<Translation2d> interiorWaypoints, 
+            Pose2d end, 
+            TrajectoryConfig config) {
         var controlVectors = Spline3DHelper.getCubicControlVectorsFromWaypoints(
                 start, interiorWaypoints.toArray(new Translation2d[0]), end
         );
@@ -126,11 +129,7 @@ public final class TrajectoryGenerator {
      * @param config         The configuration for the trajectory.
      * @return The generated trajectory.
      */
-    @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
-    public static Trajectory generateTrajectory(
-            ControlVectorList controlVectors,
-            TrajectoryConfig config
-    ) {
+    public static Trajectory generateTrajectory(ControlVectorList controlVectors, TrajectoryConfig config) {
         final var flip = new Transform2d(new Translation2d(), Rotation2d.fromDegrees(180.0));
         final var newControlVectors = new ArrayList<Spline3D.ControlVector>(controlVectors.size());
 
@@ -148,9 +147,10 @@ public final class TrajectoryGenerator {
         // Get the spline points
         List<PoseWithCurvatureAndOrientation> points;
         try {
-            points = splinePointsFromSplines(Spline3DHelper.getQuinticSplinesFromControlVectors(
-                    newControlVectors.toArray(new Spline3D.ControlVector[]{})
-            ));
+            points = 
+				splinePointsFromSplines(
+					Spline3DHelper.getQuinticSplinesFromControlVectors(
+                    	newControlVectors.toArray(new Spline3D.ControlVector[]{})));
         } catch (Spline3DParameterizer.MalformedSplineException ex) {
 //            reportError(ex.getMessage(), ex.getStackTrace());
             return kDoNothingTrajectory;
@@ -209,14 +209,20 @@ public final class TrajectoryGenerator {
         if (config.isReversed()) {
             for (var point : points) {
                 point.poseMeters = point.poseMeters.plus(flip);
+                point.curvatureRadPerMeter *= -1;
             }
         }
 
         // Generate and return trajectory.
-        return TrajectoryParameterizer.timeParameterizeTrajectory(points, config.getConstraints(),
-                config.getStartVelocity(), config.getEndVelocity(), config.getMaxVelocity(),
+        return TrajectoryParameterizer.timeParameterizeTrajectory(
+                points,
+                config.getConstraints(),
+                config.getStartVelocity(),
+                config.getEndVelocity(),
+                config.getMaxVelocity(),
                 config.getMaxAcceleration(),
-                config.getStartAngularVelocity(), config.getEndAngularVelocity(),
+                config.getStartAngularVelocity(),
+                config.getEndAngularVelocity(),
                 config.getMaxAngularVelocity(),
                 config.getMaxAngularAcceleration(),
                 config.isReversed());
@@ -231,7 +237,9 @@ public final class TrajectoryGenerator {
      * @return The generated trajectory.
      */
     @SuppressWarnings("LocalVariableName")
-    public static Trajectory generateTrajectoryFromSplines(List<QuinticHermiteSpline3D> splines, TrajectoryConfig config) {
+    public static Trajectory generateTrajectoryFromSplines(
+            List<QuinticHermiteSpline3D> splines, 
+            TrajectoryConfig config) {
         final var flip = new Transform2d(new Translation2d(), Rotation2d.fromDegrees(180.0));
 
         // TODO:  Add flip support
@@ -263,11 +271,11 @@ public final class TrajectoryGenerator {
     /**
      * Generate spline points from a vector of splines by parameterizing the
      * splines.
-     *
+     *>
      * @param splines The splines to parameterize.
      * @return The spline points for use in time parameterization of a trajectory.
-     * @throws Spline3DParameterizer.MalformedSplineException When the spline is malformed (e.g. has close adjacent points
-     *                                  with approximately opposing headings)
+     * @throws Spline3DParameterizer.MalformedSplineException When the spline is malformed (e.g. has close adjacent
+     *                                                        points with approximately opposing headings)
      */
     public static List<PoseWithCurvatureAndOrientation> splinePointsFromSplines(Spline3D[] splines) {
         // Create the vector of spline points.
