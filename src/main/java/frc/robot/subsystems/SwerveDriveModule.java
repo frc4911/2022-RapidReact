@@ -251,7 +251,7 @@ public class SwerveDriveModule extends Subsystem {
         mDriveMotor.setSelectedSensorPosition(0, 0, Constants.kLongCANTimeoutMs);
         mDriveMotor.setSensorPhase(mConstants.kInvertDriveSensorPhase);
         mDriveMotor.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, mConstants.kDriveStatusFrame2UpdateRate, Constants.kLongCANTimeoutMs);
-        mDriveMotor.configOpenloopRamp(0.15, Constants.kLongCANTimeoutMs); //Increase if swerve acceleration is too fast
+        mDriveMotor.configOpenloopRamp(0.3, Constants.kLongCANTimeoutMs); //Increase if swerve acceleration is too fast
         mDriveMotor.configClosedloopRamp(0.0);
         mDriveMotor.configAllowableClosedloopError(0, 0, Constants.kLongCANTimeoutMs);
 

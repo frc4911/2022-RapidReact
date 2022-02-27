@@ -311,7 +311,6 @@ public class Climber extends Subsystem{
         SmartDashboard.putNumber("Left Climber Encoder", mFXLeftClimber.getSelectedSensorPosition()); 
         SmartDashboard.putNumber("Left Climb Current", mFXLeftClimber.getStatorCurrent());        
         SmartDashboard.putNumber("Right Climb Current", mFXRightClimber.getStatorCurrent());        
-       
     }
 
     public static class PeriodicIO{

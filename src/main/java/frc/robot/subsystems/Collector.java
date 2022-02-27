@@ -3,6 +3,7 @@ package frc.robot.subsystems;
 import com.ctre.phoenix.motorcontrol.ControlFrame;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
+import com.ctre.phoenix.motorcontrol.StatorCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
@@ -26,9 +27,12 @@ public class Collector extends Subsystem{
     //Subsystem Constants
     private final double kCollectSpeed = 0.5;
 
+    //Configuration Constants
+    private final double kCurrentLimit = 60;
+
     //Subsystem States
     public enum SolenoidState {
-        EXTEND(true), // TODO: Need to test
+        EXTEND(true),
         RETRACT(false);
 
         private final boolean state;
@@ -61,6 +65,7 @@ public class Collector extends Subsystem{
     private LatchedBoolean mSystemStateChange = new LatchedBoolean();
     private SolenoidState mSolenoidState;
     private boolean mRunCollectorLoop;
+    private double lastBackingTimestamp;
 
     double collectSpeed;
 
@@ -104,9 +109,12 @@ public class Collector extends Subsystem{
 
         mFXCollector.setControlFramePeriod(ControlFrame.Control_3_General,18);
 
-        mFXCollector.setInverted(false); // TODO: Need to test
+        mFXCollector.setInverted(false);
 
         mFXCollector.setNeutralMode(NeutralMode.Coast);
+
+        mFXCollector.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kCurrentLimit, kCurrentLimit, 0));
+
     }
 
     @Override
@@ -179,7 +187,19 @@ public class Collector extends Subsystem{
     }
 
     private SystemState handleBacking() {
-        updateCollector(-kCollectSpeed);
+        if(mStateChanged){
+            lastBackingTimestamp = Timer.getFPGATimestamp();
+            mPeriodicIO.schedDeltaDesired = 20;
+        }
+        double now = Timer.getFPGATimestamp();
+
+        if(now - lastBackingTimestamp < 0.5) {
+            updateCollector(kCollectSpeed);
+            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
+            mRunCollectorLoop = true;
+        } else {
+            updateCollector(-kCollectSpeed);
+        }
 
         return defaultStateTransfer();
     }
