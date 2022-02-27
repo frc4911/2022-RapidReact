@@ -150,15 +150,11 @@ public class JSticks extends Subsystem{
         Superstructure.WantedState currentState = mSuperstructure.getWantedState();
 		Superstructure.WantedState previousState = currentState;
 
-        //Swerve control
-        double driveScalar = 1;
-        if(mPeriodicIO.dr_LeftTrigger_SlowSpeed) {
-            driveScalar = 0.25;
-        }
+        // All driver assist to raw imputs should be implemented in setTeleopInputs in Swerve
         // Modifying doubles are to accomodate driver preferences by reducing overall input magintude
-		double swerveYInput = mPeriodicIO.dr_LeftStickX_Translate * driveScalar * 0.75;
-		double swerveXInput = mPeriodicIO.dr_LeftStickY_Translate * driveScalar * 0.75;
-		double swerveRotationInput = mPeriodicIO.dr_RightStickX_Rotate * driveScalar * 0.8;
+		double swerveYInput = mPeriodicIO.dr_LeftStickX_Translate;
+		double swerveXInput = mPeriodicIO.dr_LeftStickY_Translate;
+		double swerveRotationInput = mPeriodicIO.dr_RightStickX_Rotate;
 
         // NEW SWERVE
         boolean maintainHeading = mShouldMaintainHeading.update(swerveRotationInput == 0, 0.2);
@@ -174,10 +170,10 @@ public class JSticks extends Subsystem{
         var isFieldOriented = !mPeriodicIO.dr_RightBumper_RobotOrient;
         if (mHeadingController.getHeadingControllerState() != SwerveHeadingController.HeadingControllerState.OFF) {
             mSwerve.setTeleopInputs(swerveXInput, swerveYInput, mHeadingController.update(),
-                    false, isFieldOriented, true);
+                    mPeriodicIO.dr_LeftTrigger_SlowSpeed, isFieldOriented, true);
         } else {
             mSwerve.setTeleopInputs(swerveXInput, swerveYInput, swerveRotationInput,
-                    false, isFieldOriented, false);
+                    mPeriodicIO.dr_LeftTrigger_SlowSpeed, isFieldOriented, false);
         }
 
 		if (mPeriodicIO.dr_YButton_ResetIMU) {
