@@ -1,13 +1,13 @@
 package frc.robot.config;
 
+import static frc.robot.constants.Constants.kMK4_L2iDriveReduction;
+import static frc.robot.constants.Constants.kMK4_L2iSteerReduction;
+import static frc.robot.constants.Constants.kMK4_L2iWheelDiameter;
+
 import edu.wpi.first.math.util.Units;
-import frc.robot.Ports;
+import frc.robot.constants.Ports;
 import frc.robot.sensors.IMU.ImuType;
-import frc.robot.subsystems.SwerveConfiguration;
 import frc.robot.subsystems.SwerveDriveModule.SwerveModuleConstants;
-
-
-import static frc.robot.Constants.*;
 
 // New Swerve requires SI units
 public class Robot2022 implements RobotConfiguration {

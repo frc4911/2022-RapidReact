@@ -1,6 +1,6 @@
 package libraries.cyberlib.control;
 
-import frc.robot.Constants;
+import frc.robot.constants.Constants;
 import frc.robot.subsystems.Swerve;
 import libraries.cheesylib.util.SynchronousPIDF;
 

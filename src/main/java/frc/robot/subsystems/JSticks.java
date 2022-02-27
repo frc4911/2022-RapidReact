@@ -1,7 +1,7 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj.Timer;
-import frc.robot.Constants;
+import frc.robot.constants.Constants;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.util.LatchedBoolean;
