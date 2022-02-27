@@ -39,6 +39,7 @@ public class JSticks extends Subsystem{
 	private Superstructure mSuperstructure;
     private Swerve mSwerve;
     private Shooter mShooter;
+    private Indexer mIndexer;
 
     @SuppressWarnings("unused")
     private LatchedBoolean mSystemStateChange = new LatchedBoolean();
@@ -65,6 +66,7 @@ public class JSticks extends Subsystem{
         mSuperstructure = Superstructure.getInstance(sClassName);
         mSwerve = Swerve.getInstance(sClassName);
         mShooter = Shooter.getInstance(sClassName);
+        mIndexer = Indexer.getInstance(sClassName); //Getting instance to reset ball count: hopefully will be a temporary fix
         mHeadingController.setPIDFConstants(
             mSwerve.mSwerveConfiguration.kSwerveHeadingKp,
             mSwerve.mSwerveConfiguration.kSwerveHeadingKi,
@@ -149,9 +151,14 @@ public class JSticks extends Subsystem{
 		Superstructure.WantedState previousState = currentState;
 
         //Swerve control
-		double swerveYInput = mPeriodicIO.dr_LeftStickX_Translate;
-		double swerveXInput = mPeriodicIO.dr_LeftStickY_Translate;
-		double swerveRotationInput = mPeriodicIO.dr_RightStickX_Rotate;
+        double driveScalar = 1;
+        if(mPeriodicIO.dr_LeftTrigger_SlowSpeed) {
+            driveScalar = 0.25;
+        }
+        // Modifying doubles are to accomodate driver preferences by reducing overall input magintude
+		double swerveYInput = mPeriodicIO.dr_LeftStickX_Translate * driveScalar * 0.75;
+		double swerveXInput = mPeriodicIO.dr_LeftStickY_Translate * driveScalar * 0.75;
+		double swerveRotationInput = mPeriodicIO.dr_RightStickX_Rotate * driveScalar * 0.8;
 
         // NEW SWERVE
         boolean maintainHeading = mShouldMaintainHeading.update(swerveRotationInput == 0, 0.2);
@@ -192,6 +199,10 @@ public class JSticks extends Subsystem{
         }
 		mSuperstructure.setOpenLoopClimb(mPeriodicIO.op_LeftStickY_ClimberElevator, deploySlappyState);
         
+        if(mPeriodicIO.op_RightBumper_TempBugFix) {
+            mIndexer.resetBallCount();
+        }
+
         if(mPeriodicIO.op_BButton_StopShooter) {
             mShooter.stopFlywheel();
         }
@@ -247,6 +258,7 @@ public class JSticks extends Subsystem{
         mPeriodicIO.op_RightTrigger_Collect = mOperator.getButton(Xbox.RIGHT_TRIGGER, CW.PRESSED_LEVEL);
         mPeriodicIO.op_LeftTrigger_Back = mOperator.getButton(Xbox.LEFT_TRIGGER, CW.PRESSED_LEVEL);
         mPeriodicIO.op_LeftBumper_LoadBall = mOperator.getButton(Xbox.LEFT_BUMPER, CW.PRESSED_EDGE);
+        mPeriodicIO.op_RightBumper_TempBugFix = mOperator.getButton(Xbox.RIGHT_BUMPER, CW.PRESSED_EDGE);
         mPeriodicIO.op_BButton_StopShooter = mOperator.getButton(Xbox.B_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.op_XButton_RetractSlappySticks = mOperator.getButton(Xbox.X_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.op_YButton_ExtendSlappySticks = mOperator.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
@@ -304,6 +316,7 @@ public class JSticks extends Subsystem{
         public double  op_LeftStickY_ClimberElevator;
         public boolean op_RightTrigger_Collect = false;
         public boolean op_LeftTrigger_Back = false;
+        public boolean op_RightBumper_TempBugFix = false;
         public boolean op_LeftBumper_LoadBall = false;
         public boolean op_BButton_StopShooter = false;
         public boolean op_XButton_RetractSlappySticks = false;

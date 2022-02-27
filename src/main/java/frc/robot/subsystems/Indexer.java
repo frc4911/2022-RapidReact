@@ -26,8 +26,8 @@ public class Indexer extends Subsystem{
     private final AnalogInput mAIBallExiting;
 
     //Subsystem Constants
-    private final double kFirstPositionDelta = 15700;
-    private final double kSecondPositionDelta = 20200;
+    private final double kFirstPositionDelta = 17000; // 15700; Continue tuning
+    private final double kSecondPositionDelta = 21200; // 20200;
     private final double kBeamBreakThreshold = 3.0;
 
     //Configuration Constants
@@ -69,8 +69,6 @@ public class Indexer extends Subsystem{
     private int mBallCount;
     private boolean firstTime = true;
 
-    double indexSpeed;
-
     //Other
     private SubsystemManager mSubsystemManager;
     
@@ -99,10 +97,6 @@ public class Indexer extends Subsystem{
         mAIBallEntering = new AnalogInput(Ports.ENTRANCE_BEAM_BREAK);
         mAIBallExiting = new AnalogInput(Ports.EXIT_BEAM_BREAK);
         mSubsystemManager = SubsystemManager.getInstance(sClassName);
-        indexSpeed = SmartDashboard.getNumber("Indexing Speed", -1.0);
-        if(indexSpeed == -1){
-            SmartDashboard.putNumber("Indexing Speed", 0.0);
-        }
         configMotors();
     }
 
@@ -236,28 +230,15 @@ public class Indexer extends Subsystem{
     private void loadSecondBall() {
         if(firstTime) {
             mPeriodicIO.indexerDemand = mPeriodicIO.startIndexerPosition + kSecondPositionDelta;
-            System.out.println("Demand 2 " + mPeriodicIO.indexerDemand);
+            // System.out.println("Demand 2 " + mPeriodicIO.indexerDemand);
             firstTime = false;
         }
 
-        System.out.println("Difference " + Math.abs(mPeriodicIO.indexerPosition - mPeriodicIO.indexerDemand));
+        // System.out.println("Difference " + Math.abs(mPeriodicIO.indexerPosition - mPeriodicIO.indexerDemand));
         if(Math.abs(mPeriodicIO.indexerPosition - mPeriodicIO.indexerDemand) <= 300) {
             mBallCount++;
             firstTime = true;
         }
-    }
-
-    private SystemState handleLoadingSecond() {
-        if(mStateChanged) {
-            mPeriodicIO.indexerDemand = mPeriodicIO.startIndexerPosition + kSecondPositionDelta;
-        }
-
-        if(Math.abs(mPeriodicIO.indexerPosition - mPeriodicIO.indexerDemand) <= 100) {
-            mBallCount++;
-            mWantedState = WantedState.LOAD;
-        }
-
-        return defaultStateTransfer();
     }
 
     private SystemState handleFeeding() {
@@ -267,7 +248,6 @@ public class Indexer extends Subsystem{
 
         if(Math.abs(mPeriodicIO.indexerPosition - mPeriodicIO.indexerDemand) <= 300) {
             mBallCount = 0;
-            mWantedState = WantedState.HOLD;
         }
 
         return defaultStateTransfer();
@@ -280,7 +260,6 @@ public class Indexer extends Subsystem{
 
         if(Math.abs(mPeriodicIO.indexerPosition - mPeriodicIO.indexerDemand) <= 300) {
             mBallCount = 0;
-            mWantedState = WantedState.HOLD;
         }
 
         return defaultStateTransfer();
@@ -317,6 +296,10 @@ public class Indexer extends Subsystem{
         return mBallCount;
     }
 
+    public void resetBallCount() {
+        mBallCount = 0;
+    }
+
     @Override
     public void readPeriodicInputs() {
         double now       = Timer.getFPGATimestamp();
@@ -328,6 +311,7 @@ public class Indexer extends Subsystem{
 
     @Override
     public void writePeriodicOutputs() {
+        //System.out.println("Demand " + mPeriodicIO.indexerDemand);
         mFXIndexer.set(ControlMode.Position, mPeriodicIO.indexerDemand);
     }
 

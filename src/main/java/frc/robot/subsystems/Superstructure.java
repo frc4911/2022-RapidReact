@@ -160,13 +160,13 @@ public class Superstructure extends Subsystem{
             mPeriodicIO.schedDeltaDesired = mFastCycle;
         }
         
-        if(mIndexer.getBallCount() < 2) {
+        //if(mIndexer.getBallCount() < 2) {
             mCollector.setWantedState(Collector.WantedState.COLLECT);
             mIndexer.setWantedState(Indexer.WantedState.LOAD);
-        } else {
-            mCollector.setWantedState(Collector.WantedState.HOLD);
-            mIndexer.setWantedState(Indexer.WantedState.HOLD);
-        }
+        //} else {
+            // mCollector.setWantedState(Collector.WantedState.HOLD);
+            // mIndexer.setWantedState(Indexer.WantedState.HOLD);
+        //}
 
         return collectingStateTransfer();
     }

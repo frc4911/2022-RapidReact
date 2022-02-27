@@ -27,11 +27,11 @@ public class Shooter extends Subsystem{
     //Subsystem Constants
     private final double kMinShootDistance = 0; // Fender shot is 0
     private final double kMaxShootDistance = 146; // Approximate distance from fender to launch pad (the shooter's location in inches)
-    private final double kMinShootSpeed = 10400; // Ticks per 100Ms
+    private final double kMinShootSpeed = 10600; // Ticks per 100Ms // TODO: Tune pid so actual flywheel is closer to this speed
     private final double kMaxShootSpeed = 20500;
     private final double kFlywheelSlope = (kMaxShootSpeed - kMinShootSpeed) / (kMaxShootDistance - kMinShootDistance);
 
-    private final double kMinHoodPosition = 4000; // Hood at lower hard stop
+    private final double kMinHoodPosition = 3000; // Hood at lower hard stop
     private final double kMaxHoodPosition = 27800; // Hood at max hard stop
     private final double kHoodSlope = (kMaxHoodPosition - kMinHoodPosition) / (kMaxShootDistance - kMinShootDistance);
 
@@ -111,14 +111,6 @@ public class Shooter extends Subsystem{
         mFXRightFlyWheel = TalonFXFactory.createDefaultTalon(Ports.RIGHT_FLYWHEEL);
         mFXHood = TalonFXFactory.createDefaultTalon(Ports.SHOOTER_HOOD);
         mSubsystemManager = SubsystemManager.getInstance(sClassName);
-        // double minSpeed = SmartDashboard.getNumber("Set Shoot Speed", -1.0);
-        // double minHood = SmartDashboard.getNumber("Set Hood Angle", -1.0);
-        // if(minSpeed == -1.0){
-        //     SmartDashboard.putNumber("Set Shoot Speed", 0.0);
-        // }
-        // if(minHood == -1.0){
-        //     SmartDashboard.putNumber("Set Hood Angle", 0.0);
-        // }
         configMotors();
     }
 
@@ -413,10 +405,10 @@ public class Shooter extends Subsystem{
     @Override
     public void writePeriodicOutputs() {
         double velocity = turnOffFlywheel? 0.0:mPeriodicIO.flywheelVelocityDemand;       
-        setWheels(velocity, mPeriodicIO.hoodDemand);
+        setMotors(velocity, mPeriodicIO.hoodDemand);
     }
 
-    private void setWheels(double flyDemand, double hoodDemand){
+    private void setMotors(double flyDemand, double hoodDemand){
         mFXLeftFlyWheel.set(ControlMode.Velocity, flyDemand);  
         mFXRightFlyWheel.set(ControlMode.Velocity, flyDemand);
         // TODO: see if there is a better way to "flush" a magicmotion path
@@ -435,7 +427,7 @@ public class Shooter extends Subsystem{
         System.out.println(sClassName + " stop()");
         mPeriodicIO.flywheelVelocityDemand = 0;
         mPeriodicIO.hoodDemand = mPeriodicIO.hoodPosition;
-        setWheels(mPeriodicIO.flywheelVelocityDemand, mPeriodicIO.hoodDemand);
+        setMotors(mPeriodicIO.flywheelVelocityDemand, mPeriodicIO.hoodDemand);
     }
     
 
@@ -467,9 +459,9 @@ public class Shooter extends Subsystem{
         SmartDashboard.putBoolean("Ready To Shoot", readyToShoot());
         // these next values are bypassing readPeriodicInputs to reduce the ctre errors in
         // riolog
-        SmartDashboard.putNumber("Flywheel Right Current", mPeriodicIO.flyRightCurrent);
-        SmartDashboard.putNumber("Flywheel Left Current", mPeriodicIO.flyLeftCurrent);  
-        SmartDashboard.putNumber("Hood Current", mPeriodicIO.hoodCurrent);    
+        // SmartDashboard.putNumber("Flywheel Right Current", mPeriodicIO.flyRightCurrent);
+        // SmartDashboard.putNumber("Flywheel Left Current", mPeriodicIO.flyLeftCurrent);  
+        // SmartDashboard.putNumber("Hood Current", mPeriodicIO.hoodCurrent);    
     }
 
     public static class PeriodicIO{

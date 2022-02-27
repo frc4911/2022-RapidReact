@@ -3,6 +3,7 @@ package frc.robot.subsystems;
 import com.ctre.phoenix.motorcontrol.ControlFrame;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
+import com.ctre.phoenix.motorcontrol.StatorCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
@@ -26,9 +27,12 @@ public class Collector extends Subsystem{
     //Subsystem Constants
     private final double kCollectSpeed = 0.5;
 
+    //Configuration Constants
+    private final double kCurrentLimit = 60;
+
     //Subsystem States
     public enum SolenoidState {
-        EXTEND(true), // TODO: Need to test
+        EXTEND(true),
         RETRACT(false);
 
         private final boolean state;
@@ -105,9 +109,12 @@ public class Collector extends Subsystem{
 
         mFXCollector.setControlFramePeriod(ControlFrame.Control_3_General,18);
 
-        mFXCollector.setInverted(false); // TODO: Need to test
+        mFXCollector.setInverted(false);
 
         mFXCollector.setNeutralMode(NeutralMode.Coast);
+
+        mFXCollector.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kCurrentLimit, kCurrentLimit, 0));
+
     }
 
     @Override
