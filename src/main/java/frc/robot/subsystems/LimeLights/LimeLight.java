@@ -1,41 +1,27 @@
 package frc.robot.subsystems.LimeLights;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.robot.Constants;
 import frc.robot.RobotState;
-import frc.robot.Constants.Target;
+import frc.robot.config.LimelightConfig;
+import frc.robot.constants.Constants;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Rotation2d;
 import libraries.cheesylib.geometry.Translation2d;
-import libraries.cheesylib.loops.ILooper;
-import libraries.cheesylib.loops.Loop;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.util.LatchedBoolean;
 import libraries.cheesylib.vision.TargetInfo;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Subsystem for interacting with the Limelight 2 or 2+
  */
 public abstract class LimeLight extends Subsystem {
-
-    public static class LimelightConstants {
-        public String kName = "";
-        public String kTableName = "";
-        public double kHeight = 0.0;
-        public Pose2d kSubsystemToLens = Pose2d.identity();
-        public Rotation2d kHorizontalPlaneToLens = Rotation2d.identity();
-        // assign a zoom to each pipeline in use (EVERY pipleine must have a zoom!!!)
-        public int[] kPipelineZoom = new int[] {1}; // all pipeline zooms default to 1
-        public double[] kExpectedTargetCount = new double[] {0, 0};
-        public Target[] kTargets = new Target[0];
-    }
 
     protected final double[] mZeroArray = new double[] { 0, 0, 0, 0 };
     protected final double mZeroDouble = 0.0;
@@ -67,7 +53,7 @@ public abstract class LimeLight extends Subsystem {
     private LatchedBoolean mSystemStateChange = new LatchedBoolean();
 
     protected NetworkTable mNetworkTable;
-    protected LimelightConstants mConstants = null;
+    protected LimelightConfig mConfig = null;
     protected boolean mOutputsHaveChanged = true;
 
     protected boolean mUsingRawCorners = false;
@@ -86,15 +72,15 @@ public abstract class LimeLight extends Subsystem {
     @SuppressWarnings("unused")
     private RobotState mRobotState;
 
-    public LimeLight(LimelightConstants constants) {
-        mConstants = constants; // set constants
+    public LimeLight(LimelightConfig config) {
+        mConfig = config; // set constants
         mPeriodicIO = new PeriodicIO();
         mCachedNormCoordinates = new ArrayList<Translation2d>();
         mCachedZoom = getZoom();
-        mNetworkTable = NetworkTableInstance.getDefault().getTable(constants.kTableName);
+        mNetworkTable = NetworkTableInstance.getDefault().getTable(config.kTableName);
         // check if network table is found
         if (!hasTable()) {
-            System.out.println("No Network table for " + mConstants.kName + ". Check constants.");
+            System.out.println("No Network table for " + mConfig.kName + ". Check constants.");
         }
         mRobotState = RobotState.getInstance("Limelight");
     }
@@ -109,7 +95,7 @@ public abstract class LimeLight extends Subsystem {
             mSystemState = SystemState.HOLDING;
             mWantedState = WantedState.HOLD;
             mStateChanged = true;
-            System.out.println(mConstants.kName + " state " + mSystemState);
+            System.out.println(mConfig.kName + " state " + mSystemState);
             switch (phase) {
                 case DISABLED:
                     mPeriodicIO.schedDeltaDesired = 0; // goto sleep
@@ -140,7 +126,7 @@ public abstract class LimeLight extends Subsystem {
                 }
 
                 if (newState != mSystemState) {
-                    System.out.println(mConstants.kName + " state " + mSystemState + " (" + timestamp + ")");
+                    System.out.println(mConfig.kName + " state " + mSystemState + " (" + timestamp + ")");
                     mSystemState = newState;
                     mStateChanged = true;
                 } else {
@@ -201,7 +187,7 @@ public abstract class LimeLight extends Subsystem {
         mRobotState.addVisionUpdate(
                 Timer.getFPGATimestamp() - getLatency(),
                 mTargets,
-                mConstants
+                mConfig
         );
     }
 
@@ -224,19 +210,19 @@ public abstract class LimeLight extends Subsystem {
     }
 
     public Pose2d getSubsystemToLens() {
-        return mConstants.kSubsystemToLens;
+        return mConfig.kSubsystemToLens;
     }
 
     public double getLensHeight() {
-        return mConstants.kHeight;
+        return mConfig.kHeight;
     }
 
     public Rotation2d getHorizontalPlaneToLens() {
-        return mConstants.kHorizontalPlaneToLens;
+        return mConfig.kHorizontalPlaneToLens;
     }
 
     public double[] getExpectedTargetCount() {
-        return mConstants.kExpectedTargetCount;
+        return mConfig.kExpectedTargetCount;
     }
 
     public boolean getStateChanged(){
@@ -253,7 +239,7 @@ public abstract class LimeLight extends Subsystem {
 
     // pipline determines zoom
     public synchronized int getZoom() {
-        return mConstants.kPipelineZoom[mPeriodicIO.givenPipeline];
+        return mConfig.kPipelineZoom[mPeriodicIO.givenPipeline];
     }
 
     public synchronized int getCachedZoom() {
@@ -284,12 +270,12 @@ public abstract class LimeLight extends Subsystem {
      */
     public synchronized boolean setPipeline(int mode) {
         if (mode != mPeriodicIO.pipeline) {
-            if(mode >= 0 && mode < mConstants.kPipelineZoom.length) {
+            if(mode >= 0 && mode < mConfig.kPipelineZoom.length) {
                 mPeriodicIO.pipeline = mode;
                 System.out.println(mPeriodicIO.pipeline + ", " + mode);
                 mOutputsHaveChanged = true;
             } else {
-                System.out.println("Failed to switch pipelines. Pipline #" + mode + " does not exist for " + mConstants.kName + ".");
+                System.out.println("Failed to switch pipelines. Pipline #" + mode + " does not exist for " + mConfig.kName + ".");
                 return false;
             }
         }
@@ -448,21 +434,21 @@ public abstract class LimeLight extends Subsystem {
     @Override
     public String getLogHeaders() {
         if (mLoggingEnabled){
-            return  mConstants.kName+".systemState,"+
-                    mConstants.kName+".latency,"+
-                    mConstants.kName+".givenLedMode,"+
-                    mConstants.kName+".ledMode,"+
-                    mConstants.kName+".givenPipeline,"+
-                    mConstants.kName+".pipeline,"+
-                    mConstants.kName+".xOffset,"+
-                    mConstants.kName+".yOffset,"+
-                    mConstants.kName+".area,"+
-                    mConstants.kName+".tv,"+
-                    mConstants.kName+".rawCorners,"+
-                    mConstants.kName+".rawContours,"+
-                    mConstants.kName+".schedDeltaDesired,"+
-                    mConstants.kName+".schedDeltaActual,"+
-                    mConstants.kName+".schedDuration";
+            return  mConfig.kName+".systemState,"+
+                    mConfig.kName+".latency,"+
+                    mConfig.kName+".givenLedMode,"+
+                    mConfig.kName+".ledMode,"+
+                    mConfig.kName+".givenPipeline,"+
+                    mConfig.kName+".pipeline,"+
+                    mConfig.kName+".xOffset,"+
+                    mConfig.kName+".yOffset,"+
+                    mConfig.kName+".area,"+
+                    mConfig.kName+".tv,"+
+                    mConfig.kName+".rawCorners,"+
+                    mConfig.kName+".rawContours,"+
+                    mConfig.kName+".schedDeltaDesired,"+
+                    mConfig.kName+".schedDeltaActual,"+
+                    mConfig.kName+".schedDuration";
         }
         return null;
     }
@@ -585,8 +571,8 @@ public abstract class LimeLight extends Subsystem {
 
     @Override
     public synchronized void outputTelemetry() {
-        SmartDashboard.putBoolean(mConstants.kName + ": Has Target", seesTarget());
-        SmartDashboard.putNumber(mConstants.kName + ": Pipeline Latency (ms)", mPeriodicIO.latency);
+        SmartDashboard.putBoolean(mConfig.kName + ": Has Target", seesTarget());
+        SmartDashboard.putNumber(mConfig.kName + ": Pipeline Latency (ms)", mPeriodicIO.latency);
     }
 
     public class PeriodicIO {

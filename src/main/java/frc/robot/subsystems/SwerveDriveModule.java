@@ -2,20 +2,19 @@ package frc.robot.subsystems;
 
 import com.ctre.phoenix.ErrorCode;
 import com.ctre.phoenix.motorcontrol.*;
-import com.ctre.phoenix.sensors.*;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
+import com.ctre.phoenix.sensors.*;
 
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.constants.Constants;
+import libraries.cheesylib.drivers.TalonFXFactory;
+import libraries.cheesylib.geometry.Rotation2d;
+import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.util.Util;
 import libraries.cyberlib.kinematics.SwerveModuleState;
 import libraries.cyberlib.utils.Angles;
 import libraries.cyberlib.utils.CheckFaults;
-
-import frc.robot.Constants;
-import libraries.cheesylib.drivers.TalonFXFactory;
-import libraries.cheesylib.geometry.Rotation2d;
-import libraries.cheesylib.subsystems.Subsystem;
-import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
  * Represents a swerve module consisting of a drive motor that controls the speed of the wheel and

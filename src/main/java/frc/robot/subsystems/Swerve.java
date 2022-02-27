@@ -2,7 +2,6 @@ package frc.robot.subsystems;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 
@@ -10,14 +9,14 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.robot.Constants;
 import frc.robot.config.RobotConfiguration;
+import frc.robot.config.SwerveConfiguration;
+import frc.robot.constants.Constants;
 import frc.robot.planners.DriveMotionPlanner;
 import frc.robot.sensors.IMU;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Pose2dWithCurvature;
 import libraries.cheesylib.geometry.Rotation2d;
-import libraries.cheesylib.geometry.Translation2d;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.trajectory.TrajectoryIterator;
@@ -26,9 +25,9 @@ import libraries.cyberlib.kinematics.ChassisSpeeds;
 import libraries.cyberlib.kinematics.SwerveDriveKinematics;
 import libraries.cyberlib.kinematics.SwerveDriveOdometry;
 import libraries.cyberlib.kinematics.SwerveModuleState;
-import libraries.cyberlib.utils.RobotName;
 import libraries.cyberlib.utils.HolonomicDriveSignal;
 import libraries.cyberlib.utils.SwerveDriveHelper;
+import libraries.cyberlib.utils.RobotName;
 
 public class Swerve extends Subsystem {
 

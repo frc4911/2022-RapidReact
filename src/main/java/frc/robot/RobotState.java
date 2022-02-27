@@ -1,7 +1,8 @@
 package frc.robot;
 
-import frc.robot.Constants.Target;
-import frc.robot.subsystems.LimeLights.LimeLight.LimelightConstants;
+import frc.robot.constants.Constants;
+import frc.robot.constants.Constants.Target;
+import frc.robot.config.LimelightConfig;
 import frc.robot.subsystems.Swerve;
 
 import java.util.ArrayList;
@@ -158,7 +159,7 @@ public class RobotState {
     }
 
     public synchronized void resetVision(String limelightName) {
-        if (limelightName.equals(Constants.kShootwardsLimelightConstants.kName)) {
+        if (limelightName.equals(Constants.kShootwardsLimelightConfig.kName)) {
             mGoalTracker.reset();
         } else {
             mPowerCellTracker.reset();
@@ -170,7 +171,7 @@ public class RobotState {
         mPowerCellTracker.reset();
     }
 
-    public void addVisionUpdate(double timestamp, List<TargetInfo> observations, LimelightConstants source) {
+    public void addVisionUpdate(double timestamp, List<TargetInfo> observations, LimelightConfig source) {
         mCameraToTarget.clear();
         for (int i = 0; i < observations.size(); i++) { //TargetInfo target : observations
             mCameraToTarget.add(getCameraToVisionTargetPose(observations.get(i), source, source.kTargets[i]));
@@ -178,16 +179,16 @@ public class RobotState {
         updateTracker(timestamp, mCameraToTarget, source);
     }
 
-    private void updateTracker(double timestamp, List<Translation2d> cameraToTargets, LimelightConstants source) {
+    private void updateTracker(double timestamp, List<Translation2d> cameraToTargets, LimelightConfig source) {
 
         if (targetsAreViable(cameraToTargets, source.kExpectedTargetCount)) {
-            if (source.kName.equals(Constants.kShootwardsLimelightConstants.kName)) {
+            if (source.kName.equals(Constants.kShootwardsLimelightConfig.kName)) {
                 mGoalTracker.update(timestamp, shooterTargetsToTrackerUpdate(timestamp, cameraToTargets, source));
             } else {
                 mPowerCellTracker.update(timestamp, collectorTargetsToTrackerUpdate(timestamp, cameraToTargets, source));
             }
         } else {
-            if (source.kName.equals(Constants.kShootwardsLimelightConstants.kName)) {
+            if (source.kName.equals(Constants.kShootwardsLimelightConfig.kName)) {
                 mGoalTracker.update(timestamp, new ArrayList<>());
             } else {
                 mPowerCellTracker.update(timestamp, new ArrayList<>());
@@ -195,7 +196,7 @@ public class RobotState {
         }
     }
 
-    private List<Pose2d> collectorTargetsToTrackerUpdate(double timestamp, List<Translation2d> cameraToTargets, LimelightConstants source) {
+    private List<Pose2d> collectorTargetsToTrackerUpdate(double timestamp, List<Translation2d> cameraToTargets, LimelightConfig source) {
         List<Pose2d> cameraToPowerCell = new ArrayList<>();
         for (int i = 0; i < cameraToTargets.size(); i++) {
             cameraToPowerCell.add((getFieldToVisionTarget(timestamp, cameraToTargets.get(i), source)));
@@ -205,7 +206,7 @@ public class RobotState {
 
     // uses the corner targets to calculate the outer and inner goal targets to give
     // to goal tracker
-    private List<Pose2d> shooterTargetsToTrackerUpdate(double timestamp, List<Translation2d> cameraToTargets, LimelightConstants source) {
+    private List<Pose2d> shooterTargetsToTrackerUpdate(double timestamp, List<Translation2d> cameraToTargets, LimelightConfig source) {
         List<Pose2d> targets = new ArrayList<>();
         Translation2d cameraToOuter = cameraToTargets.get(0);
         targets.add(getFieldToVisionTarget(timestamp, cameraToOuter, source));
@@ -229,7 +230,7 @@ public class RobotState {
     }
 
     // transforms camera to vision target to a field to target pose
-    public Pose2d getFieldToVisionTarget(double timestamp, Translation2d cameraToTarget, LimelightConstants source) {
+    public Pose2d getFieldToVisionTarget(double timestamp, Translation2d cameraToTarget, LimelightConfig source) {
         return Pose2d.fromTranslation(getFieldToVehicle(timestamp).transformBy(source.kSubsystemToLens).transformBy(Pose2d.fromTranslation(cameraToTarget)).getTranslation());
     }
 
@@ -256,7 +257,7 @@ public class RobotState {
     // uses target information to calculate a translation2d from the robot to the goal
     // translation2d x axis is perpendicular to camera face
     // translation2d y axis is parrallel to camera face
-    private Translation2d getCameraToVisionTargetPose(TargetInfo target, LimelightConstants limelight, Target targetType) {
+    private Translation2d getCameraToVisionTargetPose(TargetInfo target, LimelightConfig limelight, Target targetType) {
         // Compensate for camera pitch
         Translation2d xz_plane_translation = new Translation2d(target.getX(), target.getZ()).rotateBy(limelight.kHorizontalPlaneToLens);
         double x = xz_plane_translation.x();
