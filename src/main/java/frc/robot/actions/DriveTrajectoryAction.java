@@ -10,7 +10,7 @@ import libraries.cheesylib.trajectory.Trajectory;
 import libraries.cheesylib.trajectory.TrajectoryIterator;
 import libraries.cheesylib.trajectory.timing.TimedState;
 
-public class DriveTrajectoryAction implements Action {
+    public class DriveTrajectoryAction implements Action {
     private static final Swerve mDrive = Swerve.getInstance("DriveTrajectoryAction");
     private static final RobotState mRobotState = RobotState.getInstance("DriveTrajectoryAction");
 

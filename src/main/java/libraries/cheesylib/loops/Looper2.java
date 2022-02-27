@@ -59,9 +59,9 @@ public class Looper2 implements ILooper {
         if (mRunning) {
             System.out.println("Stopping loops");
 
-            mRunning = false;
             synchronized (mObject) {
-                double timestamp = Timer.getFPGATimestamp();    
+                mRunning = false;
+                double timestamp = Timer.getFPGATimestamp();
                 for (Loop loop : mLoops) {
                     loop.onStop(timestamp);
                 }
