@@ -151,7 +151,6 @@ public class JSticks extends Subsystem{
 		Superstructure.WantedState previousState = currentState;
 
         // All driver assist to raw imputs should be implemented in setTeleopInputs in Swerve
-        // Modifying doubles are to accomodate driver preferences by reducing overall input magintude
 		double swerveYInput = mPeriodicIO.dr_LeftStickX_Translate;
 		double swerveXInput = mPeriodicIO.dr_LeftStickY_Translate;
 		double swerveRotationInput = mPeriodicIO.dr_RightStickX_Rotate;
