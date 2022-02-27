@@ -150,7 +150,7 @@ public class JSticks extends Subsystem{
         Superstructure.WantedState currentState = mSuperstructure.getWantedState();
 		Superstructure.WantedState previousState = currentState;
 
-        // All driver assist to raw inputs should be implemented in setTeleopInputs in Swerve
+        // All driver assist to raw inputs should be implemented Swerve#handleManual()
 		double swerveYInput = mPeriodicIO.dr_LeftStickX_Translate;
 		double swerveXInput = mPeriodicIO.dr_LeftStickY_Translate;
 		double swerveRotationInput = mPeriodicIO.dr_RightStickX_Rotate;
