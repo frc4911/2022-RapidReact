@@ -70,7 +70,6 @@ public class Swerve extends Subsystem {
     public  static Swerve getInstance(String caller) {
         if (sInstance == null) {
             sInstance = new Swerve(caller);
-            mMotionPlanner = new DriveMotionPlanner();
         }
         else {
             printUsage(caller);
@@ -94,12 +93,15 @@ public class Swerve extends Subsystem {
         mModules.add(mBackLeft = new SwerveDriveModule(mRobotConfiguration.getBackLeftModuleConstants(), mSwerveConfiguration.maxSpeedInMetersPerSecond));
         mModules.add(mBackRight = new SwerveDriveModule(mRobotConfiguration.getBackRightModuleConstants(), mSwerveConfiguration.maxSpeedInMetersPerSecond));
 
+        // precaution to ensure misconfiguration modules don't run.
+        stopSwerveDriveModules();
+
         mIMU = IMU.createImu(mRobotConfiguration.getImuType());
         mKinematics = new SwerveDriveKinematics(mSwerveConfiguration.moduleLocations);
 		mOdometry = new SwerveDriveOdometry(mKinematics, mIMU.getYaw());
         mPeriodicIO.robotPose = mOdometry.getPose();
 
-         mMotionPlanner = new DriveMotionPlanner();
+        mMotionPlanner = new DriveMotionPlanner();
     }
 
     @Override
@@ -134,8 +136,6 @@ public class Swerve extends Subsystem {
                     updatePathFollower(lastUpdateTimestamp);
                     break;
                 case NEUTRAL:
-                    stop();
-                    break;
                 case DISABLED:
                 default:
                     break;
@@ -145,14 +145,20 @@ public class Swerve extends Subsystem {
 
     @Override
     public synchronized void stop() {
-        setState(ControlState.NEUTRAL);
+        mControlState = ControlState.NEUTRAL;
+        stopSwerveDriveModules();
+    }
+
+    private void stopSwerveDriveModules() {
         mModules.forEach((m) -> m.stop());
     }
+
 
     @Override
     public synchronized void zeroSensors() {
         zeroSensors(Constants.kRobotStartingPose);
     }
+
 
     /**
      * Handles MANUAL state which corresponds to joy stick inputs.
@@ -224,6 +230,9 @@ public class Swerve extends Subsystem {
             System.out.println(mControlState + " to " + newState);
             switch (newState) {
                 case NEUTRAL:
+                    stopSwerveDriveModules();
+                    mPeriodicIO.schedDeltaDesired = 10; // this is a fast cycle used while testing
+                    break;
                 case MANUAL:
                 case DISABLED:
                     mPeriodicIO.schedDeltaDesired = 10; // this is a fast cycle used while testing
@@ -374,7 +383,7 @@ public class Swerve extends Subsystem {
     /** Puts all steer and drive motors into open-loop mode */
     public synchronized void disable() {
         mModules.forEach((m) -> m.disable());
-        setState(ControlState.DISABLED);
+        mControlState  = ControlState.DISABLED;
     }
 
     /** Zeroes the drive motors, and sets the robot's internal position and heading to match that of the fed pose */
