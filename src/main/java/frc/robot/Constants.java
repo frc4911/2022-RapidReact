@@ -4,13 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import edu.wpi.first.math.util.Units;
-import frc.robot.config.DeadEye;
-import frc.robot.config.Junior;
-import frc.robot.config.Robot2022;
 import frc.robot.subsystems.LimeLights.LimeLight;
-import frc.robot.subsystems.Swerve;
-import frc.robot.subsystems.SwerveConfiguration;
-import frc.robot.subsystems.SwerveDriveModule;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Rotation2d;
 import libraries.cheesylib.geometry.Translation2d;
