@@ -5,18 +5,18 @@ import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.util.LatchedBoolean;
 
-public class Superstructure extends Subsystem{
-    
-    //Subsystem Instances
-    @SuppressWarnings("unused")
-    private Swerve    mSwerve;
-    private Indexer   mIndexer;
-    private Collector mCollector;
-    private Shooter   mShooter;
-    private Climber   mClimber;
+public class Superstructure extends Subsystem {
 
-    //Superstructure States
-    public enum SystemState{
+    // Subsystem Instances
+    @SuppressWarnings("unused")
+    private Swerve mSwerve;
+    private Indexer mIndexer;
+    private Collector mCollector;
+    private Shooter mShooter;
+    private Climber mClimber;
+
+    // Superstructure States
+    public enum SystemState {
         DISABLING,
         HOLDING,
         COLLECTING,
@@ -25,8 +25,8 @@ public class Superstructure extends Subsystem{
         MANUAL_SHOOTING,
         AUTO_CLIMBING
     }
-    
-    public enum WantedState{
+
+    public enum WantedState {
         DISABLE,
         HOLD,
         COLLECT,
@@ -36,47 +36,47 @@ public class Superstructure extends Subsystem{
         AUTO_CLIMB
     }
 
-    private SystemState    mSystemState;
-    private WantedState    mWantedState;
-    private boolean        mStateChanged;
+    private SystemState mSystemState;
+    private WantedState mWantedState;
+    private boolean mStateChanged;
     private LatchedBoolean mSystemStateChange = new LatchedBoolean();
-    private PeriodicIO     mPeriodicIO = new PeriodicIO();
-    private int            mFastCycle = 10;
-    private int            mSlowCycle = 100;
+    private PeriodicIO mPeriodicIO = new PeriodicIO();
+    private int mFastCycle = 10;
+    private int mSlowCycle = 100;
 
-    private double  mManualDistance;
+    private double mManualDistance;
     private boolean mShootSetup;
 
     private static String sClassName;
     private static int sInstanceCount;
     private static Superstructure sInstance = null;
-    public  static Superstructure getInstance(String caller) {
-        if(sInstance == null) {
+
+    public static Superstructure getInstance(String caller) {
+        if (sInstance == null) {
             sInstance = new Superstructure(caller);
-        }
-        else {
+        } else {
             printUsage(caller);
         }
         return sInstance;
     }
 
-    private static void printUsage(String caller){
-        System.out.println("("+caller+") "+" getInstance " + sClassName + " " + ++sInstanceCount);
+    private static void printUsage(String caller) {
+        System.out.println("(" + caller + ") " + " getInstance " + sClassName + " " + ++sInstanceCount);
     }
 
-    private Superstructure(String caller){
+    private Superstructure(String caller) {
         sClassName = this.getClass().getSimpleName();
         printUsage(caller);
-        mSwerve =    Swerve.getInstance(sClassName);
-        mIndexer =   Indexer.getInstance(sClassName);
+        mSwerve = Swerve.getInstance(sClassName);
+        mIndexer = Indexer.getInstance(sClassName);
         mCollector = Collector.getInstance(sClassName);
-        mShooter =   Shooter.getInstance(sClassName);
-        mClimber =   Climber.getInstance(sClassName);
+        mShooter = Shooter.getInstance(sClassName);
+        mClimber = Climber.getInstance(sClassName);
     }
 
     @Override
-    public void onStart(Phase phase){
-        synchronized(Superstructure.this) {
+    public void onStart(Phase phase) {
+        synchronized (Superstructure.this) {
             mStateChanged = true;
             switch (phase) {
                 case DISABLED:
@@ -95,11 +95,11 @@ public class Superstructure extends Subsystem{
     }
 
     @Override
-    public void onLoop(double timestamp){
-        synchronized(Superstructure.this) {
-            do{
+    public void onLoop(double timestamp) {
+        synchronized (Superstructure.this) {
+            do {
                 SystemState newState;
-                switch(mSystemState) {
+                switch (mSystemState) {
                     case COLLECTING:
                         newState = handleCollecting();
                         break;
@@ -124,19 +124,20 @@ public class Superstructure extends Subsystem{
                 }
 
                 if (newState != mSystemState) {
-                    System.out.println(sClassName + " state " + mSystemState + " to " + newState + " (" + timestamp + ")");
+                    System.out.println(
+                            sClassName + " state " + mSystemState + " to " + newState + " (" + timestamp + ")");
                     mSystemState = newState;
                     mStateChanged = true;
                 } else {
                     mStateChanged = false;
                 }
-            } while(mSystemStateChange.update(mStateChanged));
+            } while (mSystemStateChange.update(mStateChanged));
         }
     }
 
     // Handling methods
     private SystemState handleDisabling() {
-        if(mStateChanged){
+        if (mStateChanged) {
             mPeriodicIO.schedDeltaDesired = mSlowCycle;
         }
 
@@ -144,7 +145,7 @@ public class Superstructure extends Subsystem{
     }
 
     private SystemState handleHolding() {
-        if(mStateChanged){
+        if (mStateChanged) {
             mCollector.setWantedState(Collector.WantedState.HOLD);
             mIndexer.setWantedState(Indexer.WantedState.HOLD);
             mShooter.setWantedState(Shooter.WantedState.HOLD);
@@ -156,23 +157,23 @@ public class Superstructure extends Subsystem{
     }
 
     private SystemState handleCollecting() {
-        if(mStateChanged){
+        if (mStateChanged) {
             mPeriodicIO.schedDeltaDesired = mFastCycle;
         }
-        
-        //if(mIndexer.getBallCount() < 2) {
-            mCollector.setWantedState(Collector.WantedState.COLLECT);
-            mIndexer.setWantedState(Indexer.WantedState.LOAD);
-        //} else {
-            // mCollector.setWantedState(Collector.WantedState.HOLD);
-            // mIndexer.setWantedState(Indexer.WantedState.HOLD);
-        //}
+
+        // if(mIndexer.getBallCount() < 2) {
+        mCollector.setWantedState(Collector.WantedState.COLLECT);
+        mIndexer.setWantedState(Indexer.WantedState.LOAD);
+        // } else {
+        // mCollector.setWantedState(Collector.WantedState.HOLD);
+        // mIndexer.setWantedState(Indexer.WantedState.HOLD);
+        // }
 
         return collectingStateTransfer();
     }
 
     private SystemState handleBacking() {
-        if(mStateChanged){
+        if (mStateChanged) {
             mPeriodicIO.schedDeltaDesired = mSlowCycle;
         }
 
@@ -185,7 +186,7 @@ public class Superstructure extends Subsystem{
     // TODO: Get help with logic and limelight implementation - CURRENTLY UNUSED
     // If time constrains, may not be complete by Week 1
     private SystemState handleAutoShooting() {
-        if(mStateChanged){
+        if (mStateChanged) {
             mShootSetup = true;
             mPeriodicIO.schedDeltaDesired = mFastCycle;
         }
@@ -218,8 +219,8 @@ public class Superstructure extends Subsystem{
 
     // Unused: Lower priority in reference to other states
     private SystemState handleAutoClimbing() {
-        if(mStateChanged){
-            
+        if (mStateChanged) {
+
         }
 
         return climbingStateTransfer();
@@ -229,7 +230,7 @@ public class Superstructure extends Subsystem{
     // Executes subsystem actions before switching to another state
 
     private SystemState collectingStateTransfer() {
-        if(mSystemState != SystemState.COLLECTING){
+        if (mSystemState != SystemState.COLLECTING) {
             mCollector.setWantedState(Collector.WantedState.HOLD);
             mIndexer.setWantedState(Indexer.WantedState.HOLD);
         }
@@ -238,7 +239,7 @@ public class Superstructure extends Subsystem{
     }
 
     private SystemState backingStateTransfer() {
-        if(mSystemState != SystemState.BACKING){
+        if (mSystemState != SystemState.BACKING) {
             mCollector.setWantedState(Collector.WantedState.HOLD);
             mIndexer.setWantedState(Indexer.WantedState.HOLD);
         }
@@ -247,7 +248,7 @@ public class Superstructure extends Subsystem{
     }
 
     private SystemState shootingStateTransfer() {
-        if(mSystemState != SystemState.AUTO_SHOOTING && mSystemState != SystemState.MANUAL_SHOOTING){
+        if (mSystemState != SystemState.AUTO_SHOOTING && mSystemState != SystemState.MANUAL_SHOOTING) {
             mShooter.setWantedState(Shooter.WantedState.HOLD);
             mIndexer.setWantedState(Indexer.WantedState.HOLD);
         }
@@ -256,7 +257,7 @@ public class Superstructure extends Subsystem{
     }
 
     private SystemState climbingStateTransfer() {
-        if(mSystemState != SystemState.AUTO_CLIMBING){
+        if (mSystemState != SystemState.AUTO_CLIMBING) {
             mClimber.setWantedState(Climber.WantedState.HOLD);
         }
 
@@ -264,7 +265,7 @@ public class Superstructure extends Subsystem{
     }
 
     private SystemState defaultStateTransfer() {
-        switch(mWantedState){
+        switch (mWantedState) {
             case DISABLE:
                 return SystemState.DISABLING;
             case COLLECT:
@@ -284,27 +285,26 @@ public class Superstructure extends Subsystem{
     }
 
     public synchronized void setWantedState(WantedState state) {
-        if (mWantedState != state){
-            System.out.println(sClassName + " to " +state);
+        if (mWantedState != state) {
+            System.out.println(sClassName + " to " + state);
             mPeriodicIO.schedDeltaDesired = 2;
         }
         mWantedState = state;
     }
 
-
     public WantedState getWantedState() {
         return mWantedState;
     }
 
-    public void setManualShootDistance(double distance){
+    public void setManualShootDistance(double distance) {
         mManualDistance = distance;
     }
 
-    public void setOpenLoopClimb(double climbSpeed, int deploySlappyState){
+    public void setOpenLoopClimb(double climbSpeed, int deploySlappyState) {
         mClimber.setClimbSpeed(climbSpeed);
-        if(deploySlappyState == 0){
+        if (deploySlappyState == 0) {
             mClimber.setSlappyStickState(true);
-        } else if(deploySlappyState == 1){
+        } else if (deploySlappyState == 1) {
             mClimber.setSlappyStickState(false);
         }
     }
@@ -314,14 +314,14 @@ public class Superstructure extends Subsystem{
     }
 
     @Override
-    public int whenRunAgain () {
+    public int whenRunAgain() {
         return mPeriodicIO.schedDeltaDesired;
     }
 
     @Override
     public void stop() {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
@@ -348,11 +348,11 @@ public class Superstructure extends Subsystem{
 
     }
 
-    public static class PeriodicIO{
-        //Logging
+    public static class PeriodicIO {
+        // Logging
         private int schedDeltaDesired;
-        public  double schedDeltaActual;
-        public  double schedDuration;
+        public double schedDeltaActual;
+        public double schedDuration;
         private double lastSchedStart;
     }
 
