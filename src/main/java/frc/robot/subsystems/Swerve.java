@@ -26,12 +26,12 @@ import libraries.cyberlib.kinematics.SwerveDriveKinematics;
 import libraries.cyberlib.kinematics.SwerveDriveOdometry;
 import libraries.cyberlib.kinematics.SwerveModuleState;
 import libraries.cyberlib.utils.HolonomicDriveSignal;
-import libraries.cyberlib.utils.SwerveDriveHelper;
 import libraries.cyberlib.utils.RobotName;
+import libraries.cyberlib.utils.SwerveDriveHelper;
 
 public class Swerve extends Subsystem {
 
-    public enum ControlState{
+    public enum ControlState {
         NEUTRAL, MANUAL, DISABLED, PATH_FOLLOWING, VISION_AIM
     }
 
@@ -43,22 +43,22 @@ public class Swerve extends Subsystem {
     PeriodicIO mPeriodicIO = new PeriodicIO();
     private int mDefaultSchedDelta = 20;
 
-	// Module declaration
-	private final List<SwerveDriveModule> mModules = new ArrayList<>();
-	private final SwerveDriveModule mFrontRight;
+    // Module declaration
+    private final List<SwerveDriveModule> mModules = new ArrayList<>();
+    private final SwerveDriveModule mFrontRight;
     private final SwerveDriveModule mFrontLeft;
     private final SwerveDriveModule mBackLeft;
     private final SwerveDriveModule mBackRight;
 
-	double lastUpdateTimestamp = 0;
+    double lastUpdateTimestamp = 0;
 
-	// Swerve kinematics & odometry
-	private IMU mIMU;
+    // Swerve kinematics & odometry
+    private IMU mIMU;
     private boolean mIsBrakeMode;
-	private Rotation2d mGyroOffset = Rotation2d.identity();
+    private Rotation2d mGyroOffset = Rotation2d.identity();
 
-	private final SwerveDriveOdometry mOdometry;
-	private final SwerveDriveKinematics mKinematics;
+    private final SwerveDriveOdometry mOdometry;
+    private final SwerveDriveKinematics mKinematics;
 
     // Trajectory following
     private static DriveMotionPlanner mMotionPlanner;
@@ -67,18 +67,18 @@ public class Swerve extends Subsystem {
     private static String sClassName;
     private static int sInstanceCount;
     private static Swerve sInstance = null;
-    public  static Swerve getInstance(String caller) {
+
+    public static Swerve getInstance(String caller) {
         if (sInstance == null) {
             sInstance = new Swerve(caller);
-        }
-        else {
+        } else {
             printUsage(caller);
         }
         return sInstance;
     }
 
     private static void printUsage(String caller) {
-        System.out.println("("+caller+") "+"getInstance " + sClassName + " " + ++sInstanceCount);
+        System.out.println("(" + caller + ") " + "getInstance " + sClassName + " " + ++sInstanceCount);
     }
 
     private Swerve(String caller) {
@@ -88,17 +88,21 @@ public class Swerve extends Subsystem {
         mRobotConfiguration = RobotConfiguration.getRobotConfiguration(RobotName.name);
 
         mSwerveConfiguration = mRobotConfiguration.getSwerveConfiguration();
-        mModules.add(mFrontRight = new SwerveDriveModule(mRobotConfiguration.getFrontRightModuleConstants(), mSwerveConfiguration.maxSpeedInMetersPerSecond));
-        mModules.add(mFrontLeft = new SwerveDriveModule(mRobotConfiguration.getFrontLeftModuleConstants(), mSwerveConfiguration.maxSpeedInMetersPerSecond));
-        mModules.add(mBackLeft = new SwerveDriveModule(mRobotConfiguration.getBackLeftModuleConstants(), mSwerveConfiguration.maxSpeedInMetersPerSecond));
-        mModules.add(mBackRight = new SwerveDriveModule(mRobotConfiguration.getBackRightModuleConstants(), mSwerveConfiguration.maxSpeedInMetersPerSecond));
+        mModules.add(mFrontRight = new SwerveDriveModule(mRobotConfiguration.getFrontRightModuleConstants(),
+                mSwerveConfiguration.maxSpeedInMetersPerSecond));
+        mModules.add(mFrontLeft = new SwerveDriveModule(mRobotConfiguration.getFrontLeftModuleConstants(),
+                mSwerveConfiguration.maxSpeedInMetersPerSecond));
+        mModules.add(mBackLeft = new SwerveDriveModule(mRobotConfiguration.getBackLeftModuleConstants(),
+                mSwerveConfiguration.maxSpeedInMetersPerSecond));
+        mModules.add(mBackRight = new SwerveDriveModule(mRobotConfiguration.getBackRightModuleConstants(),
+                mSwerveConfiguration.maxSpeedInMetersPerSecond));
 
         // precaution to ensure misconfiguration modules don't run.
         stopSwerveDriveModules();
 
         mIMU = IMU.createImu(mRobotConfiguration.getImuType());
         mKinematics = new SwerveDriveKinematics(mSwerveConfiguration.moduleLocations);
-		mOdometry = new SwerveDriveOdometry(mKinematics, mIMU.getYaw());
+        mOdometry = new SwerveDriveOdometry(mKinematics, mIMU.getYaw());
         mPeriodicIO.robotPose = mOdometry.getPose();
 
         mMotionPlanner = new DriveMotionPlanner();
@@ -106,7 +110,7 @@ public class Swerve extends Subsystem {
 
     @Override
     public void onStart(Phase phase) {
-        synchronized(Swerve.this) {
+        synchronized (Swerve.this) {
             stop();
             lastUpdateTimestamp = Timer.getFPGATimestamp();
             switch (phase) {
@@ -122,7 +126,7 @@ public class Swerve extends Subsystem {
 
     @Override
     public void onLoop(double timestamp) {
-        synchronized(Swerve.this) {
+        synchronized (Swerve.this) {
             lastUpdateTimestamp = timestamp;
 
             // Update odometry in every loop before any other actions.
@@ -153,18 +157,18 @@ public class Swerve extends Subsystem {
         mModules.forEach((m) -> m.stop());
     }
 
-
     @Override
     public synchronized void zeroSensors() {
         zeroSensors(Constants.kRobotStartingPose);
     }
 
-
     /**
      * Handles MANUAL state which corresponds to joy stick inputs.
      * <p>
-     * Using the joy stick values in PeriodicIO, calculate and updates the swerve states. The joy stick values
-     * are as percent [-1.0, 1.0].  They need to be converted to SI units before creating the ChassisSpeeds.
+     * Using the joy stick values in PeriodicIO, calculate and updates the swerve
+     * states. The joy stick values
+     * are as percent [-1.0, 1.0]. They need to be converted to SI units before
+     * creating the ChassisSpeeds.
      */
     private void handleManual() {
         HolonomicDriveSignal driveSignal;
@@ -174,29 +178,32 @@ public class Swerve extends Subsystem {
                 mPeriodicIO.forward, mPeriodicIO.strafe, mPeriodicIO.rotation,
                 mPeriodicIO.low_power, mPeriodicIO.field_relative, mPeriodicIO.use_heading_controller);
 
-//        // Matt's Swerve control
-//        double driveScalar = 1;
-//        if(mPeriodicIO.low_power) {
-//            driveScalar = 0.25;
-//        }
-//
-//        driveSignal = new HolonomicDriveSignal(
-//                new Translation2d(mPeriodicIO.forward * driveScalar, mPeriodicIO.strafe * driveScalar),
-//                mPeriodicIO.rotation * 0.8,
-//                mPeriodicIO.field_relative);
+        // // Matt's Swerve control
+        // double driveScalar = 1;
+        // if(mPeriodicIO.low_power) {
+        // driveScalar = 0.25;
+        // }
+        //
+        // driveSignal = new HolonomicDriveSignal(
+        // new Translation2d(mPeriodicIO.forward * driveScalar, mPeriodicIO.strafe *
+        // driveScalar),
+        // mPeriodicIO.rotation * 0.8,
+        // mPeriodicIO.field_relative);
 
-//        // Inputs squared
-//        driveSignal = new HolonomicDriveSignal(
-//                new Translation2d(
-//                        Math.copySign(mPeriodicIO.forward * mPeriodicIO.forward, mPeriodicIO.forward),
-//                        Math.copySign(mPeriodicIO.strafe * mPeriodicIO.strafe, mPeriodicIO.strafe)),
-//                Math.copySign(mPeriodicIO.rotation * mPeriodicIO.rotation, mPeriodicIO.rotation),
-//                mPeriodicIO.field_relative);
-//
+        // // Inputs squared
+        // driveSignal = new HolonomicDriveSignal(
+        // new Translation2d(
+        // Math.copySign(mPeriodicIO.forward * mPeriodicIO.forward,
+        // mPeriodicIO.forward),
+        // Math.copySign(mPeriodicIO.strafe * mPeriodicIO.strafe, mPeriodicIO.strafe)),
+        // Math.copySign(mPeriodicIO.rotation * mPeriodicIO.rotation,
+        // mPeriodicIO.rotation),
+        // mPeriodicIO.field_relative);
+        //
 
-
-//        driveSignal = new HolonomicDriveSignal(new Translation2d(mPeriodicIO.forward, mPeriodicIO.strafe),
-//                    mPeriodicIO.rotation, mPeriodicIO.field_relative);
+        // driveSignal = new HolonomicDriveSignal(new Translation2d(mPeriodicIO.forward,
+        // mPeriodicIO.strafe),
+        // mPeriodicIO.rotation, mPeriodicIO.field_relative);
 
         setOpenLoop(driveSignal);
     }
@@ -222,19 +229,21 @@ public class Swerve extends Subsystem {
         // Now calculate the new Swerve Module states using inverse kinematics.
         mPeriodicIO.swerveModuleStates = mKinematics.toSwerveModuleStates(chassisSpeeds);
 
-        // Normalize wheels speeds if any individual speed is above the specified maximum.
+        // Normalize wheels speeds if any individual speed is above the specified
+        // maximum.
         SwerveDriveKinematics.desaturateWheelSpeeds(
                 mPeriodicIO.swerveModuleStates, mSwerveConfiguration.maxSpeedInMetersPerSecond);
     }
 
-//    //Assigns appropriate directions for scrub factors
-//    public void setCarpetDirection(boolean standardDirection) {
-//        mModules.forEach((m) -> m.setCarpetDirection(standardDirection));
-//    }
+    // //Assigns appropriate directions for scrub factors
+    // public void setCarpetDirection(boolean standardDirection) {
+    // mModules.forEach((m) -> m.setCarpetDirection(standardDirection));
+    // }
 
     /**
      * Gets the current control state for the Swerve Drive.
      * <p>
+     * 
      * @return The current control state.
      */
     public synchronized ControlState getState() {
@@ -244,9 +253,10 @@ public class Swerve extends Subsystem {
     /**
      * Sets the control state for the Swerve Drive.
      * <p>
+     * 
      * @param newState The desired state.
      */
-     public synchronized void setState(ControlState newState) {
+    public synchronized void setState(ControlState newState) {
         if (mControlState != newState) {
             System.out.println(mControlState + " to " + newState);
             switch (newState) {
@@ -271,6 +281,7 @@ public class Swerve extends Subsystem {
     /**
      * Returns the angle of the robot as a Rotation2d.
      * <p>
+     * 
      * @return The angle of the robot (CCW).
      */
     private synchronized Rotation2d getAngle() {
@@ -288,6 +299,7 @@ public class Swerve extends Subsystem {
     /**
      * Sets the current robot position on the field.
      * <p>
+     * 
      * @param pose The (x,y,theta) position.
      */
     public synchronized void setRobotPosition(Pose2d pose) {
@@ -298,6 +310,7 @@ public class Swerve extends Subsystem {
     /**
      * Updates the field relative position of the robot.
      * <p>
+     * 
      * @param timestamp The current time
      */
     private void updateOdometry(double timestamp) {
@@ -308,25 +321,28 @@ public class Swerve extends Subsystem {
 
         // order is CCW starting with front right.
         mPeriodicIO.chassisSpeeds = mKinematics.toChassisSpeeds(frontRight, frontLeft, backLeft, backRight);
-        mPeriodicIO.robotPose = mOdometry.updateWithTime(timestamp, getAngle(), frontRight, frontLeft, backLeft, backRight);
+        mPeriodicIO.robotPose = mOdometry.updateWithTime(timestamp, getAngle(), frontRight, frontLeft, backLeft,
+                backRight);
     }
 
     /**
-     * Gets whether path following is done or not.  Typically, called in autonomous actions.
+     * Gets whether path following is done or not. Typically, called in autonomous
+     * actions.
      * <p>
+     * 
      * @return true if done; otherwise false.
      */
     public boolean isDoneWithTrajectory() {
-        if (mMotionPlanner == null || mControlState != mControlState.PATH_FOLLOWING) {
+        if (mMotionPlanner == null || mControlState != ControlState.PATH_FOLLOWING) {
             return false;
         }
         return mMotionPlanner.isDone() || mOverrideTrajectory;
     }
 
-
     /**
      * Sets a trajectory to follow.
      * <p>
+     * 
      * @param trajectory The trajectory to follow.
      */
     public synchronized void setTrajectory(TrajectoryIterator<TimedState<Pose2dWithCurvature>> trajectory) {
@@ -365,6 +381,7 @@ public class Swerve extends Subsystem {
     /**
      * Configure modules for open loop control
      * <p>
+     * 
      * @param signal The HolonomicDriveSignal to apply
      */
     public synchronized void setOpenLoop(HolonomicDriveSignal signal) {
@@ -378,6 +395,7 @@ public class Swerve extends Subsystem {
     /**
      * Configure modules for path following.
      * <p>
+     * 
      * @param signal The HolonomicDriveSignal to apply
      */
     public synchronized void setPathFollowingVelocity(HolonomicDriveSignal signal) {
@@ -404,10 +422,13 @@ public class Swerve extends Subsystem {
     /** Puts all steer and drive motors into open-loop mode */
     public synchronized void disable() {
         mModules.forEach((m) -> m.disable());
-        mControlState  = ControlState.DISABLED;
+        mControlState = ControlState.DISABLED;
     }
 
-    /** Zeroes the drive motors, and sets the robot's internal position and heading to match that of the fed pose */
+    /**
+     * Zeroes the drive motors, and sets the robot's internal position and heading
+     * to match that of the fed pose
+     */
     public synchronized void zeroSensors(Pose2d startingPose) {
         setRobotPosition(startingPose);
         mIMU.setAngle(startingPose.getRotation().getUnboundedDegrees());
@@ -417,14 +438,20 @@ public class Swerve extends Subsystem {
     /**
      * Sets inputs from driver in teleop mode.
      * <p>
-     * @param forward percent to drive forwards/backwards (as double [-1.0,1.0]).
-     * @param strafe percent to drive sideways left/right (as double [-1.0,1.0]).
-     * @param rotation percent to rotate chassis (as double [-1.0,1.0]).
-     * @param low_power whether to use low or high power.
-     * @param field_relative whether operation is robot centric or field relative.
+     * 
+     * @param forward                percent to drive forwards/backwards (as double
+     *                               [-1.0,1.0]).
+     * @param strafe                 percent to drive sideways left/right (as double
+     *                               [-1.0,1.0]).
+     * @param rotation               percent to rotate chassis (as double
+     *                               [-1.0,1.0]).
+     * @param low_power              whether to use low or high power.
+     * @param field_relative         whether operation is robot centric or field
+     *                               relative.
      * @param use_heading_controller whether the heading controller is being used.
      */
-    public void setTeleopInputs(double forward, double strafe, double rotation, boolean low_power, boolean field_relative, boolean use_heading_controller) {
+    public void setTeleopInputs(double forward, double strafe, double rotation, boolean low_power,
+            boolean field_relative, boolean use_heading_controller) {
         if (mControlState != ControlState.MANUAL) {
             mControlState = ControlState.MANUAL;
         }
@@ -439,17 +466,16 @@ public class Swerve extends Subsystem {
     @Override
     public String getLogHeaders() {
         StringBuilder allHeaders = new StringBuilder(256);
-        for (SwerveDriveModule m: mModules) {
+        for (SwerveDriveModule m : mModules) {
             if (allHeaders.length() > 0) {
                 allHeaders.append(",");
             }
             allHeaders.append(m.getLogHeaders());
         }
 
-        allHeaders.append("," + sClassName+".schedDeltaDesired,"+
-                sClassName+".schedDeltaActual,"+
-                sClassName+".schedDuration"
-        );
+        allHeaders.append("," + sClassName + ".schedDeltaDesired," +
+                sClassName + ".schedDeltaActual," +
+                sClassName + ".schedDuration");
 
         return allHeaders.toString();
     }
@@ -457,40 +483,38 @@ public class Swerve extends Subsystem {
     private String generateLogValues(boolean telemetry) {
         String values;
         if (telemetry) {
-            values = ""+/*mPeriodicIO.schedDeltaDesired+*/","+
-                    /*mPeriodicIO.schedDeltaActual+*/","
-            /*mPeriodicIO.schedDuration*/;
-        }
-        else {
+            values = "" + /* mPeriodicIO.schedDeltaDesired+ */"," +
+            /* mPeriodicIO.schedDeltaActual+ */","
+            /* mPeriodicIO.schedDuration */;
+        } else {
             mPeriodicIO.schedDuration = Timer.getFPGATimestamp() - mPeriodicIO.lastSchedStart;
-            values = ""+mPeriodicIO.schedDeltaDesired+","+
-                    mPeriodicIO.schedDeltaActual+","+
+            values = "" + mPeriodicIO.schedDeltaDesired + "," +
+                    mPeriodicIO.schedDeltaActual + "," +
                     mPeriodicIO.schedDuration;
         }
 
         return values;
     }
 
-
     @Override
     public String getLogValues(boolean telemetry) {
         StringBuilder allValues = new StringBuilder(256);
-        for (SwerveDriveModule m: mModules) {
+        for (SwerveDriveModule m : mModules) {
             if (allValues.length() > 0) {
                 allValues.append(",");
             }
             allValues.append(m.getLogValues(telemetry));
         }
-        allValues.append(","+generateLogValues(telemetry));
+        allValues.append("," + generateLogValues(telemetry));
         return allValues.toString();
     }
 
     @Override
     public synchronized void readPeriodicInputs() {
-        double now                   = Timer.getFPGATimestamp();
+        double now = Timer.getFPGATimestamp();
         mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
-        mPeriodicIO.lastSchedStart   = now;
-        mPeriodicIO.gyro_heading     = Rotation2d.fromDegrees(mIMU.getYaw().getDegrees()).rotateBy(mGyroOffset);
+        mPeriodicIO.lastSchedStart = now;
+        mPeriodicIO.gyro_heading = Rotation2d.fromDegrees(mIMU.getYaw().getDegrees()).rotateBy(mGyroOffset);
 
         // read modules
         mModules.forEach((m) -> m.readPeriodicInputs());
@@ -508,8 +532,8 @@ public class Swerve extends Subsystem {
     }
 
     @Override
-    public int whenRunAgain () {
-        return 20;//mPeriodicIO.schedDeltaDesired; (brian test)
+    public int whenRunAgain() {
+        return 20;// mPeriodicIO.schedDeltaDesired; (brian test)
     }
 
     @Override
@@ -518,7 +542,7 @@ public class Swerve extends Subsystem {
         SmartDashboard.putString("Swerve/Swerve State", mControlState.toString());
         SmartDashboard.putString("Swerve/Pose", mPeriodicIO.robotPose.toString());
         SmartDashboard.putString("Swerve/Chassis Speeds", mPeriodicIO.chassisSpeeds.toString());
-//        SmartDashboard.putBoolean("Swerve/isOnTarget", isOnTarget());
+        // SmartDashboard.putBoolean("Swerve/isOnTarget", isOnTarget());
 
         if (Constants.kDebuggingOutput) {
             // Get the current pose from odometry state
@@ -557,7 +581,6 @@ public class Swerve extends Subsystem {
         public Pose2d error = Pose2d.identity();
         public TimedState<Pose2dWithCurvature> path_setpoint = new TimedState<>(Pose2dWithCurvature.identity());
 
-
         // Inputs
         public Rotation2d gyro_heading = Rotation2d.identity();
         public double forward;
@@ -568,7 +591,7 @@ public class Swerve extends Subsystem {
         public boolean use_heading_controller;
 
         // OUTPUTS
-        public SwerveModuleState[] swerveModuleStates = new SwerveModuleState[]{
+        public SwerveModuleState[] swerveModuleStates = new SwerveModuleState[] {
                 new SwerveModuleState(0, Rotation2d.identity()),
                 new SwerveModuleState(0, Rotation2d.identity()),
                 new SwerveModuleState(0, Rotation2d.identity()),

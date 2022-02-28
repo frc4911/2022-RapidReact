@@ -19,7 +19,7 @@ public interface RobotConfiguration {
     public ImuType getImuType();
 
     public static RobotConfiguration getRobotConfiguration(String robotName) {
-        switch(robotName) {
+        switch (robotName) {
             case Constants.kJuniorName:
                 return new Junior();
             case Constants.kDeadEyeName:

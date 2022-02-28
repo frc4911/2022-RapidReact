@@ -1,9 +1,8 @@
 package libraries.cyberlib.kinematics;
 
+import java.util.Objects;
 
 import libraries.cheesylib.geometry.Rotation2d;
-
-import java.util.Objects;
 
 /**
  * Represents the state of one swerve module.
@@ -31,7 +30,7 @@ public class SwerveModuleState implements Comparable<SwerveModuleState> {
      * Constructs a SwerveModuleState.
      *
      * @param speedInMetersPerSecond The speed of the wheel of the module.
-     * @param angle The angle of the module.
+     * @param angle                  The angle of the module.
      */
     public SwerveModuleState(double speedInMetersPerSecond, Rotation2d angle) {
         this.speedInMetersPerSecond = speedInMetersPerSecond;
@@ -41,8 +40,7 @@ public class SwerveModuleState implements Comparable<SwerveModuleState> {
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof SwerveModuleState) {
-            return Double.compare(speedInMetersPerSecond, ((SwerveModuleState) obj).speedInMetersPerSecond)
-                    == 0;
+            return Double.compare(speedInMetersPerSecond, ((SwerveModuleState) obj).speedInMetersPerSecond) == 0;
         }
         return false;
     }
@@ -53,7 +51,8 @@ public class SwerveModuleState implements Comparable<SwerveModuleState> {
     }
 
     /**
-     * Compares two swerve module states. One swerve module is "greater" than the other if its speed
+     * Compares two swerve module states. One swerve module is "greater" than the
+     * other if its speed
      * is higher than the other.
      *
      * @param other The other swerve module.
@@ -71,9 +70,12 @@ public class SwerveModuleState implements Comparable<SwerveModuleState> {
     }
 
     /**
-     * Minimize the change in heading the desired swerve module state would require by potentially
-     * reversing the direction the wheel spins. If this is used with the PIDController class's
-     * continuous input functionality, the furthest a wheel will ever rotate is 90 degrees.
+     * Minimize the change in heading the desired swerve module state would require
+     * by potentially
+     * reversing the direction the wheel spins. If this is used with the
+     * PIDController class's
+     * continuous input functionality, the furthest a wheel will ever rotate is 90
+     * degrees.
      *
      * @param desiredState The desired state.
      * @param currentAngle The current module angle.

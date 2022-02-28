@@ -25,7 +25,7 @@ public class SwerveHeadingController {
 
     public enum HeadingControllerState {
         OFF,
-        //SNAP, // for dpad snapping to cardinals
+        // SNAP, // for dpad snapping to cardinals
         MAINTAIN, // maintaining current heading while driving
     }
 
@@ -38,7 +38,7 @@ public class SwerveHeadingController {
         mPIDFController = new SynchronousPIDF();
     }
 
-    public void setPIDFConstants(double kP, double kI, double kD, double kF){
+    public void setPIDFConstants(double kP, double kI, double kD, double kF) {
         mPIDFController.setPIDF(kP, kI, kD, kF);
     }
 
@@ -53,6 +53,7 @@ public class SwerveHeadingController {
     /**
      * Sets the goal position.
      * <p>
+     * 
      * @param goalPositionInDegrees goal position in degrees
      */
     public void setGoal(double goalPositionInDegrees) {
@@ -68,7 +69,8 @@ public class SwerveHeadingController {
      */
     public double update() {
         mPIDFController.setSetpoint(mSetpoint);
-        // double current_angle = Swerve.getInstance("SwerveHeadingController").getHeading().getDegrees();
+        // double current_angle =
+        // Swerve.getInstance("SwerveHeadingController").getHeading().getDegrees();
         double current_angle = mSwerve.getHeading().getDegrees();
         double current_error = mSetpoint - current_angle;
 

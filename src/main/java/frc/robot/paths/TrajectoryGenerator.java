@@ -1,26 +1,29 @@
 package frc.robot.paths;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import edu.wpi.first.wpilibj.Timer;
+import frc.robot.constants.Constants;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Pose2dWithCurvature;
 import libraries.cheesylib.geometry.Rotation2d;
 import libraries.cheesylib.geometry.Translation2d;
 import libraries.cheesylib.spline.SplineGenerator;
-import libraries.cheesylib.trajectory.DistanceView;
 import libraries.cheesylib.trajectory.Trajectory;
+import libraries.cheesylib.trajectory.DistanceView;
 import libraries.cheesylib.trajectory.TrajectoryConfig;
 import libraries.cheesylib.trajectory.TrajectoryUtil;
 import libraries.cheesylib.trajectory.timing.TimedState;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import frc.robot.constants.Constants;
-
-import edu.wpi.first.wpilibj.Timer;
 import libraries.cheesylib.trajectory.timing.TimingUtil;
 import libraries.cheesylib.util.Units;
 
 public class TrajectoryGenerator {
+    private static double kMaxVelocity = Units.inches_to_meters(120.0);
+    private static double kMaxAccel = Units.inches_to_meters(60.0); // 120.0;
+    private static double kMaxDecel = Units.inches_to_meters(72.0); // 72.0;
+    private static double kMaxCentriptalAccel = kMaxVelocity * kMaxVelocity; // assume unit radius of 1
+    private static final double kMaxVoltage = 9.0;
 
     private static TrajectoryGenerator mInstance;
     private TrajectorySet mTrajectorySet = null;
@@ -40,7 +43,8 @@ public class TrajectoryGenerator {
             double startTime = Timer.getFPGATimestamp();
             System.out.println("Generating trajectories...");
             mTrajectorySet = new TrajectorySet(config);
-            System.out.println("Finished trajectory generation in: " + (Timer.getFPGATimestamp() - startTime) + " seconds");
+            System.out.println(
+                    "Finished trajectory generation in: " + (Timer.getFPGATimestamp() - startTime) + " seconds");
         }
     }
 
@@ -99,8 +103,11 @@ public class TrajectoryGenerator {
     // Origin is the center of the robot when the robot is placed against the middle of the alliance station wall.
     // +x is towards the center of the field.
     // +y is to the left.
-    // ALL POSES DEFINED FOR THE CASE THAT ROBOT STARTS ON LEFT! (mirrored about +x axis for RIGHT)
-    static final Pose2d autoStartingPose = new Pose2d(Constants.kRobotLeftStartingPose.getTranslation().translateBy(new Translation2d(/*-0.5*/0.0, 0.0)), Rotation2d.fromDegrees(-90.0));
+    // ALL POSES DEFINED FOR THE CASE THAT ROBOT STARTS ON LEFT! (mirrored about +x
+    // axis for RIGHT)
+    static final Pose2d autoStartingPose = new Pose2d(
+            Constants.kRobotLeftStartingPose.getTranslation().translateBy(new Translation2d(/*-0.5*/0.0, 0.0)),
+            Rotation2d.fromDegrees(-90.0));
 
     public class TrajectorySet {
         public class MirroredTrajectory {

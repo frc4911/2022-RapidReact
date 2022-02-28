@@ -1,28 +1,27 @@
 package frc.robot.planners;
 
+import java.util.Optional;
+
 import frc.robot.config.RobotConfiguration;
 import frc.robot.config.SwerveConfiguration;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Pose2dWithCurvature;
-import libraries.cheesylib.geometry.Rotation2d;
 import libraries.cheesylib.geometry.Translation2d;
-import libraries.cheesylib.trajectory.*;
+import libraries.cheesylib.trajectory.Trajectory;
+import libraries.cheesylib.trajectory.TrajectoryIterator;
+import libraries.cheesylib.trajectory.TrajectorySamplePoint;
 import libraries.cheesylib.trajectory.timing.TimedState;
-import libraries.cheesylib.trajectory.timing.TimingConstraint;
-import libraries.cheesylib.trajectory.timing.TimingUtil;
 import libraries.cheesylib.util.CSVWritable;
-import libraries.cheesylib.util.Units;
 import libraries.cheesylib.util.Util;
-import libraries.cyberlib.control.*;
+import libraries.cyberlib.control.HolonomicFeedforward;
+import libraries.cyberlib.control.HolonomicTrajectoryFollower;
+import libraries.cyberlib.control.PidGains;
+import libraries.cyberlib.control.PurePursuitTrajectoryFollower;
+import libraries.cyberlib.control.SwerveDriveFeedforwardGains;
+import libraries.cyberlib.control.TrajectoryFollower;
 import libraries.cyberlib.kinematics.ChassisSpeeds;
 import libraries.cyberlib.utils.HolonomicDriveSignal;
 import libraries.cyberlib.utils.RobotName;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class DriveMotionPlanner implements CSVWritable {
     TrajectoryFollower follower;
@@ -65,55 +64,55 @@ public class DriveMotionPlanner implements CSVWritable {
 
     public DriveMotionPlanner() {
         RobotConfiguration mRobotConfiguration = RobotConfiguration.getRobotConfiguration(RobotName.name);
-        mSwerveConfiguration =  mRobotConfiguration.getSwerveConfiguration();
-        double transKP=.6;
-        double transKD=0.025;
-        double rotKP=0;
-        double rotKD=0;
-        double ff0=0.1;
-        double ff1=0.1;
-        double ff2=0;
+        mSwerveConfiguration = mRobotConfiguration.getSwerveConfiguration();
+        double transKP = .6;
+        double transKD = 0.025;
+        double rotKP = 0;
+        double rotKD = 0;
+        double ff0 = 0.1;
+        double ff1 = 0.1;
+        double ff2 = 0;
 
         // transKP = SmartDashboard.getNumber("transKP", -1);
         // if (transKP == -1){
-        //     SmartDashboard.putNumber("transKP", 0);
-        //     transKP = 0;
+        // SmartDashboard.putNumber("transKP", 0);
+        // transKP = 0;
         // }
 
         // transKD = SmartDashboard.getNumber("transKD", -1);
         // if (transKD == -1){
-        //     SmartDashboard.putNumber("transKD", 0);
-        //     transKD = 0;
+        // SmartDashboard.putNumber("transKD", 0);
+        // transKD = 0;
         // }
 
         // rotKP = SmartDashboard.getNumber("rotKP", -1);
         // if (rotKP == -1){
-        //     SmartDashboard.putNumber("rotKP", 0);
-        //     rotKP = 0;
+        // SmartDashboard.putNumber("rotKP", 0);
+        // rotKP = 0;
         // }
 
         // rotKD = SmartDashboard.getNumber("rotKD", -1);
         // if (rotKD == -1){
-        //     SmartDashboard.putNumber("rotKD", 0);
-        //     rotKD = 0;
+        // SmartDashboard.putNumber("rotKD", 0);
+        // rotKD = 0;
         // }
 
         // ff0 = SmartDashboard.getNumber("ff0", -1);
         // if (ff0 == -1){
-        //     SmartDashboard.putNumber("ff0", 0);
-        //     ff0 = 0;
+        // SmartDashboard.putNumber("ff0", 0);
+        // ff0 = 0;
         // }
 
         // ff1 = SmartDashboard.getNumber("ff1", -1);
         // if (ff1 == -1){
-        //     SmartDashboard.putNumber("ff1", 0);
-        //     ff1 = 0;
+        // SmartDashboard.putNumber("ff1", 0);
+        // ff1 = 0;
         // }
 
         // ff2 = SmartDashboard.getNumber("ff2", -1);
         // if (ff2 == -1){
-        //     SmartDashboard.putNumber("ff2", 0);
-        //     ff2 = 0;
+        // SmartDashboard.putNumber("ff2", 0);
+        // ff2 = 0;
         // }
 
         System.out.println("transKP = " + transKP);
@@ -123,28 +122,29 @@ public class DriveMotionPlanner implements CSVWritable {
         System.out.println("ff0 = " + ff0);
         System.out.println("ff1 = " + ff1);
         System.out.println("ff2 = " + ff2);
-        
+
         if (mFollowerType == FollowerType.HOLONOMIC) {
-            // TODO:  Make these constants
+            // TODO: Make these constants
             // follower = new HolonomicTrajectoryFollower(
-            //         new PidGains(0.4, 0.0, 0.025),
-            //         new PidGains(5.0, 0.0, 0.0),
-            //         new HolonomicFeedforward(new SwerveDriveFeedforwardGains(
-            //                 0.289, //0.042746,
-            //                 0.0032181,
-            //                 0.30764
-            //         )));
+            // new PidGains(0.4, 0.0, 0.025),
+            // new PidGains(5.0, 0.0, 0.0),
+            // new HolonomicFeedforward(new SwerveDriveFeedforwardGains(
+            // 0.289, //0.042746,
+            // 0.0032181,
+            // 0.30764
+            // )));
             System.out.println("applied----------------------------------------");
-                follower = new HolonomicTrajectoryFollower(
+            follower = new HolonomicTrajectoryFollower(
                     new PidGains(transKP, 0.0, transKD),
                     new PidGains(rotKP, 0.0, rotKD),
                     new HolonomicFeedforward(new SwerveDriveFeedforwardGains(
-                            ff0, //0.042746,
+                            ff0, // 0.042746,
                             ff1,
-                            ff2
-                    )));
+                            ff2)));
         } else if (mFollowerType == FollowerType.PURE_PURSUIT) {
            follower = new PurePursuitTrajectoryFollower();
+        } else if (mFollowerType == FollowerType.PURE_PURSUIT) {
+            follower = new PurePursuitTrajectoryFollower();
         }
     }
 
@@ -173,12 +173,12 @@ public class DriveMotionPlanner implements CSVWritable {
 
     @Override
     public String toCSV() {
-//        return mOutput.toCSV();
+        // return mOutput.toCSV();
         return "";
     }
 
-     public HolonomicDriveSignal update(double timestamp, Pose2d current_state, ChassisSpeeds chassisSpeeds) {
-         HolonomicDriveSignal driveSignal;
+    public HolonomicDriveSignal update(double timestamp, Pose2d current_state, ChassisSpeeds chassisSpeeds) {
+        HolonomicDriveSignal driveSignal;
 
         if (mCurrentTrajectory == null) {
             return null;
@@ -209,8 +209,7 @@ public class DriveMotionPlanner implements CSVWritable {
                 driveSignal = new HolonomicDriveSignal(
                         driveSignal.getTranslation().scale(1 / mSwerveConfiguration.maxSpeedInMetersPerSecond),
                         driveSignal.getRotation() / mSwerveConfiguration.maxSpeedInRadiansPerSecond,
-                        driveSignal.isFieldOriented()
-                );
+                        driveSignal.isFieldOriented());
             } else {
                 driveSignal = this.driveSignal;
             }

@@ -53,11 +53,8 @@ public class SwerveModuleConfiguration {
     // Steer Motor measurement
     public int kSteerMotorStatusFrame2UpdateRate = 10; // feedback for selected sensor, ms
     public int kSteerMotorStatusFrame10UpdateRate = 10; // motion magic, ms
-    public SensorVelocityMeasPeriod kSteerMotorVelocityMeasurementPeriod = SensorVelocityMeasPeriod.Period_100Ms; // dt
-                                                                                                                  // for
-                                                                                                                  // velocity
-                                                                                                                  // measurements,
-                                                                                                                  // ms
+    // dt for velocity measurements, ms
+    public SensorVelocityMeasPeriod kSteerMotorVelocityMeasurementPeriod = SensorVelocityMeasPeriod.Period_100Ms; 
     public int kSteerMotorVelocityMeasurementWindow = 64; // # of samples in rolling average
 
     // general drive
@@ -85,10 +82,7 @@ public class SwerveModuleConfiguration {
     // drive measurement
     public int kDriveStatusFrame2UpdateRate = 15; // feedback for selected sensor, ms
     public int kDriveStatusFrame10UpdateRate = 200; // motion magic, ms
-    public SensorVelocityMeasPeriod kDriveMotorVelocityMeasurementPeriod = SensorVelocityMeasPeriod.Period_100Ms; // dt
-                                                                                                                  // for
-                                                                                                                  // velocity
-                                                                                                                  // measurements,
-                                                                                                                  // ms
+    // dt for velocity measurements, ms
+    public SensorVelocityMeasPeriod kDriveMotorVelocityMeasurementPeriod = SensorVelocityMeasPeriod.Period_100Ms;
     public int kDriveVelocityMeasurementWindow = 32; // # of samples in rolling average
 }
