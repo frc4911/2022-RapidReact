@@ -28,11 +28,15 @@ public class TrajectoryGenerator {
     private static final double kMaxVoltage = 9.0;
 
 
-    private final static TrajectoryGenerator mInstance = new TrajectoryGenerator();
+    private static TrajectoryGenerator mInstance;
     private final DriveMotionPlanner mMotionPlanner;
     private TrajectorySet mTrajectorySet = null;
 
     public static TrajectoryGenerator getInstance() {
+        if (mInstance == null) {
+            mInstance = new TrajectoryGenerator();
+        }
+
         return mInstance;
     }
 
