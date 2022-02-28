@@ -19,12 +19,6 @@ import libraries.cheesylib.trajectory.timing.TimingUtil;
 import libraries.cheesylib.util.Units;
 
 public class TrajectoryGenerator {
-    private static double kMaxVelocity = Units.inches_to_meters(120.0);
-    private static double kMaxAccel = Units.inches_to_meters(60.0); // 120.0;
-    private static double kMaxDecel = Units.inches_to_meters(72.0); // 72.0;
-    private static double kMaxCentriptalAccel = kMaxVelocity * kMaxVelocity; // assume unit radius of 1
-    private static final double kMaxVoltage = 9.0;
-
     private static TrajectoryGenerator mInstance;
     private TrajectorySet mTrajectorySet = null;
 
