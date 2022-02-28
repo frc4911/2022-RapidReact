@@ -97,22 +97,23 @@ public class Robot extends TimedRobot {
     );
 
     // ask each subsystem to register itself
-		mSubsystemManager.registerEnabledLoops(mSubsystemLooper);
+    mSubsystemManager.registerEnabledLoops(mSubsystemLooper);
 
     if (mSwerve != null) {
-			mSwerve.zeroSensors();
-			mSwerve.zeroSensors(new Pose2d());
+        mSwerve.zeroSensors();
+        mSwerve.zeroSensors(new Pose2d());
 
-			// robotState.feignVisionTargets();
-			// mSwerve.startTracking(Constants.kDiskTargetHeight, new Translation2d(-6.0,
-			// 0.0), true, new Rotation2d());
-			mSwerve.stop();
+        // robotState.feignVisionTargets();
+        // mSwerve.startTracking(Constants.kDiskTargetHeight, new Translation2d(-6.0,
+        // 0.0), true, new Rotation2d());
+        mSwerve.stop();
 
-            mAutoModeSelector = new AutoModeSelector();
-            mAutoModeSelector.updateModeCreator();
+        mAutoModeSelector = new AutoModeSelector();
+        mAutoModeSelector.updateModeCreator();
 
-            mTrajectoryGenerator.generateTrajectories();
-		}
+        // Always generate trajectories when robot code starts
+        mTrajectoryGenerator.generateTrajectories(mSwerve.mSwerveConfiguration.trajectoryConfig);
+    }
   }
 
   @Override

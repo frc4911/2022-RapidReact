@@ -30,11 +30,6 @@ class DriveMotionPlannerTest {
         final RobotConfiguration mRobotConfiguration = RobotConfiguration.getRobotConfiguration(Constants.kRobot2022Name);
         final SwerveConfiguration mSwerveConfiguration = mRobotConfiguration.getSwerveConfiguration();
 
-//        final Translation2d m_fl = new Translation2d(12, 12);
-//        final Translation2d m_fr = new Translation2d(12, -12);
-//        final Translation2d m_bl = new Translation2d(-12, 12);
-//        final Translation2d m_br = new Translation2d(-12, -12);
-
         final SwerveDriveKinematics m_kinematics =
                 new SwerveDriveKinematics(
                         mSwerveConfiguration.moduleLocations.get(0),
@@ -52,7 +47,7 @@ class DriveMotionPlannerTest {
         var gyro = Rotation2d.identity();  // 0 degrees is straight ahead
 
         TrajectoryGenerator generator = TrajectoryGenerator.getInstance();
-        generator.generateTrajectories();
+        generator.generateTrajectories(mSwerveConfiguration.trajectoryConfig);
 
         var trajectory = generator.getTrajectorySet().testTrajectory.left;
         var trajectoryTime = trajectory.getLastState().t();

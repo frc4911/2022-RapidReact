@@ -1,7 +1,10 @@
 package libraries.cyberlib.control;
 
+import frc.robot.Constants;
 import frc.robot.config.Robot2022;
+import frc.robot.config.RobotConfiguration;
 import frc.robot.paths.TrajectoryGenerator;
+import frc.robot.subsystems.SwerveConfiguration;
 import libraries.cheesylib.geometry.Rotation2d;
 import libraries.cheesylib.geometry.Translation2d;
 import libraries.cheesylib.trajectory.TrajectoryIterator;
@@ -30,21 +33,21 @@ class HolonomicTrajectoryFollowerTest {
 
     @Test
     public void FollowTest() {
+        final RobotConfiguration mRobotConfiguration = RobotConfiguration.getRobotConfiguration(Constants.kRobot2022Name);
+        final SwerveConfiguration mSwerveConfiguration = mRobotConfiguration.getSwerveConfiguration();
+
         final int frequency = 50;
         final double deltaTime = 1.0 / frequency; // loop at 20 ms
 
         var gyro = Rotation2d.identity();  // 0 degrees is straight ahead
 
         TrajectoryGenerator generator = TrajectoryGenerator.getInstance();
-        generator.generateTrajectories();
+        generator.generateTrajectories(mSwerveConfiguration.trajectoryConfig);
 
         var trajectory = generator.getTrajectorySet().testTrajectory.left;
         var trajectoryTime = trajectory.getLastState().t();
         System.out.println(String.format("trajectoryTime: %f", trajectoryTime));
         System.out.println(trajectory.toString());
-
-        var mRobotConfiguration = new Robot2022();
-        var mServeConfiguration = mRobotConfiguration.getSwerveConfiguration();
 
         var follower = new HolonomicTrajectoryFollower(
                 new PidGains(0.4, 0.0, 0.025),
@@ -79,8 +82,8 @@ class HolonomicTrajectoryFollowerTest {
             } else {
                 System.out.println(driveSignal.toString());
                 // Convert to velocities and SI units
-                var translationInput = driveSignal.getTranslation().scale(mServeConfiguration.maxSpeedInMetersPerSecond);
-                var rotationInput = driveSignal.getRotation() * mServeConfiguration.maxSpeedInRadiansPerSecond;
+                var translationInput = driveSignal.getTranslation().scale(mSwerveConfiguration.maxSpeedInMetersPerSecond);
+                var rotationInput = driveSignal.getRotation() * mSwerveConfiguration.maxSpeedInRadiansPerSecond;
 
                 if (driveSignal.isFieldOriented()) {
                     // Adjust for robot heading to maintain field relative motion.
@@ -95,7 +98,7 @@ class HolonomicTrajectoryFollowerTest {
 
             // Normalize wheels speeds if any individual speed is above the specified maximum.
             SwerveDriveKinematics.desaturateWheelSpeeds(
-                    swerveModuleStates, mServeConfiguration.maxSpeedInMetersPerSecond);
+                    swerveModuleStates, mSwerveConfiguration.maxSpeedInMetersPerSecond);
 
             // Now update odometry (assume swerve modules execute perfectly )
             position = m_odometry.updateWithTime(currentTime, gyro, swerveModuleStates);

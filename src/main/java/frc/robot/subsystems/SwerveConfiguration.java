@@ -1,6 +1,8 @@
 package frc.robot.subsystems;
 
 import libraries.cheesylib.geometry.Translation2d;
+import libraries.cheesylib.trajectory.TrajectoryConfig;
+import libraries.cheesylib.trajectory.timing.CentripetalAccelerationConstraint;
 
 import java.util.Arrays;
 import java.util.List;
@@ -10,7 +12,7 @@ public class SwerveConfiguration {
     public final double wheelbaseWidthInMeters;
     public final double maxSpeedInMetersPerSecond;
     public final double maxAccellerationInMetersPerSecondSq;
-    public final double kMaxCentriptalAccelerationInMetersPerSecondSq;
+    public final double maxCentriptalAccelerationInMetersPerSecondSq;
     public final double maxSpeedInRadiansPerSecond;
     public final List<Translation2d> moduleLocations;
     // imu heading PID constants
@@ -18,6 +20,7 @@ public class SwerveConfiguration {
     public final double kSwerveHeadingKi;
     public final double kSwerveHeadingKd;
     public final double kSwerveHeadingKf;
+    public final TrajectoryConfig trajectoryConfig;
     
 
     /**
@@ -54,7 +57,7 @@ public class SwerveConfiguration {
                 (this.maxSpeedInMetersPerSecond / radiusInMeters);
 
         // TODO: Verify this is correct
-        this.kMaxCentriptalAccelerationInMetersPerSecondSq = Math.pow(this.maxSpeedInMetersPerSecond, 2) / radiusInMeters;
+        this.maxCentriptalAccelerationInMetersPerSecondSq = Math.pow(this.maxSpeedInMetersPerSecond, 2) / radiusInMeters;
 
         // CCW:  left positive, right negative, front positive, back negative
         Translation2d kFrontRightModuleLocation = new Translation2d(wheelbaseLengthInMeters / 2, -wheelbaseWidthInMeters / 2);
@@ -65,5 +68,9 @@ public class SwerveConfiguration {
         moduleLocations = Arrays.asList(
                 kFrontRightModuleLocation, kFrontLeftModuleLocation, kBackLeftModuleLocation, kBackRightModuleLocation);
 
+        trajectoryConfig = new TrajectoryConfig(
+                this.maxSpeedInMetersPerSecond, this.maxAccellerationInMetersPerSecondSq,
+                this.maxSpeedInRadiansPerSecond, this.maxCentriptalAccelerationInMetersPerSecondSq)
+                .addConstraint(new CentripetalAccelerationConstraint(this.maxCentriptalAccelerationInMetersPerSecondSq));
     }
 }
