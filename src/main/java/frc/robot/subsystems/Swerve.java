@@ -333,7 +333,7 @@ public class Swerve extends Subsystem {
      * @return true if done; otherwise false.
      */
     public boolean isDoneWithTrajectory() {
-        if (mMotionPlanner == null || mControlState != mControlState.PATH_FOLLOWING) {
+        if (mMotionPlanner == null || mControlState != ControlState.PATH_FOLLOWING) {
             return false;
         }
         return mMotionPlanner.isDone() || mOverrideTrajectory;
