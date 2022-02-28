@@ -36,10 +36,8 @@ public class DriveMotionPlanner implements CSVWritable {
     private static final double kMaxDy = Units.inches_to_meters(0.25);
     private static final double kMaxDTheta = Math.toRadians(5.0);
 
-    TrajectoryFollower follower;
+    TrajectoryFollower<HolonomicDriveSignal> follower;
     private HolonomicDriveSignal driveSignal = null;
-
-    private Translation2d followingCenter = Translation2d.identity();
 
     public enum FollowerType {
         HOLONOMIC,

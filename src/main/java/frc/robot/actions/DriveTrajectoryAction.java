@@ -12,7 +12,6 @@ import libraries.cheesylib.trajectory.timing.TimedState;
 
 public class DriveTrajectoryAction implements Action {
     private static final Swerve mDrive = Swerve.getInstance("DriveTrajectoryAction");
-    private static final RobotState mRobotState = RobotState.getInstance("DriveTrajectoryAction");
 
     private final TrajectoryIterator<TimedState<Pose2dWithCurvature>> mTrajectory;
     private final boolean mResetPose;
@@ -30,7 +29,7 @@ public class DriveTrajectoryAction implements Action {
     public void start() {
         System.out.println("Starting trajectory! (length=" + mTrajectory.getRemainingProgress() + ")");
         if (mResetPose) {
-            mRobotState.reset(Timer.getFPGATimestamp(), mTrajectory.getState().state().getPose());
+            RobotState.reset(Timer.getFPGATimestamp(), mTrajectory.getState().state().getPose());
         }
         mDrive.setTrajectory(mTrajectory);
     }
