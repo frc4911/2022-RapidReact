@@ -68,6 +68,8 @@ public class Robot extends TimedRobot {
 
   @Override
   public void robotInit() {
+    System.out.println("robotInit() begins");
+
     mClassName = this.getClass().getSimpleName();
     //Initializing subsystems
     mSubsystemManager = SubsystemManager.getInstance(mClassName);
@@ -113,6 +115,7 @@ public class Robot extends TimedRobot {
 
             mTrajectoryGenerator.generateTrajectories();
 		}
+    System.out.println("RobotInit() ends");
   }
 
   @Override
@@ -122,7 +125,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void autonomousInit() {
-    System.out.println("AutonomousInit");
+    System.out.println("AutonomousInit() begins");
 		try {
 			autoConfig();
 
@@ -134,6 +137,7 @@ public class Robot extends TimedRobot {
 			CrashTracker.logThrowableCrash(t);
 			throw t;
 		}
+    System.out.println("AutonomousInit() ends");
   }
 
   public void autoConfig() {
@@ -151,6 +155,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopInit() {
+    System.out.println("TeleopInit() begins");
     try {
             mSubsystemLooper.stop();
 
@@ -165,6 +170,7 @@ public class Robot extends TimedRobot {
 			CrashTracker.logThrowableCrash(t);
 			throw t;
 		}
+    System.out.println("TeleopInit() ends");
   }
 
 	public void teleopConfig() {
@@ -183,6 +189,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void disabledInit() {
+    System.out.println("disabledInit() begins");
     try {
 			System.gc();
 
@@ -201,6 +208,7 @@ public class Robot extends TimedRobot {
 			CrashTracker.logThrowableCrash(t);
 			throw t;
 		}
+    System.out.println("disabledInit() ends");
   }
 
   @Override
@@ -222,7 +230,10 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void testInit() {}
+  public void testInit() {
+    System.out.println("testInit() begins");
+    System.out.println("testInit() ends");
+  }
 
   @Override
   public void testPeriodic() {}

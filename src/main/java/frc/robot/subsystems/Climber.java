@@ -284,8 +284,8 @@ public class Climber extends Subsystem{
 
     @Override
     public void stop() {
-        // TODO Auto-generated method stub
-        
+        mFXLeftClimber.set(ControlMode.PercentOutput, 0);
+        mFXRightClimber.set(ControlMode.PercentOutput, 0);
     }
 
     @Override

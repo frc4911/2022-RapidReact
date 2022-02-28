@@ -136,6 +136,7 @@ public class Indexer extends Subsystem{
             mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
             mCountedBalls = false;
             firstTime = true;
+            stop();  // stop motors just in case they were left running
         }
     }
 
@@ -311,14 +312,13 @@ public class Indexer extends Subsystem{
 
     @Override
     public void writePeriodicOutputs() {
-        //System.out.println("Demand " + mPeriodicIO.indexerDemand);
         mFXIndexer.set(ControlMode.Position, mPeriodicIO.indexerDemand);
     }
 
 
     @Override
     public void stop() {
-        mFXIndexer.set(ControlMode.Position, mPeriodicIO.indexerPosition);
+        mFXIndexer.set(ControlMode.PercentOutput, 0);
     }
 
     @Override
