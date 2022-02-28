@@ -75,7 +75,7 @@ public class TrajectoryGenerator {
             trajectory = new Trajectory<>(flipped);
         }
 
-        // NOTE: While trajectory configurations can be overridden here remember, to push back to SwerveConfiguration.
+        // NOTE: While trajectory configurations can be overridden here, remember to push back to SwerveConfiguration.
 
         // Generate the timed trajectory.
         Trajectory<TimedState<Pose2dWithCurvature>> timed_trajectory = TimingUtil.timeParameterizeTrajectory(
