@@ -1,10 +1,9 @@
 package libraries.cyberlib.control;
 
-import frc.robot.Constants;
-import frc.robot.config.Robot2022;
 import frc.robot.config.RobotConfiguration;
+import frc.robot.config.SwerveConfiguration;
+import frc.robot.constants.Constants;
 import frc.robot.paths.TrajectoryGenerator;
-import frc.robot.subsystems.SwerveConfiguration;
 import libraries.cheesylib.geometry.Pose2dWithCurvature;
 import libraries.cheesylib.geometry.Rotation2d;
 import libraries.cheesylib.geometry.Translation2d;

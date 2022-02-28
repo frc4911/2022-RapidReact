@@ -1,6 +1,6 @@
 package libraries.cyberlib.control;
 
-import frc.robot.Constants;
+import frc.robot.constants.Constants;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Pose2dWithCurvature;
 import libraries.cheesylib.geometry.Translation2d;

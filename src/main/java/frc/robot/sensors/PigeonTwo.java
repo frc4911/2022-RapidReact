@@ -2,8 +2,8 @@ package frc.robot.sensors;
 
 import com.ctre.phoenix.sensors.Pigeon2;
 
-import frc.robot.Constants;
-import frc.robot.Ports;
+import frc.robot.constants.Constants;
+import frc.robot.constants.Ports;
 import libraries.cheesylib.geometry.Rotation2d;
 
 public class PigeonTwo implements IMU {

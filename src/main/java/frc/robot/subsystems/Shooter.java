@@ -10,8 +10,8 @@ import com.ctre.phoenix.motorcontrol.can.TalonFX;
 
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.robot.Constants;
-import frc.robot.Ports;
+import frc.robot.constants.Constants;
+import frc.robot.constants.Ports;
 import libraries.cheesylib.drivers.TalonFXFactory;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
@@ -202,6 +202,7 @@ public class Shooter extends Subsystem{
                     mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
                     break;
             }
+            stop();
             System.out.println(sClassName + " state " + mSystemState);
         }
     }
@@ -425,9 +426,8 @@ public class Shooter extends Subsystem{
     @Override
     public void stop() {
         System.out.println(sClassName + " stop()");
-        mPeriodicIO.flywheelVelocityDemand = 0;
-        mPeriodicIO.hoodDemand = mPeriodicIO.hoodPosition;
-        setMotors(mPeriodicIO.flywheelVelocityDemand, mPeriodicIO.hoodDemand);
+        mFXLeftFlyWheel.set(ControlMode.PercentOutput, 0);  
+        mFXRightFlyWheel.set(ControlMode.PercentOutput, 0);
     }
     
 

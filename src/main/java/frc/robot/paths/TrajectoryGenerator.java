@@ -14,7 +14,7 @@ import libraries.cheesylib.trajectory.timing.TimedState;
 import java.util.ArrayList;
 import java.util.List;
 
-import frc.robot.Constants;
+import frc.robot.constants.Constants;
 
 import edu.wpi.first.wpilibj.Timer;
 import libraries.cheesylib.trajectory.timing.TimingUtil;

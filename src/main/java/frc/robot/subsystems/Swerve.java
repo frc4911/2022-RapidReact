@@ -2,7 +2,6 @@ package frc.robot.subsystems;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 
@@ -10,14 +9,14 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.robot.Constants;
 import frc.robot.config.RobotConfiguration;
+import frc.robot.config.SwerveConfiguration;
+import frc.robot.constants.Constants;
 import frc.robot.planners.DriveMotionPlanner;
 import frc.robot.sensors.IMU;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Pose2dWithCurvature;
 import libraries.cheesylib.geometry.Rotation2d;
-import libraries.cheesylib.geometry.Translation2d;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.trajectory.TrajectoryIterator;
@@ -26,8 +25,9 @@ import libraries.cyberlib.kinematics.ChassisSpeeds;
 import libraries.cyberlib.kinematics.SwerveDriveKinematics;
 import libraries.cyberlib.kinematics.SwerveDriveOdometry;
 import libraries.cyberlib.kinematics.SwerveModuleState;
-import libraries.cyberlib.utils.RobotName;
 import libraries.cyberlib.utils.HolonomicDriveSignal;
+import libraries.cyberlib.utils.SwerveDriveHelper;
+import libraries.cyberlib.utils.RobotName;
 
 public class Swerve extends Subsystem {
 
@@ -170,12 +170,33 @@ public class Swerve extends Subsystem {
         HolonomicDriveSignal driveSignal;
 
         // Helper to make driving feel better
-//        driveSignal = SwerveDriveHelper.calculate(
-//                mPeriodicIO.forward, mPeriodicIO.strafe, mPeriodicIO.rotation,
-//                mPeriodicIO.low_power, mPeriodicIO.field_relative, mPeriodicIO.use_heading_controller);
+        driveSignal = SwerveDriveHelper.calculate(
+                mPeriodicIO.forward, mPeriodicIO.strafe, mPeriodicIO.rotation,
+                mPeriodicIO.low_power, mPeriodicIO.field_relative, mPeriodicIO.use_heading_controller);
 
-        driveSignal = new HolonomicDriveSignal(new Translation2d(mPeriodicIO.forward, mPeriodicIO.strafe),
-                    mPeriodicIO.rotation, mPeriodicIO.field_relative);
+//        // Matt's Swerve control
+//        double driveScalar = 1;
+//        if(mPeriodicIO.low_power) {
+//            driveScalar = 0.25;
+//        }
+//
+//        driveSignal = new HolonomicDriveSignal(
+//                new Translation2d(mPeriodicIO.forward * driveScalar, mPeriodicIO.strafe * driveScalar),
+//                mPeriodicIO.rotation * 0.8,
+//                mPeriodicIO.field_relative);
+
+//        // Inputs squared
+//        driveSignal = new HolonomicDriveSignal(
+//                new Translation2d(
+//                        Math.copySign(mPeriodicIO.forward * mPeriodicIO.forward, mPeriodicIO.forward),
+//                        Math.copySign(mPeriodicIO.strafe * mPeriodicIO.strafe, mPeriodicIO.strafe)),
+//                Math.copySign(mPeriodicIO.rotation * mPeriodicIO.rotation, mPeriodicIO.rotation),
+//                mPeriodicIO.field_relative);
+//
+
+
+//        driveSignal = new HolonomicDriveSignal(new Translation2d(mPeriodicIO.forward, mPeriodicIO.strafe),
+//                    mPeriodicIO.rotation, mPeriodicIO.field_relative);
 
         setOpenLoop(driveSignal);
     }

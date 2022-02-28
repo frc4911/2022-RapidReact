@@ -1,7 +1,7 @@
 package frc.robot.planners;
 
 import frc.robot.config.RobotConfiguration;
-import frc.robot.subsystems.SwerveConfiguration;
+import frc.robot.config.SwerveConfiguration;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Pose2dWithCurvature;
 import libraries.cheesylib.geometry.Rotation2d;
