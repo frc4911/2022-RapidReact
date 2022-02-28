@@ -10,7 +10,7 @@ public class TimeCheck {
     double threshhold;
     String dashboardKey;
 
-    public TimeCheck(double threshhold, String dashboardKey){
+    public TimeCheck(double threshhold, String dashboardKey) {
         this.threshhold = threshhold;
         lastTime = Timer.getFPGATimestamp();
         this.dashboardKey = dashboardKey;
@@ -25,7 +25,8 @@ public class TimeCheck {
         if (delta > threshhold) {
             longCounter++;
             int percent = (int) Math.round((longCounter / checkCounter) * 100.0);
-            String msg = longCounter + "/" + checkCounter + "=" + percent + "% ("+Math.round(delta * 1000.0) / 1000.0+")";
+            String msg = longCounter + "/" + checkCounter + "=" + percent + "% (" + Math.round(delta * 1000.0) / 1000.0
+                    + ")";
             // System.out.println(msg+" "+str);
             SmartDashboard.putString(dashboardKey, msg);
         }
