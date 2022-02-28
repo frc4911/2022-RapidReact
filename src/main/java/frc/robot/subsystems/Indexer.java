@@ -18,19 +18,19 @@ import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.subsystems.SubsystemManager;
 import libraries.cheesylib.util.LatchedBoolean;
 
-public class Indexer extends Subsystem{
+public class Indexer extends Subsystem {
 
-    //Hardware
+    // Hardware
     private final TalonFX mFXIndexer;
     private final AnalogInput mAIBallEntering;
     private final AnalogInput mAIBallExiting;
 
-    //Subsystem Constants
+    // Subsystem Constants
     private final double kFirstPositionDelta = 17000; // 15700; Continue tuning
     private final double kSecondPositionDelta = 21200; // 20200;
     private final double kBeamBreakThreshold = 3.0;
 
-    //Configuration Constants
+    // Configuration Constants
     private final double kIndexerKp = 0.15;
     private final double kIndexerKi = 0.0;
     private final double kIndexerKd = 0.0;
@@ -40,7 +40,7 @@ public class Indexer extends Subsystem{
 
     private final double kIndexerCurrentLimit = 50;
 
-    //Subsystem States
+    // Subsystem States
     public enum SystemState {
         HOLDING,
         LOADING,
@@ -56,7 +56,7 @@ public class Indexer extends Subsystem{
         LOAD_FIRST,
         LOAD_SECOND,
         FEED,
-        BACK        
+        BACK
     }
 
     private SystemState mSystemState;
@@ -69,28 +69,28 @@ public class Indexer extends Subsystem{
     private int mBallCount;
     private boolean firstTime = true;
 
-    //Other
+    // Other
     private SubsystemManager mSubsystemManager;
-    
-    //Subsystem Creation
+
+    // Subsystem Creation
     private static String sClassName;
     private static int sInstanceCount;
     private static Indexer sInstance = null;
+
     public static Indexer getInstance(String caller) {
-        if(sInstance == null) {
+        if (sInstance == null) {
             sInstance = new Indexer(caller);
-        }
-        else {
+        } else {
             printUsage(caller);
         }
         return sInstance;
     }
 
-    private static void printUsage(String caller){
-        System.out.println("("+caller+") "+" getInstance " + sClassName + " " + ++sInstanceCount);
+    private static void printUsage(String caller) {
+        System.out.println("(" + caller + ") " + " getInstance " + sClassName + " " + ++sInstanceCount);
     }
 
-    private Indexer(String caller){
+    private Indexer(String caller) {
         sClassName = this.getClass().getSimpleName();
         printUsage(caller);
         mFXIndexer = TalonFXFactory.createDefaultTalon(Ports.INDEXER);
@@ -100,10 +100,10 @@ public class Indexer extends Subsystem{
         configMotors();
     }
 
-    private void configMotors(){
+    private void configMotors() {
         mFXIndexer.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor, 0, Constants.kLongCANTimeoutMs);
 
-        mFXIndexer.setControlFramePeriod(ControlFrame.Control_3_General,18);
+        mFXIndexer.setControlFramePeriod(ControlFrame.Control_3_General, 18);
 
         mFXIndexer.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
         mFXIndexer.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
@@ -121,12 +121,13 @@ public class Indexer extends Subsystem{
         mFXIndexer.configClosedloopRamp(kClosedRamp, Constants.kLongCANTimeoutMs);
         mFXIndexer.configAllowableClosedloopError(0, kClosedError, Constants.kLongCANTimeoutMs);
 
-        mFXIndexer.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kIndexerCurrentLimit, kIndexerCurrentLimit, 0));
+        mFXIndexer.configStatorCurrentLimit(
+                new StatorCurrentLimitConfiguration(true, kIndexerCurrentLimit, kIndexerCurrentLimit, 0));
 
     }
 
     @Override
-    public void onStart(Phase phase){
+    public void onStart(Phase phase) {
         synchronized (Indexer.this) {
             mSystemState = SystemState.HOLDING;
             mWantedState = WantedState.HOLD;
@@ -136,39 +137,40 @@ public class Indexer extends Subsystem{
             mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
             mCountedBalls = false;
             firstTime = true;
-            stop();  // stop motors just in case they were left running
+            stop(); // stop motors just in case they were left running
         }
     }
 
     @Override
-    public void onLoop(double timestamp){
+    public void onLoop(double timestamp) {
         synchronized (Indexer.this) {
-            do{
+            do {
                 SystemState newState;
                 switch (mSystemState) {
-                case LOADING:
-                    newState = handleLoading();
-                    break;
-                case FEEDING:
-                    newState = handleFeeding();
-                    break;
-                case BACKING:
-                    newState = handleBacking();
-                    break;
-                case HOLDING:
-                default:
-                    newState = handleHolding();
-                    break;
+                    case LOADING:
+                        newState = handleLoading();
+                        break;
+                    case FEEDING:
+                        newState = handleFeeding();
+                        break;
+                    case BACKING:
+                        newState = handleBacking();
+                        break;
+                    case HOLDING:
+                    default:
+                        newState = handleHolding();
+                        break;
                 }
 
                 if (newState != mSystemState) {
-                    System.out.println(sClassName + " state " + mSystemState + " to " + newState + " (" + timestamp + ")");
+                    System.out.println(
+                            sClassName + " state " + mSystemState + " to " + newState + " (" + timestamp + ")");
                     mSystemState = newState;
                     mStateChanged = true;
                 } else {
                     mStateChanged = false;
                 }
-            } while(mSystemStateChange.update(mStateChanged));
+            } while (mSystemStateChange.update(mStateChanged));
         }
     }
 
@@ -182,14 +184,14 @@ public class Indexer extends Subsystem{
     }
 
     private SystemState handleHolding() {
-        if(mStateChanged){
+        if (mStateChanged) {
             mPeriodicIO.indexerDemand = mPeriodicIO.indexerPosition;
         }
-        if(!mCountedBalls) {
-            if(isBallEntering()){
+        if (!mCountedBalls) {
+            if (isBallEntering()) {
                 mBallCount++;
             }
-            if(isFullyLoaded()){
+            if (isFullyLoaded()) {
                 mBallCount++;
             }
             mCountedBalls = true;
@@ -197,11 +199,11 @@ public class Indexer extends Subsystem{
 
         return defaultStateTransfer();
     }
-    
+
     private SystemState handleLoading() {
 
-        if(isBallEntering() || !firstTime) {
-            if(mBallCount == 0) {
+        if (isBallEntering() || !firstTime) {
+            if (mBallCount == 0) {
                 // System.out.println("Loading First Ball");
                 loadFirstBall();
             } else if (mBallCount == 1) {
@@ -216,38 +218,39 @@ public class Indexer extends Subsystem{
     }
 
     private void loadFirstBall() {
-        if(firstTime) {
+        if (firstTime) {
             mPeriodicIO.startIndexerPosition = mPeriodicIO.indexerPosition;
             mPeriodicIO.indexerDemand = mPeriodicIO.startIndexerPosition + kFirstPositionDelta;
             firstTime = false;
         }
 
-        if(Math.abs(mPeriodicIO.indexerPosition - mPeriodicIO.indexerDemand) <= 300) {
+        if (Math.abs(mPeriodicIO.indexerPosition - mPeriodicIO.indexerDemand) <= 300) {
             mBallCount++;
             firstTime = true;
         }
     }
 
     private void loadSecondBall() {
-        if(firstTime) {
+        if (firstTime) {
             mPeriodicIO.indexerDemand = mPeriodicIO.startIndexerPosition + kSecondPositionDelta;
             // System.out.println("Demand 2 " + mPeriodicIO.indexerDemand);
             firstTime = false;
         }
 
-        // System.out.println("Difference " + Math.abs(mPeriodicIO.indexerPosition - mPeriodicIO.indexerDemand));
-        if(Math.abs(mPeriodicIO.indexerPosition - mPeriodicIO.indexerDemand) <= 300) {
+        // System.out.println("Difference " + Math.abs(mPeriodicIO.indexerPosition -
+        // mPeriodicIO.indexerDemand));
+        if (Math.abs(mPeriodicIO.indexerPosition - mPeriodicIO.indexerDemand) <= 300) {
             mBallCount++;
             firstTime = true;
         }
     }
 
     private SystemState handleFeeding() {
-        if(mStateChanged){
+        if (mStateChanged) {
             mPeriodicIO.indexerDemand = mPeriodicIO.indexerPosition + kSecondPositionDelta;
         }
 
-        if(Math.abs(mPeriodicIO.indexerPosition - mPeriodicIO.indexerDemand) <= 300) {
+        if (Math.abs(mPeriodicIO.indexerPosition - mPeriodicIO.indexerDemand) <= 300) {
             mBallCount = 0;
         }
 
@@ -255,19 +258,19 @@ public class Indexer extends Subsystem{
     }
 
     private SystemState handleBacking() {
-        if(mStateChanged){
+        if (mStateChanged) {
             mPeriodicIO.indexerDemand = mPeriodicIO.indexerPosition - kSecondPositionDelta;
         }
 
-        if(Math.abs(mPeriodicIO.indexerPosition - mPeriodicIO.indexerDemand) <= 300) {
+        if (Math.abs(mPeriodicIO.indexerPosition - mPeriodicIO.indexerDemand) <= 300) {
             mBallCount = 0;
         }
 
         return defaultStateTransfer();
     }
 
-    private SystemState defaultStateTransfer(){
-        switch(mWantedState){
+    private SystemState defaultStateTransfer() {
+        switch (mWantedState) {
             case LOAD:
                 return SystemState.LOADING;
             case LOAD_FIRST:
@@ -284,7 +287,7 @@ public class Indexer extends Subsystem{
         }
     }
 
-    //Called in superstructure to manage loading balls
+    // Called in superstructure to manage loading balls
     public boolean isBallEntering() {
         return mAIBallEntering.getVoltage() < kBeamBreakThreshold;
     }
@@ -303,9 +306,9 @@ public class Indexer extends Subsystem{
 
     @Override
     public void readPeriodicInputs() {
-        double now       = Timer.getFPGATimestamp();
+        double now = Timer.getFPGATimestamp();
         mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
-        mPeriodicIO.lastSchedStart   = now;
+        mPeriodicIO.lastSchedStart = now;
 
         mPeriodicIO.indexerPosition = mFXIndexer.getSelectedSensorPosition();
     }
@@ -315,14 +318,13 @@ public class Indexer extends Subsystem{
         mFXIndexer.set(ControlMode.Position, mPeriodicIO.indexerDemand);
     }
 
-
     @Override
     public void stop() {
         mFXIndexer.set(ControlMode.PercentOutput, 0);
     }
 
     @Override
-    public int whenRunAgain () {
+    public int whenRunAgain() {
         return mPeriodicIO.schedDeltaDesired;
     }
 
@@ -340,24 +342,24 @@ public class Indexer extends Subsystem{
     public void outputTelemetry() {
         SmartDashboard.putBoolean("Ball Entering", isBallEntering());
         SmartDashboard.putBoolean("Fully Loaded", isFullyLoaded());
-        SmartDashboard.putNumber("Indexer Position", mPeriodicIO.indexerPosition); 
-        SmartDashboard.putNumber("Ball Count", mBallCount);      
+        SmartDashboard.putNumber("Indexer Position", mPeriodicIO.indexerPosition);
+        SmartDashboard.putNumber("Ball Count", mBallCount);
     }
 
-    public static class PeriodicIO{
-            //Logging
+    public static class PeriodicIO {
+        // Logging
         @SuppressWarnings("unused")
         private final int mDefaultSchedDelta = 20; // axis updated every 20 msec
-        private int    schedDeltaDesired;
-        public  double schedDeltaActual;
-        public  double schedDuration;
+        private int schedDeltaDesired;
+        public double schedDeltaActual;
+        public double schedDuration;
         private double lastSchedStart;
 
-        //Inputs
+        // Inputs
         private double indexerPosition;
         private double startIndexerPosition;
 
-        //Outputs
+        // Outputs
         private double indexerDemand;
     }
 

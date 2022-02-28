@@ -91,7 +91,7 @@ public abstract class LimeLight extends Subsystem {
 
     @Override
     public void onStart(Phase phase) {
-        synchronized(LimeLight.this) {
+        synchronized (LimeLight.this) {
             mSystemState = SystemState.HOLDING;
             mWantedState = WantedState.HOLD;
             mStateChanged = true;
@@ -110,10 +110,10 @@ public abstract class LimeLight extends Subsystem {
 
     @Override
     public void onLoop(double timestamp) {
-        synchronized(LimeLight.this) {
-            do{
+        synchronized (LimeLight.this) {
+            do {
                 SystemState newState;
-                switch(mSystemState) {
+                switch (mSystemState) {
                     case TARGETING:
                         newState = handleTargeting();
                         break;
@@ -132,7 +132,7 @@ public abstract class LimeLight extends Subsystem {
                 } else {
                     mStateChanged = false;
                 }
-            } while(mSystemStateChange.update(mStateChanged));
+            } while (mSystemStateChange.update(mStateChanged));
         }
     }
 
@@ -160,7 +160,6 @@ public abstract class LimeLight extends Subsystem {
         return defaultStateTransfer();
     }
 
-
     private SystemState handleTargeting() {
         if (mStateChanged) {
             setLed(LedMode.OFF);
@@ -187,8 +186,7 @@ public abstract class LimeLight extends Subsystem {
         mRobotState.addVisionUpdate(
                 Timer.getFPGATimestamp() - getLatency(),
                 mTargets,
-                mConfig
-        );
+                mConfig);
     }
 
     /**
@@ -225,7 +223,7 @@ public abstract class LimeLight extends Subsystem {
         return mConfig.kExpectedTargetCount;
     }
 
-    public boolean getStateChanged(){
+    public boolean getStateChanged() {
         return mStateChanged;
     }
 
@@ -270,12 +268,13 @@ public abstract class LimeLight extends Subsystem {
      */
     public synchronized boolean setPipeline(int mode) {
         if (mode != mPeriodicIO.pipeline) {
-            if(mode >= 0 && mode < mConfig.kPipelineZoom.length) {
+            if (mode >= 0 && mode < mConfig.kPipelineZoom.length) {
                 mPeriodicIO.pipeline = mode;
                 System.out.println(mPeriodicIO.pipeline + ", " + mode);
                 mOutputsHaveChanged = true;
             } else {
-                System.out.println("Failed to switch pipelines. Pipline #" + mode + " does not exist for " + mConfig.kName + ".");
+                System.out.println(
+                        "Failed to switch pipelines. Pipline #" + mode + " does not exist for " + mConfig.kName + ".");
                 return false;
             }
         }
@@ -299,10 +298,13 @@ public abstract class LimeLight extends Subsystem {
     }
 
     /**
-     * Gets all the data types as normalized coordinates. always use addTargets(), before calling this a 2nd time.
-     * (make sure data type is being used ie. useRawCorners(true) and limelight is sending the given DataType)
+     * Gets all the data types as normalized coordinates. always use addTargets(),
+     * before calling this a 2nd time.
+     * (make sure data type is being used ie. useRawCorners(true) and limelight is
+     * sending the given DataType)
      *
-     * @return the requested data type in angle offset units (like xOffset) else empty ArrayList
+     * @return the requested data type in angle offset units (like xOffset) else
+     *         empty ArrayList
      */
     protected synchronized ArrayList<Translation2d> get(TargetType dataType) {
         mCachedNormCoordinates.clear();
@@ -323,29 +325,27 @@ public abstract class LimeLight extends Subsystem {
 
     private void storeMainContourToNormCoord() {
         mCachedNormCoordinates.add(new Translation2d(
-                (2 * mCachedZoom * Math.tan(Math.toRadians(mPeriodicIO.xOffset)) / Constants.kVPW ),
-                (2 * mCachedZoom * Math.tan(Math.toRadians(mPeriodicIO.yOffset)) / Constants.kVPH )
-        ));
+                (2 * mCachedZoom * Math.tan(Math.toRadians(mPeriodicIO.xOffset)) / Constants.kVPW),
+                (2 * mCachedZoom * Math.tan(Math.toRadians(mPeriodicIO.yOffset)) / Constants.kVPH)));
     }
 
     private void storeRawCornersToNormCoord() {
         for (Translation2d corners : mPeriodicIO.rawCorners) {
             mCachedNormCoordinates.add(new Translation2d(
                     -(corners.x() - 160) / 160,
-                    -(corners.y() - 120) / 120
-            ));
+                    -(corners.y() - 120) / 120));
         }
     }
 
     private void storeRawContoursToNormCoord() {
-        for(int i = 0; i < mPeriodicIO.rawContours.size(); i++) {
-//            System.out.println("Raw contour #" + i + ": " + mPeriodicIO.rawContours.get(i).toString());
+        for (int i = 0; i < mPeriodicIO.rawContours.size(); i++) {
+            // System.out.println("Raw contour #" + i + ": " +
+            // mPeriodicIO.rawContours.get(i).toString());
         }
         for (Translation2d contours : mPeriodicIO.rawContours) {
             mCachedNormCoordinates.add(new Translation2d(
                     contours.x(),
-                    contours.y()
-            ));
+                    contours.y()));
         }
     }
 
@@ -355,11 +355,10 @@ public abstract class LimeLight extends Subsystem {
      * @param targets in angle normalized coordinate units (as given by get())
      */
     public synchronized ArrayList<TargetInfo> add(ArrayList<TargetInfo> targets, ArrayList<Translation2d> rawTargets) {
-        for(Translation2d coordinate : rawTargets) {
+        for (Translation2d coordinate : rawTargets) {
             targets.add(new TargetInfo(
                     coordinate.x() * Constants.kVPW / (2 * mCachedZoom),
-                    coordinate.y() * Constants.kVPH / (2 * mCachedZoom)
-            ));
+                    coordinate.y() * Constants.kVPH / (2 * mCachedZoom)));
         }
         return targets;
     }
@@ -370,22 +369,28 @@ public abstract class LimeLight extends Subsystem {
 
     /**
      * Used for zooming, this method checks if all cached points are in a rectangle
-     * @param proportionOfFOV Scales down the rectangle and must be less than or equal to 1. (if 1, then rectangle approximates entire FOV)
+     * 
+     * @param proportionOfFOV Scales down the rectangle and must be less than or
+     *                        equal to 1. (if 1, then rectangle approximates entire
+     *                        FOV)
      * @return whether the given points are in the rectangle approximate
      */
     protected synchronized boolean cachedPointsInRect(double proportionOfFOV) {
         boolean inRect = !mCachedNormCoordinates.isEmpty(); // there must be corners for them to be in the rectApprox
-        for(Translation2d coordinate : mCachedNormCoordinates) {
+        for (Translation2d coordinate : mCachedNormCoordinates) {
             inRect = inRect && (pointInRect(coordinate, proportionOfFOV));
         }
         return inRect;
     }
 
     // rearranging the equation lim(a => infinity) (r^2a > x^2a + y^2a),
-    // gives: 1 > lim(a => infinity) (x^2a + y^2a)/r^2a = lim(a => infinity) (x / r)^2a + (y / r)^2a
-    // the right side of the equation equals 0 if (x/r)^2 < 1 and (y/r)^2 < 1, else the equation diverges
+    // gives: 1 > lim(a => infinity) (x^2a + y^2a)/r^2a = lim(a => infinity) (x /
+    // r)^2a + (y / r)^2a
+    // the right side of the equation equals 0 if (x/r)^2 < 1 and (y/r)^2 < 1, else
+    // the equation diverges
     private boolean pointInRect(Translation2d coordinate, double proportionOfFOV) {
-        return (Math.pow((coordinate.x()/proportionOfFOV), 2) < 1) && (Math.pow((coordinate.y()/proportionOfFOV), 2) < 1);
+        return (Math.pow((coordinate.x() / proportionOfFOV), 2) < 1)
+                && (Math.pow((coordinate.y() / proportionOfFOV), 2) < 1);
     }
 
     private List<Translation2d> getCoordinates(double[] rawCorners) {
@@ -433,62 +438,61 @@ public abstract class LimeLight extends Subsystem {
 
     @Override
     public String getLogHeaders() {
-        if (mLoggingEnabled){
-            return  mConfig.kName+".systemState,"+
-                    mConfig.kName+".latency,"+
-                    mConfig.kName+".givenLedMode,"+
-                    mConfig.kName+".ledMode,"+
-                    mConfig.kName+".givenPipeline,"+
-                    mConfig.kName+".pipeline,"+
-                    mConfig.kName+".xOffset,"+
-                    mConfig.kName+".yOffset,"+
-                    mConfig.kName+".area,"+
-                    mConfig.kName+".tv,"+
-                    mConfig.kName+".rawCorners,"+
-                    mConfig.kName+".rawContours,"+
-                    mConfig.kName+".schedDeltaDesired,"+
-                    mConfig.kName+".schedDeltaActual,"+
-                    mConfig.kName+".schedDuration";
+        if (mLoggingEnabled) {
+            return mConfig.kName + ".systemState," +
+                    mConfig.kName + ".latency," +
+                    mConfig.kName + ".givenLedMode," +
+                    mConfig.kName + ".ledMode," +
+                    mConfig.kName + ".givenPipeline," +
+                    mConfig.kName + ".pipeline," +
+                    mConfig.kName + ".xOffset," +
+                    mConfig.kName + ".yOffset," +
+                    mConfig.kName + ".area," +
+                    mConfig.kName + ".tv," +
+                    mConfig.kName + ".rawCorners," +
+                    mConfig.kName + ".rawContours," +
+                    mConfig.kName + ".schedDeltaDesired," +
+                    mConfig.kName + ".schedDeltaActual," +
+                    mConfig.kName + ".schedDuration";
         }
         return null;
     }
 
-    private String generateLogValues(boolean telemetry){
+    private String generateLogValues(boolean telemetry) {
         String values;
         if (telemetry) {
-            values = ""+mSystemState+","+
-                    mPeriodicIO.latency+","+
-                    mPeriodicIO.givenLedMode+","+
-                    mPeriodicIO.ledMode+","+
-                    mPeriodicIO.givenPipeline+","+
-                    mPeriodicIO.pipeline+","+
-                    mPeriodicIO.xOffset+","+
-                    mPeriodicIO.yOffset+","+
-                    mPeriodicIO.area+","+
-                    mPeriodicIO.tv+",\""+
-                    /*mPeriodicIO.rawCorners+*/"\",\""+
-                    /*mPeriodicIO.rawContours+*/"\","+
-                    /*mPeriodicIO.schedDeltaDesired+*/","+
-                    /*mPeriodicIO.schedDeltaActual+*/","
-            /*mPeriodicIO.schedDuration*/;
-        }
-        else {
+            values = "" + mSystemState + "," +
+                    mPeriodicIO.latency + "," +
+                    mPeriodicIO.givenLedMode + "," +
+                    mPeriodicIO.ledMode + "," +
+                    mPeriodicIO.givenPipeline + "," +
+                    mPeriodicIO.pipeline + "," +
+                    mPeriodicIO.xOffset + "," +
+                    mPeriodicIO.yOffset + "," +
+                    mPeriodicIO.area + "," +
+                    mPeriodicIO.tv + ",\"" +
+                    /* mPeriodicIO.rawCorners+ */"\",\"" +
+                    /* mPeriodicIO.rawContours+ */"\"," +
+                    /* mPeriodicIO.schedDeltaDesired+ */"," +
+                    /* mPeriodicIO.schedDeltaActual+ */","
+            /* mPeriodicIO.schedDuration */;
+        } else {
             mPeriodicIO.schedDuration = Timer.getFPGATimestamp() - mPeriodicIO.lastSchedStart;
 
-            values = ""+mSystemState+","+
-                    mPeriodicIO.latency+","+
-                    mPeriodicIO.givenLedMode+","+
-                    mPeriodicIO.ledMode+","+
-                    mPeriodicIO.givenPipeline+","+
-                    mPeriodicIO.pipeline+","+
-                    mPeriodicIO.xOffset+","+
-                    mPeriodicIO.yOffset+","+
-                    mPeriodicIO.area+","+
-                    mPeriodicIO.tv+",\""+
-                    /*mPeriodicIO.rawCorners+*/"\",\""+
-                    /*mPeriodicIO.rawContours+*/"\","+
-                    mPeriodicIO.schedDeltaDesired+","+
-                    mPeriodicIO.schedDeltaActual+","+
+            values = "" + mSystemState + "," +
+                    mPeriodicIO.latency + "," +
+                    mPeriodicIO.givenLedMode + "," +
+                    mPeriodicIO.ledMode + "," +
+                    mPeriodicIO.givenPipeline + "," +
+                    mPeriodicIO.pipeline + "," +
+                    mPeriodicIO.xOffset + "," +
+                    mPeriodicIO.yOffset + "," +
+                    mPeriodicIO.area + "," +
+                    mPeriodicIO.tv + ",\"" +
+                    /* mPeriodicIO.rawCorners+ */"\",\"" +
+                    /* mPeriodicIO.rawContours+ */"\"," +
+                    mPeriodicIO.schedDeltaDesired + "," +
+                    mPeriodicIO.schedDeltaActual + "," +
                     mPeriodicIO.schedDuration;
         }
         return values;
@@ -496,7 +500,7 @@ public abstract class LimeLight extends Subsystem {
 
     @Override
     public String getLogValues(boolean telemetry) {
-        if (mLoggingEnabled){
+        if (mLoggingEnabled) {
             return generateLogValues(telemetry);
         }
         return null;
@@ -504,9 +508,9 @@ public abstract class LimeLight extends Subsystem {
 
     @Override
     public synchronized void readPeriodicInputs() {
-        double now                   = Timer.getFPGATimestamp();
+        double now = Timer.getFPGATimestamp();
         mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
-        mPeriodicIO.lastSchedStart   = now;
+        mPeriodicIO.lastSchedStart = now;
 
         mPeriodicIO.currentState = mSystemState;
         mPeriodicIO.latency = mNetworkTable.getEntry("tl").getDouble(mZeroDouble) / 1000.0
@@ -564,8 +568,9 @@ public abstract class LimeLight extends Subsystem {
     }
 
     int delta = 1;
+
     @Override
-    public int whenRunAgain () {
+    public int whenRunAgain() {
         return mPeriodicIO.schedDeltaDesired;
     }
 
@@ -577,9 +582,9 @@ public abstract class LimeLight extends Subsystem {
 
     public class PeriodicIO {
         // LOGGING
-        public  int    schedDeltaDesired;
-        public  double schedDeltaActual;
-        public  double schedDuration;
+        public int schedDeltaDesired;
+        public double schedDeltaActual;
+        public double schedDuration;
         private double lastSchedStart;
 
         // INPUTS

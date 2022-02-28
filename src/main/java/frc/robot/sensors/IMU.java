@@ -21,7 +21,7 @@ public interface IMU {
     public Rotation2d getYaw();
 
     /**
-     * Represnts the rotation around the transverse axis (up/down hill)
+     * Represents the rotation around the transverse axis (up/down hill)
      * 
      * @return Pitch in degrees of the IMU
      */
