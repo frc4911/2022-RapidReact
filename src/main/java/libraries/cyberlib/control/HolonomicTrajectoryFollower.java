@@ -19,7 +19,7 @@ public class HolonomicTrajectoryFollower extends TrajectoryFollower<HolonomicDri
     private boolean mFinished = false;
 
     public HolonomicTrajectoryFollower(PidGains translationGains, PidGains rotationGains,
-                                       HolonomicFeedforward feedforward) {
+            HolonomicFeedforward feedforward) {
         mForwardController = new PidController(translationGains);
         mStrafeController = new PidController(translationGains);
         mRotationController = new PidController(rotationGains);
@@ -31,8 +31,9 @@ public class HolonomicTrajectoryFollower extends TrajectoryFollower<HolonomicDri
     }
 
     @Override
-    protected HolonomicDriveSignal calculateDriveSignal(Pose2d currentPose, Translation2d velocity, double rotationalVelocity,
-                                                        TrajectoryIterator<TimedState<Pose2dWithCurvature>> trajectory, double time, double dt) {
+    protected HolonomicDriveSignal calculateDriveSignal(Pose2d currentPose, Translation2d velocity,
+            double rotationalVelocity,
+            TrajectoryIterator<TimedState<Pose2dWithCurvature>> trajectory, double time, double dt) {
 
         if (trajectory.isDone() || time > trajectory.trajectory().getLastState().t()) {
             mFinished = true;
@@ -54,14 +55,14 @@ public class HolonomicTrajectoryFollower extends TrajectoryFollower<HolonomicDri
         mForwardController.setSetpoint(lastState.state().getPose().getTranslation().x());
         mStrafeController.setSetpoint(lastState.state().getPose().getTranslation().y());
 
-        // TODO - make sure that pose rotation represents angular rotation in path generation
+        // TODO - make sure that pose rotation represents angular rotation in path
+        // generation
         mRotationController.setSetpoint(lastState.state().getPose().getRotation().getRadians());
 
         return new HolonomicDriveSignal(
                 new Translation2d(
                         mForwardController.calculate(currentPose.getTranslation().x(), dt) + feedforwardVector.x(),
-                        mStrafeController.calculate(currentPose.getTranslation().y(), dt) + feedforwardVector.y()
-                ),
+                        mStrafeController.calculate(currentPose.getTranslation().y(), dt) + feedforwardVector.y()),
                 mRotationController.calculate(currentPose.getRotation().getRadians(), dt), true);
     }
 
@@ -80,6 +81,6 @@ public class HolonomicTrajectoryFollower extends TrajectoryFollower<HolonomicDri
         mStrafeController.reset();
         mRotationController.reset();
 
-            mFinished = false;
+        mFinished = false;
     }
 }

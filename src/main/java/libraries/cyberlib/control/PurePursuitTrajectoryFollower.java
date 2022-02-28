@@ -10,7 +10,7 @@ import libraries.cheesylib.util.Util;
 import libraries.cyberlib.utils.Angles;
 import libraries.cyberlib.utils.HolonomicDriveSignal;
 
-public class PurePursuitTrajectoryFollower extends TrajectoryFollower<HolonomicDriveSignal>  {
+public class PurePursuitTrajectoryFollower extends TrajectoryFollower<HolonomicDriveSignal> {
 
     private TimedState<Pose2dWithCurvature> lastState = null;
     private boolean mIsReversed = false;
@@ -21,7 +21,9 @@ public class PurePursuitTrajectoryFollower extends TrajectoryFollower<HolonomicD
     }
 
     @Override
-    protected HolonomicDriveSignal calculateDriveSignal(Pose2d currentPose, Translation2d velocity, double rotationalVelocity, TrajectoryIterator<TimedState<Pose2dWithCurvature>> trajectory, double time, double dt) {
+    protected HolonomicDriveSignal calculateDriveSignal(Pose2d currentPose, Translation2d velocity,
+            double rotationalVelocity, TrajectoryIterator<TimedState<Pose2dWithCurvature>> trajectory, double time,
+            double dt) {
         if (trajectory.isDone() || time > trajectory.trajectory().getLastState().t()) {
             mFinished = true;
             return new HolonomicDriveSignal(Translation2d.identity(), 0.0, false);
@@ -44,8 +46,9 @@ public class PurePursuitTrajectoryFollower extends TrajectoryFollower<HolonomicD
             lookahead_state = new TimedState<>(new Pose2dWithCurvature(lookahead_state.state()
                     .getPose().transformBy(Pose2d.fromTranslation(new Translation2d(
                             (isReversed(trajectory) ? -1.0 : 1.0) * (Constants.kPathMinLookaheadDistance -
-                                    actual_lookahead_distance), 0.0))), 0.0), lookahead_state.t()
-                    , lookahead_state.velocity(), lookahead_state.acceleration());
+                                    actual_lookahead_distance),
+                            0.0))),
+                    0.0), lookahead_state.t(), lookahead_state.velocity(), lookahead_state.acceleration());
         }
 
         var normalizedVelocity = lookahead_state.velocity();
@@ -55,14 +58,15 @@ public class PurePursuitTrajectoryFollower extends TrajectoryFollower<HolonomicD
                 lookahead_state.state().getPose().getRotation().cos(),
                 lookahead_state.state().getPose().getRotation().sin()).scale(normalizedVelocity);
 
-        // Calculate the rotational velocity required to keep rotating  while translating.
-        // Get the rotation angle over the trajectory
-        // TODO:  Make constants and only calculate once
+        // Calculate the rotational velocity required to keep rotating while
+        // translating. Get the rotation angle over the trajectory
+        // TODO: Make constants and only calculate once
         var startAngle = trajectory.trajectory().getFirstState().state().getPose().getRotation().getRadians();
         var endAngle = trajectory.trajectory().getLastState().state().getPose().getRotation().getRadians();
         double totalAngle = Angles.shortest_angular_distance(startAngle, endAngle);
 
-        // getMaxRotationSpeed() returns a trapezoidal ramp for rotation speed based on travelled trajectory.
+        // getMaxRotationSpeed() returns a trapezoidal ramp for rotation speed based on
+        // travelled trajectory.
         var theta0 = (startAngle + (totalAngle * getRotationSample(trajectory)));
         var theta1 = lookahead_state.state().getRotation().getRadians();
 
@@ -110,7 +114,7 @@ public class PurePursuitTrajectoryFollower extends TrajectoryFollower<HolonomicD
         if (kStartPoint <= normalizedProgress && normalizedProgress <= kEndPoint) {
             if (normalizedProgress <= kPivotPoint) {
                 scalar = (normalizedProgress - kStartPoint) / (kPivotPoint - kStartPoint);
-            }else{
+            } else {
                 scalar = 1.0 - ((normalizedProgress - kPivotPoint) / (kEndPoint - kPivotPoint));
             }
         }
