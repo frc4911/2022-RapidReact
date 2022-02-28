@@ -28,6 +28,7 @@ import libraries.cyberlib.kinematics.SwerveDriveOdometry;
 import libraries.cyberlib.kinematics.SwerveModuleState;
 import libraries.cyberlib.utils.RobotName;
 import libraries.cyberlib.utils.HolonomicDriveSignal;
+import libraries.cyberlib.utils.SwerveDriveHelper;
 
 public class Swerve extends Subsystem {
 
@@ -170,12 +171,33 @@ public class Swerve extends Subsystem {
         HolonomicDriveSignal driveSignal;
 
         // Helper to make driving feel better
-//        driveSignal = SwerveDriveHelper.calculate(
-//                mPeriodicIO.forward, mPeriodicIO.strafe, mPeriodicIO.rotation,
-//                mPeriodicIO.low_power, mPeriodicIO.field_relative, mPeriodicIO.use_heading_controller);
+        driveSignal = SwerveDriveHelper.calculate(
+                mPeriodicIO.forward, mPeriodicIO.strafe, mPeriodicIO.rotation,
+                mPeriodicIO.low_power, mPeriodicIO.field_relative, mPeriodicIO.use_heading_controller);
 
-        driveSignal = new HolonomicDriveSignal(new Translation2d(mPeriodicIO.forward, mPeriodicIO.strafe),
-                    mPeriodicIO.rotation, mPeriodicIO.field_relative);
+//        // Matt's Swerve control
+//        double driveScalar = 1;
+//        if(mPeriodicIO.low_power) {
+//            driveScalar = 0.25;
+//        }
+//
+//        driveSignal = new HolonomicDriveSignal(
+//                new Translation2d(mPeriodicIO.forward * driveScalar, mPeriodicIO.strafe * driveScalar),
+//                mPeriodicIO.rotation * 0.8,
+//                mPeriodicIO.field_relative);
+
+//        // Inputs squared
+//        driveSignal = new HolonomicDriveSignal(
+//                new Translation2d(
+//                        Math.copySign(mPeriodicIO.forward * mPeriodicIO.forward, mPeriodicIO.forward),
+//                        Math.copySign(mPeriodicIO.strafe * mPeriodicIO.strafe, mPeriodicIO.strafe)),
+//                Math.copySign(mPeriodicIO.rotation * mPeriodicIO.rotation, mPeriodicIO.rotation),
+//                mPeriodicIO.field_relative);
+//
+
+
+//        driveSignal = new HolonomicDriveSignal(new Translation2d(mPeriodicIO.forward, mPeriodicIO.strafe),
+//                    mPeriodicIO.rotation, mPeriodicIO.field_relative);
 
         setOpenLoop(driveSignal);
     }
