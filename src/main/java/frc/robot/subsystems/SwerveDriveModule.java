@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix.ErrorCode;
 import com.ctre.phoenix.motorcontrol.*;
 import com.ctre.phoenix.sensors.*;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
@@ -168,6 +169,12 @@ public class SwerveDriveModule extends Subsystem {
         // multiple (usually 2) sets were needed to set new encoder value
         double fxTicksBefore = mSteerMotor.getSelectedSensorPosition();
         double cancoderDegrees = mCANCoder.getAbsolutePosition();
+        if (mCANCoder.getLastError() != ErrorCode.OK){
+            System.out.println("error reading cancoder. Trying again!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! value read was "+cancoderDegrees);
+            Timer.delay(.1);
+            cancoderDegrees = mCANCoder.getAbsolutePosition();
+        }
+
         double fxTicksTarget = degreesToEncUnits(cancoderDegrees);
         double fxTicksNow = fxTicksBefore;
         int loops = 0;
@@ -251,7 +258,7 @@ public class SwerveDriveModule extends Subsystem {
         mDriveMotor.setSelectedSensorPosition(0, 0, Constants.kLongCANTimeoutMs);
         mDriveMotor.setSensorPhase(mConstants.kInvertDriveSensorPhase);
         mDriveMotor.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, mConstants.kDriveStatusFrame2UpdateRate, Constants.kLongCANTimeoutMs);
-        mDriveMotor.configOpenloopRamp(0.15, Constants.kLongCANTimeoutMs); //Increase if swerve acceleration is too fast
+        mDriveMotor.configOpenloopRamp(0.3, Constants.kLongCANTimeoutMs); //Increase if swerve acceleration is too fast
         mDriveMotor.configClosedloopRamp(0.0);
         mDriveMotor.configAllowableClosedloopError(0, 0, Constants.kLongCANTimeoutMs);
 

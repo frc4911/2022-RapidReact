@@ -57,4 +57,18 @@ class SwerveDriveHelperTest {
         maxSpeed = SWERVE_ROTATION_MAX_INPUT * 0.5; //SwerveDriveHelper's kHighPowerRotationScalar
         assertEquals(maxSpeed, driveSignal.getRotation());
     }
+
+//    @Test
+//    public void ramp() {
+//        for (double i = 0.0; i < 1.05; i += 0.05) {
+//            var driveSignal = SwerveDriveHelper.calculate(i,  0.0, 0.0, false, false, false);
+//            System.out.format("%.2f - %s\n", i, driveSignal);
+//        }
+//        for (double i = 0.0; i < 1.05; i += 0.05) {
+//            var driveSignal = SwerveDriveHelper.calculate(i,  i, 0.6, false, false, false);
+//            System.out.format("%.2f - %s\n", i, driveSignal);
+//        }
+//
+//    }
+
 }

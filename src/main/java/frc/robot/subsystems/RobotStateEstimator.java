@@ -1,8 +1,7 @@
 package frc.robot.subsystems;
 
 import frc.robot.RobotState;
-import libraries.cheesylib.loops.ILooper;
-import libraries.cheesylib.loops.Loop;
+import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 
 public class RobotStateEstimator extends Subsystem {
@@ -25,7 +24,6 @@ public class RobotStateEstimator extends Subsystem {
     RobotState robotState;// = RobotState.getInstance();
     Swerve mSwerve;
     @SuppressWarnings("unused")
-    private int mListIndex;
 
     private static String sClassName;
     private static int sInstanceCount;
@@ -52,43 +50,37 @@ public class RobotStateEstimator extends Subsystem {
         robotState = RobotState.getInstance(sClassName);
     }
 
-    private Loop mLoop = new Loop() {
-        @Override
-        public void onStart(Phase phase) {
-            synchronized (RobotStateEstimator.this) {
-                mSystemState = SystemState.ESTIMATING;
-                mWantedState = WantedState.ESTIMATE;
+    @Override
+    public void onStart(Phase phase) {
+        synchronized (RobotStateEstimator.this) {
+            mSystemState = SystemState.ESTIMATING;
+            mWantedState = WantedState.ESTIMATE;
+            mStateChanged = true;
+            System.out.println(sClassName + " state " + mSystemState);
+            mPeriodicIO.schedDeltaDesired = mDefaultSchedDelta;
+        }
+    }
+
+    @Override
+    public void onLoop(double timestamp) {
+        synchronized (RobotStateEstimator.this) {
+            SystemState newState;
+            switch (mSystemState) {
+                case ESTIMATING:
+                default:
+                    newState = handleEstimating(timestamp);
+            }
+
+            if (newState != mSystemState) {
+                System.out.println(sClassName + " state " + mSystemState + " to " + newState + " (" + timestamp + ")");
+                mSystemState = newState;
                 mStateChanged = true;
-                System.out.println(sClassName + " state " + mSystemState);
-                mPeriodicIO.schedDeltaDesired = mDefaultSchedDelta;
+            } else {
+                mStateChanged = false;
             }
         }
+    }
 
-        @Override
-        public void onLoop(double timestamp) {
-            synchronized (RobotStateEstimator.this) {
-                SystemState newState;
-                switch (mSystemState) {
-                    case ESTIMATING:
-                    default:
-                        newState = handleEstimating(timestamp);
-                }
-
-                if (newState != mSystemState) {
-                    System.out.println(sClassName + " state " + mSystemState + " to " + newState + " (" + timestamp + ")");
-                    mSystemState = newState;
-                    mStateChanged = true;
-                } else {
-                    mStateChanged = false;
-                }
-            }
-        }
-
-        @Override
-        public void onStop(double timestamp) {
-            stop();
-        }
-    };
 
     private SystemState handleEstimating(double timestamp) {
         robotState.addFieldToVehicleObservation(timestamp, mSwerve.getPose());
@@ -109,11 +101,6 @@ public class RobotStateEstimator extends Subsystem {
 
     @Override
     public void stop() {
-    }
-
-    @Override
-    public void registerEnabledLoops(ILooper enabledLooper) {
-        mListIndex = enabledLooper.register(mLoop);
     }
 
     @Override

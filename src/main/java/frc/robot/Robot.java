@@ -9,7 +9,6 @@ import java.util.Optional;
 
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.TimedRobot;
-import frc.robot.autos.AutoModeExecutor;
 import frc.robot.autos.AutoModeSelector;
 import frc.robot.paths.TrajectoryGenerator;
 import frc.robot.subsystems.Climber;
@@ -21,6 +20,7 @@ import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.Swerve;
 import libraries.cheesylib.autos.AutoModeBase;
+import libraries.cheesylib.autos.AutoModeExecutor;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.loops.Looper;
 import libraries.cheesylib.subsystems.SubsystemManager;
@@ -59,15 +59,17 @@ public class Robot extends TimedRobot {
   private Collector        mCollector;
   private RobotStateEstimator mRobotStateEstimator;
 
-  private TrajectoryGenerator mTrajectoryGenerator = TrajectoryGenerator.getInstance();
+  private AutoModeSelector mAutoModeSelector = new AutoModeSelector();
   private AutoModeExecutor mAutoModeExecutor;
-  private AutoModeSelector mAutoModeSelector;
+  private TrajectoryGenerator mTrajectoryGenerator = TrajectoryGenerator.getInstance();
 
   private final double mLoopPeriod = .005;
   private Looper mSubsystemLooper = new Looper(mLoopPeriod,Thread.NORM_PRIORITY+1);
 
   @Override
   public void robotInit() {
+    System.out.println("robotInit() begins");
+
     mClassName = this.getClass().getSimpleName();
     //Initializing subsystems
     mSubsystemManager = SubsystemManager.getInstance(mClassName);
@@ -76,7 +78,7 @@ public class Robot extends TimedRobot {
     mSwerve = Swerve.getInstance(mClassName);
     mShooter = Shooter.getInstance(mClassName);
     mIndexer = Indexer.getInstance(mClassName);
-    // mClimber = Climber.getInstance(mClassName);
+    mClimber = Climber.getInstance(mClassName);
     mCollector = Collector.getInstance(mClassName);
     mRobotStateEstimator = RobotStateEstimator.getInstance(mClassName);
 
@@ -90,7 +92,7 @@ public class Robot extends TimedRobot {
           mSwerve,
           mShooter,
           mIndexer,
-          // mClimber,
+          mClimber,
           mCollector,
           mRobotStateEstimator
         )
@@ -113,6 +115,7 @@ public class Robot extends TimedRobot {
 
             mTrajectoryGenerator.generateTrajectories();
 		}
+    System.out.println("RobotInit() ends");
   }
 
   @Override
@@ -122,7 +125,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void autonomousInit() {
-    System.out.println("AutonomousInit");
+    System.out.println("AutonomousInit() begins");
 		try {
 			autoConfig();
 
@@ -134,6 +137,7 @@ public class Robot extends TimedRobot {
 			CrashTracker.logThrowableCrash(t);
 			throw t;
 		}
+    System.out.println("AutonomousInit() ends");
   }
 
   public void autoConfig() {
@@ -151,19 +155,22 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopInit() {
+    System.out.println("TeleopInit() begins");
     try {
+            mSubsystemLooper.stop();
+
             if (mAutoModeExecutor != null) {
                 mAutoModeExecutor.stop();
             }
 
-            mSubsystemLooper.stop();
-			mSubsystemLooper.start();
+            mSubsystemLooper.start();
 			teleopConfig();
 			//robotState.enableXTarget(false);
 		} catch (Throwable t) {
 			CrashTracker.logThrowableCrash(t);
 			throw t;
 		}
+    System.out.println("TeleopInit() ends");
   }
 
 	public void teleopConfig() {
@@ -182,8 +189,12 @@ public class Robot extends TimedRobot {
 
   @Override
   public void disabledInit() {
+    System.out.println("disabledInit() begins");
     try {
 			System.gc();
+
+            mSubsystemLooper.stop();
+
             // Reset all auto mode state.
             if (mAutoModeExecutor != null) {
                 mAutoModeExecutor.stop();
@@ -192,12 +203,12 @@ public class Robot extends TimedRobot {
             mAutoModeSelector.updateModeCreator();
             mAutoModeExecutor = new AutoModeExecutor();
 
-			mSubsystemLooper.stop();
 			mSubsystemLooper.start();
 		} catch (Throwable t) {
 			CrashTracker.logThrowableCrash(t);
 			throw t;
 		}
+    System.out.println("disabledInit() ends");
   }
 
   @Override
@@ -219,7 +230,10 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void testInit() {}
+  public void testInit() {
+    System.out.println("testInit() begins");
+    System.out.println("testInit() ends");
+  }
 
   @Override
   public void testPeriodic() {}

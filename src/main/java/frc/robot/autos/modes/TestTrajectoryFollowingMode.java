@@ -9,6 +9,6 @@ public class TestTrajectoryFollowingMode extends AutoModeBase {
     @Override
     protected void routine() throws AutoModeEndedException {
         runAction(new DriveTrajectoryAction(TrajectoryGenerator.getInstance().getTrajectorySet().testTrajectory.left));
-        //runAction(new DriveTrajectoryAction(TrajectoryGenerator.getInstance().getTrajectorySet().testTrajectoryBack.left));
+        runAction(new DriveTrajectoryAction(TrajectoryGenerator.getInstance().getTrajectorySet().testTrajectoryBack.left));
     }
 }

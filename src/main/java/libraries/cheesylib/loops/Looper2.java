@@ -35,7 +35,7 @@ public class Looper2 implements ILooper {
 
     @Override
     public synchronized int register(Loop loop) {
-        synchronized (mObject) {
+         synchronized (mObject) {
             mLoops.add(loop);
             return mLoops.size()-1;
         }
@@ -53,18 +53,16 @@ public class Looper2 implements ILooper {
                 mObject.notify();
             }
         }
+        System.out.println("Starting loops completed");
     }
 
     public synchronized void stop() {
-        if (mRunning) {
-            System.out.println("Stopping loops");
-
-            mRunning = false;
-            synchronized (mObject) {
-                double timestamp = Timer.getFPGATimestamp();    
-                for (Loop loop : mLoops) {
-                    loop.onStop(timestamp);
-                }
+        System.out.println("Stopping loops");
+        mRunning = false;
+        synchronized (mObject) {
+            double timestamp = Timer.getFPGATimestamp();
+            for (Loop loop : mLoops) {
+                loop.onStop(timestamp);
             }
         }
     }

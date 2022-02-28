@@ -15,7 +15,6 @@ import java.util.List;
  */
 public class SubsystemManager implements ILooper {
     private List<Subsystem> mAllSubsystems;
-    private List<Loop> mLoops = new ArrayList<>();
     private SubsystemLogManager mSSLogMngr;
     private int mSSCount;
     private TheLoop mTheLoop;
@@ -74,7 +73,7 @@ public class SubsystemManager implements ILooper {
     private int runALoop(int index){
         Subsystem s = mAllSubsystems.get(index);
         s.readPeriodicInputs();
-        mLoops.get(index).onLoop(Timer.getFPGATimestamp());
+        s.onLoop(Timer.getFPGATimestamp());
         s.writePeriodicOutputs();
         mSSLogMngr.addToLine(s.getLogValues(false));
         return s.whenRunAgain();
@@ -104,7 +103,9 @@ public class SubsystemManager implements ILooper {
             boolean disableLogging = true; //Matthew (3/34)
 
             lPhase = getPhase();
-            mLoops.forEach(l -> l.onStart(lPhase));
+            for (Subsystem s : mAllSubsystems) {
+                s.onStart(lPhase);
+            }
 
             // clear schedule of any leftover bits
             for (int i=0; i<lSchedule.length; i++){
@@ -194,7 +195,9 @@ public class SubsystemManager implements ILooper {
 
         @Override
         public void onStop(double timestamp) {
-            mLoops.forEach(l -> l.onStop(timestamp));
+            for (Subsystem s : mAllSubsystems) {
+                s.stop();
+            }
             System.out.println("schedule time lost "+lLostTime);
         }
 
@@ -227,15 +230,12 @@ public class SubsystemManager implements ILooper {
 
     // ask all subsystems to register themselves then register with the looper
     public void registerEnabledLoops(Looper looper2) {
-        mAllSubsystems.forEach(s -> s.registerEnabledLoops(this));
-        looper2.register(mTheLoop);
-    }
+        int index = 0;
 
-    // each subsystem calls this to register its loop and is returned its scheduling slot
-    @Override
-    public int register(Loop loop) {
-        mLoops.add(loop);
-        return mLoops.size()-1;
+        for (Subsystem s : mAllSubsystems) {
+            s.passInIndex(index++);
+        }
+        looper2.register(mTheLoop);
     }
 
     // unused
@@ -249,4 +249,10 @@ public class SubsystemManager implements ILooper {
     // unused
     @Override
     public void stop() {}
+
+    @Override
+    public int register(Loop loop) {
+        // TODO Auto-generated method stub
+        return 0;
+    }
  }

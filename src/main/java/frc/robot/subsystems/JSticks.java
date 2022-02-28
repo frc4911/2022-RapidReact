@@ -2,16 +2,13 @@ package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.Constants;
-import frc.robot.config.RobotConfiguration;
-import libraries.cheesylib.loops.ILooper;
-import libraries.cheesylib.loops.Loop;
+import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.util.LatchedBoolean;
 import libraries.cheesylib.util.TimeDelayedBoolean;
 import libraries.cyberlib.control.SwerveHeadingController;
 import libraries.cyberlib.io.CW;
 import libraries.cyberlib.io.Xbox;
-import libraries.cyberlib.utils.RobotName;
 
 public class JSticks extends Subsystem{
 
@@ -22,10 +19,12 @@ public class JSticks extends Subsystem{
 
     public enum SystemState {
         READINGBUTTONS,
+        DISABLING,
     }
 
     public enum WantedState {
         READBUTTONS,
+        DISABLE,
     }
 
     private SystemState mSystemState = SystemState.READINGBUTTONS;
@@ -37,11 +36,13 @@ public class JSticks extends Subsystem{
     private PeriodicIO mPeriodicIO = new PeriodicIO();
 
     private final double mDeadBand = 0.15; // for the turnigy (driver) swerve controls
-	private final Superstructure mSuperstructure;
-    private final Swerve mSwerve;
+	private Superstructure mSuperstructure;
+    private Swerve mSwerve;
+    private Shooter mShooter;
+    private Indexer mIndexer;
 
     @SuppressWarnings("unused")
-    private int mListIndex;
+    private LatchedBoolean mSystemStateChange = new LatchedBoolean();
 
     private static String sClassName;
     private static int sInstanceCount;
@@ -64,56 +65,57 @@ public class JSticks extends Subsystem{
         sClassName = this.getClass().getSimpleName();
         mSuperstructure = Superstructure.getInstance(sClassName);
         mSwerve = Swerve.getInstance(sClassName);
-        var mSwerveConfiguration = RobotConfiguration.getRobotConfiguration(RobotName.name).getSwerveConfiguration();
+        mShooter = Shooter.getInstance(sClassName);
+        mIndexer = Indexer.getInstance(sClassName); //Getting instance to reset ball count: hopefully will be a temporary fix
         mHeadingController.setPIDFConstants(
-            mSwerveConfiguration.kSwerveHeadingKp,
-            mSwerveConfiguration.kSwerveHeadingKi,
-            mSwerveConfiguration.kSwerveHeadingKd,
-            mSwerveConfiguration.kSwerveHeadingKf);
-        // double testKp = SmartDashboard.getNumber("kP", -1.0);
-        // if(testKp == -1.0){
-        //     SmartDashboard.putNumber("kP", 0.0);
-        // }
+            mSwerve.mSwerveConfiguration.kSwerveHeadingKp,
+            mSwerve.mSwerveConfiguration.kSwerveHeadingKi,
+            mSwerve.mSwerveConfiguration.kSwerveHeadingKd,
+            mSwerve.mSwerveConfiguration.kSwerveHeadingKf);
         mDriver = new Xbox();
         mOperator = new Xbox();
 
         printUsage(caller);
     }
-
-    private Loop mLoop = new Loop(){
         
-        @Override
-        public void onStart(Phase phase){
-            synchronized (JSticks.this) {
-                mSystemState = SystemState.READINGBUTTONS;
-                mWantedState = WantedState.READBUTTONS;
-                mStateChanged = true;
+    @Override
+    public void onStart(Phase phase){
+        synchronized (JSticks.this) {
+            mStateChanged = true;
 
-                // Force true on first iteration of teleop periodic
-                shouldChangeHeadingSetpoint.update(false);
+            // Force true on first iteration of teleop periodic
+            shouldChangeHeadingSetpoint.update(false);
 
-                System.out.println(sClassName + " state " + mSystemState);
-                switch (phase) {
-                    case DISABLED:
-                    case AUTONOMOUS: 
-                        mPeriodicIO.schedDeltaDesired = 0; // goto sleep
-                        break;
-                    default:
-                        mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
-                        break;
-                }
+            switch (phase) {
+                case DISABLED:
+                case AUTONOMOUS:
+                    mPeriodicIO.schedDeltaDesired = 0; // goto sleep
+                    mSystemState = SystemState.DISABLING;
+                    mWantedState = WantedState.DISABLE;
+                    break;
+                default:
+                    mSystemState = SystemState.READINGBUTTONS;
+                    mWantedState = WantedState.READBUTTONS;
+                    mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
+                    break;
             }
+            System.out.println(sClassName + " state " + mSystemState);
         }
+    }
 
-        @Override
-        public void onLoop(double timestamp){
-            synchronized (JSticks.this) {
+    @Override
+    public void onLoop(double timestamp){
+        synchronized (JSticks.this) {
+            do{
                 SystemState newState;
                 switch (mSystemState) {
-                case READINGBUTTONS:
-                default:
-                    newState = handleReadingButtons();
-                    break;
+                    case DISABLING:
+                        newState = handleDisabling();
+                        break;
+                    case READINGBUTTONS:
+                    default:
+                        newState = handleReadingButtons();
+                        break;
                 }
 
                 if (newState != mSystemState) {
@@ -123,19 +125,19 @@ public class JSticks extends Subsystem{
                 } else {
                     mStateChanged = false;
                 }
-            }
+            } while(mSystemStateChange.update(mStateChanged));
         }
+    }
 
-        @Override
-        public void onStop(double timestamp){
-            stop();
-        }
-
-    };
 
     @Override
     public void stop() {
 
+    }
+
+    private SystemState handleDisabling() {
+
+        return defaultStateTransfer();
     }
 
     private SystemState handleReadingButtons() {
@@ -148,11 +150,11 @@ public class JSticks extends Subsystem{
         Superstructure.WantedState currentState = mSuperstructure.getWantedState();
 		Superstructure.WantedState previousState = currentState;
 
-        //Swerve control
+        // All driver assist to raw inputs should be implemented Swerve#handleManual()
 		double swerveYInput = mPeriodicIO.dr_LeftStickX_Translate;
 		double swerveXInput = mPeriodicIO.dr_LeftStickY_Translate;
 		double swerveRotationInput = mPeriodicIO.dr_RightStickX_Rotate;
- 
+
         // NEW SWERVE
         boolean maintainHeading = mShouldMaintainHeading.update(swerveRotationInput == 0, 0.2);
         boolean changeHeadingSetpoint = shouldChangeHeadingSetpoint.update(maintainHeading);
@@ -167,10 +169,10 @@ public class JSticks extends Subsystem{
         var isFieldOriented = !mPeriodicIO.dr_RightBumper_RobotOrient;
         if (mHeadingController.getHeadingControllerState() != SwerveHeadingController.HeadingControllerState.OFF) {
             mSwerve.setTeleopInputs(swerveXInput, swerveYInput, mHeadingController.update(),
-                    false, isFieldOriented, true);
+                    mPeriodicIO.dr_LeftTrigger_SlowSpeed, isFieldOriented, true);
         } else {
             mSwerve.setTeleopInputs(swerveXInput, swerveYInput, swerveRotationInput,
-                    false, isFieldOriented, false);
+                    mPeriodicIO.dr_LeftTrigger_SlowSpeed, isFieldOriented, false);
         }
 
 		if (mPeriodicIO.dr_YButton_ResetIMU) {
@@ -185,13 +187,21 @@ public class JSticks extends Subsystem{
         //  0: Extend
         //  1: Retract
         int deploySlappyState = -1;
-        if(mPeriodicIO.op_YButton_ExtendSlappySticks){
+        if(mPeriodicIO.op_YButton_ExtendSlappySticks) {
             deploySlappyState = 0;
-        } else if(mPeriodicIO.op_XButton_RetractSlappySticks){
+        } else if(mPeriodicIO.op_XButton_RetractSlappySticks) {
             deploySlappyState = 1;
         }
 		mSuperstructure.setOpenLoopClimb(mPeriodicIO.op_LeftStickY_ClimberElevator, deploySlappyState);
         
+        if(mPeriodicIO.op_RightBumper_TempBugFix) {
+            mIndexer.resetBallCount();
+        }
+
+        if(mPeriodicIO.op_BButton_StopShooter) {
+            mShooter.stopFlywheel();
+        }
+
         // Will add clauses for different shoot distances, aimed/auto shooting, auto climbing, and others
         currentState = activeBtnIsReleased(currentState);
         if (currentState == Superstructure.WantedState.HOLD) {
@@ -228,6 +238,7 @@ public class JSticks extends Subsystem{
     @Override
     public void readPeriodicInputs() {
         double now       = Timer.getFPGATimestamp();
+
         mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
         mPeriodicIO.lastSchedStart   = now;
 
@@ -242,6 +253,7 @@ public class JSticks extends Subsystem{
         mPeriodicIO.op_RightTrigger_Collect = mOperator.getButton(Xbox.RIGHT_TRIGGER, CW.PRESSED_LEVEL);
         mPeriodicIO.op_LeftTrigger_Back = mOperator.getButton(Xbox.LEFT_TRIGGER, CW.PRESSED_LEVEL);
         mPeriodicIO.op_LeftBumper_LoadBall = mOperator.getButton(Xbox.LEFT_BUMPER, CW.PRESSED_EDGE);
+        mPeriodicIO.op_RightBumper_TempBugFix = mOperator.getButton(Xbox.RIGHT_BUMPER, CW.PRESSED_EDGE);
         mPeriodicIO.op_BButton_StopShooter = mOperator.getButton(Xbox.B_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.op_XButton_RetractSlappySticks = mOperator.getButton(Xbox.X_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.op_YButton_ExtendSlappySticks = mOperator.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
@@ -251,15 +263,12 @@ public class JSticks extends Subsystem{
 
     private SystemState defaultStateTransfer() {
         switch (mWantedState) {
-        case READBUTTONS:
-        default:
-            return SystemState.READINGBUTTONS;
+            case DISABLE:
+                return SystemState.DISABLING;
+            case READBUTTONS:
+            default:
+                return SystemState.READINGBUTTONS;
         }
-    }
-
-    @Override
-    public void registerEnabledLoops(ILooper enabledLooper) {
-        mListIndex = enabledLooper.register(mLoop);
     }
 
     @Override
@@ -302,6 +311,7 @@ public class JSticks extends Subsystem{
         public double  op_LeftStickY_ClimberElevator;
         public boolean op_RightTrigger_Collect = false;
         public boolean op_LeftTrigger_Back = false;
+        public boolean op_RightBumper_TempBugFix = false;
         public boolean op_LeftBumper_LoadBall = false;
         public boolean op_BButton_StopShooter = false;
         public boolean op_XButton_RetractSlappySticks = false;

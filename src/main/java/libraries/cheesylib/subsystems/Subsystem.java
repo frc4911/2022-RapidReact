@@ -1,6 +1,7 @@
 package libraries.cheesylib.subsystems;
 
 import libraries.cheesylib.loops.ILooper;
+import libraries.cheesylib.loops.Loop.Phase;
 
 /**
  * The Subsystem abstract class, which serves as a basic framework for all robot subsystems. Each subsystem outputs
@@ -13,6 +14,8 @@ import libraries.cheesylib.loops.ILooper;
  * instantializing all member components at the start of the match.
  */
 public abstract class Subsystem {
+    protected int mListIndex;
+
     // Optional design pattern for caching periodic reads to avoid hammering the HAL/CAN.
     public void readPeriodicInputs() {}
 
@@ -21,9 +24,13 @@ public abstract class Subsystem {
 
     public int whenRunAgain () {return 20;}
 
-    public void registerEnabledLoops(ILooper mEnabledLooper) {}
+    public void passInIndex(int listIndex){
+        mListIndex = listIndex;
+    }
 
-    public void registerLoggingLoops(ILooper mLoggingLooper) {}
+    public void onStart(Phase phase){}
+
+    public void onLoop(double timestamp){}
 
     public void zeroSensors() {}
 

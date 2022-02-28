@@ -17,8 +17,7 @@ import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Pose2dWithCurvature;
 import libraries.cheesylib.geometry.Rotation2d;
 import libraries.cheesylib.geometry.Translation2d;
-import libraries.cheesylib.loops.ILooper;
-import libraries.cheesylib.loops.Loop;
+import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.trajectory.TrajectoryIterator;
 import libraries.cheesylib.trajectory.timing.TimedState;
@@ -28,6 +27,7 @@ import libraries.cyberlib.kinematics.SwerveDriveOdometry;
 import libraries.cyberlib.kinematics.SwerveModuleState;
 import libraries.cyberlib.utils.RobotName;
 import libraries.cyberlib.utils.HolonomicDriveSignal;
+import libraries.cyberlib.utils.SwerveDriveHelper;
 
 public class Swerve extends Subsystem {
 
@@ -64,8 +64,6 @@ public class Swerve extends Subsystem {
     private DriveMotionPlanner mMotionPlanner;
     private boolean mOverrideTrajectory = false;
 
-    private int mListIndex = -1;
-
     private static String sClassName;
     private static int sInstanceCount;
     private static Swerve sInstance = null;
@@ -95,81 +93,72 @@ public class Swerve extends Subsystem {
         mModules.add(mBackLeft = new SwerveDriveModule(mRobotConfiguration.getBackLeftModuleConstants(), mSwerveConfiguration.maxSpeedInMetersPerSecond));
         mModules.add(mBackRight = new SwerveDriveModule(mRobotConfiguration.getBackRightModuleConstants(), mSwerveConfiguration.maxSpeedInMetersPerSecond));
 
+        // precaution to ensure misconfiguration modules don't run.
+        stopSwerveDriveModules();
+
         mIMU = IMU.createImu(mRobotConfiguration.getImuType());
         mKinematics = new SwerveDriveKinematics(mSwerveConfiguration.moduleLocations);
 		mOdometry = new SwerveDriveOdometry(mKinematics, mIMU.getYaw());
         mPeriodicIO.robotPose = mOdometry.getPose();
 
         mMotionPlanner = new DriveMotionPlanner();
-
-//        generator = TrajectoryGenerator.getInstance();
     }
 
-    private final Loop loop = new Loop() {
-        @Override
-        public void onStart(Phase phase) {
-            synchronized(Swerve.this) {
-                stop();
-                lastUpdateTimestamp = Timer.getFPGATimestamp();
-                switch (phase) {
-                    case DISABLED:
-                        mPeriodicIO.schedDeltaDesired = 0; // goto sleep
-                        break;
-                    default:
-                        mPeriodicIO.schedDeltaDesired = mDefaultSchedDelta;
-                        break;
-                }
+    @Override
+    public void onStart(Phase phase) {
+        synchronized(Swerve.this) {
+            stop();
+            lastUpdateTimestamp = Timer.getFPGATimestamp();
+            switch (phase) {
+                case DISABLED:
+                    mPeriodicIO.schedDeltaDesired = 0; // goto sleep
+                    break;
+                default:
+                    mPeriodicIO.schedDeltaDesired = mDefaultSchedDelta;
+                    break;
             }
         }
+    }
 
-        @Override
-        public void onLoop(double timestamp) {
-            synchronized(Swerve.this) {
-                lastUpdateTimestamp = timestamp;
+    @Override
+    public void onLoop(double timestamp) {
+        synchronized(Swerve.this) {
+            lastUpdateTimestamp = timestamp;
 
-                // Update odometry in every loop before any other actions.
-                updateOdometry(lastUpdateTimestamp);
+            // Update odometry in every loop before any other actions.
+            updateOdometry(lastUpdateTimestamp);
 
-                switch (mControlState) {
-                    case MANUAL:
-                        handleManual();
-                        break;
-                    case PATH_FOLLOWING:
-                        updatePathFollower(lastUpdateTimestamp);
-                        break;
-                    case NEUTRAL:
-                        stop();
-                        break;
-                    case DISABLED:
-                    default:
-                        break;
-                }
+            switch (mControlState) {
+                case MANUAL:
+                    handleManual();
+                    break;
+                case PATH_FOLLOWING:
+                    updatePathFollower(lastUpdateTimestamp);
+                    break;
+                case NEUTRAL:
+                case DISABLED:
+                default:
+                    break;
             }
         }
-
-        @Override
-        public void onStop(double timestamp) {
-            synchronized(Swerve.this) {
-                stop();
-            }
-        }
-    };
+    }
 
     @Override
     public synchronized void stop() {
-        setState(ControlState.NEUTRAL);
+        mControlState = ControlState.NEUTRAL;
+        stopSwerveDriveModules();
+    }
+
+    private void stopSwerveDriveModules() {
         mModules.forEach((m) -> m.stop());
     }
+
 
     @Override
     public synchronized void zeroSensors() {
         zeroSensors(Constants.kRobotStartingPose);
     }
 
-    @Override
-    public void registerEnabledLoops(ILooper enabledLooper) {
-        mListIndex = enabledLooper.register(loop);
-    }
 
     /**
      * Handles MANUAL state which corresponds to joy stick inputs.
@@ -181,12 +170,33 @@ public class Swerve extends Subsystem {
         HolonomicDriveSignal driveSignal;
 
         // Helper to make driving feel better
-//        driveSignal = SwerveDriveHelper.calculate(
-//                mPeriodicIO.forward, mPeriodicIO.strafe, mPeriodicIO.rotation,
-//                mPeriodicIO.low_power, mPeriodicIO.field_relative, mPeriodicIO.use_heading_controller);
+        driveSignal = SwerveDriveHelper.calculate(
+                mPeriodicIO.forward, mPeriodicIO.strafe, mPeriodicIO.rotation,
+                mPeriodicIO.low_power, mPeriodicIO.field_relative, mPeriodicIO.use_heading_controller);
 
-        driveSignal = new HolonomicDriveSignal(new Translation2d(mPeriodicIO.forward, mPeriodicIO.strafe),
-                    mPeriodicIO.rotation, mPeriodicIO.field_relative);
+//        // Matt's Swerve control
+//        double driveScalar = 1;
+//        if(mPeriodicIO.low_power) {
+//            driveScalar = 0.25;
+//        }
+//
+//        driveSignal = new HolonomicDriveSignal(
+//                new Translation2d(mPeriodicIO.forward * driveScalar, mPeriodicIO.strafe * driveScalar),
+//                mPeriodicIO.rotation * 0.8,
+//                mPeriodicIO.field_relative);
+
+//        // Inputs squared
+//        driveSignal = new HolonomicDriveSignal(
+//                new Translation2d(
+//                        Math.copySign(mPeriodicIO.forward * mPeriodicIO.forward, mPeriodicIO.forward),
+//                        Math.copySign(mPeriodicIO.strafe * mPeriodicIO.strafe, mPeriodicIO.strafe)),
+//                Math.copySign(mPeriodicIO.rotation * mPeriodicIO.rotation, mPeriodicIO.rotation),
+//                mPeriodicIO.field_relative);
+//
+
+
+//        driveSignal = new HolonomicDriveSignal(new Translation2d(mPeriodicIO.forward, mPeriodicIO.strafe),
+//                    mPeriodicIO.rotation, mPeriodicIO.field_relative);
 
         setOpenLoop(driveSignal);
     }
@@ -241,9 +251,12 @@ public class Swerve extends Subsystem {
             System.out.println(mControlState + " to " + newState);
             switch (newState) {
                 case NEUTRAL:
+                    stopSwerveDriveModules();
+                    mPeriodicIO.schedDeltaDesired = 10; // this is a fast cycle used while testing
+                    break;
                 case MANUAL:
                 case DISABLED:
-                    mPeriodicIO.schedDeltaDesired = 100;
+                    mPeriodicIO.schedDeltaDesired = 10; // this is a fast cycle used while testing
                     break;
 
                 case VISION_AIM:
@@ -391,7 +404,7 @@ public class Swerve extends Subsystem {
     /** Puts all steer and drive motors into open-loop mode */
     public synchronized void disable() {
         mModules.forEach((m) -> m.disable());
-        setState(ControlState.DISABLED);
+        mControlState  = ControlState.DISABLED;
     }
 
     /** Zeroes the drive motors, and sets the robot's internal position and heading to match that of the fed pose */
@@ -496,7 +509,7 @@ public class Swerve extends Subsystem {
 
     @Override
     public int whenRunAgain () {
-        return mPeriodicIO.schedDeltaDesired;
+        return 20;//mPeriodicIO.schedDeltaDesired; (brian test)
     }
 
     @Override
