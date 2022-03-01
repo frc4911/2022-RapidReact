@@ -197,6 +197,8 @@ public class Swerve extends Subsystem {
     private void handleManual() {
         HolonomicDriveSignal driveSignal;
 
+        // TODO:  Check deadband code in JStick (which reduces range and still returns 0 .s low).
+        //  Should always get raw values here and apply deadband code here.
         switch (driveMode) {
             case 0:
                 driveSignal = SwerveDriveHelper.calculate(
@@ -211,8 +213,8 @@ public class Swerve extends Subsystem {
                 }
 
                 driveSignal = new HolonomicDriveSignal(
-                        new Translation2d(mPeriodicIO.forward, mPeriodicIO.strafe).scale(driveScalar),
-                        mPeriodicIO.rotation * 0.8,
+                        new Translation2d(mPeriodicIO.forward, mPeriodicIO.strafe).scale(driveScalar * 0.75),
+                        mPeriodicIO.rotation * driveScalar * 0.8,
                         mPeriodicIO.field_relative);
                 break;
             case 2:
