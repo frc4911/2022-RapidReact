@@ -184,7 +184,6 @@ public class Swerve extends Subsystem {
                 SmartDashboard.putString("Swerve/DriveMode", driveMode + " Unknown");
                 break;
         }
-
     }
 
     /**
@@ -235,7 +234,6 @@ public class Swerve extends Subsystem {
             default:
                 driveSignal = null;
         }
-
         setOpenLoop(driveSignal);
     }
 
