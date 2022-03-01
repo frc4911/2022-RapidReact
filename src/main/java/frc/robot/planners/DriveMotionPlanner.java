@@ -9,7 +9,6 @@ import libraries.cheesylib.geometry.Pose2dWithCurvature;
 import libraries.cheesylib.geometry.Translation2d;
 import libraries.cheesylib.trajectory.Trajectory;
 import libraries.cheesylib.trajectory.TrajectoryIterator;
-import libraries.cheesylib.trajectory.TrajectorySamplePoint;
 import libraries.cheesylib.trajectory.timing.TimedState;
 import libraries.cheesylib.util.CSVWritable;
 import libraries.cheesylib.util.Util;
@@ -24,19 +23,8 @@ import libraries.cyberlib.utils.HolonomicDriveSignal;
 import libraries.cyberlib.utils.RobotName;
 
 public class DriveMotionPlanner implements CSVWritable {
-    TrajectoryFollower follower;
+    private HolonomicTrajectoryFollower follower;
     private HolonomicDriveSignal driveSignal = null;
-
-    public enum FollowerType {
-        HOLONOMIC,
-        PURE_PURSUIT
-    }
-
-    FollowerType mFollowerType = FollowerType.HOLONOMIC;
-
-    public void setFollowerType(FollowerType type) {
-        mFollowerType = type;
-    }
 
     TrajectoryIterator<TimedState<Pose2dWithCurvature>> mCurrentTrajectory;
 
@@ -123,29 +111,23 @@ public class DriveMotionPlanner implements CSVWritable {
         System.out.println("ff1 = " + ff1);
         System.out.println("ff2 = " + ff2);
 
-        if (mFollowerType == FollowerType.HOLONOMIC) {
-            // TODO: Make these constants
-            // follower = new HolonomicTrajectoryFollower(
-            // new PidGains(0.4, 0.0, 0.025),
-            // new PidGains(5.0, 0.0, 0.0),
-            // new HolonomicFeedforward(new SwerveDriveFeedforwardGains(
-            // 0.289, //0.042746,
-            // 0.0032181,
-            // 0.30764
-            // )));
-            System.out.println("applied----------------------------------------");
-            follower = new HolonomicTrajectoryFollower(
-                    new PidGains(transKP, 0.0, transKD),
-                    new PidGains(rotKP, 0.0, rotKD),
-                    new HolonomicFeedforward(new SwerveDriveFeedforwardGains(
-                            ff0, // 0.042746,
-                            ff1,
-                            ff2)));
-        } else if (mFollowerType == FollowerType.PURE_PURSUIT) {
-           follower = new PurePursuitTrajectoryFollower();
-        } else if (mFollowerType == FollowerType.PURE_PURSUIT) {
-            follower = new PurePursuitTrajectoryFollower();
-        }
+        // TODO: Make these constants
+        // follower = new HolonomicTrajectoryFollower(
+        // new PidGains(0.4, 0.0, 0.025),
+        // new PidGains(5.0, 0.0, 0.0),
+        // new HolonomicFeedforward(new SwerveDriveFeedforwardGains(
+        // 0.289, //0.042746,
+        // 0.0032181,
+        // 0.30764
+        // )));
+        System.out.println("applied----------------------------------------");
+        follower = new HolonomicTrajectoryFollower(
+                new PidGains(transKP, 0.0, transKD),
+                new PidGains(rotKP, 0.0, rotKD),
+                new HolonomicFeedforward(new SwerveDriveFeedforwardGains(
+                        ff0, // 0.042746,
+                        ff1,
+                        ff2)));
     }
 
     public void setTrajectory(final TrajectoryIterator<TimedState<Pose2dWithCurvature>> trajectory) {
@@ -190,11 +172,8 @@ public class DriveMotionPlanner implements CSVWritable {
 
         mDt = timestamp - mLastTime;
         mLastTime = timestamp;
-        TrajectorySamplePoint<TimedState<Pose2dWithCurvature>> sample_point = mCurrentTrajectory.advance(mDt);
-        mSetpoint = sample_point.state();
 
         if (!mCurrentTrajectory.isDone()) {
-            mError = current_state.inverse().transformBy(mSetpoint.state().getPose());
             var velocity = new Translation2d(chassisSpeeds.vxInMetersPerSecond, chassisSpeeds.vyInMetersPerSecond);
 
             Optional<HolonomicDriveSignal> trajectorySignal = follower.update(current_state,
@@ -202,6 +181,9 @@ public class DriveMotionPlanner implements CSVWritable {
                     chassisSpeeds.omegaInRadiansPerSecond,
                     mLastTime,
                     mDt);
+
+            mSetpoint = follower.getLastState();
+            mError = current_state.inverse().transformBy(mSetpoint.state().getPose());
 
             if (trajectorySignal.isPresent()) {
                 driveSignal = trajectorySignal.get();

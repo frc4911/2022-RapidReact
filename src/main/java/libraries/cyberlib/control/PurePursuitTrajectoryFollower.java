@@ -79,6 +79,11 @@ public class PurePursuitTrajectoryFollower extends TrajectoryFollower<HolonomicD
     }
 
     @Override
+    public TimedState<Pose2dWithCurvature> getLastState() {
+        return lastState;
+    }
+
+    @Override
     protected boolean isFinished() {
         return mFinished;
     }

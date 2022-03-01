@@ -86,9 +86,7 @@ public class TrajectoryGenerator {
                 config.getStartVelocity(),
                 config.getEndVelocity(),
                 config.getMaxVelocity(),
-                config.getMaxAcceleration(),
-                config.getMaxAcceleration(),
-                1);
+                config.getMaxAcceleration());
 
         return timed_trajectory;
     }

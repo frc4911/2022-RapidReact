@@ -60,6 +60,8 @@ public abstract class TrajectoryFollower<DriveSignalType> {
      */
     protected abstract void reset();
 
+    public abstract TimedState<Pose2dWithCurvature> getLastState();
+
     /**
      * Cancels the currently running trajectory.
      */
@@ -130,4 +132,6 @@ public abstract class TrajectoryFollower<DriveSignalType> {
 
         return Optional.of(signal);
     }
+
+
 }
