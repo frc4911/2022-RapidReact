@@ -194,10 +194,6 @@ public class JSticks extends Subsystem {
         }
         mSuperstructure.setOpenLoopClimb(mPeriodicIO.op_LeftStickY_ClimberElevator, deploySlappyState);
 
-        if (mPeriodicIO.op_RightBumper_TempBugFix) {
-            mIndexer.resetBallCount();
-        }
-
         if (mPeriodicIO.op_BButton_StopShooter) {
             mShooter.stopFlywheel();
         }

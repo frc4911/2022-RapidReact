@@ -10,7 +10,6 @@ import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.robot.subsystems.Superstructure.WantedState;
 import frc.robot.constants.Constants;
 import frc.robot.constants.Ports;
 import libraries.cheesylib.drivers.TalonFXFactory;
@@ -23,31 +22,27 @@ public class Indexer extends Subsystem {
 
     // Hardware
     private final TalonFX mFXIndexer;
-    private final AnalogInput mAIBallEntering;
-    private final AnalogInput mAIBallExiting;
+    private final AnalogInput mAIEnterBeamBreak;
+    private final AnalogInput mAIExitBeamBreak;
 
     // Subsystem Constants
-    private final double kFirstPositionDelta = 14000;// 17000; // 15700; Continue tuning
-    private final double kSecondPositionDelta = 10000;// 21200; // 20200;
-    private final double kEmptyIndexerDelta = 35000;
+    private final double kBackingSpeed = -.3;
+    private final double kFeedingSpeed = .3;
+    private final double kLoadingSpeed = .3;
+
+    private boolean hasBallOnLoadingStart;
+    private boolean loadingCompleted;
+    private boolean feedingCompleted;    
+
+    private double motorPositionTarget;
+    private final double kIndexerLengthTicks = 35000;
     private final double kBeamBreakThreshold = 3.0;
-
-    // Configuration Constants
-    private final double kIndexerKp = 0.15;
-    private final double kIndexerKi = 0.0;
-    private final double kIndexerKd = 0.0;
-    private final double kIndexerKf = 0.0;
-    private final double kClosedRamp = 0.0;
-    private final double kClosedError = 0.0;
-
     private final double kIndexerCurrentLimit = 50;
 
     // Subsystem States
     public enum SystemState {
         HOLDING,
         LOADING,
-        LOADING_FIRST,
-        LOADING_SECOND,
         FEEDING,
         BACKING
     }
@@ -55,8 +50,6 @@ public class Indexer extends Subsystem {
     public enum WantedState {
         HOLD,
         LOAD,
-        LOAD_FIRST,
-        LOAD_SECOND,
         FEED,
         BACK
     }
@@ -66,10 +59,6 @@ public class Indexer extends Subsystem {
     private boolean mStateChanged;
     private PeriodicIO mPeriodicIO = new PeriodicIO();
     private LatchedBoolean mSystemStateChange = new LatchedBoolean();
-
-    private boolean mCountedBalls = false;
-    private int mBallCount;
-    private boolean firstTime = true;
 
     // Other
     private SubsystemManager mSubsystemManager;
@@ -96,8 +85,8 @@ public class Indexer extends Subsystem {
         sClassName = this.getClass().getSimpleName();
         printUsage(caller);
         mFXIndexer = TalonFXFactory.createDefaultTalon(Ports.INDEXER);
-        mAIBallEntering = new AnalogInput(Ports.ENTRANCE_BEAM_BREAK);
-        mAIBallExiting = new AnalogInput(Ports.EXIT_BEAM_BREAK);
+        mAIEnterBeamBreak = new AnalogInput(Ports.ENTRANCE_BEAM_BREAK);
+        mAIExitBeamBreak = new AnalogInput(Ports.EXIT_BEAM_BREAK);
         mSubsystemManager = SubsystemManager.getInstance(sClassName);
         configMotors();
     }
@@ -105,23 +94,16 @@ public class Indexer extends Subsystem {
     private void configMotors() {
         mFXIndexer.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor, 0, Constants.kLongCANTimeoutMs);
 
+        // TODO verify if this and/or others are needed
         mFXIndexer.setControlFramePeriod(ControlFrame.Control_3_General, 18);
 
         mFXIndexer.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
         mFXIndexer.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
 
         mFXIndexer.setInverted(true);
-        mFXIndexer.setSensorPhase(false);
+        // mFXIndexer.setSensorPhase(false); TODO: verify this is not needed
 
         mFXIndexer.setNeutralMode(NeutralMode.Brake);
-
-        mFXIndexer.config_kP(0, kIndexerKp, Constants.kLongCANTimeoutMs);
-        mFXIndexer.config_kI(0, kIndexerKi, Constants.kLongCANTimeoutMs);
-        mFXIndexer.config_kD(0, kIndexerKd, Constants.kLongCANTimeoutMs);
-        mFXIndexer.config_kF(0, kIndexerKf, Constants.kLongCANTimeoutMs);
-        mFXIndexer.config_IntegralZone(0, 0, Constants.kLongCANTimeoutMs);
-        mFXIndexer.configClosedloopRamp(kClosedRamp, Constants.kLongCANTimeoutMs);
-        mFXIndexer.configAllowableClosedloopError(0, kClosedError, Constants.kLongCANTimeoutMs);
 
         mFXIndexer.configStatorCurrentLimit(
                 new StatorCurrentLimitConfiguration(true, kIndexerCurrentLimit, kIndexerCurrentLimit, 0));
@@ -136,9 +118,8 @@ public class Indexer extends Subsystem {
             mStateChanged = true;
             System.out.println(sClassName + " state " + mSystemState);
             mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
-            mCountedBalls = false;
-            firstTime = true;
-            mBallCount = 0; // this needs to be reset at beginning
+            feedingCompleted = false;
+            loadingCompleted = false;
             stop(); // stop motors just in case they were left running
         }
     }
@@ -159,8 +140,10 @@ public class Indexer extends Subsystem {
                         newState = handleBacking();
                         break;
                     case HOLDING:
-                    default:
                         newState = handleHolding();
+                        break;
+                    default:
+                        newState = null;
                         break;
                 }
 
@@ -191,140 +174,85 @@ public class Indexer extends Subsystem {
 
     private SystemState handleHolding() {
         if (mStateChanged) {
-            mPeriodicIO.indexerDemand = mPeriodicIO.indexerPosition;
-        }
-        if (!mCountedBalls) {
-            if (isBallEntering()) {
-                mBallCount++;
-                System.out.println("initial (entry bb) ball++ = " + mBallCount);
-            }
-            if (isFullyLoaded()) {
-                mBallCount++;
-                System.out.println("initial (exit bb) ball++ = " + mBallCount);
-            }
-            mCountedBalls = true;
+            mPeriodicIO.indexerDemand = 0;
+            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mSleepCycle; // goto sleep until woken by others
         }
 
         return defaultStateTransfer();
     }
 
+    // this will run until stopped by call to setWantedState
     private SystemState handleLoading() {
 
         if (mStateChanged) {
-            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
-            firstTime = true;
-        }
-
-        if (firstTime && isBallEntering()) {
-            mPeriodicIO.startIndexerPosition = mPeriodicIO.indexerPosition;
-            if (mBallCount == 0) {
-
-                mPeriodicIO.indexerDemand = mPeriodicIO.startIndexerPosition + kFirstPositionDelta;
-            } else {
-                mPeriodicIO.indexerDemand = mPeriodicIO.startIndexerPosition + kSecondPositionDelta;
+            if (mPeriodicIO.exitBeamBlocked){
+                hasBallOnLoadingStart = true;
+                mPeriodicIO.indexerDemand = 0;
+                mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
             }
-            firstTime = false;
-        }
-
-        if (!firstTime && Math.abs(mPeriodicIO.indexerPosition - mPeriodicIO.indexerDemand) <= 300) {
-            mBallCount++;
-            System.out.println("ball loaded = " + mBallCount);
-            firstTime = true;
-            if (mBallCount > 1) {
-                mWantedState = WantedState.HOLD;
+            else{
+                hasBallOnLoadingStart = false;
+                mPeriodicIO.indexerDemand = kLoadingSpeed;
+                mPeriodicIO.schedDeltaDesired = mPeriodicIO.mFastCycle;
             }
         }
 
-        // if(isBallEntering() || !firstTime) {
-        // if(mBallCount == 0) {
-        // System.out.println("Loading First Ball");
-        // loadFirstBall();
-        // } else if (mBallCount == 1) {
-        // System.out.println("Loading Second Ball");
-        // loadSecondBall();
-        // } else {
-        // mPeriodicIO.indexerDemand = mPeriodicIO.indexerPosition;
-        // }
-        // }
+        // loading first ball
+        if (!hasBallOnLoadingStart){
+            if (mPeriodicIO.exitBeamBlocked){
+                mPeriodicIO.indexerDemand = 0; // stop indexer when sensor trips
+                loadingCompleted = true;
+            }
+        }
+        else{ // loading 2nd ball
+            if (mPeriodicIO.enterBeamBlocked){
+                loadingCompleted = true;
+            }
+        }
 
-        return defaultStateTransfer();
-    }
-
-    private SystemState loadingStateTransfer() {
         if (mWantedState != WantedState.LOAD) {
-            mBallCount = 0;
-            System.out.println("backed out all = " + mBallCount);
+            loadingCompleted = false;
         }
+
         return defaultStateTransfer();
     }
 
-    // private void loadFirstBall() {
-    // if(firstTime) {
-    // mPeriodicIO.startIndexerPosition = mPeriodicIO.indexerPosition;
-    // mPeriodicIO.indexerDemand = mPeriodicIO.startIndexerPosition +
-    // kFirstPositionDelta;
-    // firstTime = false;
-    // }
-
-    // if(Math.abs(mPeriodicIO.indexerPosition - mPeriodicIO.indexerDemand) <= 300)
-    // {
-    // mBallCount++;
-    // System.out.println("first ball loaded = "+mBallCount);
-    // firstTime = true;
-    // }
-    // }
-
-    // private void loadSecondBall() {
-    // if(firstTime) {
-    // mPeriodicIO.indexerDemand = mPeriodicIO.startIndexerPosition +
-    // kSecondPositionDelta;
-    // // System.out.println("Demand 2 " + mPeriodicIO.indexerDemand);
-    // firstTime = false;
-    // }
-
-    // // System.out.println("Difference " + Math.abs(mPeriodicIO.indexerPosition -
-    // mPeriodicIO.indexerDemand));
-    // if(Math.abs(mPeriodicIO.indexerPosition - mPeriodicIO.indexerDemand) <= 300)
-    // {
-    // mBallCount++;
-    // System.out.println("second ball loaded = "+mBallCount);
-    // firstTime = true;
-    // }
-    // }
+    // used by automode
+    public boolean loadingCompleted(){
+        return loadingCompleted;
+    }
 
     private SystemState handleFeeding() {
         if (mStateChanged) {
-            mPeriodicIO.indexerDemand = mPeriodicIO.indexerPosition + 2 * kEmptyIndexerDelta;
+            mPeriodicIO.indexerDemand = kFeedingSpeed;
+            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
+            motorPositionTarget = mPeriodicIO.motorPosition + kIndexerLengthTicks;
+            feedingCompleted = false;
         }
 
-        if (Math.abs(mPeriodicIO.indexerPosition - mPeriodicIO.indexerDemand) <= 300) {
-            mBallCount = 0;
-            System.out.println("all balls fed = " + mBallCount);
-            mWantedState = WantedState.HOLD;
+        if (mPeriodicIO.motorPosition>motorPositionTarget){
+            feedingCompleted = true;
+        }
+
+        if (mWantedState != WantedState.FEED) {
+            feedingCompleted = false;
         }
 
         return defaultStateTransfer();
+    }
+
+    // used by automode
+    public boolean feedingComplete(){
+        return feedingCompleted;
     }
 
     private SystemState handleBacking() {
         if (mStateChanged) {
-            mPeriodicIO.indexerDemand = mPeriodicIO.indexerPosition - 2 * kEmptyIndexerDelta;
+            mPeriodicIO.indexerDemand = kBackingSpeed;
+            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
+            motorPositionTarget = mPeriodicIO.motorPosition - kIndexerLengthTicks;
         }
 
-        if (Math.abs(mPeriodicIO.indexerPosition - mPeriodicIO.indexerDemand) <= 300) {
-            mWantedState = WantedState.HOLD;
-            mBallCount = 0;
-            // System.out.println("backed out all = "+mBallCount);
-        }
-
-        return backingStateTransfer();
-    }
-
-    private SystemState backingStateTransfer() {
-        if (mWantedState != WantedState.BACK) {
-            mBallCount = 0;
-            System.out.println("backed out all = " + mBallCount);
-        }
         return defaultStateTransfer();
     }
 
@@ -332,36 +260,14 @@ public class Indexer extends Subsystem {
         switch (mWantedState) {
             case LOAD:
                 return SystemState.LOADING;
-            case LOAD_FIRST:
-                return SystemState.LOADING_FIRST;
-            case LOAD_SECOND:
-                return SystemState.LOADING_SECOND;
             case FEED:
                 return SystemState.FEEDING;
             case BACK:
                 return SystemState.BACKING;
             case HOLD:
-            default:
                 return SystemState.HOLDING;
         }
-    }
-
-    // Called in superstructure to manage loading balls
-    public boolean isBallEntering() {
-        return mAIBallEntering.getVoltage() < kBeamBreakThreshold;
-    }
-
-    public boolean isFullyLoaded() {
-        return mAIBallExiting.getVoltage() < kBeamBreakThreshold;
-    }
-
-    public int getBallCount() {
-        return mBallCount;
-    }
-
-    public void resetBallCount() {
-        mBallCount = 0;
-        System.out.println("ball count reset = " + mBallCount);
+        return null;
     }
 
     @Override
@@ -370,12 +276,15 @@ public class Indexer extends Subsystem {
         mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
         mPeriodicIO.lastSchedStart = now;
 
-        mPeriodicIO.indexerPosition = mFXIndexer.getSelectedSensorPosition();
+        mPeriodicIO.motorPosition = mFXIndexer.getSelectedSensorPosition();
+        // true if beam is blocked
+        mPeriodicIO.exitBeamBlocked = mAIExitBeamBreak.getVoltage()<kBeamBreakThreshold;
+        mPeriodicIO.enterBeamBlocked = mAIEnterBeamBreak.getVoltage()<kBeamBreakThreshold;
     }
 
     @Override
     public void writePeriodicOutputs() {
-        mFXIndexer.set(ControlMode.Position, mPeriodicIO.indexerDemand);
+        mFXIndexer.set(ControlMode.PercentOutput, mPeriodicIO.indexerDemand);
     }
 
     @Override
@@ -401,27 +310,32 @@ public class Indexer extends Subsystem {
 
     @Override
     public void outputTelemetry() {
-        SmartDashboard.putBoolean("Ball Entering", isBallEntering());
-        SmartDashboard.putBoolean("Fully Loaded", isFullyLoaded());
-        SmartDashboard.putNumber("Indexer Position", mPeriodicIO.indexerPosition);
-        SmartDashboard.putNumber("Ball Count", mBallCount);
+        if (mPeriodicIO.schedDeltaDesired==0){
+            mPeriodicIO.motorPosition = mFXIndexer.getSelectedSensorPosition();
+            mPeriodicIO.exitBeamBlocked = mAIExitBeamBreak.getVoltage()<kBeamBreakThreshold;
+        }
+
+        SmartDashboard.putBoolean("Indexer Exit Beam Blocked", mPeriodicIO.exitBeamBlocked);
+        SmartDashboard.putNumber("Indexer Current", mFXIndexer.getStatorCurrent());
+        SmartDashboard.putNumber("Indexer Position", mPeriodicIO.motorPosition);
     }
 
     public static class PeriodicIO {
         // Logging
-        @SuppressWarnings("unused")
-        private final int mDefaultSchedDelta = 20; // axis updated every 20 msec
+        private final int mDefaultSchedDelta = 20; // axis updated every 20 msec TODO: slow down after testing
+        private final int mFastCycle = 20;
+        private final int mSleepCycle = 0;
         private int schedDeltaDesired;
         public double schedDeltaActual;
         public double schedDuration;
         private double lastSchedStart;
 
         // Inputs
-        private double indexerPosition;
-        private double startIndexerPosition;
+        public boolean exitBeamBlocked;
+        public boolean enterBeamBlocked;
+        public double motorPosition;
 
         // Outputs
         private double indexerDemand;
     }
-
 }

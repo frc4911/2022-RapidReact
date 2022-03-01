@@ -163,17 +163,8 @@ public class Superstructure extends Subsystem {
     private SystemState handleCollecting() {
         if (mStateChanged) {
             mPeriodicIO.schedDeltaDesired = mFastCycle;
-            actionHasStarted = false;
-        }
-
-        if (!actionHasStarted && mIndexer.getBallCount() < 2) {
             mCollector.setWantedState(Collector.WantedState.COLLECT, sClassName);
             mIndexer.setWantedState(Indexer.WantedState.LOAD, sClassName);
-            actionHasStarted = true;
-        }
-
-        if (mIndexer.getBallCount() >= 2) {
-            mWantedState = WantedState.HOLD;
         }
 
         return defaultStateTransfer();
@@ -182,17 +173,8 @@ public class Superstructure extends Subsystem {
     private SystemState handleBacking() {
         if (mStateChanged) {
             mPeriodicIO.schedDeltaDesired = mFastCycle;
-            actionHasStarted = false;
-        }
-
-        if (!actionHasStarted && mIndexer.getBallCount() > 0) {
             mCollector.setWantedState(Collector.WantedState.BACK, sClassName);
             mIndexer.setWantedState(Indexer.WantedState.BACK, sClassName);
-            actionHasStarted = true;
-        }
-
-        if (mIndexer.getBallCount() <= 0) {
-            mWantedState = WantedState.HOLD;
         }
 
         return defaultStateTransfer();
@@ -225,13 +207,8 @@ public class Superstructure extends Subsystem {
             actionHasStarted = false;
         }
 
-        // when there are no balls then go to hold
-        if (mIndexer.getBallCount() == 0) {
-            mWantedState = WantedState.HOLD;
-        }
-        // now only do something if shooter is ready and we have not already started
-        // shooting
-        else if (!actionHasStarted && mShooter.readyToShoot()) {
+        // now only do something if shooter is ready and we have not already started shooting
+        if (!actionHasStarted && mShooter.readyToShoot()) {
             mIndexer.setWantedState(Indexer.WantedState.FEED, sClassName);
             actionHasStarted = true;
         }
