@@ -4,7 +4,7 @@ import frc.robot.subsystems.Superstructure;
 import libraries.cheesylib.autos.actions.Action;
 
 public class CollectAction implements Action {
-	
+
 	private String sClassName;
 	private Superstructure mSuperstructure;
 	private boolean mTurnOn;
@@ -14,29 +14,29 @@ public class CollectAction implements Action {
 		mSuperstructure = Superstructure.getInstance(sClassName);
 		mTurnOn = turnOn;
 	}
-	
+
 	@Override
 	public boolean isFinished() {
 		return true;
 	}
-	
+
 	@Override
 	public void start() {
 		if (mTurnOn) {
-			mSuperstructure.setWantedState(Superstructure.WantedState.COLLECT);
+			mSuperstructure.setWantedState(Superstructure.WantedState.COLLECT, sClassName);
 		} else {
-			mSuperstructure.setWantedState(Superstructure.WantedState.HOLD);
+			mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
 		}
 	}
-	
+
 	@Override
 	public void update() {
 
 	}
-	
+
 	@Override
 	public void done() {
 
 	}
-	
+
 }

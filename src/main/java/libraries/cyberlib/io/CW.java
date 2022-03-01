@@ -94,10 +94,9 @@ public class CW {
             initialize(js);
         } else {
             // setup to check again in .5 seconds
-            if (mNextCheckBase == 0){
+            if (mNextCheckBase == 0) {
                 mNextCheckBase = Timer.getFPGATimestamp() + TIMETONEXTCHECK;
-            }
-            else{
+            } else {
                 mNextCheckBase += TIMETONEXTCHECK;
             }
             mNextCheck = mNextCheckBase;
@@ -150,8 +149,9 @@ public class CW {
         // allocate rumbler even if it is not supported
         mRumbler = new Rumbler(mStick.getPort());
 
-        System.out.println("found Joystick \'" + mStick.getName() + "\', slot " + mStick.getPort() + ", buttons " + mButtonCount
-                + " , axes " + mAxisCount + " , pov " + mPOVCount);
+        System.out.println(
+                "found Joystick \'" + mStick.getName() + "\', slot " + mStick.getPort() + ", buttons " + mButtonCount
+                        + " , axes " + mAxisCount + " , pov " + mPOVCount);
     }
 
     // before checking for button press etc. check if the
@@ -169,7 +169,7 @@ public class CW {
         if (Timer.getFPGATimestamp() > mNextCheck) {
             mNextCheckBase += TIMETONEXTCHECK;
             mNextCheck = mNextCheckBase;
-            
+
             Joystick js = findJoystick(mName);
             if (js != null) {
                 // joystick found so set things up
@@ -192,62 +192,60 @@ public class CW {
     // if it is a POV then it also gets the angle
     // then it calls the joystick api to get the value
     // each press type has to be handled seperately
-    public boolean pressTypes(int inputNum, int pressType){
-        if(inputNum >= POVS_OFFSET){
+    public boolean pressTypes(int inputNum, int pressType) {
+        if (inputNum >= POVS_OFFSET) {
             inputNum -= POVS_OFFSET;
-            int povNum = inputNum/10;
-            int angleIndex = inputNum%10;
+            int povNum = inputNum / 10;
+            int angleIndex = inputNum % 10;
 
             // this handles each angle seperately
-            switch(pressType){
+            switch (pressType) {
                 case CW.PRESSED_EDGE:
-                return mJPOVs[povNum][angleIndex].isPressedEdge();
+                    return mJPOVs[povNum][angleIndex].isPressedEdge();
                 case CW.RELEASED_EDGE:
-                return mJPOVs[povNum][angleIndex].isReleasedEdge();
+                    return mJPOVs[povNum][angleIndex].isReleasedEdge();
                 case CW.PRESSED_LEVEL_LONG:
-                return mJPOVs[povNum][angleIndex].isPressedLevelLong();
+                    return mJPOVs[povNum][angleIndex].isPressedLevelLong();
                 case CW.RELEASED_EDGE_QUICK:
-                return mJPOVs[povNum][angleIndex].isReleasedEdgeQuick();
+                    return mJPOVs[povNum][angleIndex].isReleasedEdgeQuick();
                 case CW.RELEASED_EDGE_LONG:
-                return mJPOVs[povNum][angleIndex].isReleasedEdgeLong();
+                    return mJPOVs[povNum][angleIndex].isReleasedEdgeLong();
                 case CW.PRESSED_LEVEL:
-                return mJPOVs[povNum][angleIndex].isPressedLevel();
+                    return mJPOVs[povNum][angleIndex].isPressedLevel();
                 default:
             }
-        }
-        else if(inputNum>=AXIS_OFFSET){
+        } else if (inputNum >= AXIS_OFFSET) {
             // this maps axis to buttons by using .5 as a cutoff
             inputNum -= AXIS_OFFSET;
-            switch(pressType){
+            switch (pressType) {
                 case CW.PRESSED_EDGE:
-                return mJAxis[inputNum].isPressedEdge();
+                    return mJAxis[inputNum].isPressedEdge();
                 case CW.RELEASED_EDGE:
-                return mJAxis[inputNum].isReleasedEdge();
+                    return mJAxis[inputNum].isReleasedEdge();
                 case CW.PRESSED_LEVEL_LONG:
-                return mJAxis[inputNum].isPressedLevelLong();
+                    return mJAxis[inputNum].isPressedLevelLong();
                 case CW.RELEASED_EDGE_QUICK:
-                return mJAxis[inputNum].isReleasedEdgeQuick();
+                    return mJAxis[inputNum].isReleasedEdgeQuick();
                 case CW.RELEASED_EDGE_LONG:
-                return mJAxis[inputNum].isReleasedEdgeLong();
+                    return mJAxis[inputNum].isReleasedEdgeLong();
                 case CW.PRESSED_LEVEL:
-                return mJAxis[inputNum].isPressedLevel();
+                    return mJAxis[inputNum].isPressedLevel();
                 default:
             }
-        }
-        else {
-            switch(pressType){
+        } else {
+            switch (pressType) {
                 case CW.PRESSED_EDGE:
-                return mJButtons[inputNum].isPressedEdge();
+                    return mJButtons[inputNum].isPressedEdge();
                 case CW.RELEASED_EDGE:
-                return mJButtons[inputNum].isReleasedEdge();
+                    return mJButtons[inputNum].isReleasedEdge();
                 case CW.PRESSED_LEVEL_LONG:
-                return mJButtons[inputNum].isPressedLevelLong();
+                    return mJButtons[inputNum].isPressedLevelLong();
                 case CW.RELEASED_EDGE_QUICK:
-                return mJButtons[inputNum].isReleasedEdgeQuick();
+                    return mJButtons[inputNum].isReleasedEdgeQuick();
                 case CW.RELEASED_EDGE_LONG:
-                return mJButtons[inputNum].isReleasedEdgeLong();
+                    return mJButtons[inputNum].isReleasedEdgeLong();
                 case CW.PRESSED_LEVEL:
-                return mJButtons[inputNum].isPressedLevel();
+                    return mJButtons[inputNum].isPressedLevel();
                 default:
             }
         }
@@ -255,43 +253,42 @@ public class CW {
     }
 
     int timeCnt = 0;
-    // this gets the raw value plus adds a deadband for AXIS. 
-    public double getRaw(int inputNum, double deadband){
-        if(joystickFound()){
-           return getRawValue(inputNum, deadband);
+
+    // this gets the raw value plus adds a deadband for AXIS.
+    public double getRaw(int inputNum, double deadband) {
+        if (joystickFound()) {
+            return getRawValue(inputNum, deadband);
         }
-        if(inputNum >= POVS_OFFSET){
+        if (inputNum >= POVS_OFFSET) {
             return -1;
         }
         return 0;
     }
 
-    // this gets the raw value. 
-    public double getRaw(int inputNum){
+    // this gets the raw value.
+    public double getRaw(int inputNum) {
         return getRaw(inputNum, 0);
     }
 
     // it maps buttons to 0 and 1.0
-    private double getRawValue(int inputNum, double deadband){
-        if(inputNum >= POVS_OFFSET){
+    private double getRawValue(int inputNum, double deadband) {
+        if (inputNum >= POVS_OFFSET) {
             inputNum -= POVS_OFFSET;
-            int povNum = inputNum/10;
-            int angleIndex = inputNum%10;
+            int povNum = inputNum / 10;
+            int angleIndex = inputNum % 10;
 
             return mJPOVs[povNum][angleIndex].getRaw(deadband);
-        }
-        else if(inputNum >= AXIS_OFFSET){
+        } else if (inputNum >= AXIS_OFFSET) {
             inputNum -= AXIS_OFFSET;
             return mJAxis[inputNum].getRaw(deadband);
-        }
-        else {
+        } else {
             return mJButtons[inputNum].getRaw(deadband);
         }
     }
 
     // same logic as above for rumble
-    public void rumble(final double rumblesPerSecond, final double numberOfSeconds){
-        if(joystickFound()){
+    public void rumble(final double rumblesPerSecond, final double numberOfSeconds) {
+        if (joystickFound()) {
             mRumbler.rumble(rumblesPerSecond, numberOfSeconds);
         }
     }
@@ -311,18 +308,20 @@ public class CW {
         boolean releasedEdgeLongLastState = false;
         double releasedEdgeLongLastPressedDuration = 0;
 
-        public InputLogic(){}
+        public InputLogic() {
+        }
 
         // these two routines are supplied to convert
         // axis and POVs into buttons
         // and buttons into raw
         abstract protected boolean isPressed();
+
         abstract public double getRaw(double deadband);
-        
+
         // this tracks how long a button has been pressed
-        private double getPressedDuration(){
-            if (isPressed()){
-                if (pressedTime==0){
+        private double getPressedDuration() {
+            if (isPressed()) {
+                if (pressedTime == 0) {
                     pressedTime = Timer.getFPGATimestamp();
                     return .0001; // small positive # implying isPressed
                 }
@@ -331,51 +330,50 @@ public class CW {
             pressedTime = 0;
             return 0;
         }
-    
+
         // this is really isPressedRaw but I called
         // isPressedLevel to differentiate from getRaw for axis
-        public boolean isPressedLevel(){
+        public boolean isPressedLevel() {
             return isPressed();
         }
 
         // this looks for an edge
         // i.e. was it pressed since it was last checked
-        public boolean isPressedEdge(){
+        public boolean isPressedEdge() {
             boolean last = pressedEdgeLastState;
             pressedEdgeLastState = isPressed();
             return !last && pressedEdgeLastState;
         }
-        
+
         // same for release
-        public boolean isReleasedEdge(){
+        public boolean isReleasedEdge() {
             boolean last = releasedEdgeLastState;
             releasedEdgeLastState = isPressed();
             return last && !releasedEdgeLastState;
         }
-        
+
         // is it pressed for .25 seconds
-        public boolean isPressedLevelLong(){
+        public boolean isPressedLevelLong() {
             double duration = getPressedDuration();
 
-            if (duration>0){
-                if (!longPressActivated){
-                    if (duration>QUICKDURATION){
+            if (duration > 0) {
+                if (!longPressActivated) {
+                    if (duration > QUICKDURATION) {
                         longPressActivated = true;
                         return true;
                     }
                 }
-            }
-            else {
+            } else {
                 longPressActivated = false;
             }
             return false;
         }
-        
+
         // is released in < .25 seconds
-        public boolean isReleasedEdgeQuick(){
+        public boolean isReleasedEdgeQuick() {
             double pressedDuration = getPressedDuration();
 
-            if (pressedDuration>0){
+            if (pressedDuration > 0) {
                 releasedEdgeQuickLastState = true;
                 releasedEdgeQuickLastPressedDuration = pressedDuration;
                 return false;
@@ -383,14 +381,14 @@ public class CW {
             // only get here if not pressed now
             boolean last = releasedEdgeQuickLastState;
             releasedEdgeQuickLastState = false;
-            return last && releasedEdgeQuickLastPressedDuration<=QUICKDURATION;
+            return last && releasedEdgeQuickLastPressedDuration <= QUICKDURATION;
         }
-    
+
         // is released in > .25 seconds
-        public boolean isReleasedEdgeLong(){
+        public boolean isReleasedEdgeLong() {
             double pressedDuration = getPressedDuration();
 
-            if (pressedDuration>0){
+            if (pressedDuration > 0) {
                 releasedEdgeLongLastState = true;
                 releasedEdgeLongLastPressedDuration = pressedDuration;
                 return false;
@@ -398,71 +396,72 @@ public class CW {
             // only get here if not pressed now
             boolean last = releasedEdgeLongLastState;
             releasedEdgeLongLastState = false;
-            return last && releasedEdgeLongLastPressedDuration>QUICKDURATION;
+            return last && releasedEdgeLongLastPressedDuration > QUICKDURATION;
         }
     }
 
     // one created for each button
-    class JoystickButton extends InputLogic{
+    class JoystickButton extends InputLogic {
         Joystick stick;
         int num;
 
-        public JoystickButton(Joystick js, int buttonNum){
+        public JoystickButton(Joystick js, int buttonNum) {
             stick = js;
             num = buttonNum;
         }
 
-        protected boolean isPressed(){
+        protected boolean isPressed() {
             return stick.getRawButton(num);
         }
 
-        public double getRaw(double deadband){
-            return stick.getRawButton(num)?1.0:0;
+        public double getRaw(double deadband) {
+            return stick.getRawButton(num) ? 1.0 : 0;
         }
     }
 
     // one created for each axis
-    class JoystickAxis extends InputLogic{
+    class JoystickAxis extends InputLogic {
         Joystick stick;
         int num;
 
-        public JoystickAxis(Joystick js, int axisNum){
+        public JoystickAxis(Joystick js, int axisNum) {
             stick = js;
             num = axisNum;
         }
 
         // turn an axis into a button
-        protected boolean isPressed(){
+        protected boolean isPressed() {
             double value = stick.getRawAxis(num);
-            return Math.abs(value)<=AXISPRESSTHRESHOLD?false:true;
+            return Math.abs(value) <= AXISPRESSTHRESHOLD ? false : true;
         }
 
-        public double getRaw(double deadband){
+        public double getRaw(double deadband) {
             double value = stick.getRawAxis(num);
-            double scalar = 1/(1-deadband); //Calculates the input scalar with the given deadband
-            return Math.abs(value) <= deadband? 0:(value > 0)? (value-deadband)*scalar:(value+deadband)*scalar;
+            double scalar = 1 / (1 - deadband); // Calculates the input scalar with the given deadband
+            return Math.abs(value) <= deadband ? 0
+                    : (value > 0) ? (value - deadband) * scalar : (value + deadband) * scalar;
         }
     }
 
     // one created for each POV angle
-    class JoystickPOV extends InputLogic{
+    class JoystickPOV extends InputLogic {
         Joystick stick;
         int num;
         int angle;
 
-        public JoystickPOV(Joystick js, int POVNum, int a){
+        public JoystickPOV(Joystick js, int POVNum, int a) {
             stick = js;
             num = POVNum;
             angle = a;
         }
 
         // turn a POV into one of 8 buttons
-        protected boolean isPressed(){
+        protected boolean isPressed() {
             double value = stick.getPOV(num);
-            return value==angle?true:false;
+            return value == angle ? true : false;
         }
 
-        public double getRaw(double deadband){
+        public double getRaw(double deadband) {
             return stick.getPOV(num);
         }
     }

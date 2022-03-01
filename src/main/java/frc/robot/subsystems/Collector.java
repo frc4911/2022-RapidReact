@@ -10,27 +10,27 @@ import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.robot.Constants;
-import frc.robot.Ports;
+import frc.robot.constants.Constants;
+import frc.robot.constants.Ports;
 import libraries.cheesylib.drivers.TalonFXFactory;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.subsystems.SubsystemManager;
 import libraries.cheesylib.util.LatchedBoolean;
 
-public class Collector extends Subsystem{
+public class Collector extends Subsystem {
 
-    //Hardware
+    // Hardware
     private final TalonFX mFXCollector;
     private final Solenoid mSolenoid;
 
-    //Subsystem Constants
-    private final double kCollectSpeed = 0.5;
+    // Subsystem Constants
+    private final double kCollectSpeed = 0.9;
 
-    //Configuration Constants
+    // Configuration Constants
     private final double kCurrentLimit = 60;
 
-    //Subsystem States
+    // Subsystem States
     public enum SolenoidState {
         EXTEND(true),
         RETRACT(false);
@@ -45,7 +45,7 @@ public class Collector extends Subsystem{
             return state;
         }
     }
-    
+
     public enum SystemState {
         HOLDING,
         COLLECTING,
@@ -65,60 +65,54 @@ public class Collector extends Subsystem{
     private LatchedBoolean mSystemStateChange = new LatchedBoolean();
     private SolenoidState mSolenoidState;
     private boolean mRunCollectorLoop;
-    private double lastBackingTimestamp;
 
-    double collectSpeed;
-
-    //Other
+    // Other
     private SubsystemManager mSubsystemManager;
-    
-    //Subsystem Creation
+
+    // Subsystem Creation
     private static String sClassName;
     private static int sInstanceCount;
     private static Collector sInstance = null;
+
     public static Collector getInstance(String caller) {
-        if(sInstance == null) {
+        if (sInstance == null) {
             sInstance = new Collector(caller);
-        }
-        else {
+        } else {
             printUsage(caller);
         }
         return sInstance;
     }
 
-    private static void printUsage(String caller){
-        System.out.println("("+caller+") "+" getInstance " + sClassName + " " + ++sInstanceCount);
+    private static void printUsage(String caller) {
+        System.out.println("(" + caller + ") " + " getInstance " + sClassName + " " + ++sInstanceCount);
     }
 
-    private Collector(String caller){
+    private Collector(String caller) {
         sClassName = this.getClass().getSimpleName();
         printUsage(caller);
         mFXCollector = TalonFXFactory.createDefaultTalon(Ports.COLLECTOR);
         mSolenoid = new Solenoid(PneumaticsModuleType.CTREPCM, Ports.COLLECTOR_DEPLOY);
         mSubsystemManager = SubsystemManager.getInstance(sClassName);
-        collectSpeed = SmartDashboard.getNumber("Collecting Speed", -1.0);
-        if(collectSpeed == -1){
-            SmartDashboard.putNumber("Collecting Speed", 0.0);
-        }
         configMotors();
     }
 
-    private void configMotors(){
+    private void configMotors() {
         mFXCollector.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
         mFXCollector.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
 
-        mFXCollector.setControlFramePeriod(ControlFrame.Control_3_General,18);
+        mFXCollector.setControlFramePeriod(ControlFrame.Control_3_General, 18);
 
         mFXCollector.setInverted(false);
 
         mFXCollector.setNeutralMode(NeutralMode.Coast);
 
-        mFXCollector.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kCurrentLimit, kCurrentLimit, 0));
+        mFXCollector
+                .configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kCurrentLimit, kCurrentLimit, 0));
 
     }
 
     @Override
-    public void onStart(Phase phase){
+    public void onStart(Phase phase) {
         synchronized (Collector.this) { // TODO Check if the key word synchronized is needed
             mSystemState = SystemState.HOLDING;
             mWantedState = WantedState.HOLD;
@@ -132,94 +126,92 @@ public class Collector extends Subsystem{
     }
 
     @Override
-    public void onLoop(double timestamp){
+    public void onLoop(double timestamp) {
         synchronized (Collector.this) {
-            do{
+            do {
                 SystemState newState;
                 switch (mSystemState) {
-                case COLLECTING:
-                    newState = handleCollecting();
-                    break;
-                case BACKING:
-                    newState = handleBacking();
-                    break;
-                case HOLDING:
-                default:
-                    newState = handleHolding();
-                    break;
+                    case COLLECTING:
+                        newState = handleCollecting();
+                        break;
+                    case BACKING:
+                        newState = handleBacking();
+                        break;
+                    case HOLDING:
+                    default:
+                        newState = handleHolding();
+                        break;
                 }
 
                 if (newState != mSystemState) {
-                    System.out.println(sClassName + " state " + mSystemState + " to " + newState + " (" + timestamp + ")");
+                    System.out.println(
+                            sClassName + " state " + mSystemState + " to " + newState + " (" + timestamp + ")");
                     mSystemState = newState;
                     mStateChanged = true;
                 } else {
                     mStateChanged = false;
                 }
-            } while(mSystemStateChange.update(mStateChanged));
+            } while (mSystemStateChange.update(mStateChanged));
         }
     }
 
-    public synchronized void setWantedState(WantedState state) {
+    // this method should only be used by external subsystems.
+    // if you want to change your own wantedState then simply set
+    // it directly
+    public synchronized void setWantedState(WantedState state, String who) {
         if (state != mWantedState) {
-            mSubsystemManager.scheduleMe(mListIndex, 1, false);
-            System.out.println("waking " + sClassName);
+            mWantedState = state;
+            mSubsystemManager.scheduleMe(mListIndex, 1, true);
+            System.out.println(who + " is setting wanted state of " + sClassName + " to " + state);
+        } else {
+            System.out.println(who + " is setting wanted state of " + sClassName + " to " + state + " again!!!");
         }
-
-        mWantedState = state;
     }
 
     private SystemState handleHolding() {
-        if(mStateChanged) {
+        if (mStateChanged) {
             mPeriodicIO.collectorDemand = 0.0;
             mPeriodicIO.solenoidDemand = SolenoidState.RETRACT;
         }
 
         return defaultStateTransfer();
     }
-    
+
     private SystemState handleCollecting() {
-        collectSpeed = SmartDashboard.getNumber("Collecting Speed", 0.0);
-        updateCollector(collectSpeed);
-        // updateCollector(kCollectSpeed);
+        updateCollector(kCollectSpeed);
 
         return defaultStateTransfer();
     }
 
     private SystemState handleBacking() {
-        if(mStateChanged){
-            lastBackingTimestamp = Timer.getFPGATimestamp();
+        if (mStateChanged) {
             mPeriodicIO.schedDeltaDesired = 20;
         }
-        double now = Timer.getFPGATimestamp();
 
-        if(now - lastBackingTimestamp < 0.5) {
-            updateCollector(kCollectSpeed);
-            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
-            mRunCollectorLoop = true;
-        } else {
-            updateCollector(-kCollectSpeed);
-        }
+        mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
+        mRunCollectorLoop = true;
+        updateCollector(-kCollectSpeed);
 
         return defaultStateTransfer();
     }
 
-    private void updateCollector(double speed){
+    private void updateCollector(double speed) {
         // Run one loop after extending so wheels do not run while retracted
-        if(mRunCollectorLoop){
+        if (mRunCollectorLoop) {
             mPeriodicIO.collectorDemand = speed;
             mPeriodicIO.schedDeltaDesired = 0;
             mRunCollectorLoop = false;
         }
-        if(mStateChanged) {
+        if (mStateChanged) {
             mPeriodicIO.solenoidDemand = SolenoidState.EXTEND;
-            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta; // run one more time in 100 ms for collector startup
+            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta; // run one more time in 100 ms for collector
+                                                                            // startup
             mRunCollectorLoop = true;
         }
     }
 
-    private SystemState defaultStateTransfer(){
-        switch(mWantedState){
+    private SystemState defaultStateTransfer() {
+        switch (mWantedState) {
             case COLLECT:
                 return SystemState.COLLECTING;
             case BACK:
@@ -232,32 +224,32 @@ public class Collector extends Subsystem{
 
     @Override
     public void readPeriodicInputs() {
-        double now       = Timer.getFPGATimestamp();
+        double now = Timer.getFPGATimestamp();
         mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
-        mPeriodicIO.lastSchedStart   = now;
+        mPeriodicIO.lastSchedStart = now;
     }
 
     @Override
     public void writePeriodicOutputs() {
-        if(mSolenoidState != mPeriodicIO.solenoidDemand){
+        if (mSolenoidState != mPeriodicIO.solenoidDemand) {
             mSolenoidState = mPeriodicIO.solenoidDemand;
             mSolenoid.set(mPeriodicIO.solenoidDemand.get());
         }
         mFXCollector.set(ControlMode.PercentOutput, mPeriodicIO.collectorDemand);
     }
 
-
     @Override
     public void stop() {
+        System.out.println(sClassName + " stop()");
         mFXCollector.set(ControlMode.PercentOutput, 0.0);
-        mSolenoid.set(SolenoidState.RETRACT.get());   
+        mSolenoid.set(SolenoidState.RETRACT.get());
 
         mPeriodicIO.collectorDemand = 0.0;
         mSolenoidState = SolenoidState.RETRACT;
     }
 
     @Override
-    public int whenRunAgain () {
+    public int whenRunAgain() {
         return mPeriodicIO.schedDeltaDesired;
     }
 
@@ -273,20 +265,20 @@ public class Collector extends Subsystem{
 
     @Override
     public void outputTelemetry() {
-        
+
     }
 
-    public static class PeriodicIO{
-        //Logging
+    public static class PeriodicIO {
+        // Logging
         private final int mDefaultSchedDelta = 100; // axis updated every 100 msec
-        private int    schedDeltaDesired;
-        public  double schedDeltaActual;
-        public  double schedDuration;
+        private int schedDeltaDesired;
+        public double schedDeltaActual;
+        public double schedDuration;
         private double lastSchedStart;
 
-        //Inputs
+        // Inputs
 
-        //Outputs
+        // Outputs
         private double collectorDemand;
         private SolenoidState solenoidDemand;
     }

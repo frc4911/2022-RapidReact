@@ -1,13 +1,12 @@
 package frc.robot.config;
 
-import edu.wpi.first.math.util.Units;
-import frc.robot.Ports;
-import frc.robot.sensors.IMU.ImuType;
-import frc.robot.subsystems.SwerveConfiguration;
-import frc.robot.subsystems.SwerveDriveModule.SwerveModuleConstants;
+import static frc.robot.constants.Constants.kMK2_SteerReduction;
+import static frc.robot.constants.Constants.kMK2_WheelDiameter;
 
-import static frc.robot.Constants.kMK2_SteerReduction;
-import static frc.robot.Constants.kMK2_WheelDiameter;
+import edu.wpi.first.math.util.Units;
+import frc.robot.constants.Ports;
+import frc.robot.sensors.IMU.ImuType;
+import frc.robot.subsystems.SwerveDriveModule.SwerveModuleConstants;
 
 // New Swerve requires SI units
 public class DeadEye implements RobotConfiguration {

@@ -34,7 +34,8 @@ public class PidController {
             }
         }
 
-        if (shouldClearIntegralOnErrorSignChange && !Util.epsilonEquals(error, Math.copySign(error, integralAccum)) && !Util.epsilonEquals(integralAccum, 0.0)) {
+        if (shouldClearIntegralOnErrorSignChange && !Util.epsilonEquals(error, Math.copySign(error, integralAccum))
+                && !Util.epsilonEquals(integralAccum, 0.0)) {
             integralAccum = 0.0;
         }
 
@@ -84,7 +85,8 @@ public class PidController {
     }
 
     /**
-     * Sets the output range for the controller. Outputs will be clamped between these two values.
+     * Sets the output range for the controller. Outputs will be clamped between
+     * these two values.
      *
      * @param min the minimum allowable output value
      * @param max the maximum allowable output value

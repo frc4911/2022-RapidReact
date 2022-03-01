@@ -19,7 +19,7 @@ public class RobotStateEstimator extends Subsystem {
     private PeriodicIO mPeriodicIO;
     @SuppressWarnings("unused")
     private boolean mStateChanged;
-    private final boolean mLoggingEnabled = true;                    // used to disable logging for this subsystem only
+    private final boolean mLoggingEnabled = true; // used to disable logging for this subsystem only
     private static int mDefaultSchedDelta = 20;
     RobotState robotState;// = RobotState.getInstance();
     Swerve mSwerve;
@@ -81,7 +81,6 @@ public class RobotStateEstimator extends Subsystem {
         }
     }
 
-
     private SystemState handleEstimating(double timestamp) {
         robotState.addFieldToVehicleObservation(timestamp, mSwerve.getPose());
         return defaultStateTransfer();
@@ -95,12 +94,23 @@ public class RobotStateEstimator extends Subsystem {
         }
     }
 
-    public synchronized void setWantedState(WantedState state) {
-        mWantedState = state;
+    // this method should only be used by external subsystems.
+    // if you want to change your own wantedState then simply set
+    // it directly
+    public synchronized void setWantedState(WantedState state, String who) {
+        if (state != mWantedState) {
+            mWantedState = state;
+            //mSubsystemManager.scheduleMe(mListIndex, 1, true);
+            System.out.println(who + " is setting wanted state of " + sClassName + " to "+state);
+        }
+        else{
+            System.out.println(who + " is setting wanted state of " + sClassName + " to "+state + " again!!!");
+        }
     }
 
     @Override
     public void stop() {
+        System.out.println(sClassName + " stop()");
     }
 
     @Override

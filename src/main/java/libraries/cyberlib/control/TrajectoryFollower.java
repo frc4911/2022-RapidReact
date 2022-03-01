@@ -1,25 +1,27 @@
 package libraries.cyberlib.control;
 
+import java.util.Optional;
+
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Pose2dWithCurvature;
 import libraries.cheesylib.geometry.Translation2d;
 import libraries.cheesylib.trajectory.TrajectoryIterator;
 import libraries.cheesylib.trajectory.timing.TimedState;
 
-import java.util.Optional;
-
-public  abstract class TrajectoryFollower<DriveSignalType> {
+public abstract class TrajectoryFollower<DriveSignalType> {
     private final Object trajectoryLock = new Object();
 
     /**
-     * The trajectory that is currently being followed. Null if no trajectory is being followed.
+     * The trajectory that is currently being followed. Null if no trajectory is
+     * being followed.
      * <p>
      * Protected by {@link #trajectoryLock}
      */
     private TrajectoryIterator<TimedState<Pose2dWithCurvature>> currentTrajectory = null;
 
     /**
-     * The time that the current trajectory started to be followed. NaN if the trajectory has not been started yet.
+     * The time that the current trajectory started to be followed. NaN if the
+     * trajectory has not been started yet.
      * <p>
      * Protected by {@link #trajectoryLock}
      */
@@ -32,16 +34,18 @@ public  abstract class TrajectoryFollower<DriveSignalType> {
      * @param velocity           the translational velocity of the robot
      * @param rotationalVelocity the rotational velocity of the robot
      * @param trajectory         the trajectory to follow
-     * @param time               the amount of time that has elapsed since the current trajectory started to be followed
-     * @param dt                 the amount of time that has elapsed since the update loop was last ran
+     * @param time               the amount of time that has elapsed since the
+     *                           current trajectory started to be followed
+     * @param dt                 the amount of time that has elapsed since the
+     *                           update loop was last ran
      * @return the signal required to follow the trajectory
      */
     protected abstract DriveSignalType calculateDriveSignal(Pose2d currentPose,
-                                                            Translation2d velocity,
-                                                            double rotationalVelocity,
-                                                            TrajectoryIterator<TimedState<Pose2dWithCurvature>> trajectory,
-                                                            double time,
-                                                            double dt);
+            Translation2d velocity,
+            double rotationalVelocity,
+            TrajectoryIterator<TimedState<Pose2dWithCurvature>> trajectory,
+            double time,
+            double dt);
 
     /**
      * Gets if the follower is done following the path.
@@ -51,7 +55,8 @@ public  abstract class TrajectoryFollower<DriveSignalType> {
     protected abstract boolean isFinished();
 
     /**
-     * Resets the follower's internal state. This is called when a new trajectory is started.
+     * Resets the follower's internal state. This is called when a new trajectory is
+     * started.
      */
     protected abstract void reset();
 
@@ -83,7 +88,8 @@ public  abstract class TrajectoryFollower<DriveSignalType> {
     }
 
     /**
-     * Updates the follower and returns the calculated drive signal that should be applied to the robot in order to
+     * Updates the follower and returns the calculated drive signal that should be
+     * applied to the robot in order to
      * follow the current trajectory.
      *
      * @param currentPose        the current pose of the robot
@@ -94,7 +100,7 @@ public  abstract class TrajectoryFollower<DriveSignalType> {
      * @return the drive signal required to follow the current path if any
      */
     public final Optional<DriveSignalType> update(Pose2d currentPose, Translation2d velocity,
-                                                  double rotationalVelocity, double time, double dt) {
+            double rotationalVelocity, double time, double dt) {
 
         TrajectoryIterator<TimedState<Pose2dWithCurvature>> trajectory;
         double timeSinceStart;
@@ -105,7 +111,8 @@ public  abstract class TrajectoryFollower<DriveSignalType> {
                 return Optional.empty();
             }
 
-            // If the trajectory has not been started, update the start time and reset the follower state
+            // If the trajectory has not been started, update the start time and reset the
+            // follower state
             if (Double.isNaN(startTime)) {
                 startTime = time;
                 reset();
