@@ -25,11 +25,12 @@ public class Indexer extends Subsystem {
     private final AnalogInput mAIEnterBeamBreak;
     private final AnalogInput mAIExitBeamBreak;
 
+    // Subsystem Constants
     private final double kBackingSpeed = -.3;
     private final double kFeedingSpeed = .3;
     private final double kLoadingSpeed = .3;
 
-    private boolean indexerHasBall;
+    private boolean hasBallOnLoadingStart;
     private boolean loadingCompleted;
     private boolean feedingCompleted;    
 
@@ -37,8 +38,6 @@ public class Indexer extends Subsystem {
     private final double kIndexerLengthTicks = 35000;
     private final double kBeamBreakThreshold = 3.0;
     private final double kIndexerCurrentLimit = 50;
-
-    // Subsystem Constants
 
     // Subsystem States
     public enum SystemState {
@@ -187,19 +186,19 @@ public class Indexer extends Subsystem {
 
         if (mStateChanged) {
             if (mPeriodicIO.exitBeamBlocked){
-                indexerHasBall = true;
+                hasBallOnLoadingStart = true;
                 mPeriodicIO.indexerDemand = 0;
                 mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
             }
             else{
-                indexerHasBall = false;
+                hasBallOnLoadingStart = false;
                 mPeriodicIO.indexerDemand = kLoadingSpeed;
                 mPeriodicIO.schedDeltaDesired = mPeriodicIO.mFastCycle;
             }
         }
 
         // loading first ball
-        if (!indexerHasBall){
+        if (!hasBallOnLoadingStart){
             if (mPeriodicIO.exitBeamBlocked){
                 mPeriodicIO.indexerDemand = 0; // stop indexer when sensor trips
                 loadingCompleted = true;
@@ -227,7 +226,7 @@ public class Indexer extends Subsystem {
         if (mStateChanged) {
             mPeriodicIO.indexerDemand = kFeedingSpeed;
             mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
-            motorPositionTarget = mPeriodicIO.motorPosition+kIndexerLengthTicks;
+            motorPositionTarget = mPeriodicIO.motorPosition + kIndexerLengthTicks;
             feedingCompleted = false;
         }
 
@@ -251,7 +250,7 @@ public class Indexer extends Subsystem {
         if (mStateChanged) {
             mPeriodicIO.indexerDemand = kBackingSpeed;
             mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
-            motorPositionTarget = mPeriodicIO.motorPosition+kIndexerLengthTicks;
+            motorPositionTarget = mPeriodicIO.motorPosition - kIndexerLengthTicks;
         }
 
         return defaultStateTransfer();
