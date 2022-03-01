@@ -4,13 +4,14 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.autos.modes.DoNothingMode;
 import frc.robot.autos.modes.TestTrajectoryFollowingMode;
+import frc.robot.autos.modes.TwoBallAutoMode;
 import libraries.cheesylib.autos.AutoModeBase;
 
 import java.util.Optional;
 
 public class AutoModeSelector {
     public enum DesiredMode {
-        DO_NOTHING, TEST_TRAJECTORY_FOLLOWING_MODE,
+        DO_NOTHING, TEST_TRAJECTORY_FOLLOWING_MODE, TWO_BALL_AUTO_MODE
     }
 
     private SendableChooser<DesiredMode> mModeChooser;
@@ -22,7 +23,8 @@ public class AutoModeSelector {
     public AutoModeSelector() {
         mModeChooser = new SendableChooser<DesiredMode>();
         mModeChooser.setDefaultOption("None", DesiredMode.DO_NOTHING);
-        mModeChooser.addOption("Test Trajectory Following Mode", DesiredMode.TEST_TRAJECTORY_FOLLOWING_MODE); //brian temp until it works
+        mModeChooser.addOption("Test Trajectory Following Mode", DesiredMode.TEST_TRAJECTORY_FOLLOWING_MODE);
+        mModeChooser.addOption("Two Ball Auto Mode", DesiredMode.TWO_BALL_AUTO_MODE);
         SmartDashboard.putData("Auto Mode", mModeChooser);
     }
 
@@ -46,6 +48,8 @@ public class AutoModeSelector {
                 return Optional.of(new DoNothingMode());
             case TEST_TRAJECTORY_FOLLOWING_MODE:
                 return Optional.of(new TestTrajectoryFollowingMode());
+            case TWO_BALL_AUTO_MODE:
+                return Optional.of(new TwoBallAutoMode());
             default:
                 break;
         }

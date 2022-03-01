@@ -34,7 +34,6 @@ public class JSticks extends Subsystem {
     private CW mDriver;
     private CW mOperator;
     private PeriodicIO mPeriodicIO = new PeriodicIO();
-
     private final double mDeadBand = 0.15; // for the turnigy (driver) swerve controls
     private Superstructure mSuperstructure;
     private Swerve mSwerve;
@@ -133,7 +132,7 @@ public class JSticks extends Subsystem {
 
     @Override
     public void stop() {
-
+        System.out.println(sClassName + " stop()");
     }
 
     private SystemState handleDisabling() {
@@ -203,39 +202,75 @@ public class JSticks extends Subsystem {
             mShooter.stopFlywheel();
         }
 
-        // Will add clauses for different shoot distances, aimed/auto shooting, auto
+        if (mPeriodicIO.op_POV0_ManualShot_Fender) {
+            mSuperstructure.setManualShootDistance(0);
+            mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT, sClassName);
+        }
+
+        if (mPeriodicIO.op_POV90_ManualShot_Tarmac) {
+            mSuperstructure.setManualShootDistance(60);
+            mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT, sClassName);
+        }
+
+        if (mPeriodicIO.op_RightTrigger_Collect) {
+            mSuperstructure.setWantedState(Superstructure.WantedState.COLLECT, sClassName);
+        }
+
+        if (mPeriodicIO.op_RightTrigger_Collect_Stop) {
+            mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
+        }
+
+        if (mPeriodicIO.op_LeftTrigger_Back) {
+            mSuperstructure.setWantedState(Superstructure.WantedState.BACK, sClassName);
+        }
+
+        if (mPeriodicIO.op_LeftTrigger_Back_Stop) {
+            mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
+        }
+
+        // // Will add clauses for different shoot distances, aimed/auto shooting, auto
         // climbing, and others
-        currentState = activeBtnIsReleased(currentState);
-        if (currentState == Superstructure.WantedState.HOLD) {
-            if (mPeriodicIO.op_POV0_ManualShot_Fender) {
-                mSuperstructure.setManualShootDistance(0);
-                mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT);
-            } else if (mPeriodicIO.op_POV90_ManualShot_Tarmac) {
-                mSuperstructure.setManualShootDistance(60); // 5 feet away: temporary test value
-                mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT);
-            } else if (mPeriodicIO.op_RightTrigger_Collect) {
-                mSuperstructure.setWantedState(Superstructure.WantedState.COLLECT);
-            } else if (mPeriodicIO.op_LeftTrigger_Back) {
-                mSuperstructure.setWantedState(Superstructure.WantedState.BACK);
-            } else if (previousState != currentState) {
-                mSuperstructure.setWantedState(Superstructure.WantedState.HOLD);
-            }
+        // currentState = activeBtnIsReleased(currentState);
+        // if (currentState == Superstructure.WantedState.HOLD) {
+        // // if (mPeriodicIO.op_POV0_ManualShot_Fender) {
+        // // mSuperstructure.setManualShootDistance(0);
+        // // mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT,
+        // sClassName);
+        // // } else
 
-        }
+        // if (mPeriodicIO.op_POV90_ManualShot_Tarmac) {
+        // mSuperstructure.setManualShootDistance(60); //5 feet away: temporary test
+        // value
+        // mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT,
+        // sClassName);
+        // } else if (mPeriodicIO.op_RightTrigger_Collect) {
+        // mSuperstructure.setWantedState(Superstructure.WantedState.COLLECT,
+        // sClassName);
+        // } else if (mPeriodicIO.op_LeftTrigger_Back) {
+        // mSuperstructure.setWantedState(Superstructure.WantedState.BACK, sClassName);
+        // } else if (previousState != currentState) {
+        // // mSuperstructure.setWantedState(Superstructure.WantedState.HOLD,
+        // sClassName);
+        // }
+        // }
     }
 
-    private Superstructure.WantedState activeBtnIsReleased(Superstructure.WantedState currentState) {
-        switch (currentState) {
-            case MANUAL_SHOOT:
-                return !mPeriodicIO.op_POV0_ManualShot_Fender ? Superstructure.WantedState.HOLD : currentState;
-            case COLLECT:
-                return !mPeriodicIO.op_RightTrigger_Collect ? Superstructure.WantedState.HOLD : currentState;
-            case BACK:
-                return !mPeriodicIO.op_LeftTrigger_Back ? Superstructure.WantedState.HOLD : currentState;
-            default:
-                return Superstructure.WantedState.HOLD;
-        }
-    }
+    // private Superstructure.WantedState
+    // activeBtnIsReleased(Superstructure.WantedState currentState) {
+    // switch (currentState) {
+    // // case MANUAL_SHOOT:
+    // // return !mPeriodicIO.op_POV0_ManualShot_Fender ?
+    // Superstructure.WantedState.HOLD : currentState;
+    // case COLLECT:
+    // return !mPeriodicIO.op_RightTrigger_Collect ? Superstructure.WantedState.HOLD
+    // : currentState;
+    // case BACK:
+    // return !mPeriodicIO.op_LeftTrigger_Back ? Superstructure.WantedState.HOLD :
+    // currentState;
+    // default:
+    // return Superstructure.WantedState.HOLD;
+    // }
+    // }
 
     @Override
     public void readPeriodicInputs() {
@@ -253,15 +288,19 @@ public class JSticks extends Subsystem {
         mPeriodicIO.dr_YButton_ResetIMU = mDriver.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
 
         mPeriodicIO.op_LeftStickY_ClimberElevator = -mOperator.getRaw(Xbox.LEFT_STICK_Y, mDeadBand);
-        mPeriodicIO.op_RightTrigger_Collect = mOperator.getButton(Xbox.RIGHT_TRIGGER, CW.PRESSED_LEVEL);
-        mPeriodicIO.op_LeftTrigger_Back = mOperator.getButton(Xbox.LEFT_TRIGGER, CW.PRESSED_LEVEL);
+        mPeriodicIO.op_RightTrigger_Collect = mOperator.getButton(Xbox.RIGHT_TRIGGER, CW.PRESSED_EDGE);
+        mPeriodicIO.op_RightTrigger_Collect_Stop = mOperator.getButton(Xbox.RIGHT_TRIGGER, CW.RELEASED_EDGE);
+
+        mPeriodicIO.op_LeftTrigger_Back = mOperator.getButton(Xbox.LEFT_TRIGGER, CW.PRESSED_EDGE);
+        mPeriodicIO.op_LeftTrigger_Back_Stop = mOperator.getButton(Xbox.LEFT_TRIGGER, CW.RELEASED_EDGE);
+
         mPeriodicIO.op_LeftBumper_LoadBall = mOperator.getButton(Xbox.LEFT_BUMPER, CW.PRESSED_EDGE);
         mPeriodicIO.op_RightBumper_TempBugFix = mOperator.getButton(Xbox.RIGHT_BUMPER, CW.PRESSED_EDGE);
         mPeriodicIO.op_BButton_StopShooter = mOperator.getButton(Xbox.B_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.op_XButton_RetractSlappySticks = mOperator.getButton(Xbox.X_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.op_YButton_ExtendSlappySticks = mOperator.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
-        mPeriodicIO.op_POV0_ManualShot_Fender = mOperator.getButton(Xbox.POV0_0, CW.PRESSED_LEVEL);
-        mPeriodicIO.op_POV90_ManualShot_Tarmac = mOperator.getButton(Xbox.POV0_90, CW.PRESSED_LEVEL);
+        mPeriodicIO.op_POV0_ManualShot_Fender = mOperator.getButton(Xbox.POV0_0, CW.PRESSED_EDGE);
+        mPeriodicIO.op_POV90_ManualShot_Tarmac = mOperator.getButton(Xbox.POV0_90, CW.PRESSED_EDGE);
     }
 
     private SystemState defaultStateTransfer() {
@@ -313,7 +352,9 @@ public class JSticks extends Subsystem {
 
         public double op_LeftStickY_ClimberElevator;
         public boolean op_RightTrigger_Collect = false;
+        public boolean op_RightTrigger_Collect_Stop = false;
         public boolean op_LeftTrigger_Back = false;
+        public boolean op_LeftTrigger_Back_Stop = false;
         public boolean op_RightBumper_TempBugFix = false;
         public boolean op_LeftBumper_LoadBall = false;
         public boolean op_BButton_StopShooter = false;

@@ -25,7 +25,7 @@ public class Collector extends Subsystem {
     private final Solenoid mSolenoid;
 
     // Subsystem Constants
-    private final double kCollectSpeed = 0.5;
+    private final double kCollectSpeed = 0.9;
 
     // Configuration Constants
     private final double kCurrentLimit = 60;
@@ -65,9 +65,6 @@ public class Collector extends Subsystem {
     private LatchedBoolean mSystemStateChange = new LatchedBoolean();
     private SolenoidState mSolenoidState;
     private boolean mRunCollectorLoop;
-    private double lastBackingTimestamp;
-
-    double collectSpeed;
 
     // Other
     private SubsystemManager mSubsystemManager;
@@ -96,10 +93,6 @@ public class Collector extends Subsystem {
         mFXCollector = TalonFXFactory.createDefaultTalon(Ports.COLLECTOR);
         mSolenoid = new Solenoid(PneumaticsModuleType.CTREPCM, Ports.COLLECTOR_DEPLOY);
         mSubsystemManager = SubsystemManager.getInstance(sClassName);
-        collectSpeed = SmartDashboard.getNumber("Collecting Speed", -1.0);
-        if (collectSpeed == -1) {
-            SmartDashboard.putNumber("Collecting Speed", 0.0);
-        }
         configMotors();
     }
 
@@ -162,13 +155,17 @@ public class Collector extends Subsystem {
         }
     }
 
-    public synchronized void setWantedState(WantedState state) {
+    // this method should only be used by external subsystems.
+    // if you want to change your own wantedState then simply set
+    // it directly
+    public synchronized void setWantedState(WantedState state, String who) {
         if (state != mWantedState) {
-            mSubsystemManager.scheduleMe(mListIndex, 1, false);
-            System.out.println("waking " + sClassName);
+            mWantedState = state;
+            mSubsystemManager.scheduleMe(mListIndex, 1, true);
+            System.out.println(who + " is setting wanted state of " + sClassName + " to " + state);
+        } else {
+            System.out.println(who + " is setting wanted state of " + sClassName + " to " + state + " again!!!");
         }
-
-        mWantedState = state;
     }
 
     private SystemState handleHolding() {
@@ -181,27 +178,19 @@ public class Collector extends Subsystem {
     }
 
     private SystemState handleCollecting() {
-        collectSpeed = SmartDashboard.getNumber("Collecting Speed", 0.0);
-        updateCollector(collectSpeed);
-        // updateCollector(kCollectSpeed);
+        updateCollector(kCollectSpeed);
 
         return defaultStateTransfer();
     }
 
     private SystemState handleBacking() {
         if (mStateChanged) {
-            lastBackingTimestamp = Timer.getFPGATimestamp();
             mPeriodicIO.schedDeltaDesired = 20;
         }
-        double now = Timer.getFPGATimestamp();
 
-        if (now - lastBackingTimestamp < 0.5) {
-            updateCollector(kCollectSpeed);
-            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
-            mRunCollectorLoop = true;
-        } else {
-            updateCollector(-kCollectSpeed);
-        }
+        mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
+        mRunCollectorLoop = true;
+        updateCollector(-kCollectSpeed);
 
         return defaultStateTransfer();
     }
@@ -251,6 +240,7 @@ public class Collector extends Subsystem {
 
     @Override
     public void stop() {
+        System.out.println(sClassName + " stop()");
         mFXCollector.set(ControlMode.PercentOutput, 0.0);
         mSolenoid.set(SolenoidState.RETRACT.get());
 

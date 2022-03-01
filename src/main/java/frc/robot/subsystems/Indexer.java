@@ -10,6 +10,7 @@ import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.subsystems.Superstructure.WantedState;
 import frc.robot.constants.Constants;
 import frc.robot.constants.Ports;
 import libraries.cheesylib.drivers.TalonFXFactory;
@@ -26,8 +27,9 @@ public class Indexer extends Subsystem {
     private final AnalogInput mAIBallExiting;
 
     // Subsystem Constants
-    private final double kFirstPositionDelta = 17000; // 15700; Continue tuning
-    private final double kSecondPositionDelta = 21200; // 20200;
+    private final double kFirstPositionDelta = 14000;// 17000; // 15700; Continue tuning
+    private final double kSecondPositionDelta = 10000;// 21200; // 20200;
+    private final double kEmptyIndexerDelta = 35000;
     private final double kBeamBreakThreshold = 3.0;
 
     // Configuration Constants
@@ -133,10 +135,10 @@ public class Indexer extends Subsystem {
             mWantedState = WantedState.HOLD;
             mStateChanged = true;
             System.out.println(sClassName + " state " + mSystemState);
-            // this subsystem is "on demand" so
             mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
             mCountedBalls = false;
             firstTime = true;
+            mBallCount = 0; // this needs to be reset at beginning
             stop(); // stop motors just in case they were left running
         }
     }
@@ -174,13 +176,17 @@ public class Indexer extends Subsystem {
         }
     }
 
-    public synchronized void setWantedState(WantedState state) {
+    // this method should only be used by external subsystems.
+    // if you want to change your own wantedState then simply set
+    // it directly
+    public synchronized void setWantedState(WantedState state, String who) {
         if (state != mWantedState) {
+            mWantedState = state;
             mSubsystemManager.scheduleMe(mListIndex, 1, true);
-            System.out.println("waking " + sClassName);
+            System.out.println(who + " is setting wanted state of " + sClassName + " to " + state);
+        } else {
+            System.out.println(who + " is setting wanted state of " + sClassName + " to " + state + " again!!!");
         }
-
-        mWantedState = state;
     }
 
     private SystemState handleHolding() {
@@ -190,9 +196,11 @@ public class Indexer extends Subsystem {
         if (!mCountedBalls) {
             if (isBallEntering()) {
                 mBallCount++;
+                System.out.println("initial (entry bb) ball++ = " + mBallCount);
             }
             if (isFullyLoaded()) {
                 mBallCount++;
+                System.out.println("initial (exit bb) ball++ = " + mBallCount);
             }
             mCountedBalls = true;
         }
@@ -202,56 +210,97 @@ public class Indexer extends Subsystem {
 
     private SystemState handleLoading() {
 
-        if (isBallEntering() || !firstTime) {
+        if (mStateChanged) {
+            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
+            firstTime = true;
+        }
+
+        if (firstTime && isBallEntering()) {
+            mPeriodicIO.startIndexerPosition = mPeriodicIO.indexerPosition;
             if (mBallCount == 0) {
-                // System.out.println("Loading First Ball");
-                loadFirstBall();
-            } else if (mBallCount == 1) {
-                // System.out.println("Loading Second Ball");
-                loadSecondBall();
+
+                mPeriodicIO.indexerDemand = mPeriodicIO.startIndexerPosition + kFirstPositionDelta;
             } else {
-                mPeriodicIO.indexerDemand = mPeriodicIO.indexerPosition;
+                mPeriodicIO.indexerDemand = mPeriodicIO.startIndexerPosition + kSecondPositionDelta;
+            }
+            firstTime = false;
+        }
+
+        if (!firstTime && Math.abs(mPeriodicIO.indexerPosition - mPeriodicIO.indexerDemand) <= 300) {
+            mBallCount++;
+            System.out.println("ball loaded = " + mBallCount);
+            firstTime = true;
+            if (mBallCount > 1) {
+                mWantedState = WantedState.HOLD;
             }
         }
+
+        // if(isBallEntering() || !firstTime) {
+        // if(mBallCount == 0) {
+        // System.out.println("Loading First Ball");
+        // loadFirstBall();
+        // } else if (mBallCount == 1) {
+        // System.out.println("Loading Second Ball");
+        // loadSecondBall();
+        // } else {
+        // mPeriodicIO.indexerDemand = mPeriodicIO.indexerPosition;
+        // }
+        // }
 
         return defaultStateTransfer();
     }
 
-    private void loadFirstBall() {
-        if (firstTime) {
-            mPeriodicIO.startIndexerPosition = mPeriodicIO.indexerPosition;
-            mPeriodicIO.indexerDemand = mPeriodicIO.startIndexerPosition + kFirstPositionDelta;
-            firstTime = false;
+    private SystemState loadingStateTransfer() {
+        if (mWantedState != WantedState.LOAD) {
+            mBallCount = 0;
+            System.out.println("backed out all = " + mBallCount);
         }
-
-        if (Math.abs(mPeriodicIO.indexerPosition - mPeriodicIO.indexerDemand) <= 300) {
-            mBallCount++;
-            firstTime = true;
-        }
+        return defaultStateTransfer();
     }
 
-    private void loadSecondBall() {
-        if (firstTime) {
-            mPeriodicIO.indexerDemand = mPeriodicIO.startIndexerPosition + kSecondPositionDelta;
-            // System.out.println("Demand 2 " + mPeriodicIO.indexerDemand);
-            firstTime = false;
-        }
+    // private void loadFirstBall() {
+    // if(firstTime) {
+    // mPeriodicIO.startIndexerPosition = mPeriodicIO.indexerPosition;
+    // mPeriodicIO.indexerDemand = mPeriodicIO.startIndexerPosition +
+    // kFirstPositionDelta;
+    // firstTime = false;
+    // }
 
-        // System.out.println("Difference " + Math.abs(mPeriodicIO.indexerPosition -
-        // mPeriodicIO.indexerDemand));
-        if (Math.abs(mPeriodicIO.indexerPosition - mPeriodicIO.indexerDemand) <= 300) {
-            mBallCount++;
-            firstTime = true;
-        }
-    }
+    // if(Math.abs(mPeriodicIO.indexerPosition - mPeriodicIO.indexerDemand) <= 300)
+    // {
+    // mBallCount++;
+    // System.out.println("first ball loaded = "+mBallCount);
+    // firstTime = true;
+    // }
+    // }
+
+    // private void loadSecondBall() {
+    // if(firstTime) {
+    // mPeriodicIO.indexerDemand = mPeriodicIO.startIndexerPosition +
+    // kSecondPositionDelta;
+    // // System.out.println("Demand 2 " + mPeriodicIO.indexerDemand);
+    // firstTime = false;
+    // }
+
+    // // System.out.println("Difference " + Math.abs(mPeriodicIO.indexerPosition -
+    // mPeriodicIO.indexerDemand));
+    // if(Math.abs(mPeriodicIO.indexerPosition - mPeriodicIO.indexerDemand) <= 300)
+    // {
+    // mBallCount++;
+    // System.out.println("second ball loaded = "+mBallCount);
+    // firstTime = true;
+    // }
+    // }
 
     private SystemState handleFeeding() {
         if (mStateChanged) {
-            mPeriodicIO.indexerDemand = mPeriodicIO.indexerPosition + kSecondPositionDelta;
+            mPeriodicIO.indexerDemand = mPeriodicIO.indexerPosition + 2 * kEmptyIndexerDelta;
         }
 
         if (Math.abs(mPeriodicIO.indexerPosition - mPeriodicIO.indexerDemand) <= 300) {
             mBallCount = 0;
+            System.out.println("all balls fed = " + mBallCount);
+            mWantedState = WantedState.HOLD;
         }
 
         return defaultStateTransfer();
@@ -259,13 +308,23 @@ public class Indexer extends Subsystem {
 
     private SystemState handleBacking() {
         if (mStateChanged) {
-            mPeriodicIO.indexerDemand = mPeriodicIO.indexerPosition - kSecondPositionDelta;
+            mPeriodicIO.indexerDemand = mPeriodicIO.indexerPosition - 2 * kEmptyIndexerDelta;
         }
 
         if (Math.abs(mPeriodicIO.indexerPosition - mPeriodicIO.indexerDemand) <= 300) {
+            mWantedState = WantedState.HOLD;
             mBallCount = 0;
+            // System.out.println("backed out all = "+mBallCount);
         }
 
+        return backingStateTransfer();
+    }
+
+    private SystemState backingStateTransfer() {
+        if (mWantedState != WantedState.BACK) {
+            mBallCount = 0;
+            System.out.println("backed out all = " + mBallCount);
+        }
         return defaultStateTransfer();
     }
 
@@ -302,6 +361,7 @@ public class Indexer extends Subsystem {
 
     public void resetBallCount() {
         mBallCount = 0;
+        System.out.println("ball count reset = " + mBallCount);
     }
 
     @Override
@@ -320,6 +380,7 @@ public class Indexer extends Subsystem {
 
     @Override
     public void stop() {
+        System.out.println(sClassName + " stop()");
         mFXIndexer.set(ControlMode.PercentOutput, 0);
     }
 

@@ -24,7 +24,7 @@ public class Climber extends Subsystem {
     private final Solenoid mSlapSticks;
 
     // Subsystem Constants
-    private final double kClimberCurrentLimit = 60;
+    private final double kClimberCurrentLimit = 40;
 
     // Subsystem States
     public enum SolenoidState {
@@ -43,12 +43,14 @@ public class Climber extends Subsystem {
     }
 
     public enum SystemState {
+        DISABLING,
         HOLDING,
         CLIMBING,
         HOMING
     }
 
     public enum WantedState {
+        DISABLE,
         HOLD,
         CLIMB,
         HOME
@@ -72,7 +74,7 @@ public class Climber extends Subsystem {
                                                            // considered stopped
     private final double climberHomingDemand = -2 * 100000; // a number negative enough to drive past 0 regardless of
                                                             // where started
-    private boolean climberHomed = true; // global flag
+    private boolean climberHomed = false; // global flag
     private double climberNonMovementTimeout; // timestamp of when low readings are sufficient
     private WantedState wantedStateAfterHoming = WantedState.HOLD; // state to transition to after homed
 
@@ -123,6 +125,13 @@ public class Climber extends Subsystem {
         mFXLeftClimber.setNeutralMode(NeutralMode.Brake);
         mFXRightClimber.setNeutralMode(NeutralMode.Brake);
 
+        // parameters are enable, current limit after triggering, trigger limit, time
+        // allowed to exceed trigger limit before triggering
+        // Current limit motors
+        mFXLeftClimber.configStatorCurrentLimit(
+                new StatorCurrentLimitConfiguration(true, kClimberCurrentLimit, kClimberCurrentLimit, 0));
+        mFXRightClimber.configStatorCurrentLimit(
+                new StatorCurrentLimitConfiguration(true, kClimberCurrentLimit, kClimberCurrentLimit, 0));
         mFXLeftClimber.configStatorCurrentLimit(
                 new StatorCurrentLimitConfiguration(true, kClimberCurrentLimit, kClimberCurrentLimit, 0));
         mFXRightClimber.configStatorCurrentLimit(
@@ -133,12 +142,22 @@ public class Climber extends Subsystem {
     @Override
     public void onStart(Phase phase) {
         synchronized (Climber.this) {
-            mSystemState = SystemState.HOLDING;
-            mWantedState = WantedState.HOLD;
             mStateChanged = true;
+            switch (phase) {
+                case DISABLED:
+                case TEST:
+                    mSystemState = SystemState.DISABLING;
+                    mWantedState = WantedState.DISABLE;
+                    mPeriodicIO.schedDeltaDesired = 0; // goto sleep
+                    break;
+                case AUTONOMOUS:
+                case TELEOP:
+                    mSystemState = SystemState.HOLDING;
+                    mWantedState = WantedState.HOLD;
+                    mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
+                    break;
+            }
             System.out.println(sClassName + " state " + mSystemState);
-            // this subsystem is "on demand" so
-            mPeriodicIO.schedDeltaDesired = 0;
             stop(); // put into a known state
         }
     }
@@ -149,6 +168,9 @@ public class Climber extends Subsystem {
             do {
                 SystemState newState;
                 switch (mSystemState) {
+                    case DISABLING:
+                        newState = handleDisabling();
+                        break;
                     case CLIMBING:
                         newState = handleClimbing();
                         break;
@@ -172,17 +194,30 @@ public class Climber extends Subsystem {
         }
     }
 
-    public synchronized void setWantedState(WantedState state) {
+    // this method should only be used by external subsystems.
+    // if you want to change your own wantedState then simply set
+    // it directly
+    public synchronized void setWantedState(WantedState state, String who) {
         if (state != mWantedState) {
-            mSubsystemManager.scheduleMe(mListIndex, 1, false);
-            System.out.println("waking " + sClassName);
+            mWantedState = state;
+            mSubsystemManager.scheduleMe(mListIndex, 1, true);
+            System.out.println(who + " is setting wanted state of " + sClassName + " to " + state);
+        } else {
+            System.out.println(who + " is setting wanted state of " + sClassName + " to " + state + " again!!!");
+        }
+    }
+
+    private SystemState handleDisabling() {
+        if (mStateChanged) {
+            mPeriodicIO.schedDeltaDesired = 0;
         }
 
-        mWantedState = state;
+        return defaultStateTransfer();
     }
 
     private SystemState handleHolding() {
         if (mStateChanged) {
+            mPeriodicIO.schedDeltaDesired = mDefaultSchedDelta; // stay awake
             if (climberHomed) {
                 mPeriodicIO.climberDemand = 0.0;
                 // mPeriodicIO.slappyDemand = SolenoidState.RETRACT;
@@ -190,6 +225,7 @@ public class Climber extends Subsystem {
             } else {
                 mWantedState = WantedState.HOME;
                 wantedStateAfterHoming = WantedState.HOLD;
+                return defaultStateTransfer();
             }
         }
 
@@ -198,11 +234,12 @@ public class Climber extends Subsystem {
 
     private SystemState handleClimbing() {
         if (mStateChanged) {
+            mPeriodicIO.schedDeltaDesired = mDefaultSchedDelta; // stay awake
             if (climberHomed) {
-                mPeriodicIO.schedDeltaDesired = mDefaultSchedDelta; // stay awake
             } else {
                 mWantedState = WantedState.HOME;
                 wantedStateAfterHoming = WantedState.CLIMB;
+                return defaultStateTransfer();
             }
         }
 
@@ -292,6 +329,7 @@ public class Climber extends Subsystem {
 
     @Override
     public void stop() {
+        System.out.println(sClassName + " stop()");
         mFXLeftClimber.set(ControlMode.PercentOutput, 0);
         mFXRightClimber.set(ControlMode.PercentOutput, 0);
     }

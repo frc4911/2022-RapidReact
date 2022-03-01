@@ -15,6 +15,7 @@ import libraries.cheesylib.geometry.Rotation2d;
 import libraries.cheesylib.geometry.Translation2d;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
+import libraries.cheesylib.subsystems.SubsystemManager;
 import libraries.cheesylib.util.LatchedBoolean;
 import libraries.cheesylib.vision.TargetInfo;
 
@@ -51,6 +52,8 @@ public abstract class LimeLight extends Subsystem {
     private PeriodicIO mPeriodicIO;
     private boolean mStateChanged;
     private LatchedBoolean mSystemStateChange = new LatchedBoolean();
+    private SubsystemManager mSubsystemManager;
+    private String sClassName;
 
     protected NetworkTable mNetworkTable;
     protected LimelightConfig mConfig = null;
@@ -73,6 +76,8 @@ public abstract class LimeLight extends Subsystem {
     private RobotState mRobotState;
 
     public LimeLight(LimelightConfig config) {
+        sClassName = "Limelight";
+        mSubsystemManager = SubsystemManager.getInstance(sClassName);
         mConfig = config; // set constants
         mPeriodicIO = new PeriodicIO();
         mCachedNormCoordinates = new ArrayList<Translation2d>();
@@ -148,8 +153,17 @@ public abstract class LimeLight extends Subsystem {
         }
     }
 
-    public synchronized void setWantedState(WantedState state) {
-        mWantedState = state;
+    // this method should only be used by external subsystems.
+    // if you want to change your own wantedState then simply set
+    // it directly
+    public synchronized void setWantedState(WantedState state, String who) {
+        if (state != mWantedState) {
+            mWantedState = state;
+            mSubsystemManager.scheduleMe(mListIndex, 1, true);
+            System.out.println(who + " is setting wanted state of " + sClassName + " to " + state);
+        } else {
+            System.out.println(who + " is setting wanted state of " + sClassName + " to " + state + " again!!!");
+        }
     }
 
     private SystemState handleHolding() {
@@ -196,6 +210,7 @@ public abstract class LimeLight extends Subsystem {
 
     @Override
     public void stop() {
+        System.out.println(sClassName + " stop()");
         zeroSensors();
     }
 
