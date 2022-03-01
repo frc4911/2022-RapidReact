@@ -10,19 +10,26 @@ public class ManualShootAction implements Action {
 	private Superstructure mSuperstructure = Superstructure.getInstance("ManualShootAction");
     private Indexer mIndexer = Indexer.getInstance("ManualShootAction");
 	private double target = 0.0;
+	private double shotDistance;
+	private double shotTimeout;
+	private String sClassName = "ManualShootAction";
 
-	public ManualShootAction(double duration) {
-		target = Timer.getFPGATimestamp() + duration;
+	public ManualShootAction(double distance, double duration) {
+		shotDistance = distance;
+		shotTimeout = duration;
 	}
 	
 	@Override
 	public boolean isFinished() {
-		return Timer.getFPGATimestamp() >= target;// || mIndexer.ball;
+		// 
+		return /* mIndexer.getBallCount() == 0 */ Timer.getFPGATimestamp() >= target;
 	}
 	
 	@Override
 	public void start() {
-		mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT);
+		target = Timer.getFPGATimestamp() + shotTimeout;
+		mSuperstructure.setManualShootDistance(shotDistance);
+		mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT,sClassName);
 	}
 	
 	@Override
@@ -32,7 +39,7 @@ public class ManualShootAction implements Action {
 	
 	@Override
 	public void done() {
-		mSuperstructure.setWantedState(Superstructure.WantedState.HOLD);
+		mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
 	}
 	
 }

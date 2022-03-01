@@ -23,9 +23,9 @@ public class CollectAction implements Action {
 	@Override
 	public void start() {
 		if (mTurnOn) {
-			mSuperstructure.setWantedState(Superstructure.WantedState.COLLECT);
+			mSuperstructure.setWantedState(Superstructure.WantedState.COLLECT,sClassName);
 		} else {
-			mSuperstructure.setWantedState(Superstructure.WantedState.HOLD);
+			mSuperstructure.setWantedState(Superstructure.WantedState.HOLD,sClassName);
 		}
 	}
 	

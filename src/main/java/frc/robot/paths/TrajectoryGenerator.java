@@ -111,10 +111,37 @@ public class TrajectoryGenerator {
 
         public final MirroredTrajectory testTrajectory;
         public final MirroredTrajectory testTrajectoryBack;
+        public final MirroredTrajectory twoBallAuto_toBallTrajectory;
+        public final MirroredTrajectory twoBallAuto_toFenderTrajectory;
+
 
         private TrajectorySet() {
             testTrajectory = new MirroredTrajectory(getTestTrajectory());
             testTrajectoryBack = new MirroredTrajectory(getTestTrajectoryBack());
+            twoBallAuto_toBallTrajectory = new MirroredTrajectory(gettwoBallAuto_toBallTrajectory());
+            twoBallAuto_toFenderTrajectory = new MirroredTrajectory(gettwoBallAuto_toFenderTrajectory());
+        }
+
+        private Trajectory<TimedState<Pose2dWithCurvature>> gettwoBallAuto_toBallTrajectory() {
+            List<Pose2d> waypoints = new ArrayList<>();
+            waypoints.add(new Pose2d(Translation2d.identity(), Rotation2d.fromDegrees(180)));
+            waypoints.add(new Pose2d(Units.inches_to_meters(-90), Units.inches_to_meters(0), Rotation2d.fromDegrees(180)));
+            return generateTrajectory(false, waypoints,
+                    Arrays.asList(new CentripetalAccelerationConstraint(kMaxCentriptalAccel)),
+                    Units.inches_to_meters(80.0), kMaxAccel, kMaxDecel, kMaxVoltage, Units.inches_to_meters(80.0), 1);
+                    //  kMaxVelocity, kMaxAccel, kMaxDecel, kMaxVoltage, kMaxVelocity, 1);
+                //    Units.inches_to_meters(3.0), Units.inches_to_meters(30.0), Units.inches_to_meters(30.0), kMaxVoltage, Units.inches_to_meters(3.0), 1);
+        }
+
+        private Trajectory<TimedState<Pose2dWithCurvature>> gettwoBallAuto_toFenderTrajectory() {
+            List<Pose2d> waypoints = new ArrayList<>();
+            waypoints.add(new Pose2d(Units.inches_to_meters(-60), Units.inches_to_meters(0), Rotation2d.fromDegrees(0)));
+            waypoints.add(new Pose2d(Units.inches_to_meters(20), Units.inches_to_meters(0), Rotation2d.fromDegrees(0)));
+            return generateTrajectory(false, waypoints,
+                    Arrays.asList(new CentripetalAccelerationConstraint(kMaxCentriptalAccel)),
+                    Units.inches_to_meters(80.0), kMaxAccel, kMaxDecel, kMaxVoltage, Units.inches_to_meters(80.0), 1);
+                    //  kMaxVelocity, kMaxAccel, kMaxDecel, kMaxVoltage, kMaxVelocity, 1);
+                //    Units.inches_to_meters(3.0), Units.inches_to_meters(30.0), Units.inches_to_meters(30.0), kMaxVoltage, Units.inches_to_meters(3.0), 1);
         }
 
         private Trajectory<TimedState<Pose2dWithCurvature>> getTestTrajectory() {
