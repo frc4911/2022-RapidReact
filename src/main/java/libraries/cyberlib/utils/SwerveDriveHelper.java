@@ -22,7 +22,8 @@ public class SwerveDriveHelper {
      * @param strafeInput            left/right input
      * @param rotationInput          rotational input
      * @param low_power              whether to scale down output or not
-     * @param field_relative         whether driving field relative or robot centric mode.
+     * @param field_relative         whether driving field relative or robot centric
+     *                               mode.
      * @param use_heading_controller whether heading controller is used or not.
      * @return A SwerveDriveSignal object representing the adjusted inputs
      */
@@ -61,7 +62,8 @@ public class SwerveDriveHelper {
         translationalInput = new Translation2d(direction.cos() * scaledMagnitude, direction.sin() * scaledMagnitude);
 
         rotationInput = (Math.abs(rotationInput) < kRotationDeadband) ? 0 : rotationInput;
-        if (use_heading_controller) { // current constants are tuned to be put to the power of 1.75, and I don't want to retune right now
+        if (use_heading_controller) { // current constants are tuned to be put to the power of 1.75, and I don't want
+                                      // to retune right now
             rotationInput = Math.pow(Math.abs(rotationInput), 1.75) * Math.signum(rotationInput);
         } else {
             rotationInput = Math.pow(Math.abs(rotationInput), kRotationExponent) * Math.signum(rotationInput);

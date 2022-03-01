@@ -53,7 +53,7 @@ public class CheckFaults {
                 errorFaults += "APIError-";
             }
         }
-        
+
         return errorFaults;
     }
 
@@ -105,49 +105,49 @@ public class CheckFaults {
         motor.clearStickyFaults();
     }
 
-// not currently supported - check in future updates
+    // not currently supported - check in future updates
     // public boolean getPigeonFaults(PigeonIMU pigeon) {
-    //    String errorFaults = "";
-    //    PigeonIMU_Faults sf = new PigeonIMU_Faults();
-    //    pigeon.getFaults(sf);
-    //     if (sf.hasAnyFault()) {
-    //         errorFaults = "PigeonFault";
-    //     } else {
-    //         errorFaults = "none";
-    //     }
-    //     SmartDashboard.putString("Pigeon"-errorFaults);
-    //     return sf.hasAnyFault();
+    // String errorFaults = "";
+    // PigeonIMU_Faults sf = new PigeonIMU_Faults();
+    // pigeon.getFaults(sf);
+    // if (sf.hasAnyFault()) {
+    // errorFaults = "PigeonFault";
+    // } else {
+    // errorFaults = "none";
+    // }
+    // SmartDashboard.putString("Pigeon"-errorFaults);
+    // return sf.hasAnyFault();
     // }
 
     // public void clearPigeonFaults(PigeonIMU pigeon) {
-    //     pigeon.clearStickyFaults();
+    // pigeon.clearStickyFaults();
     // }
 
     public String getFaults(CANCoder CANCoder) {
         String errorFaults = "";
         CANCoderFaults ccf = new CANCoderFaults();
-		CANCoder.getFaults(ccf);
-        if(ccf.hasAnyFault()){
-            if(ccf.APIError){
+        CANCoder.getFaults(ccf);
+        if (ccf.hasAnyFault()) {
+            if (ccf.APIError) {
                 errorFaults += "APIError-";
             }
-            if(ccf.HardwareFault){
+            if (ccf.HardwareFault) {
                 errorFaults += "HardwareFault-";
-			}
-			if(ccf.MagnetTooWeak){
+            }
+            if (ccf.MagnetTooWeak) {
                 errorFaults += "MagnetTooWeak-";
             }
-            if(ccf.ResetDuringEn){
+            if (ccf.ResetDuringEn) {
                 errorFaults += "ResetDuringEn-";
-			}
-			if(ccf.UnderVoltage){
+            }
+            if (ccf.UnderVoltage) {
                 errorFaults += "UnderVoltage-";
             }
         }
-		return errorFaults;
+        return errorFaults;
     }
-    
-    public void clearFaults(CANCoder CANCoder){
-		CANCoder.clearStickyFaults();
-	}
+
+    public void clearFaults(CANCoder CANCoder) {
+        CANCoder.clearStickyFaults();
+    }
 }

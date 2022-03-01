@@ -29,7 +29,8 @@ public class HolonomicDriveSignal {
     }
 
     @Override
-    public String toString(){
-        return String.format("HolonomicDriveSignal T%s, R(%.3f), FieldOriented(%b)", translation.toString(), rotation, fieldOriented);
+    public String toString() {
+        return String.format("HolonomicDriveSignal T%s, R(%.3f), FieldOriented(%b)", translation.toString(), rotation,
+                fieldOriented);
     }
 }

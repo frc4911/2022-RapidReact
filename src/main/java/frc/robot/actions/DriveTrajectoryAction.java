@@ -10,9 +10,8 @@ import libraries.cheesylib.trajectory.Trajectory;
 import libraries.cheesylib.trajectory.TrajectoryIterator;
 import libraries.cheesylib.trajectory.timing.TimedState;
 
-    public class DriveTrajectoryAction implements Action {
+public class DriveTrajectoryAction implements Action {
     private static final Swerve mDrive = Swerve.getInstance("DriveTrajectoryAction");
-    private static final RobotState mRobotState = RobotState.getInstance("DriveTrajectoryAction");
 
     private final TrajectoryIterator<TimedState<Pose2dWithCurvature>> mTrajectory;
     private final boolean mResetPose;
@@ -20,7 +19,6 @@ import libraries.cheesylib.trajectory.timing.TimedState;
     public DriveTrajectoryAction(Trajectory<TimedState<Pose2dWithCurvature>> trajectory) {
         this(trajectory, false);
     }
-
 
     public DriveTrajectoryAction(Trajectory<TimedState<Pose2dWithCurvature>> trajectory, boolean resetPose) {
         mTrajectory = new TrajectoryIterator<>(new TimedView<>(trajectory));
@@ -31,13 +29,14 @@ import libraries.cheesylib.trajectory.timing.TimedState;
     public void start() {
         System.out.println("Starting trajectory! (length=" + mTrajectory.getRemainingProgress() + ")");
         if (mResetPose) {
-            mRobotState.reset(Timer.getFPGATimestamp(), mTrajectory.getState().state().getPose());
+            RobotState.reset(Timer.getFPGATimestamp(), mTrajectory.getState().state().getPose());
         }
         mDrive.setTrajectory(mTrajectory);
     }
 
     @Override
-    public void update() {}
+    public void update() {
+    }
 
     @Override
     public boolean isFinished() {
@@ -49,5 +48,6 @@ import libraries.cheesylib.trajectory.timing.TimedState;
     }
 
     @Override
-    public void done() {}
+    public void done() {
+    }
 }

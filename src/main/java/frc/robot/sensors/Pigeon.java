@@ -4,8 +4,8 @@ import com.ctre.phoenix.sensors.PigeonIMU;
 import com.ctre.phoenix.sensors.PigeonIMU.PigeonState;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.robot.Constants;
-import frc.robot.Ports;
+import frc.robot.constants.Constants;
+import frc.robot.constants.Ports;
 import libraries.cheesylib.geometry.Rotation2d;
 
 public class Pigeon implements IMU {

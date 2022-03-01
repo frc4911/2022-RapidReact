@@ -19,7 +19,7 @@ public class RobotStateEstimator extends Subsystem {
     private PeriodicIO mPeriodicIO;
     @SuppressWarnings("unused")
     private boolean mStateChanged;
-    private final boolean mLoggingEnabled = true;                    // used to disable logging for this subsystem only
+    private final boolean mLoggingEnabled = true; // used to disable logging for this subsystem only
     private static int mDefaultSchedDelta = 20;
     RobotState robotState;// = RobotState.getInstance();
     Swerve mSwerve;
@@ -80,7 +80,6 @@ public class RobotStateEstimator extends Subsystem {
             }
         }
     }
-
 
     private SystemState handleEstimating(double timestamp) {
         robotState.addFieldToVehicleObservation(timestamp, mSwerve.getPose());

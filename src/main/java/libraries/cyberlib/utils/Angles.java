@@ -6,6 +6,7 @@ public class Angles {
     /**
      * Gets the angle between two 2d points (x,y) and (x1,y1)
      * <p>
+     * 
      * @param p1 start point [x, y]
      * @param p2 finish point [x1, y1]
      * @return The angle between p1->p2 in radians
@@ -18,6 +19,7 @@ public class Angles {
     /**
      * Normalizes the angle to be 0 to 2*pi.
      * <p>
+     * 
      * @param angleInRadians The angle in radians to normalize.
      * @return A normalized angle between 0 and 2 * pi
      */
@@ -28,6 +30,7 @@ public class Angles {
     /**
      * Normalizes the angle to be -pi <= result < pi.
      * <p>
+     * 
      * @param angleInRadians The angle in radians to normalize.
      * @return A normalized angle between -pi and pi
      */
@@ -43,10 +46,12 @@ public class Angles {
     /**
      * Given 2 angles, return the shortest angular difference.
      * <p>
+     * 
      * @param fromAngleInRadians From angle in radians
-     * @param toAngleInRadians To angle in radians
+     * @param toAngleInRadians   To angle in radians
      * @return The result will always be -pi <= result < pi.
-     *         Adding the result to "from" will always get you an equivalent angle to "to".
+     *         Adding the result to "from" will always get you an equivalent angle
+     *         to "to".
      */
     public static double shortest_angular_distance(final double fromAngleInRadians, final double toAngleInRadians) {
         return normalizeAngle(toAngleInRadians - fromAngleInRadians);
