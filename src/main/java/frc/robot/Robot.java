@@ -116,7 +116,8 @@ public class Robot extends TimedRobot {
             mAutoModeSelector = new AutoModeSelector();
             mAutoModeSelector.updateModeCreator();
 
-            mTrajectoryGenerator.generateTrajectories();
+            // Always generate trajectories when robot code starts
+            mTrajectoryGenerator.generateTrajectories(mSwerve.mSwerveConfiguration.trajectoryConfig);
         }
         System.out.println("RobotInit() ends");
     }

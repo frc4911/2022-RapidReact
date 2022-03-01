@@ -66,6 +66,7 @@ public class HolonomicTrajectoryFollower extends TrajectoryFollower<HolonomicDri
                 mRotationController.calculate(currentPose.getRotation().getRadians(), dt), true);
     }
 
+    @Override
     public TimedState<Pose2dWithCurvature> getLastState() {
         return lastState;
     }

@@ -120,6 +120,11 @@ public class TrajectoryUtil {
         return new Trajectory<Pose2dWithCurvature>(samples);
     }
 
+    public static Trajectory<Pose2dWithCurvature> trajectoryFromSplineWaypoints(final List<Pose2d> waypoints) {
+        return trajectoryFromSplineWaypoints(
+                waypoints, SplineGenerator.kMaxDX, SplineGenerator.kMaxDY, SplineGenerator.kMaxDTheta);
+    }
+
     public static Trajectory<Pose2dWithCurvature> trajectoryFromSplineWaypoints(final List<Pose2d> waypoints, double
             maxDx, double maxDy, double maxDTheta) {
         List<QuinticHermiteSpline> splines = new ArrayList<>(waypoints.size() - 1);

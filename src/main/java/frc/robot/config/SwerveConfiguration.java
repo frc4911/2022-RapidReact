@@ -4,6 +4,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import libraries.cheesylib.geometry.Translation2d;
+import libraries.cheesylib.trajectory.TrajectoryConfig;
+import libraries.cheesylib.trajectory.timing.CentripetalAccelerationConstraint;
 
 public class SwerveConfiguration {
     public final double wheelbaseLengthInMeters;
@@ -18,11 +20,12 @@ public class SwerveConfiguration {
     public final double kSwerveHeadingKi;
     public final double kSwerveHeadingKd;
     public final double kSwerveHeadingKf;
+    public TrajectoryConfig trajectoryConfig;
 
     /**
      * Creates an instance of SwerveConfiguration
      * <p>
-     * 
+     *
      * @param wheelbaseLengthInMeters         Length in meters of distance between
      *                                        front and back wheels
      * @param wheelbaseWidthInMeters          Length in meters of distance between
@@ -77,5 +80,10 @@ public class SwerveConfiguration {
                 kFrontRightModuleLocation, kFrontLeftModuleLocation, kBackLeftModuleLocation,
                 kBackRightModuleLocation);
 
-    }
+        trajectoryConfig = new TrajectoryConfig(
+                this.maxSpeedInMetersPerSecond, this.maxAccellerationInMetersPerSecondSq,
+                this.maxSpeedInRadiansPerSecond, this.kMaxCentriptalAccelerationInMetersPerSecondSq)
+                .addConstraint(new CentripetalAccelerationConstraint(this.kMaxCentriptalAccelerationInMetersPerSecondSq));
+
+        }
 }
