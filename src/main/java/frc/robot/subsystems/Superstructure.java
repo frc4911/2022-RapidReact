@@ -292,7 +292,7 @@ public class Superstructure extends Subsystem {
   
     @Override
     public void writePeriodicOutputs() {
-        SmartDashboard.putNumber("Pressure Sensor", convertSensorToPSI(mAIPressureSensor.getVoltage()));
+        
     }
 
     @Override
@@ -311,7 +311,7 @@ public class Superstructure extends Subsystem {
         mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
         mPeriodicIO.lastSchedStart = now;
 
-        mPeriodicIO.pressure = convertSensorToPSI(mPressureSensor.getVoltage());
+        mPeriodicIO.pressure = convertSensorToPSI(mAIPressureSensor.getVoltage());
     }
 
     @Override
@@ -326,7 +326,7 @@ public class Superstructure extends Subsystem {
 
     @Override
     public void outputTelemetry() {
-        SmartDashboard.putNumber("Pressure", CyberMath.cTrunc(mPeriodicIO.pressure, 10));
+        SmartDashboard.putNumber("Pressure Sensor", CyberMath.cTrunc(mPeriodicIO.pressure, 10));
     }
 
     public static class PeriodicIO {
