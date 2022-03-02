@@ -46,16 +46,37 @@ public class Climber extends Subsystem {
         DISABLING,
         HOLDING,
         CLIMBING,
-        HOMING
+        HOMING,
+        MOVINGELEVATOR,
+        SLAPPINGSTICKS
     }
 
     public enum WantedState {
         DISABLE,
         HOLD,
         CLIMB,
-        HOME
+        HOME,
+        MOVEELEVATOR,
+        SLAPSTICKS
     }
 
+    public enum ElevatorPositions {
+        BAR(80000),
+        CLAWS(40000),
+        DOWN(0),
+        NOTSET(0);
+
+        double position;
+        private ElevatorPositions(double position){
+            this.position = position;
+        }
+
+        public double get() {
+            return position;
+        }
+    }
+
+    private ElevatorPositions desiredElevatorPosition = ElevatorPositions.NOTSET; 
     private SystemState mSystemState;
     private WantedState mWantedState;
     private boolean mStateChanged;
@@ -176,6 +197,8 @@ public class Climber extends Subsystem {
                         break;
                     case HOMING:
                         newState = handleHoming();
+                    case MOVINGELEVATOR:
+                        newState = handleMovingElevator();
                     case HOLDING:
                     default:
                         newState = handleHolding();
@@ -210,6 +233,8 @@ public class Climber extends Subsystem {
     private SystemState handleDisabling() {
         if (mStateChanged) {
             mPeriodicIO.schedDeltaDesired = 0;
+            mPeriodicIO.climberDemand = 0;
+            mPeriodicIO.climberControlMode = ControlMode.PercentOutput;
         }
 
         return defaultStateTransfer();
@@ -219,7 +244,8 @@ public class Climber extends Subsystem {
         if (mStateChanged) {
             mPeriodicIO.schedDeltaDesired = mDefaultSchedDelta; // stay awake
             if (climberHomed) {
-                mPeriodicIO.climberDemand = 0.0;
+                mPeriodicIO.climberDemand = mPeriodicIO.climberPosition;
+                mPeriodicIO.climberControlMode = ControlMode.Position;
                 // mPeriodicIO.slappyDemand = SolenoidState.RETRACT;
                 mPeriodicIO.schedDeltaDesired = 0;
             } else {
@@ -270,6 +296,46 @@ public class Climber extends Subsystem {
         return defaultStateTransfer();
     }
 
+    private boolean elevatorAtDesiredPosition;
+    private double desiredElevatorPositionTicks;
+
+    public boolean elevatorHasReachedDesiredPosition(){
+        return elevatorAtDesiredPosition;
+    }
+
+    private SystemState handleMovingElevator() {
+        if (mStateChanged) {            
+            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
+            if (!climberHomed){
+                wantedStateAfterHoming = WantedState.MOVEELEVATOR;
+                mWantedState = WantedState.MOVEELEVATOR;
+                return defaultStateTransfer();
+            }
+            else{
+                if (desiredElevatorPosition.equals(ElevatorPositions.NOTSET)){
+                    elevatorAtDesiredPosition = true;
+                }
+                else{
+                    desiredElevatorPositionTicks = desiredElevatorPosition.get();
+                    mPeriodicIO.climberDemand = desiredElevatorPositionTicks;
+                    mPeriodicIO.climberControlMode = ControlMode.Position;
+                    elevatorAtDesiredPosition = false;
+                }
+            }
+        }
+
+        double distance = Math.abs(mPeriodicIO.climberPosition - desiredElevatorPositionTicks);
+        if (distance < 300) {
+            elevatorAtDesiredPosition = true;
+        }
+
+        if (mWantedState != WantedState.MOVEELEVATOR){
+            elevatorAtDesiredPosition = false;
+            desiredElevatorPosition = ElevatorPositions.NOTSET;
+        }
+        return defaultStateTransfer();
+    }
+
     private SystemState defaultStateTransfer() {
         switch (mWantedState) {
             case CLIMB:
@@ -282,13 +348,8 @@ public class Climber extends Subsystem {
         }
     }
 
-    public void setClimbSpeed(double speed) {
-        mPeriodicIO.climberDemand = speed;
-        if (speed == 0.0) {
-            mWantedState = WantedState.HOLD;
-        } else {
-            mWantedState = WantedState.CLIMB;
-        }
+    public void setDesiredElevatorPosition(ElevatorPositions desiredElevatorPosition){
+        this.desiredElevatorPosition = desiredElevatorPosition;
     }
 
     public void setSlappyStickState(boolean state) {
@@ -304,22 +365,14 @@ public class Climber extends Subsystem {
         double now = Timer.getFPGATimestamp();
         mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
         mPeriodicIO.lastSchedStart = now;
+
+        mFXLeftClimber.getSelectedSensorPosition();
     }
 
     @Override
     public void writePeriodicOutputs() {
-        // TODO: Change to Position control, moving elevator to max height or lowest
-        // height with a controlled velocity
-        // Will still need to monitor encoder values, but it should prevent elevator
-        // from going too high
-        if (mSystemState == SystemState.CLIMBING) {
-            mFXLeftClimber.set(ControlMode.PercentOutput, mPeriodicIO.climberDemand);
-            mFXRightClimber.set(ControlMode.PercentOutput, mPeriodicIO.climberDemand);
-        } else {
-            // TODO Use pid to keep climber in place?
-            mFXLeftClimber.set(ControlMode.PercentOutput, mPeriodicIO.climberDemand);
-            mFXRightClimber.set(ControlMode.PercentOutput, mPeriodicIO.climberDemand);
-        }
+        mFXLeftClimber.set(mPeriodicIO.climberControlMode, mPeriodicIO.climberDemand);
+        mFXRightClimber.set(mPeriodicIO.climberControlMode, mPeriodicIO.climberDemand);
 
         if (mSolenoidState != mPeriodicIO.slappyDemand) {
             mSolenoidState = mPeriodicIO.slappyDemand;
@@ -373,6 +426,7 @@ public class Climber extends Subsystem {
 
         // Outputs
         private double climberDemand;
+        private ControlMode climberControlMode;
         private SolenoidState slappyDemand;
 
         // Other

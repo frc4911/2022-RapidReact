@@ -265,9 +265,9 @@ public class Indexer extends Subsystem {
             case BACK:
                 return SystemState.BACKING;
             case HOLD:
+            default:
                 return SystemState.HOLDING;
         }
-        return null;
     }
 
     @Override
