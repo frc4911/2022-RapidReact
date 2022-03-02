@@ -24,7 +24,9 @@ public class Climber extends Subsystem {
     private final Solenoid mSlapSticks;
 
     // Subsystem Constants
-    private final double kClimberCurrentLimit = 40;
+    private final double kClimberCurrentLimit = 60;
+    private final long kSlappySticksElevatorConflictLimit = 140000; // Max theory is 140k
+    private final long kElevatorMaxHeight = 162000; // Max theory is 165k
 
     // Subsystem States
     public enum SolenoidState {
@@ -45,17 +47,37 @@ public class Climber extends Subsystem {
     public enum SystemState {
         DISABLING,
         HOLDING,
+        HOMING,
         CLIMBING,
-        HOMING
+        MOVINGELEVATOR
     }
 
     public enum WantedState {
         DISABLE,
         HOLD,
+        HOME,
         CLIMB,
-        HOME
+        MOVEELEVATOR,
     }
 
+    public enum ElevatorPositions {
+        BAR(80000),
+        CLAWS(40000),
+        DOWN(0),
+        NOTSET(0);
+
+        double position;
+
+        private ElevatorPositions(double position) {
+            this.position = position;
+        }
+
+        public double get() {
+            return position;
+        }
+    }
+
+    private ElevatorPositions desiredElevatorPosition = ElevatorPositions.NOTSET;
     private SystemState mSystemState;
     private WantedState mWantedState;
     private boolean mStateChanged;
@@ -63,6 +85,10 @@ public class Climber extends Subsystem {
     private LatchedBoolean mSystemStateChange = new LatchedBoolean();
     private SolenoidState mSolenoidState;
     private int mDefaultSchedDelta = 20;
+
+    private boolean elevatorAtDesiredPosition;
+    private double desiredElevatorPositionTicks;
+    private double climbSpeed = 0;
 
     // Climber homing state variables
     // Homing is done by sending the Climber to a negative position
@@ -72,8 +98,7 @@ public class Climber extends Subsystem {
                                                         // stopped
     private final double climberNonMovementDuration = .25; // reading below threshhold encoder reads for this long is
                                                            // considered stopped
-    private final double climberHomingDemand = -2 * 100000; // a number negative enough to drive past 0 regardless of
-                                                            // where started
+    private final double climberHomingDemand = -0.1;
     private boolean climberHomed = false; // global flag
     private double climberNonMovementTimeout; // timestamp of when low readings are sufficient
     private WantedState wantedStateAfterHoming = WantedState.HOLD; // state to transition to after homed
@@ -113,10 +138,10 @@ public class Climber extends Subsystem {
 
         // Current limit motors
 
-        mFXLeftClimber.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
+        mFXLeftClimber.configForwardSoftLimitEnable(true, Constants.kLongCANTimeoutMs);
         mFXLeftClimber.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
 
-        mFXRightClimber.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
+        mFXRightClimber.configForwardSoftLimitEnable(true, Constants.kLongCANTimeoutMs);
         mFXRightClimber.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
 
         mFXLeftClimber.setInverted(false);
@@ -157,6 +182,8 @@ public class Climber extends Subsystem {
                     mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
                     break;
             }
+            mPeriodicIO.slappyDemand = SolenoidState.RETRACT;
+            mSolenoidState = SolenoidState.RETRACT;
             System.out.println(sClassName + " state " + mSystemState);
             stop(); // put into a known state
         }
@@ -171,11 +198,15 @@ public class Climber extends Subsystem {
                     case DISABLING:
                         newState = handleDisabling();
                         break;
+                    case HOMING:
+                        newState = handleHoming();
+                        break;
                     case CLIMBING:
                         newState = handleClimbing();
                         break;
-                    case HOMING:
-                        newState = handleHoming();
+                    case MOVINGELEVATOR:
+                        newState = handleMovingElevator();
+                        break;
                     case HOLDING:
                     default:
                         newState = handleHolding();
@@ -210,6 +241,8 @@ public class Climber extends Subsystem {
     private SystemState handleDisabling() {
         if (mStateChanged) {
             mPeriodicIO.schedDeltaDesired = 0;
+            mPeriodicIO.climberDemand = 0;
+            mPeriodicIO.climberControlMode = ControlMode.PercentOutput;
         }
 
         return defaultStateTransfer();
@@ -219,26 +252,12 @@ public class Climber extends Subsystem {
         if (mStateChanged) {
             mPeriodicIO.schedDeltaDesired = mDefaultSchedDelta; // stay awake
             if (climberHomed) {
-                mPeriodicIO.climberDemand = 0.0;
-                // mPeriodicIO.slappyDemand = SolenoidState.RETRACT;
+                mPeriodicIO.climberDemand = mPeriodicIO.climberPosition;
+                mPeriodicIO.climberControlMode = ControlMode.Position;
                 mPeriodicIO.schedDeltaDesired = 0;
             } else {
                 mWantedState = WantedState.HOME;
                 wantedStateAfterHoming = WantedState.HOLD;
-                return defaultStateTransfer();
-            }
-        }
-
-        return defaultStateTransfer();
-    }
-
-    private SystemState handleClimbing() {
-        if (mStateChanged) {
-            mPeriodicIO.schedDeltaDesired = mDefaultSchedDelta; // stay awake
-            if (climberHomed) {
-            } else {
-                mWantedState = WantedState.HOME;
-                wantedStateAfterHoming = WantedState.CLIMB;
                 return defaultStateTransfer();
             }
         }
@@ -251,6 +270,7 @@ public class Climber extends Subsystem {
         if (mStateChanged) {
             climberHomed = false;
             climberNonMovementTimeout = now + climberNonMovementDuration;
+            // mPeriodicIO.climberDemand = climberHomingDemand;
             mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
         }
 
@@ -258,10 +278,17 @@ public class Climber extends Subsystem {
         if (distance > climberMovementThreshhold) {
             climberNonMovementTimeout = now + climberNonMovementDuration;
         }
-
+        System.out.println("Climber Homing Now: distance " + distance);
         if (now > climberNonMovementTimeout) {
+            System.out.println("Climber Homing Sequence Complete");
             mFXRightClimber.setSelectedSensorPosition(0);
             mFXLeftClimber.setSelectedSensorPosition(0);
+
+            mFXLeftClimber.configForwardSoftLimitThreshold(kElevatorMaxHeight, Constants.kLongCANTimeoutMs);
+            mFXRightClimber.configForwardSoftLimitThreshold(kElevatorMaxHeight, Constants.kLongCANTimeoutMs);
+
+            mFXLeftClimber.configReverseSoftLimitThreshold(100, Constants.kLongCANTimeoutMs);
+            mFXRightClimber.configReverseSoftLimitThreshold(100, Constants.kLongCANTimeoutMs);
 
             climberHomed = true;
             mWantedState = wantedStateAfterHoming;
@@ -270,24 +297,78 @@ public class Climber extends Subsystem {
         return defaultStateTransfer();
     }
 
+    private SystemState handleClimbing() {
+        if(mStateChanged) {
+            mPeriodicIO.climberControlMode = ControlMode.PercentOutput;
+        }
+        mPeriodicIO.climberDemand = climbSpeed;
+
+        return defaultStateTransfer();
+    }
+
+    private SystemState handleMovingElevator() {
+        if (mStateChanged) {
+            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
+            if (!climberHomed) {
+                wantedStateAfterHoming = WantedState.MOVEELEVATOR;
+                mWantedState = WantedState.HOME;
+                return defaultStateTransfer();
+            } else {
+                if (desiredElevatorPosition.equals(ElevatorPositions.NOTSET)) {
+                    elevatorAtDesiredPosition = true;
+                } else {
+                    desiredElevatorPositionTicks = desiredElevatorPosition.get();
+                    mPeriodicIO.climberDemand = desiredElevatorPositionTicks;
+                    mPeriodicIO.climberControlMode = ControlMode.Position;
+                    elevatorAtDesiredPosition = false;
+                }
+            }
+        }
+
+        double distance = Math.abs(mPeriodicIO.climberPosition - desiredElevatorPositionTicks);
+        if (distance < 300) {
+            elevatorAtDesiredPosition = true;
+        }
+
+        if (mWantedState != WantedState.MOVEELEVATOR) {
+            elevatorAtDesiredPosition = false;
+            desiredElevatorPosition = ElevatorPositions.NOTSET;
+        }
+        return defaultStateTransfer();
+    }
+
+    public boolean elevatorHasReachedDesiredPosition() {
+        return elevatorAtDesiredPosition;
+    }
+
     private SystemState defaultStateTransfer() {
         switch (mWantedState) {
-            case CLIMB:
-                return SystemState.CLIMBING;
             case HOME:
                 return SystemState.HOMING;
+            case CLIMB:
+                return SystemState.CLIMBING;
+            case MOVEELEVATOR:
+                return SystemState.MOVINGELEVATOR;
+            case DISABLE:
+                return SystemState.DISABLING;
             case HOLD:
             default:
                 return SystemState.HOLDING;
         }
     }
 
+    public void setDesiredElevatorPosition(ElevatorPositions desiredElevatorPosition) {
+        this.desiredElevatorPosition = desiredElevatorPosition;
+    }
+
     public void setClimbSpeed(double speed) {
-        mPeriodicIO.climberDemand = speed;
-        if (speed == 0.0) {
-            mWantedState = WantedState.HOLD;
-        } else {
-            mWantedState = WantedState.CLIMB;
+        if(mSystemState != SystemState.HOMING && mSystemState != SystemState.DISABLING) {
+            climbSpeed = speed;
+            if(speed == 0.0) {
+                mWantedState = WantedState.HOLD;
+            } else {
+                mWantedState = WantedState.CLIMB;
+            }
         }
     }
 
@@ -304,27 +385,37 @@ public class Climber extends Subsystem {
         double now = Timer.getFPGATimestamp();
         mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
         mPeriodicIO.lastSchedStart = now;
+
+        mPeriodicIO.lastClimberPosition = mPeriodicIO.climberPosition;
+        mPeriodicIO.climberPosition = mFXLeftClimber.getSelectedSensorPosition();
     }
 
     @Override
     public void writePeriodicOutputs() {
-        // TODO: Change to Position control, moving elevator to max height or lowest
-        // height with a controlled velocity
-        // Will still need to monitor encoder values, but it should prevent elevator
-        // from going too high
-        if (mSystemState == SystemState.CLIMBING) {
-            mFXLeftClimber.set(ControlMode.PercentOutput, mPeriodicIO.climberDemand);
-            mFXRightClimber.set(ControlMode.PercentOutput, mPeriodicIO.climberDemand);
-        } else {
-            // TODO Use pid to keep climber in place?
-            mFXLeftClimber.set(ControlMode.PercentOutput, mPeriodicIO.climberDemand);
-            mFXRightClimber.set(ControlMode.PercentOutput, mPeriodicIO.climberDemand);
+        if (mSolenoidState != mPeriodicIO.slappyDemand) {
+            // If we're extending, only do it if the elevator is below the height where
+            // they'll hit
+            if (!mPeriodicIO.slappyDemand.get() || (mPeriodicIO.slappyDemand.get()
+                    && mPeriodicIO.climberPosition < kSlappySticksElevatorConflictLimit)) {
+                mSolenoidState = mPeriodicIO.slappyDemand;
+                mSlapSticks.set(mPeriodicIO.slappyDemand.get());
+            }
+
+            if (mSolenoidState.get()) {
+                mFXLeftClimber.configForwardSoftLimitThreshold(kSlappySticksElevatorConflictLimit,
+                        Constants.kLongCANTimeoutMs);
+                mFXRightClimber.configForwardSoftLimitThreshold(kSlappySticksElevatorConflictLimit,
+                        Constants.kLongCANTimeoutMs);
+            } else {
+                mFXLeftClimber.configForwardSoftLimitThreshold(kElevatorMaxHeight, Constants.kLongCANTimeoutMs);
+                mFXRightClimber.configForwardSoftLimitThreshold(kElevatorMaxHeight, Constants.kLongCANTimeoutMs);
+            }
         }
 
-        if (mSolenoidState != mPeriodicIO.slappyDemand) {
-            mSolenoidState = mPeriodicIO.slappyDemand;
-            mSlapSticks.set(mPeriodicIO.slappyDemand.get());
-        }
+        // We don't need safety checks here because the motors can't extend through the
+        // soft limits
+        mFXLeftClimber.set(mPeriodicIO.climberControlMode, mPeriodicIO.climberDemand);
+        mFXRightClimber.set(mPeriodicIO.climberControlMode, mPeriodicIO.climberDemand);
     }
 
     @Override
@@ -373,6 +464,7 @@ public class Climber extends Subsystem {
 
         // Outputs
         private double climberDemand;
+        private ControlMode climberControlMode;
         private SolenoidState slappyDemand;
 
         // Other
