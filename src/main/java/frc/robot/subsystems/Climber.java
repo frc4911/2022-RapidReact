@@ -136,8 +136,6 @@ public class Climber extends Subsystem {
 
     private void configMotors() {
 
-        // Current limit motors
-
         mFXLeftClimber.configForwardSoftLimitEnable(true, Constants.kLongCANTimeoutMs);
         mFXLeftClimber.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
 
@@ -280,13 +278,16 @@ public class Climber extends Subsystem {
         }
         System.out.println("Climber Homing Now: distance " + distance);
         if (now > climberNonMovementTimeout) {
+
             System.out.println("Climber Homing Sequence Complete");
             mFXRightClimber.setSelectedSensorPosition(0);
             mFXLeftClimber.setSelectedSensorPosition(0);
 
+            // Set maximum climber height after homing
             mFXLeftClimber.configForwardSoftLimitThreshold(kElevatorMaxHeight, Constants.kLongCANTimeoutMs);
             mFXRightClimber.configForwardSoftLimitThreshold(kElevatorMaxHeight, Constants.kLongCANTimeoutMs);
 
+            // Set minimum climber height after
             mFXLeftClimber.configReverseSoftLimitThreshold(100, Constants.kLongCANTimeoutMs);
             mFXRightClimber.configReverseSoftLimitThreshold(100, Constants.kLongCANTimeoutMs);
 
@@ -452,8 +453,8 @@ public class Climber extends Subsystem {
 
     public static class PeriodicIO {
         // Logging
-        @SuppressWarnings("unused")
         private final int mDefaultSchedDelta = 100; // axis updated every 100 msec
+        @SuppressWarnings("unused")
         private int schedDeltaDesired;
         public double schedDeltaActual;
         public double schedDuration;

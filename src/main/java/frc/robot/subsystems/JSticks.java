@@ -29,7 +29,6 @@ public class JSticks extends Subsystem {
 
     private SystemState mSystemState = SystemState.READINGBUTTONS;
     private WantedState mWantedState = WantedState.READBUTTONS;
-    @SuppressWarnings("unused")
     private boolean mStateChanged;
     private CW mDriver;
     private CW mOperator;
