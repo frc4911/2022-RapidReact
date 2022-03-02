@@ -268,7 +268,7 @@ public class Superstructure extends Subsystem {
     }
 
     public void setOpenLoopClimb(double climbSpeed, int deploySlappyState) {
-        // mClimber.setClimbSpeed(climbSpeed);
+        mClimber.setClimbSpeed(climbSpeed);
         if (deploySlappyState == 0) {
             mClimber.setSlappyStickState(true);
         } else if (deploySlappyState == 1) {

@@ -167,6 +167,7 @@ public class Swerve extends Subsystem {
 
     public void toggleThroughDriveModes() {
         driveMode = ++driveMode % 4;
+        System.out.println("Shifting Drive Mode***** to " + driveMode);
         switch (driveMode) {
             case 0:
                 SmartDashboard.putString("Swerve/DriveMode", driveMode + " SwerveDriveHelper");
