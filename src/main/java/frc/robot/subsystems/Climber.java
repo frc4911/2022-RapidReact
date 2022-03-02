@@ -287,7 +287,6 @@ public class Climber extends Subsystem {
             mFXLeftClimber.configForwardSoftLimitThreshold(kElevatorMaxHeight, Constants.kLongCANTimeoutMs);
             mFXRightClimber.configForwardSoftLimitThreshold(kElevatorMaxHeight, Constants.kLongCANTimeoutMs);
 
-            // Set minimum climber height after
             mFXLeftClimber.configReverseSoftLimitThreshold(100, Constants.kLongCANTimeoutMs);
             mFXRightClimber.configReverseSoftLimitThreshold(100, Constants.kLongCANTimeoutMs);
 
@@ -428,19 +427,16 @@ public class Climber extends Subsystem {
 
     @Override
     public int whenRunAgain() {
-        // return mPeriodicIO.schedDeltaDesired;
-        return 20;
+        return mPeriodicIO.schedDeltaDesired;
     }
 
     @Override
     public String getLogHeaders() {
-        // TODO Auto-generated method stub
         return "Climber";
     }
 
     @Override
     public String getLogValues(boolean telemetry) {
-        // TODO Auto-generated method stub
         return "Climber.Values";
     }
 
@@ -454,7 +450,6 @@ public class Climber extends Subsystem {
     public static class PeriodicIO {
         // Logging
         private final int mDefaultSchedDelta = 100; // axis updated every 100 msec
-        @SuppressWarnings("unused")
         private int schedDeltaDesired;
         public double schedDeltaActual;
         public double schedDuration;
