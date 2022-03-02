@@ -1,6 +1,9 @@
 package frc.robot.subsystems;
 
+import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.constants.Ports;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.subsystems.SubsystemManager;
@@ -15,6 +18,7 @@ public class Superstructure extends Subsystem {
     private Collector mCollector;
     private Shooter mShooter;
     private Climber mClimber;
+    private final AnalogInput mAIPressure;
 
     // Superstructure States
     public enum SystemState {
@@ -76,6 +80,7 @@ public class Superstructure extends Subsystem {
         mCollector = Collector.getInstance(sClassName);
         mShooter = Shooter.getInstance(sClassName);
         mClimber = Climber.getInstance(sClassName);
+        mAIPressure = new AnalogInput(Ports.PRESSURESENSOR);
     }
 
     @Override
@@ -276,8 +281,16 @@ public class Superstructure extends Subsystem {
         }
     }
 
+    // max voltage is 2.6 which is 100 PSI
+    // min voltage is 0.5 which is 0 PSI
+    private double pressureSensorVoltageToPSI(double volts){
+        return volts*((100-0)/(2.6-.5))-24.3;
+    }
+
+    int value;
     @Override
     public void writePeriodicOutputs() {
+        SmartDashboard.putNumber("Pressure Sensor", pressureSensorVoltageToPSI(mAIPressure.getVoltage()));
     }
 
     @Override

@@ -191,38 +191,8 @@ public class SwerveDriveModule extends Subsystem {
         mSteerMotor.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
         mSteerMotor.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
 
-        // multiple (usually 2) sets were needed to set new encoder value
-        double fxTicksBefore = mSteerMotor.getSelectedSensorPosition();
-        double cancoderDegrees = mCANCoder.getAbsolutePosition();
-        int limit = 5;
-        do{
-            if (mCANCoder.getLastError() != ErrorCode.OK) {
-                System.out.println("error reading cancoder. Trying again!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! value read was "
-                        + cancoderDegrees);
-                Timer.delay(.1);
-                cancoderDegrees = mCANCoder.getAbsolutePosition();
-            }
-            else{
-                break;
-            }
-        }while (limit-- > 0);
-
-        double fxTicksTarget = degreesToEncUnits(cancoderDegrees);
-        double fxTicksNow = fxTicksBefore;
-        int loops = 0;
-        final double acceptableTickErr = 10;
-
-        while (Math.abs(fxTicksNow - fxTicksTarget) > acceptableTickErr && loops < 5) {
-            mSteerMotor.setSelectedSensorPosition(fxTicksTarget, 0, 0);
-            Timer.delay(.1);
-            fxTicksNow = mSteerMotor.getSelectedSensorPosition();
-            loops++;
-        }
-
-        System.out.println(mConstants.kName + " cancoder degrees: " + cancoderDegrees +
-                ",  fx encoder ticks (before, target, adjusted): (" + fxTicksBefore + "," + fxTicksTarget + ","
-                + fxTicksNow + ") loops:" + loops);
-
+        convertCancoderToFX();
+        
         mSteerMotor.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, mConstants.kSteerMotorStatusFrame2UpdateRate,
                 Constants.kLongCANTimeoutMs);
         mSteerMotor.setStatusFramePeriod(StatusFrame.Status_10_MotionMagic,
@@ -353,6 +323,40 @@ public class SwerveDriveModule extends Subsystem {
         // false);
         // hasEmergency = true;
         // }
+    }
+
+    protected void convertCancoderToFX(){
+        // multiple (usually 2) sets were needed to set new encoder value
+        double fxTicksBefore = mSteerMotor.getSelectedSensorPosition();
+        double cancoderDegrees = mCANCoder.getAbsolutePosition();
+        int limit = 5;
+        do{
+            if (mCANCoder.getLastError() != ErrorCode.OK) {
+                System.out.println("error reading cancoder. Trying again!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! value read was "
+                        + cancoderDegrees);
+                Timer.delay(.1);
+                cancoderDegrees = mCANCoder.getAbsolutePosition();
+            }
+            else{
+                break;
+            }
+        }while (limit-- > 0);
+
+        double fxTicksTarget = degreesToEncUnits(cancoderDegrees);
+        double fxTicksNow = fxTicksBefore;
+        int loops = 0;
+        final double acceptableTickErr = 10;
+
+        while (Math.abs(fxTicksNow - fxTicksTarget) > acceptableTickErr && loops < 5) {
+            mSteerMotor.setSelectedSensorPosition(fxTicksTarget, 0, 0);
+            Timer.delay(.1);
+            fxTicksNow = mSteerMotor.getSelectedSensorPosition();
+            loops++;
+        }
+
+        System.out.println(mConstants.kName + " cancoder degrees: " + cancoderDegrees +
+                ",  fx encoder ticks (before, target, adjusted): (" + fxTicksBefore + "," + fxTicksTarget + ","
+                + fxTicksNow + ") loops:" + loops);
     }
 
     /**
