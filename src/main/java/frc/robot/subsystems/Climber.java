@@ -197,8 +197,10 @@ public class Climber extends Subsystem {
                         break;
                     case HOMING:
                         newState = handleHoming();
+                        break;
                     case MOVINGELEVATOR:
                         newState = handleMovingElevator();
+                        break;
                     case HOLDING:
                     default:
                         newState = handleHolding();
