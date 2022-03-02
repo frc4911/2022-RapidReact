@@ -284,8 +284,10 @@ public class Superstructure extends Subsystem {
         }
     }
 
+    // max voltage is 2.6 which is 100 PSI
+    // min voltage is 0.5 which is 0 PSI
     private double convertSensorToPSI(double sensorValue){
-        return 250.0 * (sensorValue / 5.0) - 25.0;
+        return sensorValue * ((100-0)/(2.6-.5)) - 24.3;
     }
 
     @Override
