@@ -312,9 +312,11 @@ public class Indexer extends Subsystem {
     public void outputTelemetry() {
         if (mPeriodicIO.schedDeltaDesired==0){
             mPeriodicIO.motorPosition = mFXIndexer.getSelectedSensorPosition();
+            mPeriodicIO.enterBeamBlocked = mAIEnterBeamBreak.getVoltage()<kBeamBreakThreshold;
             mPeriodicIO.exitBeamBlocked = mAIExitBeamBreak.getVoltage()<kBeamBreakThreshold;
         }
 
+        SmartDashboard.putBoolean("Indexer Enter Beam Blocked", mPeriodicIO.enterBeamBlocked);
         SmartDashboard.putBoolean("Indexer Exit Beam Blocked", mPeriodicIO.exitBeamBlocked);
         SmartDashboard.putNumber("Indexer Current", mFXIndexer.getStatorCurrent());
         SmartDashboard.putNumber("Indexer Position", mPeriodicIO.motorPosition);
