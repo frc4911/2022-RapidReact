@@ -5,6 +5,9 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
+import frc.robot.config.RobotConfiguration;
+import frc.robot.config.SwerveConfiguration;
+import frc.robot.constants.Constants;
 import libraries.cyberlib.trajectory.constraints.TrajectoryConstraint;
 import org.junit.jupiter.api.Test;
 
@@ -90,15 +93,8 @@ class TrajectoryGeneratorTest {
 
     @Test
     void testSwervePath() {
-        final double maxVelocity = feetToMeters(14.2);
-        final double maxAccel = feetToMeters(maxVelocity / 0.4);
-
-        final double kRobotWidth = inchesToMeters(30);
-        final double kRobotLength = inchesToMeters(30);
-        final double kRadius = Math.hypot(kRobotWidth / 2, kRobotLength / 2);
-
-        final double kAngularVelocity = Math.min(maxVelocity / kRadius, Math.toRadians(270));  // radians/s
-        final double kAngularAcceleration = kAngularVelocity / 0.4;
+        final RobotConfiguration mRobotConfiguration = RobotConfiguration.getRobotConfiguration(Constants.kRobot2022Name);
+        final SwerveConfiguration mSwerveConfiguration = mRobotConfiguration.getSwerveConfiguration();
 
         List<Pose2d> wayPoints = new ArrayList<>();
         wayPoints.add(new Pose2d(new Translation2d(0, 0), Rotation2d.fromDegrees(0)));
@@ -107,12 +103,61 @@ class TrajectoryGeneratorTest {
         wayPoints.add(new Pose2d(new Translation2d(Units.inchesToMeters(120), 0), Rotation2d.fromDegrees(0)));
         wayPoints.add(new Pose2d(new Translation2d(Units.inchesToMeters(150), Units.inchesToMeters(-10)), Rotation2d.fromDegrees(0)));
 
-        TrajectoryConfig config = new TrajectoryConfig(maxVelocity, maxAccel, kAngularVelocity, kAngularAcceleration)
-                .setReversed(false)
+        TrajectoryConfig config = new TrajectoryConfig(
+                mSwerveConfiguration.trajectoryConfig.getMaxVelocity(),
+                mSwerveConfiguration.trajectoryConfig.getMaxAcceleration(),
+                mSwerveConfiguration.trajectoryConfig.getMaxAngularVelocity(),
+                mSwerveConfiguration.trajectoryConfig.getMaxAngularAcceleration())
+                .setReversed(mSwerveConfiguration.trajectoryConfig.isReversed())
                 .addConstraints(new ArrayList<>());
 
         var trajectory = TrajectoryGenerator.generateTrajectory(wayPoints, config);
         System.out.println("Trajectory");
         System.out.println(trajectory.toString());
     }
+
+    @Test
+    void testStraightSwervePath() {
+        final RobotConfiguration mRobotConfiguration = RobotConfiguration.getRobotConfiguration(Constants.kRobot2022Name);
+        final SwerveConfiguration mSwerveConfiguration = mRobotConfiguration.getSwerveConfiguration();
+
+        List<Pose2d> wayPoints = new ArrayList<>();
+        wayPoints.add(new Pose2d(new Translation2d(0, 0), Rotation2d.fromDegrees(0)));
+        wayPoints.add(new Pose2d(new Translation2d(Units.inchesToMeters(50), Units.inchesToMeters(50)), Rotation2d.fromDegrees(0)));
+
+        TrajectoryConfig config = new TrajectoryConfig(
+                mSwerveConfiguration.trajectoryConfig.getMaxVelocity(),
+                mSwerveConfiguration.trajectoryConfig.getMaxAcceleration(),
+                mSwerveConfiguration.trajectoryConfig.getMaxAngularVelocity(),
+                mSwerveConfiguration.trajectoryConfig.getMaxAngularAcceleration())
+                .setReversed(mSwerveConfiguration.trajectoryConfig.isReversed())
+                .addConstraints(new ArrayList<>());
+
+        var trajectory = TrajectoryGenerator.generateTrajectory(wayPoints, config);
+        System.out.println("Trajectory");
+        System.out.println(trajectory.toString());
+    }
+
+    @Test
+    void testNinteyTurnSwervePath() {
+        final RobotConfiguration mRobotConfiguration = RobotConfiguration.getRobotConfiguration(Constants.kRobot2022Name);
+        final SwerveConfiguration mSwerveConfiguration = mRobotConfiguration.getSwerveConfiguration();
+
+        List<Pose2d> wayPoints = new ArrayList<>();
+        wayPoints.add(new Pose2d(new Translation2d(0, 0), Rotation2d.fromDegrees(0)));
+        wayPoints.add(new Pose2d(new Translation2d(Units.inchesToMeters(50), Units.inchesToMeters(50)), Rotation2d.fromDegrees(90)));
+
+        TrajectoryConfig config = new TrajectoryConfig(
+                mSwerveConfiguration.trajectoryConfig.getMaxVelocity(),
+                mSwerveConfiguration.trajectoryConfig.getMaxAcceleration(),
+                mSwerveConfiguration.trajectoryConfig.getMaxAngularVelocity(),
+                mSwerveConfiguration.trajectoryConfig.getMaxAngularAcceleration())
+                .setReversed(mSwerveConfiguration.trajectoryConfig.isReversed())
+                .addConstraints(new ArrayList<>());
+
+        var trajectory = TrajectoryGenerator.generateTrajectory(wayPoints, config);
+        System.out.println("Trajectory");
+        System.out.println(trajectory.toString());
+    }
+
 }
