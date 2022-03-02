@@ -128,7 +128,7 @@ public class TrajectoryGenerator {
             testTrajectory = new MirroredTrajectory(
                     getTestTrajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
             testTrajectoryBack = new MirroredTrajectory(
-                    getTestTrajectoryBack(TrajectoryConfig.fromTrajectoryConfig(config)));
+                    getTestTrajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
             twoBallAuto_toBallTrajectory = new MirroredTrajectory(
                     gettwoBallAuto_toBallTrajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
             twoBallAuto_toFenderTrajectory = new MirroredTrajectory(

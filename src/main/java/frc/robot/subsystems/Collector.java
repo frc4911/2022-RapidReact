@@ -64,7 +64,7 @@ public class Collector extends Subsystem {
     private PeriodicIO mPeriodicIO = new PeriodicIO();
     private LatchedBoolean mSystemStateChange = new LatchedBoolean();
     private SolenoidState mSolenoidState;
-    private boolean mRunCollectorLoop;
+    private double backingLoopCount;
 
     // Other
     private SubsystemManager mSubsystemManager;
@@ -117,7 +117,6 @@ public class Collector extends Subsystem {
             mSystemState = SystemState.HOLDING;
             mWantedState = WantedState.HOLD;
             mStateChanged = true;
-            mRunCollectorLoop = false;
             System.out.println(sClassName + " state " + mSystemState);
             // this subsystem is "on demand" so
             mPeriodicIO.schedDeltaDesired = 0;
@@ -178,36 +177,31 @@ public class Collector extends Subsystem {
     }
 
     private SystemState handleCollecting() {
-        updateCollector(kCollectSpeed);
-
+        if(mStateChanged) {
+            mPeriodicIO.solenoidDemand = SolenoidState.EXTEND;
+            mPeriodicIO.collectorDemand = kCollectSpeed;
+            mPeriodicIO.schedDeltaDesired = 0;
+        }
+        
         return defaultStateTransfer();
     }
 
     private SystemState handleBacking() {
         if (mStateChanged) {
+            mPeriodicIO.solenoidDemand = SolenoidState.EXTEND;
             mPeriodicIO.schedDeltaDesired = 20;
+            backingLoopCount = 100 / mPeriodicIO.schedDeltaDesired; // 100 is time (ms) to run collector forward
         }
 
-        mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
-        mRunCollectorLoop = true;
-        updateCollector(-kCollectSpeed);
+        // Run collector inward to deploy collector before backing
+        if(backingLoopCount-- <= 0) {
+            mPeriodicIO.collectorDemand = -kCollectSpeed;
+            mPeriodicIO.schedDeltaDesired = 0;
+        } else {
+            mPeriodicIO.collectorDemand = kCollectSpeed;
+        }
 
         return defaultStateTransfer();
-    }
-
-    private void updateCollector(double speed) {
-        // Run one loop after extending so wheels do not run while retracted
-        if (mRunCollectorLoop) {
-            mPeriodicIO.collectorDemand = speed;
-            mPeriodicIO.schedDeltaDesired = 0;
-            mRunCollectorLoop = false;
-        }
-        if (mStateChanged) {
-            mPeriodicIO.solenoidDemand = SolenoidState.EXTEND;
-            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta; // run one more time in 100 ms for collector
-                                                                            // startup
-            mRunCollectorLoop = true;
-        }
     }
 
     private SystemState defaultStateTransfer() {

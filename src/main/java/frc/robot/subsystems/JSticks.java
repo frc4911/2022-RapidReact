@@ -194,10 +194,6 @@ public class JSticks extends Subsystem {
         }
         mSuperstructure.setOpenLoopClimb(mPeriodicIO.op_LeftStickY_ClimberElevator, deploySlappyState);
 
-        if (mPeriodicIO.op_RightBumper_TempBugFix) {
-            mIndexer.resetBallCount();
-        }
-
         if (mPeriodicIO.op_BButton_StopShooter) {
             mShooter.stopFlywheel();
         }
@@ -210,6 +206,10 @@ public class JSticks extends Subsystem {
         if (mPeriodicIO.op_POV90_ManualShot_Tarmac) {
             mSuperstructure.setManualShootDistance(60);
             mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT, sClassName);
+        }
+
+        if (mPeriodicIO.op_POV0_ManualShot_Fender_Stop || mPeriodicIO.op_POV90_ManualShot_Tarmac_Stop) {
+            mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
         }
 
         if (mPeriodicIO.op_RightTrigger_Collect) {
@@ -279,28 +279,35 @@ public class JSticks extends Subsystem {
         mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
         mPeriodicIO.lastSchedStart = now;
 
+        //Driving
         mPeriodicIO.dr_LeftStickX_Translate = -mDriver.getRaw(Xbox.LEFT_STICK_X, mDeadBand);
         mPeriodicIO.dr_LeftStickY_Translate = -mDriver.getRaw(Xbox.LEFT_STICK_Y, mDeadBand);
         mPeriodicIO.dr_RightStickX_Rotate = -mDriver.getRaw(Xbox.RIGHT_STICK_X, mDeadBand);
         mPeriodicIO.dr_LeftTrigger_SlowSpeed = mDriver.getButton(Xbox.LEFT_TRIGGER, CW.PRESSED_LEVEL);
         mPeriodicIO.dr_RightBumper_RobotOrient = mDriver.getButton(Xbox.RIGHT_BUMPER, CW.PRESSED_LEVEL); // field/robot
-                                                                                                         // oriented
         mPeriodicIO.dr_YButton_ResetIMU = mDriver.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
 
+        //Climbing
         mPeriodicIO.op_LeftStickY_ClimberElevator = -mOperator.getRaw(Xbox.LEFT_STICK_Y, mDeadBand);
+        mPeriodicIO.op_XButton_RetractSlappySticks = mOperator.getButton(Xbox.X_BUTTON, CW.PRESSED_EDGE);
+        mPeriodicIO.op_YButton_ExtendSlappySticks = mOperator.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
+
+        //Collecting
         mPeriodicIO.op_RightTrigger_Collect = mOperator.getButton(Xbox.RIGHT_TRIGGER, CW.PRESSED_EDGE);
         mPeriodicIO.op_RightTrigger_Collect_Stop = mOperator.getButton(Xbox.RIGHT_TRIGGER, CW.RELEASED_EDGE);
 
         mPeriodicIO.op_LeftTrigger_Back = mOperator.getButton(Xbox.LEFT_TRIGGER, CW.PRESSED_EDGE);
         mPeriodicIO.op_LeftTrigger_Back_Stop = mOperator.getButton(Xbox.LEFT_TRIGGER, CW.RELEASED_EDGE);
 
-        mPeriodicIO.op_LeftBumper_LoadBall = mOperator.getButton(Xbox.LEFT_BUMPER, CW.PRESSED_EDGE);
-        mPeriodicIO.op_RightBumper_TempBugFix = mOperator.getButton(Xbox.RIGHT_BUMPER, CW.PRESSED_EDGE);
+        //Shooting
         mPeriodicIO.op_BButton_StopShooter = mOperator.getButton(Xbox.B_BUTTON, CW.PRESSED_EDGE);
-        mPeriodicIO.op_XButton_RetractSlappySticks = mOperator.getButton(Xbox.X_BUTTON, CW.PRESSED_EDGE);
-        mPeriodicIO.op_YButton_ExtendSlappySticks = mOperator.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
+
         mPeriodicIO.op_POV0_ManualShot_Fender = mOperator.getButton(Xbox.POV0_0, CW.PRESSED_EDGE);
         mPeriodicIO.op_POV90_ManualShot_Tarmac = mOperator.getButton(Xbox.POV0_90, CW.PRESSED_EDGE);
+
+        //Other
+        mPeriodicIO.op_LeftBumper_LoadBall = mOperator.getButton(Xbox.LEFT_BUMPER, CW.PRESSED_EDGE);
+        mPeriodicIO.op_RightBumper_TempBugFix = mOperator.getButton(Xbox.RIGHT_BUMPER, CW.PRESSED_EDGE);
     }
 
     private SystemState defaultStateTransfer() {
@@ -360,8 +367,11 @@ public class JSticks extends Subsystem {
         public boolean op_BButton_StopShooter = false;
         public boolean op_XButton_RetractSlappySticks = false;
         public boolean op_YButton_ExtendSlappySticks = false;
+
         public boolean op_POV0_ManualShot_Fender = false;
         public boolean op_POV90_ManualShot_Tarmac = false;
+        public boolean op_POV0_ManualShot_Fender_Stop = false;
+        public boolean op_POV90_ManualShot_Tarmac_Stop = false;
         public boolean op_ManualShoot = false; // Move to Pov once read
 
     }
