@@ -183,6 +183,11 @@ public class JSticks extends Subsystem {
             mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.OFF);
             mSwerve.zeroSensors(Constants.kRobotStartingPose);
         }
+
+        if (mPeriodicIO.dr_StartButton_ResetWheels){
+            mSwerve.convertCancoderToFX();
+        }
+        
         // END NEW SWERVE
 
         // CLIMBER CONTROL
@@ -294,6 +299,7 @@ public class JSticks extends Subsystem {
         mPeriodicIO.dr_RightBumper_RobotOrient = mDriver.getButton(Xbox.RIGHT_BUMPER, CW.PRESSED_LEVEL); // field/robot
         mPeriodicIO.dr_YButton_ResetIMU = mDriver.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.dr_AButton_ToggleDriveMode = mDriver.getButton(Xbox.A_BUTTON, CW.PRESSED_EDGE);
+        mPeriodicIO.dr_StartButton_ResetWheels = mDriver.getButton(Xbox.START_BUTTON, CW.PRESSED_EDGE);
 
         //Climbing
         mPeriodicIO.op_LeftStickY_ClimberElevator = -mOperator.getRaw(Xbox.LEFT_STICK_Y, mDeadBand);
@@ -363,6 +369,7 @@ public class JSticks extends Subsystem {
         public boolean dr_RightBumper_RobotOrient = false; // field/robot oriented
         public boolean dr_YButton_ResetIMU = false; // reset direction
         public boolean dr_AButton_ToggleDriveMode = false;
+        public boolean dr_StartButton_ResetWheels = false;
 
         public double op_LeftStickY_ClimberElevator;
         public boolean op_RightTrigger_Collect = false;

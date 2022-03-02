@@ -160,6 +160,10 @@ public class Swerve extends Subsystem {
         mModules.forEach((m) -> m.stop());
     }
 
+    public void convertCancoderToFX(){
+        mModules.forEach((m) -> m.convertCancoderToFX());
+    }
+
     @Override
     public synchronized void zeroSensors() {
         zeroSensors(Constants.kRobotStartingPose);

@@ -46,4 +46,8 @@ public class Ports {
     public static final int LEFT_CLIMBER  = 40;
     public static final int RIGHT_CLIMBER = 41;
     public static final int CLIMBER_STAGE = 1; //Solenoid
+
+    // Superstructure
+    public static final int PRESSURESENSOR = 2; //Analog Input
+
 }

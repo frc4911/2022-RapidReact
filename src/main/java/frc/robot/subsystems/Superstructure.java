@@ -19,8 +19,8 @@ public class Superstructure extends Subsystem {
     private Collector mCollector;
     private Shooter mShooter;
     private Climber mClimber;
-
-    private final AnalogInput mPressureSensor;
+  
+    private final AnalogInput mAIPressureSensor;
 
     // Superstructure States
     public enum SystemState {
@@ -83,7 +83,7 @@ public class Superstructure extends Subsystem {
         mCollector = Collector.getInstance(sClassName);
         mShooter = Shooter.getInstance(sClassName);
         mClimber = Climber.getInstance(sClassName);
-        mPressureSensor = new AnalogInput(Ports.PRESSURE_SENSOR);
+        mAIPressureSensor = new AnalogInput(Ports.PRESSURE_SENSOR);
     }
 
     @Override
@@ -289,9 +289,10 @@ public class Superstructure extends Subsystem {
     private double convertSensorToPSI(double sensorValue){
         return sensorValue * ((100-0)/(2.6-.5)) - 24.3;
     }
-
+  
     @Override
     public void writePeriodicOutputs() {
+        SmartDashboard.putNumber("Pressure Sensor", convertSensorToPSI(mAIPressureSensor.getVoltage()));
     }
 
     @Override
