@@ -39,5 +39,6 @@ public class SwerveTwistAction implements Action {
 
 	@Override
 	public void done() {
+		mSwerve.setTeleopInputs(0, 0, 0, false, false, false);
 	}
 }
