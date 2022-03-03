@@ -212,4 +212,57 @@ public class Pose2d implements IPose2d<Pose2d> {
     public Pose2d mirror() {
         return new Pose2d(new Translation2d(getTranslation().x(), -getTranslation().y()), getRotation().inverse());
     }
+
+
+    /**
+     * Transforms the pose by the given transformation and returns the new pose. See + operator for
+     * the matrix multiplication performed.
+     *
+     * @param other The transform to transform the pose by.
+     * @return The transformed pose.
+     */
+    public Pose2d transformBy(Transform2d other) {
+        return new Pose2d(
+                translation_.plus(other.getTranslation().rotateBy(rotation_)),
+                rotation_.plus(other.getRotation()));
+    }
+
+    /**
+     * Returns the other pose relative to the current pose.
+     *
+     * <p>This function can often be used for trajectory tracking or pose stabilization algorithms to
+     * get the error between the reference and the current pose.
+     *
+     * @param other The pose that is the origin of the new coordinate frame that the current pose will
+     *     be converted into.
+     * @return The current pose relative to the new origin pose.
+     */
+    public Pose2d relativeTo(Pose2d other) {
+        var transform = new Transform2d(other, this);
+        return new Pose2d(transform.getTranslation(), transform.getRotation());
+    }
+
+    /**
+     * Transforms the pose by the given transformation and returns the new transformed pose.
+     *
+     * <p>The matrix multiplication is as follows [x_new] [cos, -sin, 0][transform.x] [y_new] += [sin,
+     * cos, 0][transform.y] [t_new] [0, 0, 1][transform.t]
+     *
+     * @param other The transform to transform the pose by.
+     * @return The transformed pose.
+     */
+    public Pose2d plus(Transform2d other) {
+        return transformBy(other);
+    }
+
+    /**
+     * Returns the Transform2d that maps the one pose to another.
+     *
+     * @param other The initial pose of the transformation.
+     * @return The transform that maps the other pose to the current pose.
+     */
+    public Transform2d minus(Pose2d other) {
+        final var pose = this.relativeTo(other);
+        return new Transform2d(pose.getTranslation(), pose.getRotation());
+    }
 }
