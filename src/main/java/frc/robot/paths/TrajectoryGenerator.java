@@ -118,6 +118,8 @@ public class TrajectoryGenerator {
 
         public final MirroredTrajectory testTrajectory;
         public final MirroredTrajectory testTrajectoryBack;
+        public final MirroredTrajectory forwardTrajectory;
+        public final MirroredTrajectory backwardTrajectory;
         public final MirroredTrajectory twoBallAuto_toBallTrajectory;
         public final MirroredTrajectory twoBallAuto_toFenderTrajectory;
 
@@ -129,12 +131,30 @@ public class TrajectoryGenerator {
                     getTestTrajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
             testTrajectoryBack = new MirroredTrajectory(
                     getTestTrajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
+            forwardTrajectory = new MirroredTrajectory(
+                    getForwardTrajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
+            backwardTrajectory = new MirroredTrajectory(
+                    getBackwardTrajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
             twoBallAuto_toBallTrajectory = new MirroredTrajectory(
                     gettwoBallAuto_toBallTrajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
             twoBallAuto_toFenderTrajectory = new MirroredTrajectory(
                     gettwoBallAuto_toFenderTrajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
         }
 
+        private Trajectory<TimedState<Pose2dWithCurvature>> getForwardTrajectory(TrajectoryConfig config) {
+            List<Pose2d> waypoints = new ArrayList<>();
+            waypoints.add(new Pose2d(Translation2d.identity(), Rotation2d.fromDegrees(0)));
+            waypoints.add(new Pose2d(Units.inches_to_meters(100), Units.inches_to_meters(0), Rotation2d.fromDegrees(0)));
+            return generateTrajectory(waypoints, config);
+        }
+
+        private Trajectory<TimedState<Pose2dWithCurvature>> getBackwardTrajectory(TrajectoryConfig config) {
+            List<Pose2d> waypoints = new ArrayList<>();
+            waypoints.add(new Pose2d(Translation2d.identity(), Rotation2d.fromDegrees(180)));
+            waypoints.add(new Pose2d(Units.inches_to_meters(-100), Units.inches_to_meters(0), Rotation2d.fromDegrees(180)));
+            return generateTrajectory(waypoints, config);
+        }
+        
         private Trajectory<TimedState<Pose2dWithCurvature>> gettwoBallAuto_toBallTrajectory(TrajectoryConfig config) {
             List<Pose2d> waypoints = new ArrayList<>();
             waypoints.add(new Pose2d(Translation2d.identity(), Rotation2d.fromDegrees(180)));
