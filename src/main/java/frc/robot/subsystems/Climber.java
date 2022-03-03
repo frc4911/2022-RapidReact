@@ -1,8 +1,10 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix.motorcontrol.ControlFrame;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.StatorCurrentLimitConfiguration;
+import com.ctre.phoenix.motorcontrol.StatusFrame;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
@@ -25,8 +27,9 @@ public class Climber extends Subsystem {
 
     // Subsystem Constants
     private final double kClimberCurrentLimit = 60;
-    private final long kSlappySticksElevatorConflictLimit = 140000; // Max theory is 140k
-    private final long kElevatorMaxHeight = 162000; // Max theory is 165k
+    private final int kHomingZeroAdjustment = -1000; // Tick adjustment to accomodate physical overdriving on the elevator
+    private final int kSlappySticksElevatorConflictLimit = 140000; // Max theory is 140k
+    private final int kElevatorMaxHeight = 162000; // Max theory is 165k
 
     // Subsystem States
     public enum SolenoidState {
@@ -94,9 +97,9 @@ public class Climber extends Subsystem {
     // Homing is done by sending the Climber to a negative position
     // While watching for the climber encoder to stop changing for a sufficient
     // amount of time
-    private final double climberMovementThreshhold = 5; // encoder movements below this threshhold are considered
+    private final double climberMovementThreshhold = 50; // encoder movements below this threshhold are considered
                                                         // stopped
-    private final double climberNonMovementDuration = .25; // reading below threshhold encoder reads for this long is
+    private final double climberNonMovementDuration = .1; // reading below threshhold encoder reads for this long is
                                                            // considered stopped
     private final double climberHomingDemand = -0.1;
     private boolean climberHomed = false; // global flag
@@ -135,6 +138,12 @@ public class Climber extends Subsystem {
     }
 
     private void configMotors() {
+
+        // only one encoder is needed
+        mFXLeftClimber.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, 20, Constants.kLongCANTimeoutMs);
+
+        mFXLeftClimber.setControlFramePeriod(ControlFrame.Control_3_General, 18);
+        mFXRightClimber.setControlFramePeriod(ControlFrame.Control_3_General, 18);
 
         mFXLeftClimber.configForwardSoftLimitEnable(true, Constants.kLongCANTimeoutMs);
         mFXLeftClimber.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
@@ -252,7 +261,6 @@ public class Climber extends Subsystem {
             if (climberHomed) {
                 mPeriodicIO.climberDemand = mPeriodicIO.climberPosition;
                 mPeriodicIO.climberControlMode = ControlMode.Position;
-                mPeriodicIO.schedDeltaDesired = 0;
             } else {
                 mWantedState = WantedState.HOME;
                 wantedStateAfterHoming = WantedState.HOLD;
@@ -268,7 +276,7 @@ public class Climber extends Subsystem {
         if (mStateChanged) {
             climberHomed = false;
             climberNonMovementTimeout = now + climberNonMovementDuration;
-            // mPeriodicIO.climberDemand = climberHomingDemand;
+            mPeriodicIO.climberDemand = climberHomingDemand;
             mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
         }
 
@@ -276,19 +284,16 @@ public class Climber extends Subsystem {
         if (distance > climberMovementThreshhold) {
             climberNonMovementTimeout = now + climberNonMovementDuration;
         }
-        System.out.println("Climber Homing Now: distance " + distance);
+        //System.out.println("Climber Homing Now: distance " + distance);
         if (now > climberNonMovementTimeout) {
 
             System.out.println("Climber Homing Sequence Complete");
-            mFXRightClimber.setSelectedSensorPosition(0);
-            mFXLeftClimber.setSelectedSensorPosition(0);
+            mFXRightClimber.setSelectedSensorPosition(kHomingZeroAdjustment);
+            mFXLeftClimber.setSelectedSensorPosition(kHomingZeroAdjustment);
 
             // Set maximum climber height after homing
             mFXLeftClimber.configForwardSoftLimitThreshold(kElevatorMaxHeight, Constants.kLongCANTimeoutMs);
             mFXRightClimber.configForwardSoftLimitThreshold(kElevatorMaxHeight, Constants.kLongCANTimeoutMs);
-
-            mFXLeftClimber.configReverseSoftLimitThreshold(100, Constants.kLongCANTimeoutMs);
-            mFXRightClimber.configReverseSoftLimitThreshold(100, Constants.kLongCANTimeoutMs);
 
             climberHomed = true;
             mWantedState = wantedStateAfterHoming;
@@ -300,6 +305,7 @@ public class Climber extends Subsystem {
     private SystemState handleClimbing() {
         if(mStateChanged) {
             mPeriodicIO.climberControlMode = ControlMode.PercentOutput;
+            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
         }
         mPeriodicIO.climberDemand = climbSpeed;
 
@@ -449,7 +455,7 @@ public class Climber extends Subsystem {
 
     public static class PeriodicIO {
         // Logging
-        private final int mDefaultSchedDelta = 100; // axis updated every 100 msec
+        private final int mDefaultSchedDelta = 20; // axis updated every 20 msec
         private int schedDeltaDesired;
         public double schedDeltaActual;
         public double schedDuration;
