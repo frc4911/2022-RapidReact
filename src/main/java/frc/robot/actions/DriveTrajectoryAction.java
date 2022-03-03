@@ -29,7 +29,9 @@ public class DriveTrajectoryAction implements Action {
     public void start() {
         System.out.println("Starting trajectory! (length=" + mTrajectory.getRemainingProgress() + ")");
         if (mResetPose) {
-            RobotState.reset(Timer.getFPGATimestamp(), mTrajectory.getState().state().getPose());
+            var startPose = mTrajectory.getState().state().getPose();
+            RobotState.reset(Timer.getFPGATimestamp(), startPose);
+            mDrive.setRobotPosition(startPose);
         }
         mDrive.setTrajectory(mTrajectory);
     }
