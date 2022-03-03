@@ -19,8 +19,7 @@ public class ManualShootAction implements Action {
 
 	@Override
 	public boolean isFinished() {
-		//
-		return /* mIndexer.getBallCount() == 0 */ Timer.getFPGATimestamp() >= target;
+		return mSuperstructure.autoShootingComplete() || Timer.getFPGATimestamp() >= target;
 	}
 
 	@Override

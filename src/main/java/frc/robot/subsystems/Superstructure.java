@@ -284,6 +284,11 @@ public class Superstructure extends Subsystem {
         }
     }
 
+    // used in auto
+    public boolean autoShootingComplete() {
+        return mIndexer.feedingComplete();
+    }
+
     // max voltage is 2.6 which is 100 PSI
     // min voltage is 0.5 which is 0 PSI
     private double convertSensorToPSI(double sensorValue){
