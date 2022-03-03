@@ -318,7 +318,7 @@ public class Swerve extends Subsystem {
     }
 
     public Rotation2d getHeading() {
-        return mOdometry.getPose().getRotation(); //mPeriodicIO.gyro_heading;
+        return mOdometry.getPose().getRotation();
     }
 
     /**
@@ -605,7 +605,6 @@ public class Swerve extends Subsystem {
 
         // Inputs
         public Rotation2d gyro_heading = Rotation2d.identity();
-        public Rotation2d imu_yaw = Rotation2d.identity();
         public double forward;
         public double strafe;
         public double rotation;
