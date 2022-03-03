@@ -144,14 +144,14 @@ public class TrajectoryGenerator {
         private Trajectory<TimedState<Pose2dWithCurvature>> getForwardTrajectory(TrajectoryConfig config) {
             List<Pose2d> waypoints = new ArrayList<>();
             waypoints.add(new Pose2d(Translation2d.identity(), Rotation2d.fromDegrees(0)));
-            waypoints.add(new Pose2d(Units.inches_to_meters(100), Units.inches_to_meters(0), Rotation2d.fromDegrees(0)));
+            waypoints.add(new Pose2d(Units.inches_to_meters(110), Units.inches_to_meters(0), Rotation2d.fromDegrees(0)));
             return generateTrajectory(waypoints, config);
         }
 
         private Trajectory<TimedState<Pose2dWithCurvature>> getBackwardTrajectory(TrajectoryConfig config) {
             List<Pose2d> waypoints = new ArrayList<>();
             waypoints.add(new Pose2d(Translation2d.identity(), Rotation2d.fromDegrees(180)));
-            waypoints.add(new Pose2d(Units.inches_to_meters(-100), Units.inches_to_meters(0), Rotation2d.fromDegrees(180)));
+            waypoints.add(new Pose2d(Units.inches_to_meters(-110), Units.inches_to_meters(0), Rotation2d.fromDegrees(180)));
             return generateTrajectory(waypoints, config);
         }
         
