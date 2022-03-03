@@ -448,29 +448,29 @@ public class Climber extends Subsystem {
 
     @Override
     public void outputTelemetry() {
-        SmartDashboard.putNumber("Left Climber Encoder", mFXLeftClimber.getSelectedSensorPosition());
+        SmartDashboard.putNumber("Left Climber Encoder", mPeriodicIO.climberPosition);
         SmartDashboard.putNumber("Left Climb Current", mFXLeftClimber.getStatorCurrent());
         SmartDashboard.putNumber("Right Climb Current", mFXRightClimber.getStatorCurrent());
     }
 
     public static class PeriodicIO {
         // Logging
-        private final int mDefaultSchedDelta = 20; // axis updated every 20 msec
-        private int schedDeltaDesired;
+        public final int mDefaultSchedDelta = 20; // axis updated every 20 msec
+        public int schedDeltaDesired;
         public double schedDeltaActual;
         public double schedDuration;
-        private double lastSchedStart;
+        public double lastSchedStart;
 
         // Inputs
-        private double climberPosition;
+        public double climberPosition;
 
         // Outputs
-        private double climberDemand;
-        private ControlMode climberControlMode;
-        private SolenoidState slappyDemand;
+        public double climberDemand;
+        public ControlMode climberControlMode;
+        public SolenoidState slappyDemand;
 
         // Other
-        private double lastClimberPosition;
+        public double lastClimberPosition;
 
     }
 

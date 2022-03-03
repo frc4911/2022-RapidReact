@@ -462,10 +462,6 @@ public class Shooter extends Subsystem {
 
     @Override
     public void outputTelemetry() {
-        mPeriodicIO.hoodCurrent = mFXHood.getStatorCurrent();
-        mPeriodicIO.flyLeftCurrent = mFXLeftFlyWheel.getStatorCurrent();
-        mPeriodicIO.flyRightCurrent = mFXRightFlyWheel.getStatorCurrent();
-
         SmartDashboard.putNumber("Hood Position", mPeriodicIO.hoodPosition);
         SmartDashboard.putNumber("Flywheel Speed", mPeriodicIO.flywheelVelocity);
         SmartDashboard.putBoolean("Reached Desired Speed", mPeriodicIO.reachedDesiredSpeed);
@@ -474,36 +470,31 @@ public class Shooter extends Subsystem {
         // these next values are bypassing readPeriodicInputs to reduce the ctre errors
         // in
         // riolog
-        // SmartDashboard.putNumber("Flywheel Right Current",
-        // mPeriodicIO.flyRightCurrent);
-        // SmartDashboard.putNumber("Flywheel Left Current",
-        // mPeriodicIO.flyLeftCurrent);
-        // SmartDashboard.putNumber("Hood Current", mPeriodicIO.hoodCurrent);
+        SmartDashboard.putNumber("Flywheel Right Current", mFXRightFlyWheel.getStatorCurrent());
+        SmartDashboard.putNumber("Flywheel Left Current", mFXLeftFlyWheel.getStatorCurrent());
+        SmartDashboard.putNumber("Hood Current", mFXHood.getStatorCurrent());
     }
 
     public static class PeriodicIO {
         // Logging
-        private final int mDefaultSchedDelta = 20; // loop run every 20 msec
-        private int schedDeltaDesired;
+        public final int mDefaultSchedDelta = 20; // loop run every 20 msec
+        public int schedDeltaDesired;
         public double schedDeltaActual;
         public double schedDuration;
-        private double lastSchedStart;
+        public double lastSchedStart;
 
         // Inputs
-        private double flywheelVelocity;
-        private double hoodPosition;
-        private double hoodCurrent;
-        private double flyRightCurrent;
-        private double flyLeftCurrent;
+        public double flywheelVelocity;
+        public double hoodPosition;
 
         // Outputs
-        private double flywheelVelocityDemand;
-        private double hoodDemand;
+        public double flywheelVelocityDemand;
+        public double hoodDemand;
 
         // Other
-        private double lastHoodPosition;
-        private boolean reachedDesiredSpeed;
-        private boolean reachedDesiredHoodPosition;
+        public double lastHoodPosition;
+        public boolean reachedDesiredSpeed;
+        public boolean reachedDesiredHoodPosition;
     }
 
 }

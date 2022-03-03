@@ -462,11 +462,6 @@ public class SwerveDriveModule extends Subsystem {
         String values;
 
         if (telemetry) {
-            mPeriodicIO.steerCurrent = mSteerMotor.getStatorCurrent();
-            mPeriodicIO.driveCurrent = mDriveMotor.getStatorCurrent();
-            mPeriodicIO.steerFaults = mCheckFaults.getFaults(mSteerMotor);
-            mPeriodicIO.driveFaults = mCheckFaults.getFaults(mDriveMotor);
-
             values = "" + mPeriodicIO.steerPosition + "," +
                     mPeriodicIO.drivePosition + "," +
                     mPeriodicIO.steerControlMode + "," +
@@ -505,6 +500,13 @@ public class SwerveDriveModule extends Subsystem {
         mPeriodicIO.steerPosition = (int) mSteerMotor.getSelectedSensorPosition(0);
         mPeriodicIO.drivePosition = (int) mDriveMotor.getSelectedSensorPosition(0);
         mPeriodicIO.driveVelocity = mDriveMotor.getSelectedSensorVelocity(0);
+        mPeriodicIO.steerVelocity = mSteerMotor.getSelectedSensorVelocity(0);
+        mPeriodicIO.steerError = mSteerMotor.getClosedLoopError(0);
+
+        mPeriodicIO.steerCurrent = mSteerMotor.getStatorCurrent();
+        mPeriodicIO.driveCurrent = mDriveMotor.getStatorCurrent();
+        mPeriodicIO.steerFaults = mCheckFaults.getFaults(mSteerMotor);
+        mPeriodicIO.driveFaults = mCheckFaults.getFaults(mDriveMotor);
     }
 
     @Override
@@ -547,12 +549,12 @@ public class SwerveDriveModule extends Subsystem {
         // SmartDashboard.putNumber(mModuleName + ": Current",
         // mSteerMotor.getStatorCurrent());
         if (Constants.kDebuggingOutput) {
-            SmartDashboard.putNumber(mModuleName + "Pulse Width", mSteerMotor.getSelectedSensorPosition(0));
-            if (mSteerMotor.getControlMode() == ControlMode.MotionMagic)
-                SmartDashboard.putNumber(mModuleName + "Error", encUnitsToDegrees(mSteerMotor.getClosedLoopError(0)));
+            SmartDashboard.putNumber(mModuleName + "Pulse Width", mPeriodicIO.steerPosition);
+            if (mPeriodicIO.steerControlMode == ControlMode.MotionMagic)
+                SmartDashboard.putNumber(mModuleName + "Error", encUnitsToDegrees(mPeriodicIO.steerError));
             // SmartDashboard.putNumber(mModuleName + "X", position.x());
             // SmartDashboard.putNumber(mModuleName + "Y", position.y());
-            SmartDashboard.putNumber(mModuleName + "Steer Speed", mSteerMotor.getSelectedSensorVelocity(0));
+            SmartDashboard.putNumber(mModuleName + "Steer Speed", mPeriodicIO.steerVelocity);
         }
     }
 
@@ -561,9 +563,11 @@ public class SwerveDriveModule extends Subsystem {
         public int moduleID;
         public int steerPosition;
         public int drivePosition;
+        public double steerVelocity;
         public double driveVelocity;
         public double steerCurrent;
         public double driveCurrent;
+        public double steerError;
         public String steerFaults;
         public String driveFaults;
 

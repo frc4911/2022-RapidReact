@@ -540,6 +540,7 @@ public class Swerve extends Subsystem {
         mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
         mPeriodicIO.lastSchedStart = now;
         mPeriodicIO.gyro_heading = Rotation2d.fromDegrees(mIMU.getYaw().getDegrees()).rotateBy(mGyroOffset);
+        mPeriodicIO.gyroYPR = mIMU.getYPR();
 
         // read modules
         mModules.forEach((m) -> m.readPeriodicInputs());
@@ -587,7 +588,7 @@ public class Swerve extends Subsystem {
             SmartDashboard.putNumber("Swerve/Rotational Velocity rad/s",
                     mPeriodicIO.chassisSpeeds.omegaInRadiansPerSecond);
 
-            SmartDashboard.putNumberArray("Swerve/Pigeon YPR", mIMU.getYPR());
+            SmartDashboard.putNumberArray("Swerve/Pigeon YPR", mPeriodicIO.gyroYPR);
         }
     }
 
@@ -608,6 +609,7 @@ public class Swerve extends Subsystem {
 
         // Inputs
         public Rotation2d gyro_heading = Rotation2d.identity();
+        public double[] gyroYPR;
         public double forward;
         public double strafe;
         public double rotation;
