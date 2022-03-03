@@ -26,7 +26,6 @@ import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.util.Util;
 import libraries.cyberlib.kinematics.SwerveModuleState;
 import libraries.cyberlib.utils.Angles;
-import libraries.cyberlib.utils.CheckFaults;
 
 /**
  * Represents a swerve module consisting of a drive motor that controls the
@@ -52,10 +51,8 @@ public class SwerveDriveModule extends Subsystem {
     }
 
     String mModuleName;
-    private final CheckFaults mCheckFaults = new CheckFaults();
 
     private final boolean mLoggingEnabled = true; // used to disable logging for this subsystem only
-    private final CheckFaults mFaultChecker = new CheckFaults();
 
     // boolean tenVoltSteerMode = false;
     // private boolean standardCarpetDirection = true;
@@ -440,8 +437,6 @@ public class SwerveDriveModule extends Subsystem {
     @Override
     public String getLogHeaders() {
         if (mLoggingEnabled) {
-            mCheckFaults.clearFaults(mDriveMotor);
-            mCheckFaults.clearFaults(mSteerMotor);
             String shortName = mModuleName;
 
             return shortName + ".steerPosition," +
@@ -451,9 +446,7 @@ public class SwerveDriveModule extends Subsystem {
                     shortName + ".steerDemand," +
                     shortName + ".driveDemand," +
                     shortName + ".steerCurrent," +
-                    shortName + ".driveCurrent," +
-                    shortName + ".steerFaults," +
-                    shortName + ".driveFaults";
+                    shortName + ".driveCurrent";
         }
         return null;
     }
@@ -469,9 +462,7 @@ public class SwerveDriveModule extends Subsystem {
                     mPeriodicIO.steerDemand + "," +
                     mPeriodicIO.driveDemand + "," +
                     mPeriodicIO.steerCurrent + "," +
-                    mPeriodicIO.driveCurrent + "," +
-                    mPeriodicIO.steerFaults + "," +
-                    mPeriodicIO.driveFaults;
+                    mPeriodicIO.driveCurrent;
         } else {
             values = "" + mPeriodicIO.steerPosition + "," +
                     mPeriodicIO.drivePosition + "," +
@@ -480,9 +471,7 @@ public class SwerveDriveModule extends Subsystem {
                     mPeriodicIO.steerDemand + "," +
                     mPeriodicIO.driveDemand + "," +
                     /* periodicIO.steerCurrent+ */"," +
-                    /* periodicIO.driveCurrent+ */"," +
-                    /* mCheckFaults.getFXFaults(steerMotor)+ */","
-            /* mCheckFaults.getFXFaults(driveMotor) */;
+                    /* periodicIO.driveCurrent+ */",";
         }
         return values;
     }
@@ -505,8 +494,6 @@ public class SwerveDriveModule extends Subsystem {
 
         mPeriodicIO.steerCurrent = mSteerMotor.getStatorCurrent();
         mPeriodicIO.driveCurrent = mDriveMotor.getStatorCurrent();
-        mPeriodicIO.steerFaults = mCheckFaults.getFaults(mSteerMotor);
-        mPeriodicIO.driveFaults = mCheckFaults.getFaults(mDriveMotor);
     }
 
     @Override
@@ -568,8 +555,6 @@ public class SwerveDriveModule extends Subsystem {
         public double steerCurrent;
         public double driveCurrent;
         public double steerError;
-        public String steerFaults;
-        public String driveFaults;
 
         // Outputs are in units for the motor controller.
         public ControlMode steerControlMode = ControlMode.PercentOutput;
