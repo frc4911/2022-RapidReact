@@ -267,6 +267,7 @@ public class Shooter extends Subsystem {
 
     private SystemState handleDisabling() {
         if (mStateChanged) {
+            mPeriodicIO.schedDeltaDesired = 0;
             stop();
         }
 
