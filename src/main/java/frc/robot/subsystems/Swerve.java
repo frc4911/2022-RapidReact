@@ -450,6 +450,9 @@ public class Swerve extends Subsystem {
     /**
      * Zeroes the drive motors, and sets the robot's internal position and heading
      * to match that of the fed pose
+     *
+     * DO NOT use this to reset the IMU mid match. Use
+     * {@link #setRobotPosition(Pose2d)} for that purpose.
      */
     public synchronized void zeroSensors(Pose2d startingPose) {
         setRobotPosition(startingPose);
