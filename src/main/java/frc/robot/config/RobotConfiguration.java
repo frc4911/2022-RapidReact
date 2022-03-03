@@ -2,19 +2,18 @@ package frc.robot.config;
 
 import frc.robot.constants.Constants;
 import frc.robot.sensors.IMU.ImuType;
-import frc.robot.subsystems.SwerveDriveModule.SwerveModuleConstants;
 
 public interface RobotConfiguration {
 
     public SwerveConfiguration getSwerveConfiguration();
 
-    public SwerveModuleConstants getFrontRightModuleConstants();
+    public SwerveModuleConfiguration getFrontRightModuleConstants();
 
-    public SwerveModuleConstants getFrontLeftModuleConstants();
+    public SwerveModuleConfiguration getFrontLeftModuleConstants();
 
-    public SwerveModuleConstants getBackLeftModuleConstants();
+    public SwerveModuleConfiguration getBackLeftModuleConstants();
 
-    public SwerveModuleConstants getBackRightModuleConstants();
+    public SwerveModuleConfiguration getBackRightModuleConstants();
 
     public ImuType getImuType();
 
