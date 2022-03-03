@@ -6,7 +6,6 @@ import static frc.robot.constants.Constants.kMK2_WheelDiameter;
 import edu.wpi.first.math.util.Units;
 import frc.robot.constants.Ports;
 import frc.robot.sensors.IMU.ImuType;
-import frc.robot.subsystems.SwerveDriveModule.SwerveModuleConstants;
 
 // New Swerve requires SI units
 public class DeadEye implements RobotConfiguration {
@@ -33,8 +32,8 @@ public class DeadEye implements RobotConfiguration {
     }
 
     @Override
-    public SwerveModuleConstants getFrontRightModuleConstants() {
-        SwerveModuleConstants frontRightModuleConstants = new SwerveModuleConstants();
+    public SwerveModuleConfiguration getFrontRightModuleConstants() {
+        SwerveModuleConfiguration frontRightModuleConstants = new SwerveModuleConfiguration();
 
         frontRightModuleConstants.kName = "Front Right";
         frontRightModuleConstants.kDriveMotorTalonId = Ports.FRONT_RIGHT_DRIVE;
@@ -50,8 +49,8 @@ public class DeadEye implements RobotConfiguration {
     }
 
     @Override
-    public SwerveModuleConstants getFrontLeftModuleConstants() {
-        SwerveModuleConstants frontLeftModuleConstants = new SwerveModuleConstants();
+    public SwerveModuleConfiguration getFrontLeftModuleConstants() {
+        SwerveModuleConfiguration frontLeftModuleConstants = new SwerveModuleConfiguration();
 
         frontLeftModuleConstants.kName = "Front Left";
         frontLeftModuleConstants.kDriveMotorTalonId = Ports.FRONT_LEFT_DRIVE;
@@ -67,8 +66,8 @@ public class DeadEye implements RobotConfiguration {
     }
 
     @Override
-    public SwerveModuleConstants getBackLeftModuleConstants() {
-        SwerveModuleConstants backLeftModuleConstants = new SwerveModuleConstants();
+    public SwerveModuleConfiguration getBackLeftModuleConstants() {
+        SwerveModuleConfiguration backLeftModuleConstants = new SwerveModuleConfiguration();
 
         backLeftModuleConstants.kName = "Back Left";
         backLeftModuleConstants.kDriveMotorTalonId = Ports.BACK_LEFT_DRIVE;
@@ -84,8 +83,8 @@ public class DeadEye implements RobotConfiguration {
     }
 
     @Override
-    public SwerveModuleConstants getBackRightModuleConstants() {
-        SwerveModuleConstants backRightModuleConstants = new SwerveModuleConstants();
+    public SwerveModuleConfiguration getBackRightModuleConstants() {
+        SwerveModuleConfiguration backRightModuleConstants = new SwerveModuleConfiguration();
 
         backRightModuleConstants.kName = "Back Right";
         backRightModuleConstants.kDriveMotorTalonId = Ports.BACK_RIGHT_DRIVE;

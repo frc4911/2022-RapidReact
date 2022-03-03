@@ -6,7 +6,6 @@ import static frc.robot.constants.Constants.kMK2_WheelDiameter;
 import edu.wpi.first.math.util.Units;
 import frc.robot.constants.Ports;
 import frc.robot.sensors.IMU.ImuType;
-import frc.robot.subsystems.SwerveDriveModule.SwerveModuleConstants;
 
 // New Swerve requires SI units
 public class Junior implements RobotConfiguration {
@@ -38,8 +37,8 @@ public class Junior implements RobotConfiguration {
     }
 
     @Override
-    public SwerveModuleConstants getFrontRightModuleConstants() {
-        SwerveModuleConstants frontRightModuleConstants = new SwerveModuleConstants();
+    public SwerveModuleConfiguration getFrontRightModuleConstants() {
+        SwerveModuleConfiguration frontRightModuleConstants = new SwerveModuleConfiguration();
 
         frontRightModuleConstants.kName = "Front Right";
         frontRightModuleConstants.kModuleId = 0;
@@ -60,8 +59,8 @@ public class Junior implements RobotConfiguration {
     }
 
     @Override
-    public SwerveModuleConstants getFrontLeftModuleConstants() {
-        SwerveModuleConstants frontLeftModuleConstants = new SwerveModuleConstants();
+    public SwerveModuleConfiguration getFrontLeftModuleConstants() {
+        SwerveModuleConfiguration frontLeftModuleConstants = new SwerveModuleConfiguration();
 
         frontLeftModuleConstants.kName = "Front Left";
         frontLeftModuleConstants.kModuleId = 1;
@@ -82,8 +81,8 @@ public class Junior implements RobotConfiguration {
     }
 
     @Override
-    public SwerveModuleConstants getBackLeftModuleConstants() {
-        SwerveModuleConstants backLeftModuleConstants = new SwerveModuleConstants();
+    public SwerveModuleConfiguration getBackLeftModuleConstants() {
+        SwerveModuleConfiguration backLeftModuleConstants = new SwerveModuleConfiguration();
 
         backLeftModuleConstants.kName = "Back Left";
         backLeftModuleConstants.kModuleId = 2;
@@ -104,8 +103,8 @@ public class Junior implements RobotConfiguration {
     }
 
     @Override
-    public SwerveModuleConstants getBackRightModuleConstants() {
-        SwerveModuleConstants backRightModuleConstants = new SwerveModuleConstants();
+    public SwerveModuleConfiguration getBackRightModuleConstants() {
+        SwerveModuleConfiguration backRightModuleConstants = new SwerveModuleConfiguration();
 
         backRightModuleConstants.kName = "Back Right";
         backRightModuleConstants.kModuleId = 3;
