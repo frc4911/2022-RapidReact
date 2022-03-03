@@ -170,6 +170,7 @@ public class Collector extends Subsystem {
         if (mStateChanged) {
             mPeriodicIO.collectorDemand = 0.0;
             mPeriodicIO.solenoidDemand = SolenoidState.RETRACT;
+            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
         }
 
         return defaultStateTransfer();
@@ -179,7 +180,7 @@ public class Collector extends Subsystem {
         if(mStateChanged) {
             mPeriodicIO.solenoidDemand = SolenoidState.EXTEND;
             mPeriodicIO.collectorDemand = kCollectSpeed;
-            mPeriodicIO.schedDeltaDesired = 0;
+            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
         }
         
         return defaultStateTransfer();
