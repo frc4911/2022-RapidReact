@@ -7,7 +7,7 @@ public class OptimizationParameters {
     double rs = 0.0;
     double re = 0.0;
     double theta_elongation = 0.0;
-    double theta_lambda = 0.0;
+    public double theta_lambda = 0.0;
 
     public OptimizationParameters() {
         this(0.0, 0.0, 0.5, 0.0, 0.0, 1.0, 0.0);

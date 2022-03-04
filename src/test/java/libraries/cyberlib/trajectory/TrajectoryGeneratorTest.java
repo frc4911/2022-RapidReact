@@ -145,10 +145,11 @@ class TrajectoryGeneratorTest {
 
         List<Pose2d> wayPoints = new ArrayList<>();
         wayPoints.add(new Pose2d(new Translation2d(0, 0), Rotation2d.fromDegrees(0)));
-        wayPoints.add(new Pose2d(new Translation2d(Units.inchesToMeters(50), Units.inchesToMeters(50)), Rotation2d.fromDegrees(90)));
+        wayPoints.add(new Pose2d(new Translation2d(Units.inchesToMeters(50), Units.inchesToMeters(0)), Rotation2d.fromDegrees(0)));
 
         TrajectoryConfig config = new TrajectoryConfig(
                 mSwerveConfiguration.trajectoryConfig.getMaxVelocity(),
+//                Units.feetToMeters(14.2),
                 mSwerveConfiguration.trajectoryConfig.getMaxAcceleration(),
                 mSwerveConfiguration.trajectoryConfig.getMaxAngularVelocity(),
                 mSwerveConfiguration.trajectoryConfig.getMaxAngularAcceleration())

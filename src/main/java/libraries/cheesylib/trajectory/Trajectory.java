@@ -10,13 +10,13 @@ public class Trajectory<S extends State<S>> implements CSVWritable {
     protected final List<TrajectoryPoint<S>> points_;
     protected final IndexView index_view_ = new IndexView();
 
-    protected double default_velocity = 0.0;
-    public void setDefaultVelocity(double default_velocity){
-        this.default_velocity = default_velocity;
-    }
-    public double defaultVelocity(){
-        return default_velocity;
-    }
+//    protected double default_velocity = 0.0;
+//    public void setDefaultVelocity(double default_velocity){
+//        this.default_velocity = default_velocity;
+//    }
+//    public double defaultVelocity(){
+//        return default_velocity;
+//    }
 
     /**
      * Create an empty trajectory.

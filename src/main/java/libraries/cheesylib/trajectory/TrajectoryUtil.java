@@ -28,16 +28,16 @@ public class TrajectoryUtil {
         return new Trajectory<>(waypoints);
     }
 
-    public static <S extends IPose2d<S>> Trajectory<TimedState<S>> mirrorTimed(final Trajectory<TimedState<S>> trajectory, double defaultVelocity) {
-        List<TimedState<S>> waypoints = new ArrayList<>(trajectory.length());
-        for (int i = 0; i < trajectory.length(); ++i) {
-            TimedState<S> timed_state = trajectory.getState(i);
-            waypoints.add(new TimedState<S>(timed_state.state().mirror(), timed_state.t(), timed_state.velocity(), timed_state.acceleration()));
-        }
-       Trajectory<TimedState<S>> traj = new Trajectory<TimedState<S>>(waypoints);
-        traj.setDefaultVelocity(defaultVelocity);
-        return traj;
-    }
+//    public static <S extends IPose2d<S>> Trajectory<TimedState<S>> mirrorTimed(final Trajectory<TimedState<S>> trajectory, double defaultVelocity) {
+//        List<TimedState<S>> waypoints = new ArrayList<>(trajectory.length());
+//        for (int i = 0; i < trajectory.length(); ++i) {
+//            TimedState<S> timed_state = trajectory.getState(i);
+//            waypoints.add(new TimedState<S>(timed_state.state().mirror(), timed_state.t(), timed_state.velocity(), timed_state.acceleration()));
+//        }
+//       Trajectory<TimedState<S>> traj = new Trajectory<TimedState<S>>(waypoints);
+//        traj.setDefaultVelocity(defaultVelocity);
+//        return traj;
+//    }
 
 
     public static <S extends IPose2d<S>> Trajectory<S> transform(final Trajectory<S> trajectory, Pose2d transform) {

@@ -103,10 +103,10 @@ public final class Spline3DHelper {
             newWaypts[newWaypts.length - 1] = new Translation2d(xFinal[0], yFinal[0]);
 
             // Populate tridiagonal system for clamped cubic
-      /* See:
-      https://www.uio.no/studier/emner/matnat/ifi/nedlagte-emner/INF-MAT4350/h08
-      /undervisningsmateriale/chap7alecture.pdf
-      */
+            /* See:
+              https://www.uio.no/studier/emner/matnat/ifi/nedlagte-emner/INF-MAT4350/h08
+              /undervisningsmateriale/chap7alecture.pdf
+             */
             // Above-diagonal of tridiagonal matrix, zero-padded
             final double[] a = new double[newWaypts.length - 2];
 

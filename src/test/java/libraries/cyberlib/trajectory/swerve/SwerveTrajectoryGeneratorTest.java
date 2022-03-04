@@ -1,11 +1,17 @@
 package libraries.cyberlib.trajectory.swerve;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import frc.robot.config.RobotConfiguration;
+import frc.robot.config.SwerveConfiguration;
+import frc.robot.constants.Constants;
 import libraries.cheesylib.spline.QuinticHermiteSpline;
 import edu.wpi.first.math.util.Units;
 import libraries.cheesylib.geometry.Translation2d;
 import libraries.cyberlib.kinematics.SwerveDriveKinematics;
 import libraries.cyberlib.spline.QuinticHermiteSpline3D;
 import libraries.cyberlib.trajectory.TrajectoryConfig;
+import libraries.cyberlib.trajectory.TrajectoryGenerator;
 import libraries.cyberlib.trajectory.TrajectoryUtil;
 import libraries.cyberlib.trajectory.constraints.CentripetalAccelerationConstraint;
 import libraries.cyberlib.trajectory.constraints.SwerveDriveConstraint;
@@ -186,4 +192,46 @@ public class SwerveTrajectoryGeneratorTest {
         // End orientation
         assertEquals(endOrientation, splines.get(7).zFinalControlVector[0]);
     }
+
+    @Test
+    void testNinteyTurnSwervePath() {
+        final RobotConfiguration mRobotConfiguration = RobotConfiguration.getRobotConfiguration(Constants.kRobot2022Name);
+        final SwerveConfiguration mSwerveConfiguration = mRobotConfiguration.getSwerveConfiguration();
+
+        List<Translation2d> wayPoints = new ArrayList<>();
+        wayPoints.add(new Translation2d(0, 0));
+        wayPoints.add(new Translation2d(Units.inchesToMeters(50), 0));
+
+        TrajectoryConfig config = new TrajectoryConfig(
+                mSwerveConfiguration.trajectoryConfig.getMaxVelocity(),
+//                Units.feetToMeters(14.2),
+                mSwerveConfiguration.trajectoryConfig.getMaxAcceleration(),
+                Math.toRadians(270),
+                mSwerveConfiguration.trajectoryConfig.getMaxAngularAcceleration())
+                .setReversed(mSwerveConfiguration.trajectoryConfig.isReversed())
+                .addConstraints(new ArrayList<>());
+
+        var startOrientation = Math.toRadians(0.0);
+        var endOrientation = Math.toRadians(90.0);
+
+        List<SwerveTrajectoryGenerator.TrajectoryPoint> points = createTrajectoryPoints(wayPoints);
+
+        // Create an optimization parameter set per waypoint
+        List<OptimizationParameters> optParams = new ArrayList<>();
+        for (var i = 0; i < points.size(); i++) {
+            optParams.add(new OptimizationParameters());
+        }
+
+        optParams.get(0).theta_lambda=1.0;
+        optParams.get(1).theta_lambda=1.0;
+
+        var splines = generateSpline(points, startOrientation, endOrientation, optParams);
+//        var trajectory = SwerveTrajectoryGenerator.create_trajectory(
+//                wayPoints, startOrientation, endOrientation, config, splines);
+        var trajectory = TrajectoryGenerator.generateTrajectoryFromSplines(splines, config);
+
+        System.out.println("Trajectory");
+        System.out.println(trajectory.toString());
+    }
+
 }

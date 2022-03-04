@@ -6,13 +6,10 @@ import frc.robot.constants.Constants;
 import frc.robot.paths.TrajectoryGenerator;
 import libraries.cheesylib.geometry.Rotation2d;
 import libraries.cheesylib.trajectory.TrajectoryIterator;
-import libraries.cheesylib.util.Units;
 import libraries.cyberlib.kinematics.ChassisSpeeds;
 import libraries.cyberlib.kinematics.SwerveDriveKinematics;
 import libraries.cyberlib.kinematics.SwerveDriveOdometry;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class DriveMotionPlannerTest {
 
@@ -42,8 +39,8 @@ class DriveMotionPlannerTest {
 
         var trajectory = generator.getTrajectorySet().testTrajectory.left;
         var trajectoryTime = trajectory.getLastState().t();
-//        System.out.format("trajectoryTime: %f\n", trajectoryTime);
-//        System.out.println(trajectory.toString());
+        System.out.format("trajectoryTime: %f\n", trajectoryTime);
+        System.out.println(trajectory.toString());
 
         var planner = new DriveMotionPlanner();
         planner.setTrajectory(new TrajectoryIterator<>(trajectory.getIndexView()));

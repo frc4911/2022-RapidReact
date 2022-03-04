@@ -32,6 +32,16 @@ public class TrajectoryGenerator {
     private TrajectoryGenerator() {
     }
 
+    // CRITICAL POSES
+    // Origin is the center of the robot when the robot is placed against the middle of the alliance station wall.
+    // +x is towards the center of the field.
+    // +y is to the left.
+    // ALL POSES DEFINED FOR THE CASE THAT ROBOT STARTS ON LEFT! (mirrored about +x
+    // axis for RIGHT)
+
+    static final Pose2d autoStartingPose = new Pose2d(
+            Constants.kRobotLeftStartingPose.getTranslation().translateBy(new Translation2d(/*-0.5*/0.0, 0.0)),
+            Rotation2d.fromDegrees(-90.0));
     public void generateTrajectories(TrajectoryConfig config) {
         if (mTrajectorySet == null) {
             double startTime = Timer.getFPGATimestamp();
@@ -91,21 +101,11 @@ public class TrajectoryGenerator {
         return timed_trajectory;
     }
 
-    // CRITICAL POSES
-    // Origin is the center of the robot when the robot is placed against the middle of the alliance station wall.
-    // +x is towards the center of the field.
-    // +y is to the left.
-    // ALL POSES DEFINED FOR THE CASE THAT ROBOT STARTS ON LEFT! (mirrored about +x
-    // axis for RIGHT)
-    static final Pose2d autoStartingPose = new Pose2d(
-            Constants.kRobotLeftStartingPose.getTranslation().translateBy(new Translation2d(/*-0.5*/0.0, 0.0)),
-            Rotation2d.fromDegrees(-90.0));
-
     public class TrajectorySet {
         public class MirroredTrajectory {
             public MirroredTrajectory(Trajectory<TimedState<Pose2dWithCurvature>> left) {
                 this.left = left;
-                this.right = TrajectoryUtil.mirrorTimed(left, left.defaultVelocity());
+                this.right = TrajectoryUtil.mirrorTimed(left);
             }
 
             public Trajectory<TimedState<Pose2dWithCurvature>> get(boolean left) {

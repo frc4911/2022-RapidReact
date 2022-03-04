@@ -1,9 +1,17 @@
 package libraries.cheesylib.trajectory;
 
+import frc.robot.config.RobotConfiguration;
+import frc.robot.config.SwerveConfiguration;
+import frc.robot.constants.Constants;
+import frc.robot.paths.TrajectoryGenerator;
+import libraries.cheesylib.geometry.Pose2d;
+import libraries.cheesylib.geometry.Rotation2d;
 import libraries.cheesylib.geometry.Translation2d;
+import libraries.cheesylib.util.Units;
 import libraries.cheesylib.util.Util;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -72,5 +80,29 @@ public class TrajectoryTest {
         assertEquals(kWaypoints.get(0).interpolate(kWaypoints.get(1), .25), index_view.sample(0.25).state());
         assertEquals(kWaypoints.get(1).interpolate(kWaypoints.get(2), .5), index_view.sample(1.5).state());
         assertEquals(kWaypoints.get(2).interpolate(kWaypoints.get(3), .75), index_view.sample(2.75).state());
+    }
+
+    @Test
+    public void StraightLineTest() {
+        final RobotConfiguration mRobotConfiguration = RobotConfiguration.getRobotConfiguration(Constants.kRobot2022Name);
+        final SwerveConfiguration mSwerveConfiguration = mRobotConfiguration.getSwerveConfiguration();
+
+        var config = new TrajectoryConfig(
+//                mSwerveConfiguration.trajectoryConfig.getMaxVelocity(),
+                Units.feet_to_meters(14.2),
+                mSwerveConfiguration.trajectoryConfig.getMaxAcceleration(),
+                mSwerveConfiguration.trajectoryConfig.getMaxAngularVelocity(),
+                mSwerveConfiguration.trajectoryConfig.getMaxAngularAcceleration())
+                .setReversed(mSwerveConfiguration.trajectoryConfig.isReversed())
+                .addConstraints(new ArrayList<>());
+
+
+        List<Pose2d> waypoints = new ArrayList<>();
+        waypoints.add(new Pose2d(Translation2d.identity(), Rotation2d.fromDegrees(0)));
+        waypoints.add(new Pose2d(Units.inches_to_meters(50), Units.inches_to_meters(0), Rotation2d.fromDegrees(0)));
+        var trajectory = TrajectoryGenerator.generateTrajectory(waypoints, config);
+
+        System.out.println("Trajectory");
+        System.out.println(trajectory.toString());
     }
 }

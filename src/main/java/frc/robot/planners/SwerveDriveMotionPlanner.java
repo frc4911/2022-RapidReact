@@ -1,47 +1,49 @@
 package frc.robot.planners;
 
-import java.util.Optional;
-
 import frc.robot.config.RobotConfiguration;
 import frc.robot.config.SwerveConfiguration;
 import libraries.cheesylib.geometry.Pose2d;
-import libraries.cheesylib.geometry.Pose2dWithCurvature;
+import libraries.cheesylib.geometry.Rotation2d;
 import libraries.cheesylib.geometry.Translation2d;
-import libraries.cheesylib.trajectory.Trajectory;
-import libraries.cheesylib.trajectory.TrajectoryIterator;
-import libraries.cheesylib.trajectory.timing.TimedState;
 import libraries.cheesylib.util.CSVWritable;
 import libraries.cheesylib.util.Util;
-import libraries.cyberlib.control.HolonomicFeedforward;
-import libraries.cyberlib.control.HolonomicTrajectoryFollower;
-import libraries.cyberlib.control.PidGains;
-import libraries.cyberlib.control.SwerveDriveFeedforwardGains;
+import libraries.cyberlib.control.*;
 import libraries.cyberlib.kinematics.ChassisSpeeds;
+import libraries.cyberlib.spline.PoseWithCurvatureAndOrientation;
+import libraries.cyberlib.trajectory.Trajectory;
 import libraries.cyberlib.utils.HolonomicDriveSignal;
 import libraries.cyberlib.utils.RobotName;
 
+import java.util.Optional;
 
-
-public class DriveMotionPlanner implements CSVWritable {
-    private HolonomicTrajectoryFollower follower;
+public class SwerveDriveMotionPlanner implements CSVWritable {
+    private SwerveHolonomicTrajectoryFollower follower;
     private HolonomicDriveSignal driveSignal = null;
 
-    TrajectoryIterator<TimedState<Pose2dWithCurvature>> mCurrentTrajectory;
+    Trajectory mCurrentTrajectory;
 
-    public Trajectory<TimedState<Pose2dWithCurvature>> getTrajectory() {
-        return mCurrentTrajectory.trajectory();
+    public Trajectory getTrajectory() {
+        return mCurrentTrajectory;
     }
 
-    public double getRemainingProgress() {
-        if (mCurrentTrajectory != null) {
-            return mCurrentTrajectory.getRemainingProgress();
-        }
-        return 0.0;
-    }
+//    public double getRemainingProgress() {
+//        if (mCurrentTrajectory != null) {
+//            return mCurrentTrajectory.getRemainingProgress();
+//        }
+//        return 0.0;
+//    }
 
     boolean mIsReversed = false;
     double mLastTime = Double.POSITIVE_INFINITY;
-    public TimedState<Pose2dWithCurvature> mSetpoint = new TimedState<>(Pose2dWithCurvature.identity());
+    public Trajectory.State mSetpoint = new Trajectory.State(
+            0.0,
+            0.0,
+            0.0,
+            new edu.wpi.first.math.geometry.Pose2d(),
+            0.0,
+            0.0,
+            0.0,
+            0.0);
     Pose2d mError = Pose2d.identity();
     HolonomicDriveSignal mOutput = new HolonomicDriveSignal(Translation2d.identity(), 0.0, true);
     double currentTrajectoryLength = 0.0;
@@ -50,7 +52,7 @@ public class DriveMotionPlanner implements CSVWritable {
 
     public SwerveConfiguration mSwerveConfiguration;
 
-    public DriveMotionPlanner() {
+    public SwerveDriveMotionPlanner() {
         RobotConfiguration mRobotConfiguration = RobotConfiguration.getRobotConfiguration(RobotName.name);
         mSwerveConfiguration = mRobotConfiguration.getSwerveConfiguration();
         double transKP = .6;
@@ -121,7 +123,7 @@ public class DriveMotionPlanner implements CSVWritable {
         // 0.30764
         // )));
         System.out.println("applied----------------------------------------");
-        follower = new HolonomicTrajectoryFollower(
+        follower = new SwerveHolonomicTrajectoryFollower(
                 new PidGains(transKP, 0.0, transKD),
                 new PidGains(rotKP, 0.0, rotKD),
                 new HolonomicFeedforward(new SwerveDriveFeedforwardGains(
@@ -130,15 +132,15 @@ public class DriveMotionPlanner implements CSVWritable {
                         ff2)));
     }
 
-    public void setTrajectory(final TrajectoryIterator<TimedState<Pose2dWithCurvature>> trajectory) {
+    public void setTrajectory(final Trajectory trajectory) {
         mCurrentTrajectory = trajectory;
-        mSetpoint = trajectory.getState();
-        currentTrajectoryLength = trajectory.trajectory().getLastState().t();
-        for (int i = 0; i < trajectory.trajectory().length(); ++i) {
-            if (trajectory.trajectory().getState(i).velocity() > Util.kEpsilon) {
+        mSetpoint = trajectory.getStates().get(0);
+        currentTrajectoryLength = trajectory.getTotalTimeSeconds();
+        for (int i = 0; i < trajectory.getStates().size(); ++i) {
+            if (trajectory.getStates().get(i).velocityMetersPerSecond > Util.kEpsilon) {
                 mIsReversed = false;
                 break;
-            } else if (trajectory.trajectory().getState(i).velocity() < -Util.kEpsilon) {
+            } else if (trajectory.getStates().get(i).velocityMetersPerSecond < -Util.kEpsilon) {
                 mIsReversed = true;
                 break;
             }
@@ -166,24 +168,40 @@ public class DriveMotionPlanner implements CSVWritable {
             return null;
         }
 
-        if (mCurrentTrajectory.getProgress() == 0.0 && !Double.isFinite(mLastTime)) {
+        if (mCurrentTrajectory.getTotalTimeSeconds() == 0.0 && !Double.isFinite(mLastTime)) {
             mLastTime = timestamp;
         }
 
         mDt = timestamp - mLastTime;
         mLastTime = timestamp;
 
-        if (!mCurrentTrajectory.isDone()) {
+        if (mCurrentTrajectory.getTotalTimeSeconds() <= timestamp) {
             var velocity = new Translation2d(chassisSpeeds.vxInMetersPerSecond, chassisSpeeds.vyInMetersPerSecond);
 
-            Optional<HolonomicDriveSignal> trajectorySignal = follower.update(current_state,
+            // NOTE - Conversions between geometry systems is required until we switch completely to wpilib.
+            var current = new PoseWithCurvatureAndOrientation(
+                    new edu.wpi.first.math.geometry.Pose2d(
+                            new edu.wpi.first.math.geometry.Translation2d(
+                                    current_state.getTranslation().x(),
+                                    current_state.getTranslation().y()),
+                            new edu.wpi.first.math.geometry.Rotation2d(
+                                    current_state.getRotation().getRadians())),
+                    0.0,
+                    chassisSpeeds.omegaInRadiansPerSecond,
+                    0.0,
+                    0.0);
+            Optional<HolonomicDriveSignal> trajectorySignal = follower.update(current,
                     velocity,
                     chassisSpeeds.omegaInRadiansPerSecond,
                     mLastTime,
                     mDt);
 
             mSetpoint = follower.getLastState();
-            mError = current_state.inverse().transformBy(mSetpoint.state().getPose());
+            var setPointPose = new Pose2d(
+                    new Translation2d(mSetpoint.poseMeters.getX(), mSetpoint.poseMeters.getX()),
+                    Rotation2d.fromRadians(mSetpoint.poseMeters.getRotation().getRadians()));
+
+            mError = current_state.inverse().transformBy(setPointPose);
 
             if (trajectorySignal.isPresent()) {
                 driveSignal = trajectorySignal.get();
@@ -202,14 +220,14 @@ public class DriveMotionPlanner implements CSVWritable {
     }
 
     public boolean isDone() {
-        return mCurrentTrajectory != null && mCurrentTrajectory.isDone();
+        return mCurrentTrajectory != null && mCurrentTrajectory.getTotalTimeSeconds() <= mLastTime;
     }
 
     public Pose2d error() {
         return mError;
     }
 
-    public TimedState<Pose2dWithCurvature> setpoint() {
+    public Trajectory.State setpoint() {
         return mSetpoint;
     }
 }
