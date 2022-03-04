@@ -57,7 +57,6 @@ public class Superstructure extends Subsystem {
     private static String sClassName;
     private static int sInstanceCount;
     private static Superstructure sInstance = null;
-    private boolean actionHasStarted;
     private SubsystemManager mSubsystemManager;
 
     public static Superstructure getInstance(String caller) {
@@ -212,13 +211,18 @@ public class Superstructure extends Subsystem {
             // shooter must be in shoot state for readyToShoot to return true
             mShooter.setWantedState(Shooter.WantedState.SHOOT, sClassName);
             mPeriodicIO.schedDeltaDesired = mFastCycle; // Set aligned with shooter frequency
-            actionHasStarted = false;
         }
 
+        if (!mShooter.getWantedState().equals(Shooter.WantedState.HOMEHOOD) &&
+            !mShooter.getWantedState().equals(Shooter.WantedState.SHOOT)){
+            mShooter.setWantedState(Shooter.WantedState.SHOOT, sClassName);
+        }
         // now only do something if shooter is ready and we have not already started shooting
-        if (!actionHasStarted && mShooter.readyToShoot()) {
+        if (mShooter.readyToShoot()) {
             mIndexer.setWantedState(Indexer.WantedState.FEED, sClassName);
-            actionHasStarted = true;
+        }
+        else{
+            mIndexer.setWantedState(Indexer.WantedState.HOLD, sClassName);
         }
 
         // everything is put into hold when the state changes
@@ -272,6 +276,7 @@ public class Superstructure extends Subsystem {
     }
 
     public void setManualShootDistance(double distance) {
+        System.out.println("setManualShootDistance "+distance);
         mManualDistance = distance;
     }
 

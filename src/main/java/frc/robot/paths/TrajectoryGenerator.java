@@ -122,6 +122,9 @@ public class TrajectoryGenerator {
         public final MirroredTrajectory backwardTrajectory;
         public final MirroredTrajectory twoBallAuto_toBallTrajectory;
         public final MirroredTrajectory twoBallAuto_toFenderTrajectory;
+        public final MirroredTrajectory threeBallAuto0Trajectory;
+        public final MirroredTrajectory threeBallAuto1Trajectory;
+        public final MirroredTrajectory threeBallAuto2Trajectory;
 
 
         private TrajectorySet(TrajectoryConfig config) {
@@ -130,7 +133,7 @@ public class TrajectoryGenerator {
             testTrajectory = new MirroredTrajectory(
                     getTestTrajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
             testTrajectoryBack = new MirroredTrajectory(
-                    getTestTrajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
+                    getTestTrajectoryBack(TrajectoryConfig.fromTrajectoryConfig(config)));
             forwardTrajectory = new MirroredTrajectory(
                     getForwardTrajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
             backwardTrajectory = new MirroredTrajectory(
@@ -139,7 +142,13 @@ public class TrajectoryGenerator {
                     gettwoBallAuto_toBallTrajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
             twoBallAuto_toFenderTrajectory = new MirroredTrajectory(
                     gettwoBallAuto_toFenderTrajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
-        }
+            threeBallAuto0Trajectory = new MirroredTrajectory(
+                    getThreeBallAutoPhase0Trajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
+            threeBallAuto1Trajectory = new MirroredTrajectory(
+                    getThreeBallAutoPhase1Trajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
+            threeBallAuto2Trajectory = new MirroredTrajectory(
+                    getThreeBallAutoPhase2Trajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
+            }
 
         private Trajectory<TimedState<Pose2dWithCurvature>> getForwardTrajectory(TrajectoryConfig config) {
             List<Pose2d> waypoints = new ArrayList<>();
@@ -169,6 +178,29 @@ public class TrajectoryGenerator {
             return generateTrajectory(waypoints, config);
         }
 
+        private Trajectory<TimedState<Pose2dWithCurvature>> getThreeBallAutoPhase0Trajectory(TrajectoryConfig config) {
+            List<Pose2d> waypoints = new ArrayList<>();
+            waypoints.add(new Pose2d(Units.inches_to_meters(0), Units.inches_to_meters(0), Rotation2d.fromDegrees(180)));
+            waypoints.add(new Pose2d(Units.inches_to_meters(-86), Units.inches_to_meters(-27), Rotation2d.fromDegrees(180)));
+            return generateTrajectory(waypoints, config);
+        }
+
+        private Trajectory<TimedState<Pose2dWithCurvature>> getThreeBallAutoPhase1Trajectory(TrajectoryConfig config) {
+            List<Pose2d> waypoints = new ArrayList<>();
+            waypoints.add(new Pose2d(Units.inches_to_meters(-80), Units.inches_to_meters(-32), Rotation2d.fromDegrees(0)));
+            waypoints.add(new Pose2d(Units.inches_to_meters(-60), Units.inches_to_meters(98), Rotation2d.fromDegrees(180)));
+            return generateTrajectory(waypoints, config);
+        }
+
+        private Trajectory<TimedState<Pose2dWithCurvature>> getThreeBallAutoPhase2Trajectory(TrajectoryConfig config) {
+            List<Pose2d> waypoints = new ArrayList<>();
+            waypoints.add(new Pose2d(Units.inches_to_meters(-60), Units.inches_to_meters(98), Rotation2d.fromDegrees(180)));
+            waypoints.add(new Pose2d(Units.inches_to_meters(0), Units.inches_to_meters(0), Rotation2d.fromDegrees(0)));
+            return generateTrajectory(waypoints, config);
+        }
+
+
+        // TEST
         private Trajectory<TimedState<Pose2dWithCurvature>> getTestTrajectory(TrajectoryConfig config) {
             List<Pose2d> waypoints = new ArrayList<>();
             waypoints.add(new Pose2d(Translation2d.identity(), Rotation2d.fromDegrees(0)));

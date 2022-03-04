@@ -26,15 +26,15 @@ public class Shooter extends Subsystem {
 
     // Subsystem Constants
     private final double kMinShootDistance = 0; // Fender shot is 0
-    private final double kMaxShootDistance = 146; // Approximate distance from fender to launch pad (the shooter's
-                                                  // location in inches)
-    private final double kMinShootSpeed = 10600; // Ticks per 100Ms // TODO: Tune pid so actual flywheel is closer to
+    private final double kMaxShootDistance = 102; // Approximate distance of tarmac shot to fender (max wanted shot)
+                                                  // (the shooter's location in inches)
+    private final double kMinShootSpeed = 10920; // Ticks per 100Ms // TODO: Tune pid so actual flywheel is closer to
                                                  // this speed
-    private final double kMaxShootSpeed = 20500;
+    private final double kMaxShootSpeed = 12500;
     private final double kFlywheelSlope = (kMaxShootSpeed - kMinShootSpeed) / (kMaxShootDistance - kMinShootDistance);
 
-    private final double kMinHoodPosition = 3000; // Hood at lower hard stop
-    private final double kMaxHoodPosition = 27800; // Hood at max hard stop
+    private final double kMinHoodPosition = 3000; // Hood at wanted angle for fender shot
+    private final double kMaxHoodPosition = 22000; // Hood at wanted angle for tarmac shot
     private final double kHoodSlope = (kMaxHoodPosition - kMinHoodPosition) / (kMaxShootDistance - kMinShootDistance);
 
     // Configuration Constants
@@ -265,6 +265,11 @@ public class Shooter extends Subsystem {
         }
     }
 
+    public synchronized WantedState getWantedState() {
+        return mWantedState;
+    }
+  
+
     private SystemState handleDisabling() {
         if (mStateChanged) {
             mPeriodicIO.schedDeltaDesired = 0;
@@ -294,6 +299,7 @@ public class Shooter extends Subsystem {
             hoodEncoderOffset = mPeriodicIO.hoodPosition;
             hoodHomed = true;
             mWantedState = wantedStateAfterHoming;
+            System.out.println("homing is complete");
         }
 
         return defaultStateTransfer();

@@ -53,12 +53,12 @@ public class DriveMotionPlanner implements CSVWritable {
     public DriveMotionPlanner() {
         RobotConfiguration mRobotConfiguration = RobotConfiguration.getRobotConfiguration(RobotName.name);
         mSwerveConfiguration = mRobotConfiguration.getSwerveConfiguration();
-        double transKP = .6;
+        double transKP = 1.4;
         double transKD = 0.025;
         double rotKP = 0;
         double rotKD = 0;
-        double ff0 = 0.1;
-        double ff1 = 0.1;
+        double ff0 = 0.0;
+        double ff1 = 0.0;
         double ff2 = 0;
 
         // transKP = SmartDashboard.getNumber("transKP", -1);
