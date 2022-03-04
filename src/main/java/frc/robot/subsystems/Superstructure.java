@@ -213,6 +213,10 @@ public class Superstructure extends Subsystem {
             mPeriodicIO.schedDeltaDesired = mFastCycle; // Set aligned with shooter frequency
         }
 
+        if (!mShooter.getWantedState().equals(Shooter.WantedState.HOMEHOOD) &&
+            !mShooter.getWantedState().equals(Shooter.WantedState.SHOOT)){
+            mShooter.setWantedState(Shooter.WantedState.SHOOT, sClassName);
+        }
         // now only do something if shooter is ready and we have not already started shooting
         if (mShooter.readyToShoot()) {
             mIndexer.setWantedState(Indexer.WantedState.FEED, sClassName);

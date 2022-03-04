@@ -265,6 +265,11 @@ public class Shooter extends Subsystem {
         }
     }
 
+    public synchronized WantedState getWantedState() {
+        return mWantedState;
+    }
+  
+
     private SystemState handleDisabling() {
         if (mStateChanged) {
             mPeriodicIO.schedDeltaDesired = 0;
