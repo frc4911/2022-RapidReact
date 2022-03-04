@@ -52,8 +52,8 @@ public class Swerve extends Subsystem {
     private final SwerveDriveModule mBackRight;
 
     double lastUpdateTimestamp = 0;
-
-    int driveMode = 0;
+    double rotationPow = 2;
+    int driveMode = 2;
 
     // Swerve kinematics & odometry
     private final IMU mIMU;
@@ -111,6 +111,11 @@ public class Swerve extends Subsystem {
         mPeriodicIO.robotPose = mOdometry.getPose();
 
         mMotionPlanner = new DriveMotionPlanner();
+
+        // rotationPow = SmartDashboard.getNumber("Rotation Power", -1);
+        // if(rotationPow == -1) {
+        //     SmartDashboard.putNumber("Rotation Power", 0);
+        // }
     }
 
     @Override
@@ -225,11 +230,12 @@ public class Swerve extends Subsystem {
                 break;
             case 2:
                 // Inputs squared
+                // rotationPow = SmartDashboard.getNumber("Rotation Power", 1);
                 driveSignal = new HolonomicDriveSignal(
                         new Translation2d(
-                                Math.copySign(mPeriodicIO.forward * mPeriodicIO.forward, mPeriodicIO.forward),
-                                Math.copySign(mPeriodicIO.strafe * mPeriodicIO.strafe, mPeriodicIO.strafe)),
-                        Math.copySign(mPeriodicIO.rotation * mPeriodicIO.rotation, mPeriodicIO.rotation),
+                                Math.copySign(Math.pow(mPeriodicIO.forward, 2), mPeriodicIO.forward),
+                                Math.copySign(Math.pow(mPeriodicIO.strafe, 2), mPeriodicIO.strafe)),
+                        Math.copySign(Math.pow(mPeriodicIO.rotation, 2), mPeriodicIO.rotation),
                         mPeriodicIO.field_relative);
                 break;
             case 3:

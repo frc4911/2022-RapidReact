@@ -149,9 +149,10 @@ public class JSticks extends Subsystem {
         Superstructure.WantedState currentState = mSuperstructure.getWantedState();
         Superstructure.WantedState previousState = currentState;
 
-        if(mPeriodicIO.dr_AButton_ToggleDriveMode) {
-            mSwerve.toggleThroughDriveModes();
-        }
+        // disable for the competition
+        // if(mPeriodicIO.dr_AButton_ToggleDriveMode) {
+        //     mSwerve.toggleThroughDriveModes();
+        // }
 
         // All driver assist to raw inputs should be implemented Swerve#handleManual()
         double swerveYInput = mPeriodicIO.dr_LeftStickX_Translate;
@@ -223,12 +224,23 @@ public class JSticks extends Subsystem {
             mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT, sClassName);
         }
 
-        if (mPeriodicIO.op_POV90_ManualShot_Tarmac) {
+        if (mPeriodicIO.op_POV90_ManualShot_Ball) {
+            mSuperstructure.setManualShootDistance(36);
+            mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT, sClassName);
+        }
+
+        if (mPeriodicIO.op_POV180_ManualShot_Robot) {
             mSuperstructure.setManualShootDistance(60);
             mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT, sClassName);
         }
 
-        if (mPeriodicIO.op_POV0_ManualShot_Fender_Stop || mPeriodicIO.op_POV90_ManualShot_Tarmac_Stop) {
+        if (mPeriodicIO.op_POV270_ManualShot_Tarmac) {
+            mSuperstructure.setManualShootDistance(102);
+            mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT, sClassName);
+        }
+
+        if (mPeriodicIO.op_POV0_ManualShot_Fender_Stop || mPeriodicIO.op_POV90_ManualShot_Ball_Stop
+            || mPeriodicIO.op_POV180_ManualShot_Robot_Stop || mPeriodicIO.op_POV270_ManualShot_Tarmac_Stop) {
             mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
         }
 
@@ -318,7 +330,14 @@ public class JSticks extends Subsystem {
         mPeriodicIO.op_BButton_StopShooter = mOperator.getButton(Xbox.B_BUTTON, CW.PRESSED_EDGE);
 
         mPeriodicIO.op_POV0_ManualShot_Fender = mOperator.getButton(Xbox.POV0_0, CW.PRESSED_EDGE);
-        mPeriodicIO.op_POV90_ManualShot_Tarmac = mOperator.getButton(Xbox.POV0_90, CW.PRESSED_EDGE);
+        mPeriodicIO.op_POV90_ManualShot_Ball = mOperator.getButton(Xbox.POV0_90, CW.PRESSED_EDGE);
+        mPeriodicIO.op_POV180_ManualShot_Robot = mOperator.getButton(Xbox.POV0_180, CW.PRESSED_EDGE);
+        mPeriodicIO.op_POV270_ManualShot_Tarmac = mOperator.getButton(Xbox.POV0_270, CW.PRESSED_EDGE);
+
+        mPeriodicIO.op_POV0_ManualShot_Fender_Stop = mOperator.getButton(Xbox.POV0_0, CW.RELEASED_EDGE);
+        mPeriodicIO.op_POV90_ManualShot_Ball_Stop = mOperator.getButton(Xbox.POV0_90, CW.RELEASED_EDGE);
+        mPeriodicIO.op_POV180_ManualShot_Robot_Stop = mOperator.getButton(Xbox.POV0_180, CW.RELEASED_EDGE);
+        mPeriodicIO.op_POV270_ManualShot_Tarmac_Stop = mOperator.getButton(Xbox.POV0_270, CW.RELEASED_EDGE);
 
     }
 
@@ -382,10 +401,15 @@ public class JSticks extends Subsystem {
         public boolean op_RightBumper_ExtendSlappySticks = false;
 
         public boolean op_POV0_ManualShot_Fender = false;
-        public boolean op_POV90_ManualShot_Tarmac = false;
-        public boolean op_POV0_ManualShot_Fender_Stop = false;
-        public boolean op_POV90_ManualShot_Tarmac_Stop = false;
+        public boolean op_POV90_ManualShot_Ball = false;
+        public boolean op_POV180_ManualShot_Robot = false;
+        public boolean op_POV270_ManualShot_Tarmac = false;
         public boolean op_ManualShoot = false; // Move to Pov once read
+
+        public boolean op_POV0_ManualShot_Fender_Stop = false;
+        public boolean op_POV90_ManualShot_Ball_Stop = false;
+        public boolean op_POV180_ManualShot_Robot_Stop = false;
+        public boolean op_POV270_ManualShot_Tarmac_Stop = false;
 
     }
 }
