@@ -7,7 +7,7 @@ import frc.robot.paths.TrajectoryGenerator;
 import libraries.cheesylib.autos.AutoModeBase;
 import libraries.cheesylib.autos.AutoModeEndedException;
 
-public class TwoBallAutoMode extends AutoModeBase {
+public class TwoBallMode extends AutoModeBase {
     @Override
     protected void routine() throws AutoModeEndedException {
         runAction(new ManualShootAction(0,3));

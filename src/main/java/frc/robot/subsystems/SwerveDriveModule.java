@@ -18,6 +18,7 @@ import com.ctre.phoenix.sensors.SensorVelocityMeasPeriod;
 
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.config.SwerveModuleConfiguration;
 import frc.robot.constants.Constants;
 import libraries.cheesylib.drivers.TalonFXFactory;
 import libraries.cheesylib.geometry.Rotation2d;
@@ -53,95 +54,6 @@ public class SwerveDriveModule extends Subsystem {
     String mModuleName;
     private final CheckFaults mCheckFaults = new CheckFaults();
 
-    public static class SwerveModuleConstants {
-        public String kName = "Name";
-        public int kModuleId = -1;
-        public int kDriveMotorTalonId = -1;
-        public int kSteerMotorTalonId = -1;
-
-        // Default steer reduction is Mk4_L2i value
-        public double kSteerReduction = (14.0 / 50.0) * (10.0 / 60.0); // 1/21.43
-        public double kSteerTicksPerUnitDistance = (1.0 / 2048.0) * kSteerReduction * (2.0 * Math.PI);
-        public double kSteerTicksPerUnitVelocity = kSteerTicksPerUnitDistance * 10; // Motor controller unit is ticks
-                                                                                    // per 100 ms
-
-        // general Steer Motor
-        public boolean kInvertSteerMotor = false;
-        public boolean kInvertSteerMotorSensorPhase = true;
-        public NeutralMode kSteerMotorInitNeutralMode = NeutralMode.Coast; // neutral mode could change
-        public double kSteerMotorTicksPerRadian = (2048.0 / kSteerReduction) / (2.0 * Math.PI); // for steer motor
-        public double kSteerMotorTicksPerRadianPerSecond = kSteerMotorTicksPerRadian / 10; // for steer motor
-        public double kSteerMotorEncoderHomeOffset = 0;
-
-        // Steer CANCoder
-        public int kCANCoderId = -1;
-        public SensorInitializationStrategy kCANCoderSensorInitializationStrategy = SensorInitializationStrategy.BootToAbsolutePosition;
-        public int kCANCoderStatusFramePeriodVbatAndFaults = 255;
-        public int kCANCoderStatusFramePeriodSensorData = 255;
-        public double kCANCoderOffsetDegrees = 0.0;
-
-        // Steer Motor motion
-        public double kSteerMotorSlot0Kp = 0.4;
-        public double kSteerMotorSlot0Ki = 0.0;
-        public double kSteerMotorSlot0Kd = 0.0;
-        public double kSteerMotorSlot0Kf = 0.0;
-        public int kSteerMotorSlot0IZone = 25;
-        public int kSteerMotorSlot0CruiseVelocity = 1698;
-        public int kSteerMotorSlot0Acceleration = 20379; // 12 * kSteerMotorCruiseVelocity
-        public int kSteerMotorClosedLoopAllowableError = 5;
-
-        // Steer Motor current/voltage
-        public int kSteerMotorContinuousCurrentLimit = 20; // amps
-        public int kSteerMotorPeakCurrentLimit = 60; // amps
-        public int kSteerMotorPeakCurrentDuration = 200; // ms
-        public boolean kSteerMotorEnableCurrentLimit = false;
-        public double kSteerMotorMaxVoltage = 7.0; // volts
-        public boolean kSteerMotorEnableVoltageCompensation = false;
-        public int kSteerMotorVoltageMeasurementFilter = 8; // # of samples in rolling average
-
-        // Steer Motor measurement
-        public int kSteerMotorStatusFrame2UpdateRate = 10; // feedback for selected sensor, ms
-        public int kSteerMotorStatusFrame10UpdateRate = 10; // motion magic, ms
-        public SensorVelocityMeasPeriod kSteerMotorVelocityMeasurementPeriod = SensorVelocityMeasPeriod.Period_100Ms; // dt
-                                                                                                                      // for
-                                                                                                                      // velocity
-                                                                                                                      // measurements,
-                                                                                                                      // ms
-        public int kSteerMotorVelocityMeasurementWindow = 64; // # of samples in rolling average
-
-        // general drive
-        public boolean kInvertDrive = true;
-        public boolean kInvertDriveSensorPhase = false;
-        public NeutralMode kDriveInitNeutralMode = NeutralMode.Brake; // neutral mode could change
-        // Default wheel diameter and drive reduction to Mk4_L2i values which are in SI
-        // units
-        public double kWheelDiameter = 0.10033; // Probably should tune for each individual wheel maybe
-        public double kDriveReduction = (14.0 / 50.0) * (27.0 / 17.0) * (15.0 / 45.0);
-        public double kDriveTicksPerUnitDistance = (1.0 / 2048.0) * kDriveReduction * (Math.PI * kWheelDiameter);
-        public double kDriveTicksPerUnitVelocity = kDriveTicksPerUnitDistance * 10; // Motor controller unit is ticks
-                                                                                    // per 100 ms
-        public double kDriveDeadband = 0.01;
-
-        // drive current/voltage
-        public int kDriveContinuousCurrentLimit = 30; // amps
-        public int kDrivePeakCurrentLimit = 50; // amps
-        public int kDrivePeakCurrentDuration = 200; // ms
-        public boolean kDriveEnableCurrentLimit = false;
-        public double kDriveMaxVoltage = 12.0; // 10 //volts
-        public double kDriveNominalVoltage = 0.0; // volts
-        public int kDriveVoltageMeasurementFilter = 8; // # of samples in rolling average
-
-        // drive measurement
-        public int kDriveStatusFrame2UpdateRate = 15; // feedback for selected sensor, ms
-        public int kDriveStatusFrame10UpdateRate = 200; // motion magic, ms
-        public SensorVelocityMeasPeriod kDriveMotorVelocityMeasurementPeriod = SensorVelocityMeasPeriod.Period_100Ms; // dt
-                                                                                                                      // for
-                                                                                                                      // velocity
-                                                                                                                      // measurements,
-                                                                                                                      // ms
-        public int kDriveVelocityMeasurementWindow = 32; // # of samples in rolling average
-    }
-
     private final boolean mLoggingEnabled = true; // used to disable logging for this subsystem only
     private final CheckFaults mFaultChecker = new CheckFaults();
 
@@ -150,23 +62,23 @@ public class SwerveDriveModule extends Subsystem {
 
     private final PeriodicIO mPeriodicIO = new PeriodicIO();
     private ControlState mControlState = ControlState.NEUTRAL;
-    public final SwerveModuleConstants mConstants;
+    public final SwerveModuleConfiguration mConfig;
 
     private double mMaxSpeedInMetersPerSecond = 1.0;
 
-    public SwerveDriveModule(SwerveModuleConstants constants, double maxSpeedInMetersPerSecond) {
-        mConstants = constants;
+    public SwerveDriveModule(SwerveModuleConfiguration constants, double maxSpeedInMetersPerSecond) {
+        mConfig = constants;
         mMaxSpeedInMetersPerSecond = maxSpeedInMetersPerSecond;
-        mModuleName = String.format("%s %d", mConstants.kName, mConstants.kModuleId);
-        mPeriodicIO.moduleID = mConstants.kModuleId;
+        mModuleName = String.format("%s %d", mConfig.kName, mConfig.kModuleId);
+        mPeriodicIO.moduleID = mConfig.kModuleId;
 
-        System.out.println("SwerveDriveModule " + mModuleName + "," + mConstants.kSteerMotorSlot0Kp);
+        System.out.println("SwerveDriveModule " + mModuleName + "," + mConfig.kSteerMotorSlot0Kp);
 
-        mDriveMotor = TalonFXFactory.createDefaultTalon(mConstants.kDriveMotorTalonId);
-        mSteerMotor = TalonFXFactory.createDefaultTalon(mConstants.kSteerMotorTalonId);
+        mDriveMotor = TalonFXFactory.createDefaultTalon(mConfig.kDriveMotorTalonId);
+        mSteerMotor = TalonFXFactory.createDefaultTalon(mConfig.kSteerMotorTalonId);
 
         CANCoderConfiguration config = new CANCoderConfiguration();
-        config.initializationStrategy = mConstants.kCANCoderSensorInitializationStrategy;
+        config.initializationStrategy = mConfig.kCANCoderSensorInitializationStrategy;
         config.absoluteSensorRange = AbsoluteSensorRange.Unsigned_0_to_360;
         config.magnetOffsetDegrees = constants.kCANCoderOffsetDegrees;
         config.sensorDirection = false; // TODO - Make cancoder direction configurable through robot config files
@@ -175,8 +87,8 @@ public class SwerveDriveModule extends Subsystem {
         mCANCoder.configAllSettings(config, Constants.kLongCANTimeoutMs);
 
         mCANCoder.setStatusFramePeriod(CANCoderStatusFrame.VbatAndFaults,
-                mConstants.kCANCoderStatusFramePeriodVbatAndFaults);
-        mCANCoder.setStatusFramePeriod(CANCoderStatusFrame.SensorData, mConstants.kCANCoderStatusFramePeriodSensorData);
+                mConfig.kCANCoderStatusFramePeriodVbatAndFaults);
+        mCANCoder.setStatusFramePeriod(CANCoderStatusFrame.SensorData, mConfig.kCANCoderStatusFramePeriodSensorData);
 
         configureMotors();
     }
@@ -186,60 +98,30 @@ public class SwerveDriveModule extends Subsystem {
      */
     private void configureMotors() {
         mSteerMotor.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor, 0, Constants.kLongCANTimeoutMs);
-        mSteerMotor.setSensorPhase(mConstants.kInvertSteerMotorSensorPhase);
-        mSteerMotor.setInverted(mConstants.kInvertSteerMotor);
+        mSteerMotor.setSensorPhase(mConfig.kInvertSteerMotorSensorPhase);
+        mSteerMotor.setInverted(mConfig.kInvertSteerMotor);
         mSteerMotor.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
         mSteerMotor.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
 
-        // multiple (usually 2) sets were needed to set new encoder value
-        double fxTicksBefore = mSteerMotor.getSelectedSensorPosition();
-        double cancoderDegrees = mCANCoder.getAbsolutePosition();
-        int limit = 5;
-        do{
-            if (mCANCoder.getLastError() != ErrorCode.OK) {
-                System.out.println("error reading cancoder. Trying again!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! value read was "
-                        + cancoderDegrees);
-                Timer.delay(.1);
-                cancoderDegrees = mCANCoder.getAbsolutePosition();
-            }
-            else{
-                break;
-            }
-        }while (limit-- > 0);
-
-        double fxTicksTarget = degreesToEncUnits(cancoderDegrees);
-        double fxTicksNow = fxTicksBefore;
-        int loops = 0;
-        final double acceptableTickErr = 10;
-
-        while (Math.abs(fxTicksNow - fxTicksTarget) > acceptableTickErr && loops < 5) {
-            mSteerMotor.setSelectedSensorPosition(fxTicksTarget, 0, 0);
-            Timer.delay(.1);
-            fxTicksNow = mSteerMotor.getSelectedSensorPosition();
-            loops++;
-        }
-
-        System.out.println(mConstants.kName + " cancoder degrees: " + cancoderDegrees +
-                ",  fx encoder ticks (before, target, adjusted): (" + fxTicksBefore + "," + fxTicksTarget + ","
-                + fxTicksNow + ") loops:" + loops);
-
-        mSteerMotor.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, mConstants.kSteerMotorStatusFrame2UpdateRate,
+        convertCancoderToFX();
+        
+        mSteerMotor.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, mConfig.kSteerMotorStatusFrame2UpdateRate,
                 Constants.kLongCANTimeoutMs);
         mSteerMotor.setStatusFramePeriod(StatusFrame.Status_10_MotionMagic,
-                mConstants.kSteerMotorStatusFrame10UpdateRate, Constants.kLongCANTimeoutMs);
-        mSteerMotor.setNeutralMode(mConstants.kSteerMotorInitNeutralMode);
-        mSteerMotor.configNominalOutputForward(mConstants.kDriveNominalVoltage, Constants.kLongCANTimeoutMs);
+                mConfig.kSteerMotorStatusFrame10UpdateRate, Constants.kLongCANTimeoutMs);
+        mSteerMotor.setNeutralMode(mConfig.kSteerMotorInitNeutralMode);
+        mSteerMotor.configNominalOutputForward(mConfig.kDriveNominalVoltage, Constants.kLongCANTimeoutMs);
         mSteerMotor.configNominalOutputReverse(0.0, Constants.kLongCANTimeoutMs);
         mSteerMotor.configVoltageCompSaturation(0.0, Constants.kLongCANTimeoutMs);
-        mSteerMotor.enableVoltageCompensation(mConstants.kSteerMotorEnableVoltageCompensation);
-        mSteerMotor.configAllowableClosedloopError(0, mConstants.kSteerMotorClosedLoopAllowableError,
+        mSteerMotor.enableVoltageCompensation(mConfig.kSteerMotorEnableVoltageCompensation);
+        mSteerMotor.configAllowableClosedloopError(0, mConfig.kSteerMotorClosedLoopAllowableError,
                 Constants.kLongCANTimeoutMs);
 
-        if (mConstants.kSteerMotorEnableCurrentLimit) {
+        if (mConfig.kSteerMotorEnableCurrentLimit) {
             var supplyCurrLimit = new SupplyCurrentLimitConfiguration();
-            supplyCurrLimit.currentLimit = mConstants.kSteerMotorContinuousCurrentLimit;
-            supplyCurrLimit.triggerThresholdCurrent = mConstants.kSteerMotorPeakCurrentLimit;
-            supplyCurrLimit.triggerThresholdTime = mConstants.kSteerMotorPeakCurrentDuration;
+            supplyCurrLimit.currentLimit = mConfig.kSteerMotorContinuousCurrentLimit;
+            supplyCurrLimit.triggerThresholdCurrent = mConfig.kSteerMotorPeakCurrentLimit;
+            supplyCurrLimit.triggerThresholdTime = mConfig.kSteerMotorPeakCurrentDuration;
             supplyCurrLimit.enable = true;
 
             mSteerMotor.configGetSupplyCurrentLimit(supplyCurrLimit, Constants.kLongCANTimeoutMs);
@@ -248,22 +130,22 @@ public class SwerveDriveModule extends Subsystem {
         // StatorCurrentLimitConfiguration(true, 30, 30, 0));
 
         // TODO: Set these correctly
-        mSteerMotor.configMotionAcceleration(0.9 * mConstants.kSteerTicksPerUnitVelocity * 0.25,
+        mSteerMotor.configMotionAcceleration(0.9 * mConfig.kSteerTicksPerUnitVelocity * 0.25,
                 Constants.kLongCANTimeoutMs);
-        mSteerMotor.configMotionCruiseVelocity(0.9 * mConstants.kSteerTicksPerUnitVelocity,
+        mSteerMotor.configMotionCruiseVelocity(0.9 * mConfig.kSteerTicksPerUnitVelocity,
                 Constants.kLongCANTimeoutMs);
-        mSteerMotor.configVelocityMeasurementPeriod(mConstants.kSteerMotorVelocityMeasurementPeriod,
+        mSteerMotor.configVelocityMeasurementPeriod(mConfig.kSteerMotorVelocityMeasurementPeriod,
                 Constants.kLongCANTimeoutMs);
-        mSteerMotor.configVelocityMeasurementWindow(mConstants.kSteerMotorVelocityMeasurementWindow,
+        mSteerMotor.configVelocityMeasurementWindow(mConfig.kSteerMotorVelocityMeasurementWindow,
                 Constants.kLongCANTimeoutMs);
         mSteerMotor.selectProfileSlot(0, 0);
 
         // Slot 0 is for normal use (tuned for fx integrated encoder)
-        mSteerMotor.config_kP(0, mConstants.kSteerMotorSlot0Kp, Constants.kLongCANTimeoutMs);
-        mSteerMotor.config_kI(0, mConstants.kSteerMotorSlot0Ki, Constants.kLongCANTimeoutMs);
-        mSteerMotor.config_kD(0, mConstants.kSteerMotorSlot0Kd, Constants.kLongCANTimeoutMs);
-        mSteerMotor.config_kF(0, mConstants.kSteerMotorSlot0Kf, Constants.kLongCANTimeoutMs);
-        mSteerMotor.config_IntegralZone(0, mConstants.kSteerMotorSlot0IZone, Constants.kLongCANTimeoutMs);
+        mSteerMotor.config_kP(0, mConfig.kSteerMotorSlot0Kp, Constants.kLongCANTimeoutMs);
+        mSteerMotor.config_kI(0, mConfig.kSteerMotorSlot0Ki, Constants.kLongCANTimeoutMs);
+        mSteerMotor.config_kD(0, mConfig.kSteerMotorSlot0Kd, Constants.kLongCANTimeoutMs);
+        mSteerMotor.config_kF(0, mConfig.kSteerMotorSlot0Kf, Constants.kLongCANTimeoutMs);
+        mSteerMotor.config_IntegralZone(0, mConfig.kSteerMotorSlot0IZone, Constants.kLongCANTimeoutMs);
 
         // TODO: Pass in and tune these Motion Magic settings.
         // mSteerMotor.configMotionCruiseVelocity(Constants.kSwerveDriveMaxSpeed*0.9,
@@ -297,30 +179,30 @@ public class SwerveDriveModule extends Subsystem {
         mDriveMotor.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor, 0, Constants.kLongCANTimeoutMs);
         mDriveMotor.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
         mDriveMotor.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
-        mDriveMotor.configVelocityMeasurementPeriod(mConstants.kDriveMotorVelocityMeasurementPeriod,
+        mDriveMotor.configVelocityMeasurementPeriod(mConfig.kDriveMotorVelocityMeasurementPeriod,
                 Constants.kLongCANTimeoutMs);
-        mDriveMotor.configVelocityMeasurementWindow(mConstants.kDriveVelocityMeasurementWindow,
+        mDriveMotor.configVelocityMeasurementWindow(mConfig.kDriveVelocityMeasurementWindow,
                 Constants.kLongCANTimeoutMs);
         mDriveMotor.configNominalOutputForward(0.0, Constants.kLongCANTimeoutMs);
         mDriveMotor.configNominalOutputReverse(0.0, Constants.kLongCANTimeoutMs);
-        mDriveMotor.configVoltageCompSaturation(mConstants.kDriveMaxVoltage, Constants.kLongCANTimeoutMs);
+        mDriveMotor.configVoltageCompSaturation(mConfig.kDriveMaxVoltage, Constants.kLongCANTimeoutMs);
         mDriveMotor.enableVoltageCompensation(true);
         mDriveMotor.setControlFramePeriod(ControlFrame.Control_3_General, 18); // Need this to prevent clicking sounds
-        mDriveMotor.setInverted(mConstants.kInvertDrive);
-        mDriveMotor.setNeutralMode(mConstants.kDriveInitNeutralMode);
+        mDriveMotor.setInverted(mConfig.kInvertDrive);
+        mDriveMotor.setNeutralMode(mConfig.kDriveInitNeutralMode);
         mDriveMotor.setSelectedSensorPosition(0, 0, Constants.kLongCANTimeoutMs);
-        mDriveMotor.setSensorPhase(mConstants.kInvertDriveSensorPhase);
-        mDriveMotor.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, mConstants.kDriveStatusFrame2UpdateRate,
+        mDriveMotor.setSensorPhase(mConfig.kInvertDriveSensorPhase);
+        mDriveMotor.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, mConfig.kDriveStatusFrame2UpdateRate,
                 Constants.kLongCANTimeoutMs);
         mDriveMotor.configOpenloopRamp(0.3, Constants.kLongCANTimeoutMs); // Increase if swerve acceleration is too fast
         mDriveMotor.configClosedloopRamp(0.0);
         mDriveMotor.configAllowableClosedloopError(0, 0, Constants.kLongCANTimeoutMs);
 
-        if (mConstants.kDriveEnableCurrentLimit) {
+        if (mConfig.kDriveEnableCurrentLimit) {
             var supplyCurrLimit = new SupplyCurrentLimitConfiguration();
-            supplyCurrLimit.currentLimit = mConstants.kDriveContinuousCurrentLimit;
-            supplyCurrLimit.triggerThresholdCurrent = mConstants.kDrivePeakCurrentLimit;
-            supplyCurrLimit.triggerThresholdTime = mConstants.kDrivePeakCurrentDuration;
+            supplyCurrLimit.currentLimit = mConfig.kDriveContinuousCurrentLimit;
+            supplyCurrLimit.triggerThresholdCurrent = mConfig.kDrivePeakCurrentLimit;
+            supplyCurrLimit.triggerThresholdTime = mConfig.kDrivePeakCurrentDuration;
             supplyCurrLimit.enable = true;
 
             mDriveMotor.configGetSupplyCurrentLimit(supplyCurrLimit, Constants.kLongCANTimeoutMs);
@@ -353,6 +235,40 @@ public class SwerveDriveModule extends Subsystem {
         // false);
         // hasEmergency = true;
         // }
+    }
+
+    protected void convertCancoderToFX(){
+        // multiple (usually 2) sets were needed to set new encoder value
+        double fxTicksBefore = mSteerMotor.getSelectedSensorPosition();
+        double cancoderDegrees = mCANCoder.getAbsolutePosition();
+        int limit = 5;
+        do{
+            if (mCANCoder.getLastError() != ErrorCode.OK) {
+                System.out.println("error reading cancoder. Trying again!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! value read was "
+                        + cancoderDegrees);
+                Timer.delay(.1);
+                cancoderDegrees = mCANCoder.getAbsolutePosition();
+            }
+            else{
+                break;
+            }
+        }while (limit-- > 0);
+
+        double fxTicksTarget = degreesToEncUnits(cancoderDegrees);
+        double fxTicksNow = fxTicksBefore;
+        int loops = 0;
+        final double acceptableTickErr = 10;
+
+        while (Math.abs(fxTicksNow - fxTicksTarget) > acceptableTickErr && loops < 5) {
+            mSteerMotor.setSelectedSensorPosition(fxTicksTarget, 0, 0);
+            Timer.delay(.1);
+            fxTicksNow = mSteerMotor.getSelectedSensorPosition();
+            loops++;
+        }
+
+        System.out.println(mConfig.kName + " cancoder degrees: " + cancoderDegrees +
+                ",  fx encoder ticks (before, target, adjusted): (" + fxTicksBefore + "," + fxTicksTarget + ","
+                + fxTicksNow + ") loops:" + loops);
     }
 
     /**
@@ -451,11 +367,11 @@ public class SwerveDriveModule extends Subsystem {
 
     // Steer motor
     private double encoderUnitsToRadians(double encUnits) {
-        return encUnits / mConstants.kSteerMotorTicksPerRadian;
+        return encUnits / mConfig.kSteerMotorTicksPerRadian;
     }
 
     private double radiansToEncoderUnits(double radians) {
-        return radians * mConstants.kSteerMotorTicksPerRadian;
+        return radians * mConfig.kSteerMotorTicksPerRadian;
     }
 
     private int degreesToEncUnits(double degrees) {
@@ -468,15 +384,15 @@ public class SwerveDriveModule extends Subsystem {
 
     // Drive motor
     private double encoderUnitsToDistance(double ticks) {
-        return ticks * mConstants.kDriveTicksPerUnitDistance;
+        return ticks * mConfig.kDriveTicksPerUnitDistance;
     }
 
     private double encoderUnitsToVelocity(double ticks) {
-        return ticks * mConstants.kDriveTicksPerUnitVelocity;
+        return ticks * mConfig.kDriveTicksPerUnitVelocity;
     }
 
     private double distanceToEncoderUnits(double distanceInMeters) {
-        return distanceInMeters / mConstants.kDriveTicksPerUnitDistance;
+        return distanceInMeters / mConfig.kDriveTicksPerUnitDistance;
     }
 
     // private double encUnitsToInches(double encUnits) {
@@ -488,11 +404,11 @@ public class SwerveDriveModule extends Subsystem {
     // }
 
     private double metersPerSecondToEncVelocity(double metersPerSecond) {
-        return metersPerSecond / mConstants.kDriveTicksPerUnitVelocity;
+        return metersPerSecond / mConfig.kDriveTicksPerUnitVelocity;
     }
 
     private double encVelocityToMetersPerSecond(double encUnitsPer100ms) {
-        return encUnitsPer100ms * mConstants.kDriveTicksPerUnitVelocity;
+        return encUnitsPer100ms * mConfig.kDriveTicksPerUnitVelocity;
     }
 
     /**
@@ -596,7 +512,7 @@ public class SwerveDriveModule extends Subsystem {
         switch (mControlState) {
             case OPEN_LOOP:
                 // don't move if throttle is 0
-                if (Util.epsilonEquals(mPeriodicIO.driveDemand, 0.0, mConstants.kDriveDeadband)) {
+                if (Util.epsilonEquals(mPeriodicIO.driveDemand, 0.0, mConfig.kDriveDeadband)) {
                     stop();
                 } else {
                     mSteerMotor.set(mPeriodicIO.steerControlMode, mPeriodicIO.steerDemand);

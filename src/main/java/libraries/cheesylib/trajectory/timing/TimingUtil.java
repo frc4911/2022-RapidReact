@@ -1,6 +1,9 @@
 package libraries.cheesylib.trajectory.timing;
 
+import libraries.cheesylib.geometry.Pose2d;
+import libraries.cheesylib.geometry.Pose2dWithCurvature;
 import libraries.cheesylib.geometry.State;
+import libraries.cheesylib.geometry.Transform2d;
 import libraries.cheesylib.trajectory.DistanceView;
 import libraries.cheesylib.trajectory.Trajectory;
 
@@ -463,5 +466,80 @@ public class TimingUtil {
             return state.toString() + ", distance: " + distance + ", max_velocity: " + max_velocity + ", " +
                     "min_acceleration: " + min_acceleration + ", max_acceleration: " + max_acceleration;
         }
+    }
+
+    /**
+     * Transforms all poses in the trajectory by the given transform. This is useful for converting a
+     * robot-relative trajectory into a field-relative trajectory. This works with respect to the
+     * first pose in the trajectory.
+     *
+     * @param trajectory The trajectory to transform.
+     * @param transform The transform to transform the trajectory by.
+     * @return The transformed trajectory.
+     */
+    public static Trajectory<TimedState<Pose2dWithCurvature>> transformBy(
+            Trajectory<TimedState<Pose2dWithCurvature>> trajectory,
+            Transform2d transform) {
+        var firstState = trajectory.getFirstState();
+        var firstPose = firstState.state().getPose();
+
+        // Calculate the transformed first pose.
+        var newFirstPose = firstPose.plus(transform);
+        List<TimedState<Pose2dWithCurvature>> newStates = new ArrayList<>();
+
+        newStates.add(
+                new TimedState<Pose2dWithCurvature>(
+                        new Pose2dWithCurvature(
+                                newFirstPose,
+                                firstState.state().getCurvature(),
+                                firstState.state().getDCurvatureDs()),
+                        firstState.t(),
+                        firstState.velocity(),
+                        firstState.acceleration()));
+
+        for (int i = 1; i < trajectory.length(); i++) {
+            var state = trajectory.getState(i);
+            // We are transforming relative to the coordinate frame of the new initial pose.
+            newStates.add(
+                    new TimedState<Pose2dWithCurvature>(
+                        new Pose2dWithCurvature(
+                                newFirstPose.plus(state.state().getPose().minus(firstPose.getPose())),
+                                firstState.state().getCurvature(),
+                                firstState.state().getDCurvatureDs()),
+                        state.t(),
+                        state.velocity(),
+                        state.acceleration()));
+        }
+
+        return new Trajectory<>(newStates);
+    }
+
+    /**
+     * Transforms all poses in the trajectory so that they are relative to the given pose. This is
+     * useful for converting a field-relative trajectory into a robot-relative trajectory.
+     *
+     * @param trajectory The trajectory to transform.
+     * @param pose The pose that is the origin of the coordinate frame that the current trajectory
+     *     will be transformed into.
+     * @return The transformed trajectory.
+     */
+    public static Trajectory<TimedState<Pose2dWithCurvature>> relativeTo(
+            Trajectory<TimedState<Pose2dWithCurvature>> trajectory,
+            Pose2d pose) {
+        List<TimedState<Pose2dWithCurvature>> newStates = new ArrayList<>();
+        for (int i = 0; i < trajectory.length(); i++) {
+            var state = trajectory.getState(i);
+            newStates.add(
+                    new TimedState<Pose2dWithCurvature>(
+                            new Pose2dWithCurvature(
+                                    state.state().getPose().relativeTo(pose),
+                                    state.state().getCurvature(),
+                                    state.state().getDCurvatureDs()),
+                            state.t(),
+                            state.velocity(),
+                            state.acceleration()));
+        }
+
+        return new Trajectory<>(newStates);
     }
 }

@@ -55,8 +55,10 @@ public class Swerve extends Subsystem {
     int driveMode = 0;
 
     // Swerve kinematics & odometry
-    private IMU mIMU;
+    private final IMU mIMU;
     private boolean mIsBrakeMode;
+
+    // TODO - do we still need this a odometry tracks this already?
     private Rotation2d mGyroOffset = Rotation2d.identity();
 
     private final SwerveDriveOdometry mOdometry;
@@ -159,6 +161,10 @@ public class Swerve extends Subsystem {
         mModules.forEach((m) -> m.stop());
     }
 
+    public void convertCancoderToFX(){
+        mModules.forEach((m) -> m.convertCancoderToFX());
+    }
+
     @Override
     public synchronized void zeroSensors() {
         zeroSensors(Constants.kRobotStartingPose);
@@ -166,6 +172,7 @@ public class Swerve extends Subsystem {
 
     public void toggleThroughDriveModes() {
         driveMode = ++driveMode % 4;
+        System.out.println("Shifting Drive Mode***** to " + driveMode);
         switch (driveMode) {
             case 0:
                 SmartDashboard.putString("Swerve/DriveMode", driveMode + " SwerveDriveHelper");
@@ -187,16 +194,15 @@ public class Swerve extends Subsystem {
 
     /**
      * Handles MANUAL state which corresponds to joy stick inputs.
-     * <p>
-     * Using the joy stick values in PeriodicIO, calculate and updates the swerve
-     * states. The joy stick values
-     * are as percent [-1.0, 1.0]. They need to be converted to SI units before
-     * creating the ChassisSpeeds.
+     *
+     * <p>Using the joy stick values in PeriodicIO, calculate and updates the swerve
+     * states. The joy stick values are as percent [-1.0, 1.0]. They need to be
+     * converted to SI units before creating the ChassisSpeeds.</p>
      */
     private void handleManual() {
         HolonomicDriveSignal driveSignal;
 
-        // TODO:  Check deadband code in JStick (which reduces range and still returns 0 .s low).
+        // TODO: Check deadband code in JStick (which reduces range and still returns 0 .s low).
         //  Should always get raw values here and apply deadband code here.
         switch (driveMode) {
             case 0:
@@ -272,8 +278,7 @@ public class Swerve extends Subsystem {
 
     /**
      * Gets the current control state for the Swerve Drive.
-     * <p>
-     * 
+     *
      * @return The current control state.
      */
     public synchronized ControlState getState() {
@@ -282,8 +287,7 @@ public class Swerve extends Subsystem {
 
     /**
      * Sets the control state for the Swerve Drive.
-     * <p>
-     * 
+     *
      * @param newState The desired state.
      */
     public synchronized void setState(ControlState newState) {
@@ -308,39 +312,28 @@ public class Swerve extends Subsystem {
         mControlState = newState;
     }
 
-    /**
-     * Returns the angle of the robot as a Rotation2d.
-     * <p>
-     * 
-     * @return The angle of the robot (CCW).
-     */
-    private synchronized Rotation2d getAngle() {
-        return mIMU.getYaw();
-    }
-
     public Pose2d getPose() {
         return mPeriodicIO.robotPose;
     }
 
     public Rotation2d getHeading() {
-        return mPeriodicIO.gyro_heading;
+        return mOdometry.getPose().getRotation();
     }
 
     /**
      * Sets the current robot position on the field.
-     * <p>
-     * 
+     *
      * @param pose The (x,y,theta) position.
      */
     public synchronized void setRobotPosition(Pose2d pose) {
         mOdometry.resetPosition(pose, mIMU.getYaw());
         mPeriodicIO.robotPose = mOdometry.getPose();
+        mGyroOffset = pose.getRotation().rotateBy(Rotation2d.fromDegrees(mIMU.getYaw().getDegrees()).inverse());
     }
 
     /**
      * Updates the field relative position of the robot.
-     * <p>
-     * 
+     *
      * @param timestamp The current time
      */
     private void updateOdometry(double timestamp) {
@@ -351,28 +344,26 @@ public class Swerve extends Subsystem {
 
         // order is CCW starting with front right.
         mPeriodicIO.chassisSpeeds = mKinematics.toChassisSpeeds(frontRight, frontLeft, backLeft, backRight);
-        mPeriodicIO.robotPose = mOdometry.updateWithTime(timestamp, getAngle(), frontRight, frontLeft, backLeft,
-                backRight);
+        mPeriodicIO.robotPose = mOdometry.updateWithTime(
+                timestamp, mIMU.getYaw(), frontRight, frontLeft, backLeft, backRight);
     }
 
     /**
      * Gets whether path following is done or not. Typically, called in autonomous
      * actions.
-     * <p>
-     * 
+     *
      * @return true if done; otherwise false.
      */
     public boolean isDoneWithTrajectory() {
         if (mMotionPlanner == null || mControlState != ControlState.PATH_FOLLOWING) {
-            return false;
+            return true;
         }
         return mMotionPlanner.isDone() || mOverrideTrajectory;
     }
 
     /**
      * Sets a trajectory to follow.
-     * <p>
-     * 
+     *
      * @param trajectory The trajectory to follow.
      */
     public synchronized void setTrajectory(TrajectoryIterator<TimedState<Pose2dWithCurvature>> trajectory) {
@@ -458,6 +449,9 @@ public class Swerve extends Subsystem {
     /**
      * Zeroes the drive motors, and sets the robot's internal position and heading
      * to match that of the fed pose
+     *
+     * DO NOT use this to reset the IMU mid match. Use
+     * {@link #setRobotPosition(Pose2d)} for that purpose.
      */
     public synchronized void zeroSensors(Pose2d startingPose) {
         setRobotPosition(startingPose);

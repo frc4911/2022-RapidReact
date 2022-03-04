@@ -1,10 +1,14 @@
 package frc.robot.subsystems;
 
+import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.constants.Ports;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.subsystems.SubsystemManager;
 import libraries.cheesylib.util.LatchedBoolean;
+import libraries.cyberlib.utils.CyberMath;
 
 public class Superstructure extends Subsystem {
 
@@ -15,6 +19,8 @@ public class Superstructure extends Subsystem {
     private Collector mCollector;
     private Shooter mShooter;
     private Climber mClimber;
+  
+    private final AnalogInput mAIPressureSensor;
 
     // Superstructure States
     public enum SystemState {
@@ -47,6 +53,7 @@ public class Superstructure extends Subsystem {
 
     private double mManualDistance;
     private boolean mShootSetup;
+
     private static String sClassName;
     private static int sInstanceCount;
     private static Superstructure sInstance = null;
@@ -76,6 +83,7 @@ public class Superstructure extends Subsystem {
         mCollector = Collector.getInstance(sClassName);
         mShooter = Shooter.getInstance(sClassName);
         mClimber = Climber.getInstance(sClassName);
+        mAIPressureSensor = new AnalogInput(Ports.PRESSURE_SENSOR);
     }
 
     @Override
@@ -276,8 +284,20 @@ public class Superstructure extends Subsystem {
         }
     }
 
+    // used in auto
+    public boolean autoShootingComplete() {
+        return mIndexer.feedingComplete();
+    }
+
+    // max voltage is 2.6 which is 100 PSI
+    // min voltage is 0.5 which is 0 PSI
+    private double convertSensorToPSI(double sensorValue){
+        return sensorValue * ((100-0)/(2.6-.5)) - 24.3;
+    }
+  
     @Override
     public void writePeriodicOutputs() {
+        
     }
 
     @Override
@@ -288,8 +308,6 @@ public class Superstructure extends Subsystem {
     @Override
     public void stop() {
         System.out.println(sClassName + " stop()");
-        // TODO Auto-generated method stub
-
     }
 
     @Override
@@ -297,23 +315,23 @@ public class Superstructure extends Subsystem {
         double now = Timer.getFPGATimestamp();
         mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
         mPeriodicIO.lastSchedStart = now;
+
+        mPeriodicIO.pressure = convertSensorToPSI(mAIPressureSensor.getVoltage());
     }
 
     @Override
     public String getLogHeaders() {
-        // TODO Auto-generated method stub
         return "Superstructure";
     }
 
     @Override
     public String getLogValues(boolean telemetry) {
-        // TODO Auto-generated method stub
         return "Superstructure.Values";
     }
 
     @Override
     public void outputTelemetry() {
-
+        SmartDashboard.putNumber("Pressure Sensor", CyberMath.cTrunc(mPeriodicIO.pressure, 10));
     }
 
     public static class PeriodicIO {
@@ -322,6 +340,9 @@ public class Superstructure extends Subsystem {
         public double schedDeltaActual;
         public double schedDuration;
         private double lastSchedStart;
+
+        // Inputs
+        private double pressure;
     }
 
 }

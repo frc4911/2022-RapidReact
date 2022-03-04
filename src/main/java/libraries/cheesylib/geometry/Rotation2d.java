@@ -215,4 +215,15 @@ public class Rotation2d implements IRotation2d<Rotation2d> {
     public Rotation2d plus(Rotation2d other) {
         return rotateBy(other);
     }
+
+    /**
+     * Multiplies the current rotation by a scalar.
+     *
+     * @param scalar The scalar.
+     * @return The new scaled Rotation2d.
+     */
+    public Rotation2d times(double scalar) {
+        return new Rotation2d(theta_degrees * scalar);
+    }
+
 }

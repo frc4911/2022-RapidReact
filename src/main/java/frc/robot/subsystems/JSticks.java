@@ -29,7 +29,6 @@ public class JSticks extends Subsystem {
 
     private SystemState mSystemState = SystemState.READINGBUTTONS;
     private WantedState mWantedState = WantedState.READBUTTONS;
-    @SuppressWarnings("unused")
     private boolean mStateChanged;
     private CW mDriver;
     private CW mOperator;
@@ -150,6 +149,10 @@ public class JSticks extends Subsystem {
         Superstructure.WantedState currentState = mSuperstructure.getWantedState();
         Superstructure.WantedState previousState = currentState;
 
+        if(mPeriodicIO.dr_AButton_ToggleDriveMode) {
+            mSwerve.toggleThroughDriveModes();
+        }
+
         // All driver assist to raw inputs should be implemented Swerve#handleManual()
         double swerveYInput = mPeriodicIO.dr_LeftStickX_Translate;
         double swerveXInput = mPeriodicIO.dr_LeftStickY_Translate;
@@ -178,21 +181,38 @@ public class JSticks extends Subsystem {
         if (mPeriodicIO.dr_YButton_ResetIMU) {
             // Seems safest to disable heading controller if were resetting IMU.
             mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.OFF);
-            mSwerve.zeroSensors(Constants.kRobotStartingPose);
+            mSwerve.setRobotPosition(Constants.kRobotStartingPose);
         }
+
+        if (mPeriodicIO.dr_StartButton_ResetWheels){
+            mSwerve.convertCancoderToFX();
+        }
+        
         // END NEW SWERVE
 
         // CLIMBER CONTROL
-        // -1: Do nothing
-        // 0: Extend
-        // 1: Retract
-        int deploySlappyState = -1;
-        if (mPeriodicIO.op_YButton_ExtendSlappySticks) {
-            deploySlappyState = 0;
-        } else if (mPeriodicIO.op_XButton_RetractSlappySticks) {
-            deploySlappyState = 1;
+        if(mPeriodicIO.op_AButton_ClimberLockout) {
+            // -1: Do nothing
+            // 0: Extend
+            // 1: Retract
+            int deploySlappyState = -1;
+            if (mPeriodicIO.op_RightBumper_ExtendSlappySticks) {
+                deploySlappyState = 0;
+            } else if (mPeriodicIO.op_LeftBumper_RetractSlappySticks) {
+                deploySlappyState = 1;
+            }
+            mSuperstructure.setOpenLoopClimb(mPeriodicIO.op_LeftStickY_ClimberElevator, deploySlappyState);
+        } else {
+            if (mPeriodicIO.op_RightTrigger_Collect) {
+                mSuperstructure.setWantedState(Superstructure.WantedState.COLLECT, sClassName);
+            }
+    
+            if (mPeriodicIO.op_LeftTrigger_Back) {
+                mSuperstructure.setWantedState(Superstructure.WantedState.BACK, sClassName);
+            }
+
+            mSuperstructure.setOpenLoopClimb(0.0, -1);
         }
-        mSuperstructure.setOpenLoopClimb(mPeriodicIO.op_LeftStickY_ClimberElevator, deploySlappyState);
 
         if (mPeriodicIO.op_BButton_StopShooter) {
             mShooter.stopFlywheel();
@@ -212,16 +232,8 @@ public class JSticks extends Subsystem {
             mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
         }
 
-        if (mPeriodicIO.op_RightTrigger_Collect) {
-            mSuperstructure.setWantedState(Superstructure.WantedState.COLLECT, sClassName);
-        }
-
         if (mPeriodicIO.op_RightTrigger_Collect_Stop) {
             mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
-        }
-
-        if (mPeriodicIO.op_LeftTrigger_Back) {
-            mSuperstructure.setWantedState(Superstructure.WantedState.BACK, sClassName);
         }
 
         if (mPeriodicIO.op_LeftTrigger_Back_Stop) {
@@ -286,11 +298,14 @@ public class JSticks extends Subsystem {
         mPeriodicIO.dr_LeftTrigger_SlowSpeed = mDriver.getButton(Xbox.LEFT_TRIGGER, CW.PRESSED_LEVEL);
         mPeriodicIO.dr_RightBumper_RobotOrient = mDriver.getButton(Xbox.RIGHT_BUMPER, CW.PRESSED_LEVEL); // field/robot
         mPeriodicIO.dr_YButton_ResetIMU = mDriver.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
+        mPeriodicIO.dr_AButton_ToggleDriveMode = mDriver.getButton(Xbox.A_BUTTON, CW.PRESSED_EDGE);
+        mPeriodicIO.dr_StartButton_ResetWheels = mDriver.getButton(Xbox.START_BUTTON, CW.PRESSED_EDGE);
 
         //Climbing
         mPeriodicIO.op_LeftStickY_ClimberElevator = -mOperator.getRaw(Xbox.LEFT_STICK_Y, mDeadBand);
-        mPeriodicIO.op_XButton_RetractSlappySticks = mOperator.getButton(Xbox.X_BUTTON, CW.PRESSED_EDGE);
-        mPeriodicIO.op_YButton_ExtendSlappySticks = mOperator.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
+        mPeriodicIO.op_AButton_ClimberLockout = mOperator.getButton(Xbox.A_BUTTON, CW.PRESSED_LEVEL);
+        mPeriodicIO.op_LeftBumper_RetractSlappySticks = mOperator.getButton(Xbox.LEFT_BUMPER, CW.PRESSED_EDGE);
+        mPeriodicIO.op_RightBumper_ExtendSlappySticks = mOperator.getButton(Xbox.RIGHT_BUMPER, CW.PRESSED_EDGE);
 
         //Collecting
         mPeriodicIO.op_RightTrigger_Collect = mOperator.getButton(Xbox.RIGHT_TRIGGER, CW.PRESSED_EDGE);
@@ -305,9 +320,6 @@ public class JSticks extends Subsystem {
         mPeriodicIO.op_POV0_ManualShot_Fender = mOperator.getButton(Xbox.POV0_0, CW.PRESSED_EDGE);
         mPeriodicIO.op_POV90_ManualShot_Tarmac = mOperator.getButton(Xbox.POV0_90, CW.PRESSED_EDGE);
 
-        //Other
-        mPeriodicIO.op_LeftBumper_LoadBall = mOperator.getButton(Xbox.LEFT_BUMPER, CW.PRESSED_EDGE);
-        mPeriodicIO.op_RightBumper_TempBugFix = mOperator.getButton(Xbox.RIGHT_BUMPER, CW.PRESSED_EDGE);
     }
 
     private SystemState defaultStateTransfer() {
@@ -356,17 +368,18 @@ public class JSticks extends Subsystem {
         public boolean dr_LeftTrigger_SlowSpeed = false;
         public boolean dr_RightBumper_RobotOrient = false; // field/robot oriented
         public boolean dr_YButton_ResetIMU = false; // reset direction
+        public boolean dr_AButton_ToggleDriveMode = false;
+        public boolean dr_StartButton_ResetWheels = false;
 
         public double op_LeftStickY_ClimberElevator;
         public boolean op_RightTrigger_Collect = false;
         public boolean op_RightTrigger_Collect_Stop = false;
         public boolean op_LeftTrigger_Back = false;
         public boolean op_LeftTrigger_Back_Stop = false;
-        public boolean op_RightBumper_TempBugFix = false;
-        public boolean op_LeftBumper_LoadBall = false;
         public boolean op_BButton_StopShooter = false;
-        public boolean op_XButton_RetractSlappySticks = false;
-        public boolean op_YButton_ExtendSlappySticks = false;
+        public boolean op_AButton_ClimberLockout = false;
+        public boolean op_LeftBumper_RetractSlappySticks = false;
+        public boolean op_RightBumper_ExtendSlappySticks = false;
 
         public boolean op_POV0_ManualShot_Fender = false;
         public boolean op_POV90_ManualShot_Tarmac = false;

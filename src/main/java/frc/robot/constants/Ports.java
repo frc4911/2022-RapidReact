@@ -26,6 +26,7 @@ public class Ports {
     public static final int BACK_RIGHT_CANCODER  = 3;
 
     public static final int PIGEON = 0;
+    public static final int PRESSURE_SENSOR = 2; //Analog Input
 
     // Shooter
     public static final int LEFT_FLYWHEEL  = 10;
@@ -45,4 +46,8 @@ public class Ports {
     public static final int LEFT_CLIMBER  = 40;
     public static final int RIGHT_CLIMBER = 41;
     public static final int CLIMBER_STAGE = 1; //Solenoid
+
+    // Superstructure
+    public static final int PRESSURESENSOR = 2; //Analog Input
+
 }

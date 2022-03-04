@@ -9,7 +9,6 @@ import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.constants.Constants;
 import frc.robot.constants.Ports;
 import libraries.cheesylib.drivers.TalonFXFactory;
@@ -171,6 +170,7 @@ public class Collector extends Subsystem {
         if (mStateChanged) {
             mPeriodicIO.collectorDemand = 0.0;
             mPeriodicIO.solenoidDemand = SolenoidState.RETRACT;
+            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
         }
 
         return defaultStateTransfer();
@@ -180,7 +180,7 @@ public class Collector extends Subsystem {
         if(mStateChanged) {
             mPeriodicIO.solenoidDemand = SolenoidState.EXTEND;
             mPeriodicIO.collectorDemand = kCollectSpeed;
-            mPeriodicIO.schedDeltaDesired = 0;
+            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
         }
         
         return defaultStateTransfer();
@@ -264,6 +264,7 @@ public class Collector extends Subsystem {
 
     public static class PeriodicIO {
         // Logging
+        @SuppressWarnings("unused")
         private final int mDefaultSchedDelta = 100; // axis updated every 100 msec
         private int schedDeltaDesired;
         public double schedDeltaActual;
