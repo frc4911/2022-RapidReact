@@ -27,13 +27,13 @@ public class ThreeBallMode extends AutoModeBase{
         runAction(new ManualShootAction(2, 5));
         runAction(new CollectAction(true));
         runAction(new ParallelAction(Arrays.asList(new DriveTrajectoryAction(TrajectoryGenerator.getInstance().getTrajectorySet().threeBallAuto0Trajectory.left, false),
-                                    new EndTrajectoryAction(2.5))));
+                                    new EndTrajectoryAction(2.0))));
         runAction(new ParallelAction(Arrays.asList(new DriveTrajectoryAction(TrajectoryGenerator.getInstance().getTrajectorySet().threeBallAuto1Trajectory.left, false),
-                                    new EndTrajectoryAction(3.5))));
-        runAction(new WaitAction(.5));
+                                    new EndTrajectoryAction(2.8))));
+        runAction(new WaitAction(.3));
         runAction(new CollectAction(false));
         runAction(new ParallelAction(Arrays.asList(new DriveTrajectoryAction(TrajectoryGenerator.getInstance().getTrajectorySet().threeBallAuto2Trajectory.left, false),
-                                    new EndTrajectoryAction(3.5))));
-        runAction(new ManualShootAction(0, 3));
+                                    new EndTrajectoryAction(2.6))));
+        runAction(new ManualShootAction(5, 3));
     }
 }
