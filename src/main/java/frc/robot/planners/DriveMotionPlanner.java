@@ -47,19 +47,20 @@ public class DriveMotionPlanner implements CSVWritable {
     double currentTrajectoryLength = 0.0;
 
     double mDt = 0.0;
+    double mSumDt;
 
     public SwerveConfiguration mSwerveConfiguration;
 
     public DriveMotionPlanner() {
         RobotConfiguration mRobotConfiguration = RobotConfiguration.getRobotConfiguration(RobotName.name);
         mSwerveConfiguration = mRobotConfiguration.getSwerveConfiguration();
-        double transKP = 1.4;
-        double transKD = 0.025;
-        double rotKP = 0;
+        double transKP = 4.0;//1.4;
+        double transKD = 0;//0.025;
+        double rotKP = 0.0;
         double rotKD = 0;
-        double ff0 = 0.0;
-        double ff1 = 0.0;
-        double ff2 = 0;
+        double ff0 = 0;//0.2;
+        double ff1 = 0;//0.002;
+        double ff2 = 0;//0.2;
 
         // transKP = SmartDashboard.getNumber("transKP", -1);
         // if (transKP == -1){
@@ -131,6 +132,7 @@ public class DriveMotionPlanner implements CSVWritable {
     }
 
     public void setTrajectory(final TrajectoryIterator<TimedState<Pose2dWithCurvature>> trajectory) {
+        mSumDt = 0;
         mCurrentTrajectory = trajectory;
         mSetpoint = trajectory.getState();
         currentTrajectoryLength = trajectory.trajectory().getLastState().t();
@@ -150,6 +152,7 @@ public class DriveMotionPlanner implements CSVWritable {
         mError = Pose2d.identity();
         mOutput = new HolonomicDriveSignal(Translation2d.identity(), 0.0, true);
         mLastTime = Double.POSITIVE_INFINITY;
+        mSumDt = 0;
     }
 
 
@@ -171,6 +174,7 @@ public class DriveMotionPlanner implements CSVWritable {
         }
 
         mDt = timestamp - mLastTime;
+        mSumDt += mDt;
         mLastTime = timestamp;
 
         if (!mCurrentTrajectory.isDone()) {
@@ -200,9 +204,9 @@ public class DriveMotionPlanner implements CSVWritable {
 
         return null;
     }
-
+//mLastTime < mCurrentTrajectory.trajectory().getLastState().t()
     public boolean isDone() {
-        return mCurrentTrajectory != null && mCurrentTrajectory.isDone();
+        return (mCurrentTrajectory != null && mCurrentTrajectory.isDone()) || (mSumDt>currentTrajectoryLength);
     }
 
     public Pose2d error() {
