@@ -9,6 +9,6 @@ public class DriveBackwardMode extends AutoModeBase{
     @Override
     protected void routine() throws AutoModeEndedException {
         runAction(new DriveTrajectoryAction(TrajectoryGenerator.getInstance().getTrajectorySet().backwardTrajectory.left));
-        runAction(new DriveTrajectoryAction(TrajectoryGenerator.getInstance().getTrajectorySet().forwardTrajectory.left));
+        // runAction(new DriveTrajectoryAction(TrajectoryGenerator.getInstance().getTrajectorySet().forwardTrajectory.left));
     }
 }

@@ -8,6 +8,7 @@ import frc.robot.autos.modes.DriveForwardMode;
 import frc.robot.autos.modes.ShootOneAndDriveBackwardMode;
 import frc.robot.autos.modes.TestTrajectoryFollowingMode;
 import frc.robot.autos.modes.ThreeBallMode;
+import frc.robot.autos.modes.TwoBallLeftMode;
 import frc.robot.autos.modes.TwoBallMode;
 import libraries.cheesylib.autos.AutoModeBase;
 
@@ -69,7 +70,7 @@ public class AutoModeSelector {
             case SHOOT_ONE_AND_DRIVE_BACKWARD_MODE:
                 return Optional.of(new ShootOneAndDriveBackwardMode());
             case TWO_BALL_MODE:
-                return Optional.of(new TwoBallMode());
+                return Optional.of(new TwoBallLeftMode());
             case THREE_BALL_MODE:
                 return Optional.of(new ThreeBallMode());
             default:
