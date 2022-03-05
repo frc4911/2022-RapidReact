@@ -140,6 +140,9 @@ public class JSticks extends Subsystem {
     }
 
     private SystemState handleReadingButtons() {
+        if (mStateChanged){
+            mDriver.rumble(5, 2);
+        }
         teleopRoutines();
 
         return defaultStateTransfer();
