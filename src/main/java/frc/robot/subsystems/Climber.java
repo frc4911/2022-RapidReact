@@ -52,7 +52,8 @@ public class Climber extends Subsystem {
         HOLDING,
         HOMING,
         CLIMBING,
-        MOVINGELEVATOR
+        MOVINGELEVATOR,
+        GRABBINGBARDYNAMICCLAW
     }
 
     public enum WantedState {
@@ -61,6 +62,7 @@ public class Climber extends Subsystem {
         HOME,
         CLIMB,
         MOVEELEVATOR,
+        GRABBARDYNAMICCLAW
     }
 
     public enum ElevatorPositions {
@@ -79,6 +81,21 @@ public class Climber extends Subsystem {
             return position;
         }
     }
+
+    private enum GrabBarDynamicClawSubState {
+        EXTENDTOTOP,
+        RETRACTTOENGAGECLAW,
+        DONE
+    }
+
+    private GrabBarDynamicClawSubState gbdcSubState = GrabBarDynamicClawSubState.EXTENDTOTOP;
+    private boolean gbdcSubStateChange = false;
+    // TODO: get the correct values for these constants
+    private final double kExtendToTopPos = 160000;
+    private final double kDescendToBar = 145000;
+    private final double kElevPosTolerance = 1000;
+
+
 
     private ElevatorPositions desiredElevatorPosition = ElevatorPositions.NOTSET;
     private SystemState mSystemState;
@@ -169,6 +186,44 @@ public class Climber extends Subsystem {
         mFXRightClimber.configStatorCurrentLimit(
                 new StatorCurrentLimitConfiguration(true, kClimberCurrentLimit, kClimberCurrentLimit, 0));
 
+        // TODO: all values must be tuned
+        double kClosedError = 50;
+        double config_kP = 0;
+        double config_kI = 0;
+        double config_kD = 0;
+        double config_kF = 0;
+        double integralZone = 0;
+        double kClosedRamp = 0; // this makes a difference in Magic and Position modes 
+                                // but when using magic i prefer to use the Magic config values
+                                // so this should only be nonzero when using Position mode
+        double kCruiseVelocity = 0; 
+        double kAcceleration = 0;
+        int kCurveStrength = 0; // 0 is trapizoidal, larger values make the path more soft (curved) at velocity changes
+
+        mFXLeftClimber.config_kP(0, config_kP, Constants.kLongCANTimeoutMs);
+        mFXLeftClimber.config_kI(0, config_kI, Constants.kLongCANTimeoutMs);
+        mFXLeftClimber.config_kD(0, config_kD, Constants.kLongCANTimeoutMs);
+        mFXLeftClimber.config_kF(0, config_kF, Constants.kLongCANTimeoutMs);
+        mFXLeftClimber.config_IntegralZone(0, integralZone, Constants.kLongCANTimeoutMs);
+        mFXLeftClimber.configClosedloopRamp(kClosedRamp, Constants.kLongCANTimeoutMs);
+        mFXLeftClimber.configAllowableClosedloopError(0, kClosedError, Constants.kLongCANTimeoutMs);
+
+        mFXLeftClimber.configMotionCruiseVelocity(kCruiseVelocity); // 10000 ticks/second
+        mFXLeftClimber.configMotionAcceleration(kAcceleration); // 2500 ticks/(sec^2)
+        mFXLeftClimber.configMotionSCurveStrength(kCurveStrength); // trapizoidal curve
+        
+        mFXRightClimber.config_kP(0, config_kP, Constants.kLongCANTimeoutMs);
+        mFXRightClimber.config_kI(0, config_kI, Constants.kLongCANTimeoutMs);
+        mFXRightClimber.config_kD(0, config_kD, Constants.kLongCANTimeoutMs);
+        mFXRightClimber.config_kF(0, config_kF, Constants.kLongCANTimeoutMs);
+        mFXRightClimber.config_IntegralZone(0, integralZone, Constants.kLongCANTimeoutMs);
+        mFXRightClimber.configClosedloopRamp(kClosedRamp, Constants.kLongCANTimeoutMs);
+        mFXRightClimber.configAllowableClosedloopError(0, kClosedError, Constants.kLongCANTimeoutMs);
+
+        mFXRightClimber.configMotionCruiseVelocity(kCruiseVelocity); // 10000 ticks/second
+        mFXRightClimber.configMotionAcceleration(kAcceleration); // 2500 ticks/(sec^2)
+        mFXRightClimber.configMotionSCurveStrength(kCurveStrength); // trapizoidal curve
+        
     }
 
     @Override
@@ -213,6 +268,9 @@ public class Climber extends Subsystem {
                         break;
                     case MOVINGELEVATOR:
                         newState = handleMovingElevator();
+                        break;
+                    case GRABBINGBARDYNAMICCLAW:
+                        newState = handleGrabbingBarDynamicClaw();
                         break;
                     case HOLDING:
                     default:
@@ -347,6 +405,65 @@ public class Climber extends Subsystem {
         return elevatorAtDesiredPosition;
     }
 
+    // This is preliminary only. It is intended to give us a starting if we decide to automate any of the climb
+    private SystemState handleGrabbingBarDynamicClaw(){
+        if (mStateChanged) {
+            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
+            if (!climberHomed) {
+                wantedStateAfterHoming = WantedState.GRABBARDYNAMICCLAW;
+                mWantedState = WantedState.HOME;
+                return defaultStateTransfer();
+            } else {
+                gbdcSubState = GrabBarDynamicClawSubState.EXTENDTOTOP;
+                gbdcSubStateChange = true;
+            }
+        }
+
+        if (gbdcSubStateChange){
+
+            switch (gbdcSubState){
+                case EXTENDTOTOP:
+                    mPeriodicIO.climberDemand = kExtendToTopPos;
+                    mPeriodicIO.climberControlMode = ControlMode.Position;
+                    break;
+                case RETRACTTOENGAGECLAW:
+                    mPeriodicIO.climberDemand = kDescendToBar;
+                    mPeriodicIO.climberControlMode = ControlMode.Position;
+                    break;
+                case DONE:
+                    break;
+            }
+        }
+
+        double distance;
+        distance = Math.abs(mPeriodicIO.climberPosition - mPeriodicIO.climberDemand);
+
+        switch (gbdcSubState){
+            case EXTENDTOTOP:
+                if (distance < kElevPosTolerance) {
+                    gbdcSubStateChange = true;
+                    gbdcSubState = GrabBarDynamicClawSubState.RETRACTTOENGAGECLAW;
+                }
+                break;
+            case RETRACTTOENGAGECLAW:
+                gbdcSubStateChange = true;
+                gbdcSubState = GrabBarDynamicClawSubState.DONE;
+                break;
+            case DONE:
+                break;
+        }
+
+        if (mWantedState != WantedState.GRABBARDYNAMICCLAW) {
+            gbdcSubState = GrabBarDynamicClawSubState.RETRACTTOENGAGECLAW; // anystate that is not DONE
+        }
+        return defaultStateTransfer();
+    }
+
+    public boolean ElevatorHasGrabbedBar() {
+        return gbdcSubState.equals(GrabBarDynamicClawSubState.DONE);
+    }
+
+
     private SystemState defaultStateTransfer() {
         switch (mWantedState) {
             case HOME:
@@ -357,6 +474,8 @@ public class Climber extends Subsystem {
                 return SystemState.MOVINGELEVATOR;
             case DISABLE:
                 return SystemState.DISABLING;
+            case GRABBARDYNAMICCLAW:
+                return SystemState.GRABBINGBARDYNAMICCLAW;
             case HOLD:
             default:
                 return SystemState.HOLDING;
