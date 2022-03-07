@@ -5,11 +5,13 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import libraries.cyberlib.spline.PoseWithCurvatureAndOrientation;
 import libraries.cyberlib.spline.QuinticHermiteSpline3D;
-import libraries.cyberlib.spline.Spline3D;
 
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Represents a way to build simple and complex paths composed of different path segments.
+ */
 public class PathBuilder {
     private final List<PathSegment> segmentList = new ArrayList<>();
     private PoseWithCurvatureAndOrientation lastState;
@@ -17,17 +19,17 @@ public class PathBuilder {
 
     public PathBuilder(Translation2d initialPosition, Rotation2d initialHeading, Rotation2d initialOrientation) {
         lastState = new PoseWithCurvatureAndOrientation(
-                new Pose2d(initialPosition, initialHeading), 0.0, 0.0, initialOrientation.getRadians(), 0.0);
+                new Pose2d(initialPosition, initialHeading),
+                0.0,
+                0.0,
+                initialOrientation.getRadians(),
+                0.0);
     }
 
     private void addSegment(PathSegment segment) {
         segmentList.add(segment);
         length += segment.getLength();
         lastState = segment.getEnd();
-    }
-
-    private void addSpline(Spline3D spline) {
-        addSegment(new Spline3DSegment(spline));
     }
 
     public Path build() {
