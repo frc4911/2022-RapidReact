@@ -26,7 +26,7 @@ public class Climber extends Subsystem {
     private final Solenoid mSlapSticks;
 
     // Subsystem Constants
-    private final double kClimberCurrentLimit = 60;
+    private final double kClimberCurrentLimit = 80;
     private final int kHomingZeroAdjustment = -1000; // Tick adjustment to accomodate physical overdriving on the elevator
     private final int kSlappySticksElevatorConflictLimit = 140000; // Max theory is 140k
     private final int kElevatorMaxHeight = 162000; // Max theory is 165k
@@ -451,6 +451,8 @@ public class Climber extends Subsystem {
         SmartDashboard.putNumber("Left Climber Encoder", mPeriodicIO.climberPosition);
         SmartDashboard.putNumber("Left Climb Current", mFXLeftClimber.getStatorCurrent());
         SmartDashboard.putNumber("Right Climb Current", mFXRightClimber.getStatorCurrent());
+        // SmartDashboard.putNumber("Left Climb Supply Current", mFXLeftClimber.getSupplyCurrent());
+        // SmartDashboard.putNumber("Right Climb Supply Current", mFXRightClimber.getSupplyCurrent());
     }
 
     public static class PeriodicIO {

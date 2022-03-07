@@ -224,8 +224,8 @@ public class Swerve extends Subsystem {
                 }
 
                 driveSignal = new HolonomicDriveSignal(
-                        new Translation2d(mPeriodicIO.forward, mPeriodicIO.strafe).scale(driveScalar * 0.75),
-                        mPeriodicIO.rotation * driveScalar * 0.8,
+                    new Translation2d(mPeriodicIO.forward, mPeriodicIO.strafe).scale(driveScalar * 0.75),
+                    mPeriodicIO.rotation * driveScalar * 0.8,
                         mPeriodicIO.field_relative);
                 break;
             case 2:
@@ -233,9 +233,9 @@ public class Swerve extends Subsystem {
                 // rotationPow = SmartDashboard.getNumber("Rotation Power", 1);
                 driveSignal = new HolonomicDriveSignal(
                         new Translation2d(
-                                Math.copySign(Math.pow(mPeriodicIO.forward, 3), mPeriodicIO.forward),
-                                Math.copySign(Math.pow(mPeriodicIO.strafe, 3), mPeriodicIO.strafe)),
-                        Math.copySign(Math.pow(mPeriodicIO.rotation, 3), mPeriodicIO.rotation),
+                                Math.copySign(Math.pow(mPeriodicIO.forward, 2), mPeriodicIO.forward),
+                                Math.copySign(Math.pow(mPeriodicIO.strafe, 2), mPeriodicIO.strafe)),
+                        Math.copySign(Math.pow(mPeriodicIO.rotation, 2), mPeriodicIO.rotation),
                         mPeriodicIO.field_relative);
                 break;
             case 3:

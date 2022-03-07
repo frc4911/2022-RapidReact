@@ -101,7 +101,8 @@ public class SwerveDriveModule extends Subsystem {
         mSteerMotor.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
 
         convertCancoderToFX();
-        
+        convertCancoderToFX();
+
         mSteerMotor.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, mConfig.kSteerMotorStatusFrame2UpdateRate,
                 Constants.kLongCANTimeoutMs);
         mSteerMotor.setStatusFramePeriod(StatusFrame.Status_10_MotionMagic,
