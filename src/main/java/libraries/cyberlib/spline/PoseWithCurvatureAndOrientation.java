@@ -2,6 +2,8 @@ package libraries.cyberlib.spline;
 
 import edu.wpi.first.math.geometry.Pose2d;
 
+import java.text.DecimalFormat;
+
 /**
  * Represents a pose, a curvature, and an orientation.
  */
@@ -49,4 +51,15 @@ public class PoseWithCurvatureAndOrientation {
     public PoseWithCurvatureAndOrientation() {
         this(new Pose2d(), 0.0, 0.0, 0.0, 0.0);
     }
+
+    @Override
+    public String toString() {
+        final DecimalFormat fmt = new DecimalFormat("#0.000");
+        return poseMeters.toString() +
+                ", curvature: " + fmt.format(curvatureRadPerMeter) +
+                ", orientation:(Rads: " + fmt.format(orientation) +", Deg: " + fmt.format(Math.toDegrees(orientation)) + ")" +
+                ", angularVelocity " +  fmt.format(angularVelocity) +
+                ", angularAcceleration " + fmt.format(angularAcceleration);
+    }
+
 }

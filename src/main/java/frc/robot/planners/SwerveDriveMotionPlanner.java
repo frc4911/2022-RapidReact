@@ -33,8 +33,8 @@ public class SwerveDriveMotionPlanner implements CSVWritable {
 //        return 0.0;
 //    }
 
-    boolean mIsReversed = false;
-    double mLastTime = Double.POSITIVE_INFINITY;
+    private boolean mIsReversed = false;
+    private double mLastTime = Double.POSITIVE_INFINITY;
     public Trajectory.State mSetpoint = new Trajectory.State(
             0.0,
             0.0,
@@ -44,11 +44,12 @@ public class SwerveDriveMotionPlanner implements CSVWritable {
             0.0,
             0.0,
             0.0);
-    Pose2d mError = Pose2d.identity();
-    HolonomicDriveSignal mOutput = new HolonomicDriveSignal(Translation2d.identity(), 0.0, true);
-    double currentTrajectoryLength = 0.0;
+    private Pose2d mError = Pose2d.identity();
+//    private HolonomicDriveSignal mOutput = new HolonomicDriveSignal(Translation2d.identity(), 0.0, true);
+    private double mCurrentTrajectoryTotalTime = 0.0;
 
-    double mDt = 0.0;
+    private double mDt = 0.0;
+    private double mSumDt = 0.0;
 
     public SwerveConfiguration mSwerveConfiguration;
 
@@ -135,7 +136,8 @@ public class SwerveDriveMotionPlanner implements CSVWritable {
     public void setTrajectory(final Trajectory trajectory) {
         mCurrentTrajectory = trajectory;
         mSetpoint = trajectory.getStates().get(0);
-        currentTrajectoryLength = trajectory.getTotalTimeSeconds();
+        mCurrentTrajectoryTotalTime = trajectory.getTotalTimeSeconds();
+        mSumDt = 0.0;
         for (int i = 0; i < trajectory.getStates().size(); ++i) {
             if (trajectory.getStates().get(i).velocityMetersPerSecond > Util.kEpsilon) {
                 mIsReversed = false;
@@ -150,7 +152,7 @@ public class SwerveDriveMotionPlanner implements CSVWritable {
 
     public void reset() {
         mError = Pose2d.identity();
-        mOutput = new HolonomicDriveSignal(Translation2d.identity(), 0.0, true);
+//        mOutput = new HolonomicDriveSignal(Translation2d.identity(), 0.0, true);
         mLastTime = Double.POSITIVE_INFINITY;
     }
 
@@ -173,6 +175,7 @@ public class SwerveDriveMotionPlanner implements CSVWritable {
         }
 
         mDt = timestamp - mLastTime;
+        mSumDt += mDt;
         mLastTime = timestamp;
 
         if (mCurrentTrajectory.getTotalTimeSeconds() <= timestamp) {
@@ -197,6 +200,8 @@ public class SwerveDriveMotionPlanner implements CSVWritable {
                     mDt);
 
             mSetpoint = follower.getLastState();
+
+            // NOTE - Conversions between geometry systems is required until we switch completely to wpilib.
             var setPointPose = new Pose2d(
                     new Translation2d(mSetpoint.poseMeters.getX(), mSetpoint.poseMeters.getX()),
                     Rotation2d.fromRadians(mSetpoint.poseMeters.getRotation().getRadians()));
@@ -220,7 +225,7 @@ public class SwerveDriveMotionPlanner implements CSVWritable {
     }
 
     public boolean isDone() {
-        return mCurrentTrajectory != null && mCurrentTrajectory.getTotalTimeSeconds() <= mLastTime;
+        return mCurrentTrajectory != null && mCurrentTrajectory.getTotalTimeSeconds() < mSumDt;
     }
 
     public Pose2d error() {

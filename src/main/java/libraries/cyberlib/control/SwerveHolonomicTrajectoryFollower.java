@@ -17,7 +17,7 @@ public class SwerveHolonomicTrajectoryFollower extends SwerveTrajectoryFollower<
     private boolean mFinished = false;
 
     public SwerveHolonomicTrajectoryFollower(PidGains translationGains, PidGains rotationGains,
-                                       HolonomicFeedforward feedforward) {
+                                             HolonomicFeedforward feedforward) {
         mForwardController = new PidController(translationGains);
         mStrafeController = new PidController(translationGains);
         mRotationController = new PidController(rotationGains);

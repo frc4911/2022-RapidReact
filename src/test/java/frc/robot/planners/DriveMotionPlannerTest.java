@@ -50,7 +50,7 @@ class DriveMotionPlannerTest {
         var position = m_odometry.getPose();
         for (double currentTime = 0; currentTime < trajectoryTime; currentTime += deltaTime) {
 
-             var driveSignal = planner.update(currentTime, position, chassisSpeeds);
+            var driveSignal = planner.update(currentTime, position, chassisSpeeds);
 
             if (driveSignal == null) {
                 chassisSpeeds = new ChassisSpeeds(0.0, 0.0, 0.0);
@@ -66,7 +66,7 @@ class DriveMotionPlannerTest {
                 }
 
                 chassisSpeeds = new ChassisSpeeds(translationInput.x(), translationInput.y(), rotationInput);
-//                System.out.println("chassis Speeds " + chassisSpeeds.toString() + "; v m/s" + +translationInput.norm());
+                System.out.println("chassis Speeds " + chassisSpeeds.toString() + "; v m/s " + +translationInput.norm());
             }
 
             // Now calculate the new Swerve Module states using inverse kinematics.
@@ -79,7 +79,7 @@ class DriveMotionPlannerTest {
             // Now update odometry (assume swerve modules execute perfectly )
             position = m_odometry.updateWithTime(currentTime, gyro, swerveModuleStates);
 
-//            System.out.format("time: %.2f - %s, %s\n", currentTime, position.toString(), chassisSpeeds);
+            System.out.format("time: %.2f - %s, %s\n", currentTime, position.toString(), chassisSpeeds);
         }
     }
 }

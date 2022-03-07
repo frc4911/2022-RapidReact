@@ -63,7 +63,9 @@ public class HolonomicTrajectoryFollower extends TrajectoryFollower<HolonomicDri
                 new Translation2d(
                         mForwardController.calculate(currentPose.getTranslation().x(), dt) + feedforwardVector.x(),
                         mStrafeController.calculate(currentPose.getTranslation().y(), dt) + feedforwardVector.y()),
-                mRotationController.calculate(currentPose.getRotation().getRadians(), dt), true);
+//                mRotationController.calculate(currentPose.getRotation().getRadians(), dt),
+                           0.0,
+                true);
     }
 
     @Override
