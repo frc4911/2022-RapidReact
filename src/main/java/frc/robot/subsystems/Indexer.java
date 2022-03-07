@@ -27,7 +27,7 @@ public class Indexer extends Subsystem {
 
     // Subsystem Constants
     private final double kBackingSpeed = -.3;
-    private final double kFeedingSpeed = .3;
+    private final double kFeedingSpeed = .9;
     private final double kLoadingSpeed = .3;
 
     private boolean hasBallOnLoadingStart;
@@ -310,27 +310,22 @@ public class Indexer extends Subsystem {
 
     @Override
     public void outputTelemetry() {
-        if (mPeriodicIO.schedDeltaDesired==0){
-            mPeriodicIO.motorPosition = mFXIndexer.getSelectedSensorPosition();
-            mPeriodicIO.enterBeamBlocked = mAIEnterBeamBreak.getVoltage()<kBeamBreakThreshold;
-            mPeriodicIO.exitBeamBlocked = mAIExitBeamBreak.getVoltage()<kBeamBreakThreshold;
-        }
-
         SmartDashboard.putBoolean("Indexer Enter Beam Blocked", mPeriodicIO.enterBeamBlocked);
         SmartDashboard.putBoolean("Indexer Exit Beam Blocked", mPeriodicIO.exitBeamBlocked);
-        SmartDashboard.putNumber("Indexer Current", mFXIndexer.getStatorCurrent());
         SmartDashboard.putNumber("Indexer Position", mPeriodicIO.motorPosition);
+
+        SmartDashboard.putNumber("Indexer Current", mFXIndexer.getStatorCurrent());
     }
 
     public static class PeriodicIO {
         // Logging
-        private final int mDefaultSchedDelta = 20; // axis updated every 20 msec TODO: slow down after testing
-        private final int mFastCycle = 20;
-        private final int mSleepCycle = 0;
-        private int schedDeltaDesired;
+        public final int mDefaultSchedDelta = 20; // axis updated every 20 msec TODO: slow down after testing
+        public final int mFastCycle = 20;
+        public final int mSleepCycle = 0;
+        public int schedDeltaDesired;
         public double schedDeltaActual;
         public double schedDuration;
-        private double lastSchedStart;
+        public double lastSchedStart;
 
         // Inputs
         public boolean exitBeamBlocked;
@@ -338,6 +333,6 @@ public class Indexer extends Subsystem {
         public double motorPosition;
 
         // Outputs
-        private double indexerDemand;
+        public double indexerDemand;
     }
 }

@@ -7,6 +7,8 @@ import frc.robot.autos.modes.DriveBackwardMode;
 import frc.robot.autos.modes.DriveForwardMode;
 import frc.robot.autos.modes.ShootOneAndDriveBackwardMode;
 import frc.robot.autos.modes.TestTrajectoryFollowingMode;
+import frc.robot.autos.modes.ThreeBallMode;
+import frc.robot.autos.modes.TwoBallLeftMode;
 import frc.robot.autos.modes.TwoBallMode;
 import libraries.cheesylib.autos.AutoModeBase;
 
@@ -19,7 +21,8 @@ public class AutoModeSelector {
         DRIVE_FORWARD_MODE,
         DRIVE_BACKWARD_MODE,
         SHOOT_ONE_AND_DRIVE_BACKWARD_MODE,
-        TWO_BALL_AUTO_MODE
+        TWO_BALL_MODE,
+        THREE_BALL_MODE
     }
 
     private SendableChooser<DesiredMode> mModeChooser;
@@ -35,7 +38,8 @@ public class AutoModeSelector {
         mModeChooser.addOption("Drive Forward Mode", DesiredMode.DRIVE_FORWARD_MODE);
         mModeChooser.addOption("Drive Backward Mode", DesiredMode.DRIVE_BACKWARD_MODE);
         mModeChooser.addOption("Shoot One and Drive Backward", DesiredMode.SHOOT_ONE_AND_DRIVE_BACKWARD_MODE);
-        mModeChooser.addOption("Two Ball Auto Mode", DesiredMode.TWO_BALL_AUTO_MODE);
+        mModeChooser.addOption("Two Ball Auto Mode", DesiredMode.TWO_BALL_MODE);
+        mModeChooser.addOption("Three Ball Auto Mode", DesiredMode.THREE_BALL_MODE);
         SmartDashboard.putData("Auto Mode", mModeChooser);
     }
 
@@ -65,8 +69,10 @@ public class AutoModeSelector {
                 return Optional.of(new DriveBackwardMode());
             case SHOOT_ONE_AND_DRIVE_BACKWARD_MODE:
                 return Optional.of(new ShootOneAndDriveBackwardMode());
-            case TWO_BALL_AUTO_MODE:
-                return Optional.of(new TwoBallMode());
+            case TWO_BALL_MODE:
+                return Optional.of(new TwoBallLeftMode());
+            case THREE_BALL_MODE:
+                return Optional.of(new ThreeBallMode());
             default:
                 break;
         }
