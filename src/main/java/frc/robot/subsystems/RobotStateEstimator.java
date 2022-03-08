@@ -23,7 +23,6 @@ public class RobotStateEstimator extends Subsystem {
     private static int mDefaultSchedDelta = 20;
     RobotState robotState;// = RobotState.getInstance();
     Swerve mSwerve;
-    @SuppressWarnings("unused")
 
     private static String sClassName;
     private static int sInstanceCount;

@@ -37,7 +37,6 @@ public class JSticks extends Subsystem {
     private Superstructure mSuperstructure;
     private Swerve mSwerve;
     private Shooter mShooter;
-    private Indexer mIndexer;
 
     @SuppressWarnings("unused")
     private LatchedBoolean mSystemStateChange = new LatchedBoolean();
@@ -64,8 +63,6 @@ public class JSticks extends Subsystem {
         mSuperstructure = Superstructure.getInstance(sClassName);
         mSwerve = Swerve.getInstance(sClassName);
         mShooter = Shooter.getInstance(sClassName);
-        mIndexer = Indexer.getInstance(sClassName); // Getting instance to reset ball count: hopefully will be a
-                                                    // temporary fix
         mHeadingController.setPIDFConstants(
                 mSwerve.mSwerveConfiguration.kSwerveHeadingKp,
                 mSwerve.mSwerveConfiguration.kSwerveHeadingKi,
@@ -149,9 +146,6 @@ public class JSticks extends Subsystem {
     }
 
     public void teleopRoutines() {
-        Superstructure.WantedState currentState = mSuperstructure.getWantedState();
-        Superstructure.WantedState previousState = currentState;
-
         // disable for the competition
         // if(mPeriodicIO.dr_AButton_ToggleDriveMode) {
         //     mSwerve.toggleThroughDriveModes();
@@ -261,49 +255,7 @@ public class JSticks extends Subsystem {
             mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
         }
 
-        // // Will add clauses for different shoot distances, aimed/auto shooting, auto
-        // climbing, and others
-        // currentState = activeBtnIsReleased(currentState);
-        // if (currentState == Superstructure.WantedState.HOLD) {
-        // // if (mPeriodicIO.op_POV0_ManualShot_Fender) {
-        // // mSuperstructure.setManualShootDistance(0);
-        // // mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT,
-        // sClassName);
-        // // } else
-
-        // if (mPeriodicIO.op_POV90_ManualShot_Tarmac) {
-        // mSuperstructure.setManualShootDistance(60); //5 feet away: temporary test
-        // value
-        // mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT,
-        // sClassName);
-        // } else if (mPeriodicIO.op_RightTrigger_Collect) {
-        // mSuperstructure.setWantedState(Superstructure.WantedState.COLLECT,
-        // sClassName);
-        // } else if (mPeriodicIO.op_LeftTrigger_Back) {
-        // mSuperstructure.setWantedState(Superstructure.WantedState.BACK, sClassName);
-        // } else if (previousState != currentState) {
-        // // mSuperstructure.setWantedState(Superstructure.WantedState.HOLD,
-        // sClassName);
-        // }
-        // }
     }
-
-    // private Superstructure.WantedState
-    // activeBtnIsReleased(Superstructure.WantedState currentState) {
-    // switch (currentState) {
-    // // case MANUAL_SHOOT:
-    // // return !mPeriodicIO.op_POV0_ManualShot_Fender ?
-    // Superstructure.WantedState.HOLD : currentState;
-    // case COLLECT:
-    // return !mPeriodicIO.op_RightTrigger_Collect ? Superstructure.WantedState.HOLD
-    // : currentState;
-    // case BACK:
-    // return !mPeriodicIO.op_LeftTrigger_Back ? Superstructure.WantedState.HOLD :
-    // currentState;
-    // default:
-    // return Superstructure.WantedState.HOLD;
-    // }
-    // }
 
     @Override
     public void readPeriodicInputs() {
@@ -392,33 +344,32 @@ public class JSticks extends Subsystem {
         public double dr_LeftStickX_Translate; // drive
         public double dr_LeftStickY_Translate; // drive
         public double dr_RightStickX_Rotate; // drive
-        public boolean dr_RightTrigger_AutoShoot = false;
-        public boolean dr_LeftTrigger_SlowSpeed = false;
-        public boolean dr_RightBumper_RobotOrient = false; // field/robot oriented
-        public boolean dr_YButton_ResetIMU = false; // reset direction
-        public boolean dr_AButton_ToggleDriveMode = false;
-        public boolean dr_StartButton_ResetWheels = false;
+        public boolean dr_RightTrigger_AutoShoot;
+        public boolean dr_LeftTrigger_SlowSpeed;
+        public boolean dr_RightBumper_RobotOrient; // field/robot oriented
+        public boolean dr_YButton_ResetIMU; // reset direction
+        public boolean dr_AButton_ToggleDriveMode;
+        public boolean dr_StartButton_ResetWheels;
 
         public double op_LeftStickY_ClimberElevator;
-        public boolean op_RightTrigger_Collect = false;
-        public boolean op_RightTrigger_Collect_Stop = false;
-        public boolean op_LeftTrigger_Back = false;
-        public boolean op_LeftTrigger_Back_Stop = false;
-        public boolean op_BButton_StopShooter = false;
-        public boolean op_AButton_ClimberLockout = false;
-        public boolean op_LeftBumper_RetractSlappySticks = false;
-        public boolean op_RightBumper_ExtendSlappySticks = false;
+        public boolean op_RightTrigger_Collect;
+        public boolean op_RightTrigger_Collect_Stop;
+        public boolean op_LeftTrigger_Back;
+        public boolean op_LeftTrigger_Back_Stop;
+        public boolean op_BButton_StopShooter;
+        public boolean op_AButton_ClimberLockout;
+        public boolean op_LeftBumper_RetractSlappySticks;
+        public boolean op_RightBumper_ExtendSlappySticks;
 
-        public boolean op_POV0_ManualShot_Fender = false;
-        public boolean op_POV90_ManualShot_Ball = false;
-        public boolean op_POV180_ManualShot_Robot = false;
-        public boolean op_POV270_ManualShot_Tarmac = false;
-        public boolean op_ManualShoot = false; // Move to Pov once read
+        public boolean op_POV0_ManualShot_Fender;
+        public boolean op_POV90_ManualShot_Ball;
+        public boolean op_POV180_ManualShot_Robot;
+        public boolean op_POV270_ManualShot_Tarmac;
 
-        public boolean op_POV0_ManualShot_Fender_Stop = false;
-        public boolean op_POV90_ManualShot_Ball_Stop = false;
-        public boolean op_POV180_ManualShot_Robot_Stop = false;
-        public boolean op_POV270_ManualShot_Tarmac_Stop = false;
+        public boolean op_POV0_ManualShot_Fender_Stop;
+        public boolean op_POV90_ManualShot_Ball_Stop;
+        public boolean op_POV180_ManualShot_Robot_Stop;
+        public boolean op_POV270_ManualShot_Tarmac_Stop;
 
     }
 }

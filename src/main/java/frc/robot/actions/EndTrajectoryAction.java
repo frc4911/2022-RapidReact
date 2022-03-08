@@ -1,7 +1,6 @@
 package frc.robot.actions;
 
 import edu.wpi.first.wpilibj.Timer;
-import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.Swerve;
 import libraries.cheesylib.autos.actions.Action;
 

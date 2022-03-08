@@ -7,7 +7,6 @@ import libraries.cheesylib.loops.Looper;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -252,7 +251,6 @@ public class SubsystemManager implements ILooper {
 
     @Override
     public int register(Loop loop) {
-        // TODO Auto-generated method stub
         return 0;
     }
  }
