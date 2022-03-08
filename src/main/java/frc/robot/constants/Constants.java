@@ -97,6 +97,11 @@ public class Constants {
     // TODO: "fix em up later" -Ram
     // shootwards limelight
     public static final LimelightConfig kShootwardsLimelightConfig = new LimelightConfig();
+
+    public static final double kTrackStabilityWeight = 0.0;
+    public static final double kTrackAgeWeight = 10.0;
+    public static final double kTrackSwitchingWeight = 100.0;
+
     static {
         kShootwardsLimelightConfig.kName = "ShootwardsLimelight";
         kShootwardsLimelightConfig.kTableName = "limelight-shooter";
@@ -276,6 +281,30 @@ public class Constants {
     public static final double kSwerveHeadingControllerErrorTolerance = 1.0; // degrees
 
     // END NEW SWERVE
+
+    // LIMELIGHT
+    // Vision
+    public static final boolean kUseTopCorners = false;
+    public static final double kTopVisionTargetHeight = Units.inchesToMeters(98.25);
+    public static final double kBottomVisionTargetHeight = 81.25;
+
+    public static final LimelightConfig kShootLimelightConfig = new LimelightConfig();
+    static {
+        kShootLimelightConfig.kName = "ShooterLimelight";
+        kShootLimelightConfig.kTableName = "limelight-Shooter";
+        kShootLimelightConfig.kHeight = 23 /*22.25*/;// cetus: 11  // robot1: 22.25// pinkeye: 23// inches
+        kShootLimelightConfig.kSubsystemToLens = new Pose2d(new Translation2d(0, 0.0), Rotation2d.fromDegrees(0.0)); // 0.0 brian // right is positive // -1.5
+        kShootLimelightConfig.kHorizontalPlaneToLens = Rotation2d.fromDegrees(20.5); //38 // degrees
+        kShootLimelightConfig.kExpectedTargetCount = new double[] {1, 3}; // expect 2 targets (2 top corners)
+        kShootLimelightConfig.kPipelineZoom = new int[] {1, 2};
+        kShootLimelightConfig.kTargets = new Target[] {
+                Target.OUTER_GOAL_MAIN_COUNTOUR,
+                Target.OUTER_GOAL_CORNERS,
+                Target.OUTER_GOAL_CORNERS
+        };
+    }
+    // END LIMELIGHT
+
 
     // Panel Manipulator Constants
     public static final int kPanelManipulatorTalonID = 0; // TODO: temporary value, need adjustments

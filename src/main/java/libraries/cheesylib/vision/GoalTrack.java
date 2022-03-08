@@ -28,8 +28,7 @@ public class GoalTrack {
     Pose2d mSmoothedPosition = null;
     int mId;
 
-    private GoalTrack() {
-	}
+    private GoalTrack() {}
 
     /**
      * Makes a new track based on the timestamp and the goal's coordinates (from vision)
@@ -56,7 +55,7 @@ public class GoalTrack {
             return false;
         }
         double distance = mSmoothedPosition.inverse().transformBy(new_observation).getTranslation().norm();
-        if (distance < maxTrackerDistance) {
+        if (distance < Constants.kMaxTrackerDistance) {
             mObservedPositions.put(timestamp, new_observation);
             pruneByTime();
             return true;
@@ -64,16 +63,6 @@ public class GoalTrack {
             emptyUpdate();
             return false;
         }
-    }
-
-    public synchronized void forceUpdate(double timestamp, Pose2d new_observation){
-        if (!isAlive()) {
-            mSmoothedPosition = new_observation;
-        } else if (mSmoothedPosition.distance(new_observation) > maxTrackerDistance){
-            mObservedPositions.clear();
-        } 
-        mObservedPositions.put(timestamp, new_observation);
-        pruneByTime();
     }
 
     public synchronized boolean isAlive() {

@@ -197,10 +197,7 @@ public abstract class LimeLight extends Subsystem {
     public synchronized void addVisionUpdate() {
         mTargets.clear();
         getRawTargetInfos(mTargets);
-        mRobotState.addVisionUpdate(
-                Timer.getFPGATimestamp() - getLatency(),
-                mTargets,
-                mConfig);
+        mRobotState.addVisionUpdate(Timer.getFPGATimestamp() - getLatency(), mTargets,this);
     }
 
     /**

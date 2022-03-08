@@ -94,50 +94,38 @@ public class GoalTracker {
     List<GoalTrack> mCurrentTracks = new ArrayList<>();
     int mNextId = 0;
 
-    public GoalTracker() {
-	}
+    public GoalTracker() {}
 
     public synchronized void reset() {
         mCurrentTracks.clear();
     }
 
-    double xTarget = 0.0;
-    double acceptableError = 6.0;
-    boolean useXTarget = false;
-    public void setXTarget(double x, double error){
-        xTarget = x;
-        acceptableError = error;
-        useXTarget = true;
-    }
-    public void enableXTarget(boolean enable){
-        useXTarget = enable;
-    }
-
     public synchronized void update(double timestamp, List<Pose2d> field_to_goals) {
-        // make new tracks to accommadate for each observation
-        if (mCurrentTracks.size() < field_to_goals.size()) {
-            for (int i = mCurrentTracks.size(); i < field_to_goals.size(); i++) {
-                mCurrentTracks.add(GoalTrack.makeNewTrack(timestamp, field_to_goals.get(i), mNextId));
+        // Try to update existing tracks
+        for (Pose2d target : field_to_goals) {
+            boolean hasUpdatedTrack = false;
+            for (GoalTrack track : mCurrentTracks) {
+                if (!hasUpdatedTrack) {
+                    if (track.tryUpdate(timestamp, target)) {
+                        hasUpdatedTrack = true;
+                    }
+                } else {
+                    track.emptyUpdate();
+                }
+            }
+            if (!hasUpdatedTrack) {
+                // Add a new track.
+                // System.out.println("Created new track");
+                mCurrentTracks.add(GoalTrack.makeNewTrack(timestamp, target, mNextId));
                 ++mNextId;
             }
         }
 
-        for (int i = 0; i < mCurrentTracks.size(); i++) {
-            // if there as an observation to update the track
-            if (field_to_goals.size() > i) {
-                // try to update the given track
-                mCurrentTracks.get(i).tryUpdate(timestamp, field_to_goals.get(i));
+        maybePruneTracks();
+    }
 
-                // if dead after update, force update to reset the target position
-                if (!mCurrentTracks.get(i).isAlive()) {
-                    mCurrentTracks.get(i).forceUpdate(timestamp, field_to_goals.get(i));
-                }
-        
-                // if no observation for an update empty update 
-            } else {
-                mCurrentTracks.get(i).emptyUpdate();
-            }
-        }
+    public synchronized void maybePruneTracks() {
+        mCurrentTracks.removeIf(track -> !track.isAlive());
     }
 
     public synchronized boolean hasTracks() {
@@ -150,9 +138,5 @@ public class GoalTracker {
             rv.add(new TrackReport(track));
         }
         return rv;
-    }
-
-    public synchronized void clearTracks(){
-        mCurrentTracks = new ArrayList<>();
     }
 }
