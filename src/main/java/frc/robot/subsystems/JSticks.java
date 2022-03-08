@@ -140,6 +140,9 @@ public class JSticks extends Subsystem {
     }
 
     private SystemState handleReadingButtons() {
+        if (mStateChanged){
+            mDriver.rumble(5, 2);
+        }
         teleopRoutines();
 
         return defaultStateTransfer();
@@ -159,6 +162,12 @@ public class JSticks extends Subsystem {
         double swerveXInput = mPeriodicIO.dr_LeftStickY_Translate;
         double swerveRotationInput = mPeriodicIO.dr_RightStickX_Rotate;
 
+        if (mPeriodicIO.dr_LeftTrigger_SlowSpeed) {
+            swerveYInput *= 0.5;
+            swerveXInput *= 0.5;
+            swerveRotationInput *= 0.5;
+        }
+
         // NEW SWERVE
         boolean maintainHeading = mShouldMaintainHeading.update(swerveRotationInput == 0, 0.2);
         boolean changeHeadingSetpoint = shouldChangeHeadingSetpoint.update(maintainHeading);
@@ -173,10 +182,10 @@ public class JSticks extends Subsystem {
         var isFieldOriented = !mPeriodicIO.dr_RightBumper_RobotOrient;
         if (mHeadingController.getHeadingControllerState() != SwerveHeadingController.HeadingControllerState.OFF) {
             mSwerve.setTeleopInputs(swerveXInput, swerveYInput, mHeadingController.update(),
-                    mPeriodicIO.dr_LeftTrigger_SlowSpeed, isFieldOriented, true);
+                    false/*mPeriodicIO.dr_LeftTrigger_SlowSpeed*/, isFieldOriented, true);
         } else {
             mSwerve.setTeleopInputs(swerveXInput, swerveYInput, swerveRotationInput,
-                    mPeriodicIO.dr_LeftTrigger_SlowSpeed, isFieldOriented, false);
+                    false/*mPeriodicIO.dr_LeftTrigger_SlowSpeed*/, isFieldOriented, false);
         }
 
         if (mPeriodicIO.dr_YButton_ResetIMU) {
