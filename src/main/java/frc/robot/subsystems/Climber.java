@@ -568,8 +568,8 @@ public class Climber extends Subsystem {
     @Override
     public void outputTelemetry() {
         SmartDashboard.putNumber("Left Climber Encoder", mPeriodicIO.climberPosition);
-        SmartDashboard.putNumber("Left Climb Current", mFXLeftClimber.getStatorCurrent());
-        SmartDashboard.putNumber("Right Climb Current", mFXRightClimber.getStatorCurrent());
+        // SmartDashboard.putNumber("Left Climb Current", mFXLeftClimber.getStatorCurrent());
+        // SmartDashboard.putNumber("Right Climb Current", mFXRightClimber.getStatorCurrent());
         // SmartDashboard.putNumber("Left Climb Supply Current", mFXLeftClimber.getSupplyCurrent());
         // SmartDashboard.putNumber("Right Climb Supply Current", mFXRightClimber.getSupplyCurrent());
     }

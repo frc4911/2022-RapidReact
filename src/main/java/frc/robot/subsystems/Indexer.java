@@ -310,11 +310,11 @@ public class Indexer extends Subsystem {
 
     @Override
     public void outputTelemetry() {
-        SmartDashboard.putBoolean("Indexer Enter Beam Blocked", mPeriodicIO.enterBeamBlocked);
-        SmartDashboard.putBoolean("Indexer Exit Beam Blocked", mPeriodicIO.exitBeamBlocked);
-        SmartDashboard.putNumber("Indexer Position", mPeriodicIO.motorPosition);
+        SmartDashboard.putBoolean("Enter Beam Blocked", mPeriodicIO.enterBeamBlocked);
+        SmartDashboard.putBoolean("Exit Beam Blocked", mPeriodicIO.exitBeamBlocked);
+        // SmartDashboard.putNumber("Indexer Position", mPeriodicIO.motorPosition);
 
-        SmartDashboard.putNumber("Indexer Current", mFXIndexer.getStatorCurrent());
+        // SmartDashboard.putNumber("Indexer Current", mFXIndexer.getStatorCurrent());
     }
 
     public static class PeriodicIO {

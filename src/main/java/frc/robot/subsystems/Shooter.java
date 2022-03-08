@@ -472,13 +472,13 @@ public class Shooter extends Subsystem {
         SmartDashboard.putNumber("Flywheel Speed", mPeriodicIO.flywheelVelocity);
         SmartDashboard.putBoolean("Reached Desired Speed", mPeriodicIO.reachedDesiredSpeed);
         SmartDashboard.putBoolean("Reached Desired Hood", mPeriodicIO.reachedDesiredHoodPosition);
-        SmartDashboard.putBoolean("Ready To Shoot", readyToShoot());
+        // SmartDashboard.putBoolean("Ready To Shoot", readyToShoot());
         // these next values are bypassing readPeriodicInputs to reduce the ctre errors
         // in
         // riolog
-        SmartDashboard.putNumber("Flywheel Right Current", mFXRightFlyWheel.getStatorCurrent());
-        SmartDashboard.putNumber("Flywheel Left Current", mFXLeftFlyWheel.getStatorCurrent());
-        SmartDashboard.putNumber("Hood Current", mFXHood.getStatorCurrent());
+        // SmartDashboard.putNumber("Flywheel Right Current", mFXRightFlyWheel.getStatorCurrent());
+        // SmartDashboard.putNumber("Flywheel Left Current", mFXLeftFlyWheel.getStatorCurrent());
+        // SmartDashboard.putNumber("Hood Current", mFXHood.getStatorCurrent());
     }
 
     public static class PeriodicIO {

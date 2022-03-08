@@ -571,9 +571,9 @@ public class Swerve extends Subsystem {
     @Override
     public void outputTelemetry() {
         mModules.forEach((m) -> m.outputTelemetry());
-        SmartDashboard.putString("Swerve/Swerve State", mControlState.toString());
-        SmartDashboard.putString("Swerve/Pose", mPeriodicIO.robotPose.toString());
-        SmartDashboard.putString("Swerve/Chassis Speeds", mPeriodicIO.chassisSpeeds.toString());
+        // SmartDashboard.putString("Swerve/Swerve State", mControlState.toString());
+        // SmartDashboard.putString("Swerve/Pose", mPeriodicIO.robotPose.toString());
+        // SmartDashboard.putString("Swerve/Chassis Speeds", mPeriodicIO.chassisSpeeds.toString());
         // SmartDashboard.putBoolean("Swerve/isOnTarget", isOnTarget());
 
         if (Constants.kDebuggingOutput) {
