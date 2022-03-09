@@ -1,5 +1,6 @@
 package frc.robot.actions;
 
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.RobotState;
 import frc.robot.subsystems.Swerve;
@@ -30,7 +31,10 @@ public class DriveTrajectoryAction implements Action {
         System.out.println("Starting trajectory! (length=" + mTrajectory.getRemainingProgress() + ")");
         if (mResetPose) {
             var startPose = mTrajectory.getState().state().getPose();
-            RobotState.reset(Timer.getFPGATimestamp(), startPose);
+            var orientation = mTrajectory.getState().state().getPose().getRotation();
+            // TODO - when using Swerve enabled trajectpries get the orientation forom the state
+//            var orientation = Rotation2d.fromDegrees(Math.toRadians(mTrajectory.getState().state().orientation));
+            RobotState.getInstance("DriveTrajectoryAction").reset(Timer.getFPGATimestamp(), startPose, orientation);
             mDrive.setRobotPosition(startPose);
         }
         mDrive.setTrajectory(mTrajectory);

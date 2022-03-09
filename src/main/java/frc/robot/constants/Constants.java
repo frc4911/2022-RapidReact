@@ -4,7 +4,9 @@ import java.util.Arrays;
 import java.util.List;
 
 import edu.wpi.first.math.util.Units;
+import frc.robot.config.CameraResolution;
 import frc.robot.config.LimelightConfig;
+import frc.robot.config.PipelineConfiguration;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Rotation2d;
 import libraries.cheesylib.geometry.Translation2d;
@@ -84,109 +86,6 @@ public class Constants {
     public static final Pose2d kRobotRightRampExitPose = new Pose2d(
             new Translation2d(95.25 + kRobotHalfLength, -(97.0 + kRobotHalfWidth - 162.0)),
             Rotation2d.fromDegrees(0));
-    // public static final Pose2d kRobotLeftRampExitPose = new Pose2d(new
-    // Translation2d(48.0 + kRobotHalfLength, -75.25 - kRobotHalfWidth),
-    // Rotation2d.fromDegrees(0));
-    // public static final Pose2d kRobotRightRampExitPose = new Pose2d(new
-    // Translation2d(48.0 + kRobotHalfLength, 75.25 + kRobotHalfWidth),
-    // Rotation2d.fromDegrees(0));
-
-    public static double kMaxAngleAimError = 1;
-    public static final double kMaxAimTurningVelocity = 0.1;
-
-    // TODO: "fix em up later" -Ram
-    // shootwards limelight
-    public static final LimelightConfig kShootwardsLimelightConfig = new LimelightConfig();
-
-    public static final double kTrackStabilityWeight = 0.0;
-    public static final double kTrackAgeWeight = 10.0;
-    public static final double kTrackSwitchingWeight = 100.0;
-
-    static {
-        kShootwardsLimelightConfig.kName = "ShootwardsLimelight";
-        kShootwardsLimelightConfig.kTableName = "limelight-shooter";
-        kShootwardsLimelightConfig.kHeight = 23 /* 22.25 */;// cetus: 11 // robot1: 22.25// pinkeye: 23// inches
-        kShootwardsLimelightConfig.kSubsystemToLens = new Pose2d(new Translation2d(0, 0.0),
-                Rotation2d.fromDegrees(0.0)); // 0.0 brian // right is positive // -1.5
-        kShootwardsLimelightConfig.kHorizontalPlaneToLens = Rotation2d.fromDegrees(20.5); // 38 // degrees
-        kShootwardsLimelightConfig.kExpectedTargetCount = new double[] { 1, 3 }; // expect 2 targets (2 top
-                                                                                 // corners)
-        kShootwardsLimelightConfig.kPipelineZoom = new int[] { 1, 2 };
-        kShootwardsLimelightConfig.kTargets = new Target[] {
-                Target.OUTER_GOAL_MAIN_COUNTOUR,
-                Target.OUTER_GOAL_CORNERS,
-                Target.OUTER_GOAL_CORNERS
-        };
-    }
-
-    // shootwards zoom constants
-
-    // when zoomed in (2), if robot closer than 12.5 ft, zoom out (1) will occur.
-    // if zoomed out (1), if robot farther than 13.5, zoom in may occur (2).
-    // overlap keeps zooms from jumping back and forth
-    public static final double kZoomOutDistance = 13.5; // ft
-    public static final double kZoomInDistance = 14.5; // ft
-    public static final double kZoomInProportion = 0.4; // for zoom 1 - 2, target must be within kZoomConstant * FOV
-                                                        // for each x and y
-    public static final double kZoomOutProportion = 0.95;
-    public static final double kTimeBeforeZoomSwitch = 0.1; // 0.1 sec must pass to zoom in or out
-
-    // collectwards limelight
-    public static final LimelightConfig kCollectwardsLimelightConfig = new LimelightConfig();
-    static {
-        kCollectwardsLimelightConfig.kName = "CollectwardsLimelight";
-        kCollectwardsLimelightConfig.kTableName = "limelight-collect"; // TODO: "limelight-collect"
-        kCollectwardsLimelightConfig.kHeight = 22; // deadeye 23, pinkeye 22
-        kCollectwardsLimelightConfig.kSubsystemToLens = new Pose2d(new Translation2d(0, 0),
-                Rotation2d.fromDegrees(0));
-        kCollectwardsLimelightConfig.kHorizontalPlaneToLens = Rotation2d.fromDegrees(-29.0);
-        kCollectwardsLimelightConfig.kExpectedTargetCount = new double[] { 1, 3 };
-        kCollectwardsLimelightConfig.kPipelineZoom = new int[] { 1 };
-        kCollectwardsLimelightConfig.kTargets = new Target[] {
-                Target.POWER_CELL,
-                Target.POWER_CELL,
-                Target.POWER_CELL
-        };
-    }
-
-    // collectwards limelight testing
-    // public static final LimelightConstants kCollectwardsLimelightConstants = new
-    // LimelightConstants();
-    // static {
-    // kCollectwardsLimelightConstants.kName = "Collectwards Limelight";
-    // kCollectwardsLimelightConstants.kTableName = "limelight-shooter";
-    // kCollectwardsLimelightConstants.kHeight = 25.25/*22.25*/;// cetus: 11 //
-    // robot1: 22.25// inches
-    // kCollectwardsLimelightConstants.kSubsystemToLens = new Pose2d(new
-    // Translation2d(0, 0.0), Rotation2d.fromDegrees(-0.7)); // right is positive
-    // kCollectwardsLimelightConstants.kHorizontalPlaneToLens =
-    // Rotation2d.fromDegrees(20.5); //38 // degrees
-    // kCollectwardsLimelightConstants.kExpectedTargetCount = new double[] {1, 3};
-    // // expect 2 targets (2 top corners)
-    // kCollectwardsLimelightConstants.kPiplineZoom = new int[] {1, 2};
-    // }
-
-    // target constants
-    public enum Target {
-        OUTER_GOAL_MAIN_COUNTOUR,
-        OUTER_GOAL_CORNERS,
-        POWER_CELL;
-
-        double[] targetHeights = new double[] {
-                /* 98.25 */ 70 - 7.5,
-                /* 98.25 */70,
-                // raynli
-                /* 43.5 */ 4.5
-        };
-
-        public double getHeight() {
-            return targetHeights[this.ordinal()];
-        }
-    }
-
-    public static final double kGoalTargetHeight = 98.25;
-    public static final double kPowerCellTargetHeight = 4.5;
-    public static final double kCornerToCornerLength = 39.26;
 
     public static final double kImageCaptureLatency = 11.0 / 1000.0; // seconds
     public static final double kHorizontalFOV = Math.toRadians(59.6);
@@ -195,8 +94,6 @@ public class Constants {
     public static final double kVPW = 2.0 * Math.tan(kHorizontalFOV / 2);
     public static final double kVPH = 2.0 * Math.tan(kVerticalFOV / 2);
 
-    public static final int[] pixelFrameLowRes = new int[] { 320, 240 };
-    public static final int[] pixelFrameHighRes = new int[] { 960, 720 };
 
     // Goal tracker constants
     public static double kMaxGoalTrackAge = 0.5;// 0.5
@@ -224,33 +121,6 @@ public class Constants {
     public static final double kPathLookaheadTime = 0.25; // seconds to look ahead along the path for steering 0.4
     public static final double kPathMinLookaheadDistance = Units.inchesToMeters(6.0); // inches 24.0 (we've been
                                                                                       // using 3.0)
-
-    // Swerve Odometry Constants
-    public static final double kSwerveWheelDiameter = 4.0901; // inches (actual diamter is closer to 3.87, but
-                                                              // secondary algorithm prefers 4.0901) 3.76
-    // public static final double kSwerveRotationMotorTicksPerRotation = 2048.0 *
-    // 21.5; // FX encoder ticks per module rotation
-
-    /**
-     * The number of rotations the swerve drive encoder undergoes for every rotation
-     * of the wheel.
-     */
-    // public static final double kSwerveDriveTicksPerWheelRev = .85*14178; //brian
-    // 1.21 new gear ratio 2048 * 6.923 //SwerveDriveEncoderResolution *
-    // kSwerveEncoderToWheelRatio;
-    // public static final double kSwerveEncUnitsPerInch =
-    // kSwerveDriveTicksPerWheelRev / (Math.PI * kSwerveWheelDiameter);
-
-    // TODO - Replace the following constants with configuration
-
-    // public static final double kSwerveDriveMaxSpeed = 21000.0; // drive motor
-    // ticks/100ms
-    // start with velocity of motor shaft kSwerveDriveMaxSpeed*10 in ticks/sec *
-    // 6.923 (gear ratio) * wheel diameter * pi
-    // TODO: This is used by Trajectory code etc. Replace later.
-    // public static final double kSwerveMaxSpeedInchesPerSecond =
-    // kSwerveDriveMaxSpeed*10.0/(6.923*2048)*kSwerveWheelDiameter*Math.PI;
-
     // NEW SWERVE
     // TODO: use SDS MK4 module configurations file.
 
@@ -286,23 +156,25 @@ public class Constants {
     // Vision
     public static final boolean kUseTopCorners = false;
     public static final double kTopVisionTargetHeight = Units.inchesToMeters(98.25);
-    public static final double kBottomVisionTargetHeight = 81.25;
 
-    public static final LimelightConfig kShootLimelightConfig = new LimelightConfig();
-    static {
-        kShootLimelightConfig.kName = "ShooterLimelight";
-        kShootLimelightConfig.kTableName = "limelight-Shooter";
-        kShootLimelightConfig.kHeight = 23 /*22.25*/;// cetus: 11  // robot1: 22.25// pinkeye: 23// inches
-        kShootLimelightConfig.kSubsystemToLens = new Pose2d(new Translation2d(0, 0.0), Rotation2d.fromDegrees(0.0)); // 0.0 brian // right is positive // -1.5
-        kShootLimelightConfig.kHorizontalPlaneToLens = Rotation2d.fromDegrees(20.5); //38 // degrees
-        kShootLimelightConfig.kExpectedTargetCount = new double[] {1, 3}; // expect 2 targets (2 top corners)
-        kShootLimelightConfig.kPipelineZoom = new int[] {1, 2};
-        kShootLimelightConfig.kTargets = new Target[] {
-                Target.OUTER_GOAL_MAIN_COUNTOUR,
-                Target.OUTER_GOAL_CORNERS,
-                Target.OUTER_GOAL_CORNERS
-        };
-    }
+    public static final double kLimelightLensOffGroundHeight = Units.inchesToMeters(39.8);
+    public static final Rotation2d kTurretLimelightHorizontalPlaneToLens = Rotation2d.fromDegrees(38.00);
+    public static final Pose2d kShooterToLens  = new Pose2d(-5.7, 0, Rotation2d.fromDegrees(1.5));
+
+    public static final PipelineConfiguration kLowRes1xZoom = new PipelineConfiguration(CameraResolution.F_320x240, 1.0);
+    public static final PipelineConfiguration kLowRes2xZoom = new PipelineConfiguration(CameraResolution.F_320x240, 2.0);
+
+    public static LimelightConfig kLimelight2Config = new LimelightConfig(
+            1, // label id
+                LimelightConfig.Type.Shooter,
+                "Turret Limelight #1", // name
+                "limelight", // table name
+                Constants.kLimelightLensOffGroundHeight, // height
+                Constants.kShooterToLens, // shooter to lens
+                Constants.kTurretLimelightHorizontalPlaneToLens, // horizontalPlaneToLens,
+                65.0, //64.03840065743408,
+                50.0 //50.34836606499798
+            );
     // END LIMELIGHT
 
 

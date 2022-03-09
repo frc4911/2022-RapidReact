@@ -8,7 +8,7 @@ import java.util.Optional;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.constants.Constants;
-import frc.robot.subsystems.LimeLights.LimeLight;
+import frc.robot.subsystems.LimeLights.Limelight;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Rotation2d;
 import libraries.cheesylib.geometry.Translation2d;
@@ -86,7 +86,10 @@ public class RobotState {
     /**
      * Resets the field to robot transform (robot's position on the field)
      */
-    private synchronized void reset(
+    /**
+     * Resets the field to robot transform (robot's position on the field)
+     */
+    public synchronized void reset(
             double start_time, Pose2d initial_field_to_vehicle, Rotation2d initial_field_to_orientation) {
         field_to_vehicle_ = new InterpolatingTreeMap<>(kObservationBufferSize);
         field_to_vehicle_.put(new InterpolatingDouble(start_time), initial_field_to_vehicle);
@@ -121,16 +124,23 @@ public class RobotState {
         return field_to_orientation_.lastEntry();
     }
 
+    public synchronized void addFieldToVehicleObservation(double timestamp, Pose2d observation) {
+        field_to_vehicle_.put(new InterpolatingDouble(timestamp), observation);
+    }
 
     public synchronized void resetVision() {
         goal_tracker_.reset();
     }
 
-    private Translation2d getCameraToVisionTargetTranslation(TargetInfo target, LimeLight source) {
+    private Translation2d getCameraToVisionTargetTranslation(TargetInfo target, Limelight source) {
         return getCameraToVisionTargetTranslation(target, source.getLensHeight(), source.getHorizontalPlaneToLens(), Constants.kTopVisionTargetHeight);
     }
 
-    private static Translation2d getCameraToVisionTargetTranslation(TargetInfo target, double cameraHeight, Rotation2d cameraPitch, double targetCornerHeight) {
+    private static Translation2d getCameraToVisionTargetTranslation(
+            TargetInfo target,
+            double cameraHeight,
+            Rotation2d cameraPitch,
+            double targetCornerHeight) {
         // Compensate for camera pitch
         Translation2d xz_plane_translation = new Translation2d(target.getX(), target.getZ()).rotateBy(cameraPitch);
         double x = xz_plane_translation.x();
@@ -148,7 +158,11 @@ public class RobotState {
         return null;
     }
 
-    private void updateGoalTracker(double timestamp, List<Translation2d> cameraToVisionTargetTranslations, GoalTracker tracker, LimeLight source) {
+    private void updateGoalTracker(
+            double timestamp,
+            List<Translation2d> cameraToVisionTargetTranslations,
+            GoalTracker tracker,
+            Limelight source) {
         if (cameraToVisionTargetTranslations.size() != 2 ||
                 cameraToVisionTargetTranslations.get(0) == null ||
                 cameraToVisionTargetTranslations.get(1) == null) {
@@ -158,7 +172,7 @@ public class RobotState {
         Pose2d cameraToVisionTarget = Pose2d.fromTranslation(cameraToVisionTargetTranslations.get(0).interpolate(
                 cameraToVisionTargetTranslations.get(1), 0.5));
 
-        Pose2d fieldToVisionTarget = getFieldToVehicle(timestamp).transformBy(source.getSubsystemToLens()).transformBy(cameraToVisionTarget);
+        Pose2d fieldToVisionTarget = getFieldToVehicle(timestamp).transformBy(source.getShooterToLens()).transformBy(cameraToVisionTarget);
 
         if (fieldToVisionTarget.getTranslation().direction().cos() < 0.0) {
             return;
@@ -168,7 +182,7 @@ public class RobotState {
         tracker.update(timestamp, List.of(new Pose2d(fieldToVisionTarget.getTranslation(), Rotation2d.fromDegrees(180.0))));
     }
 
-    public synchronized void addVisionUpdate(double timestamp, List<TargetInfo> observations, LimeLight source) {
+    public synchronized void addVisionUpdate(double timestamp, List<TargetInfo> observations, Limelight source) {
         List<Translation2d> cameraToVisionTargetTranslations = new ArrayList<>();
 
         if (observations == null || observations.isEmpty()) {

@@ -55,7 +55,7 @@ public class GoalTrack {
             return false;
         }
         double distance = mSmoothedPosition.inverse().transformBy(new_observation).getTranslation().norm();
-        if (distance < Constants.kMaxTrackerDistance) {
+        if (distance < maxTrackerDistance) {
             mObservedPositions.put(timestamp, new_observation);
             pruneByTime();
             return true;
