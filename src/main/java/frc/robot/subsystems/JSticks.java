@@ -194,7 +194,7 @@ public class JSticks extends Subsystem {
         
         // END NEW SWERVE
 
-        // CLIMBER CONTROL
+        // Climbing
         if(mPeriodicIO.op_AButton_ClimberLockout) {
             // -1: Do nothing
             // 0: Extend
@@ -218,6 +218,7 @@ public class JSticks extends Subsystem {
             mSuperstructure.setOpenLoopClimb(0.0, -1);
         }
 
+        // Shooting
         if (mPeriodicIO.op_BButton_StopShooter) {
             mShooter.stopFlywheel();
         }
@@ -226,22 +227,20 @@ public class JSticks extends Subsystem {
             mSuperstructure.setManualShootDistance(0);
             mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT, sClassName);
         }
-
         if (mPeriodicIO.op_POV90_ManualShot_Ball) {
             mSuperstructure.setManualShootDistance(36);
             mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT, sClassName);
         }
-
         if (mPeriodicIO.op_POV180_ManualShot_Robot) {
             mSuperstructure.setManualShootDistance(60);
             mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT, sClassName);
         }
-
         if (mPeriodicIO.op_POV270_ManualShot_Tarmac) {
             mSuperstructure.setManualShootDistance(102);
             mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT, sClassName);
         }
 
+        // On Release
         if (mPeriodicIO.op_POV0_ManualShot_Fender_Stop || mPeriodicIO.op_POV90_ManualShot_Ball_Stop
             || mPeriodicIO.op_POV180_ManualShot_Robot_Stop || mPeriodicIO.op_POV270_ManualShot_Tarmac_Stop) {
             mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
@@ -264,30 +263,29 @@ public class JSticks extends Subsystem {
         mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
         mPeriodicIO.lastSchedStart = now;
 
-        //Driving
+        // Driving
         mPeriodicIO.dr_LeftStickX_Translate = -mDriver.getRaw(Xbox.LEFT_STICK_X, mDeadBand);
         mPeriodicIO.dr_LeftStickY_Translate = -mDriver.getRaw(Xbox.LEFT_STICK_Y, mDeadBand);
         mPeriodicIO.dr_RightStickX_Rotate = -mDriver.getRaw(Xbox.RIGHT_STICK_X, mDeadBand);
         mPeriodicIO.dr_LeftTrigger_SlowSpeed = mDriver.getButton(Xbox.LEFT_TRIGGER, CW.PRESSED_LEVEL);
         mPeriodicIO.dr_RightBumper_RobotOrient = mDriver.getButton(Xbox.RIGHT_BUMPER, CW.PRESSED_LEVEL); // field/robot
         mPeriodicIO.dr_YButton_ResetIMU = mDriver.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
-        mPeriodicIO.dr_AButton_ToggleDriveMode = mDriver.getButton(Xbox.A_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.dr_StartButton_ResetWheels = mDriver.getButton(Xbox.START_BUTTON, CW.PRESSED_EDGE);
 
-        //Climbing
+        // Climbing
         mPeriodicIO.op_LeftStickY_ClimberElevator = -mOperator.getRaw(Xbox.LEFT_STICK_Y, mDeadBand);
         mPeriodicIO.op_AButton_ClimberLockout = mOperator.getButton(Xbox.A_BUTTON, CW.PRESSED_LEVEL);
         mPeriodicIO.op_LeftBumper_RetractSlappySticks = mOperator.getButton(Xbox.LEFT_BUMPER, CW.PRESSED_EDGE);
         mPeriodicIO.op_RightBumper_ExtendSlappySticks = mOperator.getButton(Xbox.RIGHT_BUMPER, CW.PRESSED_EDGE);
 
-        //Collecting
+        // Collecting
         mPeriodicIO.op_RightTrigger_Collect = mOperator.getButton(Xbox.RIGHT_TRIGGER, CW.PRESSED_EDGE);
         mPeriodicIO.op_RightTrigger_Collect_Stop = mOperator.getButton(Xbox.RIGHT_TRIGGER, CW.RELEASED_EDGE);
 
         mPeriodicIO.op_LeftTrigger_Back = mOperator.getButton(Xbox.LEFT_TRIGGER, CW.PRESSED_EDGE);
         mPeriodicIO.op_LeftTrigger_Back_Stop = mOperator.getButton(Xbox.LEFT_TRIGGER, CW.RELEASED_EDGE);
 
-        //Shooting
+        // Shooting
         mPeriodicIO.op_BButton_StopShooter = mOperator.getButton(Xbox.B_BUTTON, CW.PRESSED_EDGE);
 
         mPeriodicIO.op_POV0_ManualShot_Fender = mOperator.getButton(Xbox.POV0_0, CW.PRESSED_EDGE);
@@ -341,6 +339,8 @@ public class JSticks extends Subsystem {
         private double lastSchedStart;
 
         // Joystick Inputs
+
+        // Driving
         public double dr_LeftStickX_Translate; // drive
         public double dr_LeftStickY_Translate; // drive
         public double dr_RightStickX_Rotate; // drive
@@ -348,18 +348,22 @@ public class JSticks extends Subsystem {
         public boolean dr_LeftTrigger_SlowSpeed;
         public boolean dr_RightBumper_RobotOrient; // field/robot oriented
         public boolean dr_YButton_ResetIMU; // reset direction
-        public boolean dr_AButton_ToggleDriveMode;
         public boolean dr_StartButton_ResetWheels;
 
-        public double op_LeftStickY_ClimberElevator;
+        // Climbing
+        public double op_LeftStickY_ClimberElevator;        
+        public boolean op_AButton_ClimberLockout;
+        public boolean op_LeftBumper_RetractSlappySticks;
+        public boolean op_RightBumper_ExtendSlappySticks;
+
+        // Collecting
         public boolean op_RightTrigger_Collect;
         public boolean op_RightTrigger_Collect_Stop;
         public boolean op_LeftTrigger_Back;
         public boolean op_LeftTrigger_Back_Stop;
+
+        // Shooting
         public boolean op_BButton_StopShooter;
-        public boolean op_AButton_ClimberLockout;
-        public boolean op_LeftBumper_RetractSlappySticks;
-        public boolean op_RightBumper_ExtendSlappySticks;
 
         public boolean op_POV0_ManualShot_Fender;
         public boolean op_POV90_ManualShot_Ball;
