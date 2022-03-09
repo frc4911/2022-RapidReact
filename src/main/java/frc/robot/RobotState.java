@@ -133,7 +133,7 @@ public class RobotState {
     }
 
     private Translation2d getCameraToVisionTargetTranslation(TargetInfo target, Limelight source) {
-        return getCameraToVisionTargetTranslation(target, source.getLensHeight(), source.getHorizontalPlaneToLens(), Constants.kTopVisionTargetHeight);
+        return getCameraToVisionTargetTranslation(target, source.getLensHeight(), source.getHorizontalPlaneToLens(), Constants.kVisionTargetHeight);
     }
 
     private static Translation2d getCameraToVisionTargetTranslation(

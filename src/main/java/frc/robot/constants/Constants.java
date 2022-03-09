@@ -1,8 +1,5 @@
 package frc.robot.constants;
 
-import java.util.Arrays;
-import java.util.List;
-
 import edu.wpi.first.math.util.Units;
 import frc.robot.config.CameraResolution;
 import frc.robot.config.LimelightConfig;
@@ -62,16 +59,6 @@ public class Constants {
     public static final Pose2d farShipPosition = new Pose2d(new Translation2d(304.3, -28.87),
             Rotation2d.fromDegrees(90.0));
 
-    public static final double kOuterTargetHeight = 98.25 - 7.5;
-    public static final double kDiskTargetHeight = 28.625;// 28.1875
-    public static final double kBallTargetHeight = 36.9375;
-    public static final List<Rotation2d> kPossibleDiskTargetAngles = Arrays.asList(
-            /* Rotation2d.fromDegrees(0.0), */ Rotation2d.fromDegrees(30.0), Rotation2d.fromDegrees(150.0),
-            /* Rotation2d.fromDegrees(180.0), */ Rotation2d.fromDegrees(-150.0),
-            Rotation2d.fromDegrees(-30.0));
-    public static final List<Rotation2d> kPossibleBallTargetAngles = Arrays.asList(Rotation2d.fromDegrees(90.0),
-            Rotation2d.fromDegrees(-90.0));
-
     public static final Pose2d kRobotStartingPose = Pose2d.identity();
     public static final Pose2d kRobotSpecialPose = new Pose2d(new Translation2d(0, 0), Rotation2d.fromDegrees(180));
     public static final Pose2d kRobotLeftStartingPose = new Pose2d(
@@ -87,35 +74,7 @@ public class Constants {
             new Translation2d(95.25 + kRobotHalfLength, -(97.0 + kRobotHalfWidth - 162.0)),
             Rotation2d.fromDegrees(0));
 
-    public static final double kImageCaptureLatency = 11.0 / 1000.0; // seconds
-    public static final double kHorizontalFOV = Math.toRadians(59.6);
-    public static final double kVerticalFOV = Math.toRadians(49.7);
 
-    public static final double kVPW = 2.0 * Math.tan(kHorizontalFOV / 2);
-    public static final double kVPH = 2.0 * Math.tan(kVerticalFOV / 2);
-
-
-    // Goal tracker constants
-    public static double kMaxGoalTrackAge = 0.5;// 0.5
-    public static double kMaxTrackerDistance = 60.0;// 18.0
-    public static double kCameraFrameRate = 90.0;
-    public static double kTrackReportComparatorStablityWeight = 1.0;
-    public static double kTrackReportComparatorAgeWeight = 1.0;
-    public static final double kDefaultCurveDistance = kRobotHalfLength + 36.0;
-    public static final double kVisionUpdateDistance = kRobotHalfLength + 75.0;
-    public static final double kVisionDistanceStep = 4.0;
-    public static final double kClosestVisionDistance = 26.0;// 36.0
-    public static final double kDefaultVisionTrackingSpeed = 42.0;
-    public static final double kCurvedVisionYOffset = 0.375;// 1.25
-
-    // Vision Speed Constraint Treemap
-    public static InterpolatingTreeMap<InterpolatingDouble, InterpolatingDouble> kVisionSpeedTreemap = new InterpolatingTreeMap<>();
-    static {
-        kVisionSpeedTreemap.put(new InterpolatingDouble(-6.0), new InterpolatingDouble(24.0));
-        kVisionSpeedTreemap.put(new InterpolatingDouble(kClosestVisionDistance), new InterpolatingDouble(24.0));
-        kVisionSpeedTreemap.put(new InterpolatingDouble(60.0), new InterpolatingDouble(48.0));
-        kVisionSpeedTreemap.put(new InterpolatingDouble(300.0), new InterpolatingDouble(48.0));
-    }
 
     // Path following constants
     public static final double kPathLookaheadTime = 0.25; // seconds to look ahead along the path for steering 0.4
@@ -153,12 +112,32 @@ public class Constants {
     // END NEW SWERVE
 
     // LIMELIGHT
-    // Vision
+    // TODO:  Create Robot specific configurations
+    // Goal Tracker
+//    public static final double kHorizontalFOV = Math.toRadians(59.6);
+//    public static final double kVerticalFOV = Math.toRadians(49.7);
+
+//    public static final double kVPW = 2.0 * Math.tan(kHorizontalFOV / 2);
+//    public static final double kVPH = 2.0 * Math.tan(kVerticalFOV / 2);
+
     public static final boolean kUseTopCorners = false;
-    public static final double kTopVisionTargetHeight = Units.inchesToMeters(98.25);
+
+
+    public static final double kImageCaptureLatency = 11.0 / 1000.0; // seconds
+
+    public static final double kMaxTrackerDistance = Units.feetToMeters(9.0);
+    public static final double kMaxGoalTrackAge = 2.5;
+    public static final double kMaxGoalTrackSmoothingTime = 0.5;
+    public static final double kCameraFrameRate = 90.0; // fps
+
+    public static final double kTrackStabilityWeight = 0.0;
+    public static final double kTrackAgeWeight = 10.0;
+    public static final double kTrackSwitchingWeight = 100.0;
 
     public static final double kLimelightLensOffGroundHeight = Units.inchesToMeters(39.8);
-    public static final Rotation2d kTurretLimelightHorizontalPlaneToLens = Rotation2d.fromDegrees(38.00);
+    public static final Rotation2d kLimelightHorizontalPlaneToLens = Rotation2d.fromDegrees(38.00);
+
+    public static final double kVisionTargetHeight = Units.inchesToMeters(12 * 8 + 10);
     public static final Pose2d kShooterToLens  = new Pose2d(-5.7, 0, Rotation2d.fromDegrees(1.5));
 
     public static final PipelineConfiguration kLowRes1xZoom = new PipelineConfiguration(CameraResolution.F_320x240, 1.0);
@@ -171,10 +150,26 @@ public class Constants {
                 "limelight", // table name
                 Constants.kLimelightLensOffGroundHeight, // height
                 Constants.kShooterToLens, // shooter to lens
-                Constants.kTurretLimelightHorizontalPlaneToLens, // horizontalPlaneToLens,
+                Constants.kLimelightHorizontalPlaneToLens, // horizontalPlaneToLens,
                 65.0, //64.03840065743408,
                 50.0 //50.34836606499798
             );
+    // Goal tracker constants
+    public static final double kDefaultCurveDistance = kRobotHalfLength + 36.0;
+    public static final double kVisionUpdateDistance = kRobotHalfLength + 75.0;
+    public static final double kVisionDistanceStep = 4.0;
+    public static final double kClosestVisionDistance = 26.0;// 36.0
+    public static final double kDefaultVisionTrackingSpeed = 42.0;
+    public static final double kCurvedVisionYOffset = 0.375;// 1.25
+
+    // Vision Speed Constraint Treemap
+    public static InterpolatingTreeMap<InterpolatingDouble, InterpolatingDouble> kVisionSpeedTreemap = new InterpolatingTreeMap<>();
+    static {
+        kVisionSpeedTreemap.put(new InterpolatingDouble(-6.0), new InterpolatingDouble(24.0));
+        kVisionSpeedTreemap.put(new InterpolatingDouble(kClosestVisionDistance), new InterpolatingDouble(24.0));
+        kVisionSpeedTreemap.put(new InterpolatingDouble(60.0), new InterpolatingDouble(48.0));
+        kVisionSpeedTreemap.put(new InterpolatingDouble(300.0), new InterpolatingDouble(48.0));
+    }
     // END LIMELIGHT
 
 
