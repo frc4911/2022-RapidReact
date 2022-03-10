@@ -342,12 +342,29 @@ public class Superstructure extends Subsystem {
 
     @Override
     public String getLogHeaders() {
-        return "Superstructure";
+        return  sClassName+".schedDeltaDesired,"+
+                sClassName+".schedDeltaActual,"+
+                sClassName+".schedDuration,"+
+                sClassName+".mSystemState,"+
+                sClassName+".mWantedState,"+
+                sClassName+".pressure";
     }
 
     @Override
     public String getLogValues(boolean telemetry) {
-        return "Superstructure.Values";
+        String start;
+        if (telemetry){
+            start = ",,,";
+        }
+        else{
+            start = mPeriodicIO.schedDeltaDesired+","+
+                    mPeriodicIO.schedDeltaActual+","+
+                    (Timer.getFPGATimestamp()-mPeriodicIO.lastSchedStart)+",";
+        }
+        return  start+
+        mSystemState+","+
+        mWantedState+","+
+        mPeriodicIO.pressure;
     }
 
     @Override
@@ -359,7 +376,6 @@ public class Superstructure extends Subsystem {
         // Logging
         private int schedDeltaDesired;
         public double schedDeltaActual;
-        public double schedDuration;
         private double lastSchedStart;
 
         // Inputs

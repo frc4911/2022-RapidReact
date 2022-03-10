@@ -635,19 +635,46 @@ public class Climber extends Subsystem {
 
     @Override
     public String getLogHeaders() {
-        return "Climber";
+        return  sClassName+".schedDeltaDesired,"+
+                sClassName+".schedDeltaActual,"+
+                sClassName+".schedDuration,"+
+                sClassName+".mSystemState,"+
+                sClassName+".mWantedState,"+
+                sClassName+".gbdcSubState,"+
+                sClassName+".climberPosition,"+
+                sClassName+".climberDemand,"+
+                sClassName+".climberControlMode,"+
+                sClassName+".slappyDemand,"+
+                sClassName+".climberHomed";
     }
 
     @Override
     public String getLogValues(boolean telemetry) {
-        return "Climber.Values";
+        String start;
+        if (telemetry){
+            start = ",,,";
+        }
+        else{
+            start = mPeriodicIO.schedDeltaDesired+","+
+                    mPeriodicIO.schedDeltaActual+","+
+                    (Timer.getFPGATimestamp()-mPeriodicIO.lastSchedStart)+",";
+        }
+        return  start+
+                mSystemState+","+
+                mWantedState+","+
+                mPeriodicIO.climberPosition+","+
+                gbdcSubState+","+
+                mPeriodicIO.climberDemand+","+
+                mPeriodicIO.climberControlMode+","+
+                mPeriodicIO.slappyDemand+","+
+                climberHomed;
     }
 
     @Override
     public void outputTelemetry() {
-        SmartDashboard.putNumber("Left Climber Encoder", mPeriodicIO.climberPosition);
-        SmartDashboard.putNumber("Left Climb Current", mFXLeftClimber.getStatorCurrent());
-        SmartDashboard.putNumber("Right Climb Current", mFXRightClimber.getStatorCurrent());
+        // SmartDashboard.putNumber("Left Climber Encoder", mPeriodicIO.climberPosition);
+        // SmartDashboard.putNumber("Left Climb Current", mFXLeftClimber.getStatorCurrent());
+        // SmartDashboard.putNumber("Right Climb Current", mFXRightClimber.getStatorCurrent());
         // SmartDashboard.putNumber("Left Climb Supply Current", mFXLeftClimber.getSupplyCurrent());
         // SmartDashboard.putNumber("Right Climb Supply Current", mFXRightClimber.getSupplyCurrent());
     }
@@ -657,7 +684,6 @@ public class Climber extends Subsystem {
         public final int mDefaultSchedDelta = 20; // axis updated every 20 msec
         public int schedDeltaDesired;
         public double schedDeltaActual;
-        public double schedDuration;
         public double lastSchedStart;
 
         // Inputs

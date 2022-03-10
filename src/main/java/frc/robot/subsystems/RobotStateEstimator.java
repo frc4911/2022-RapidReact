@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import edu.wpi.first.wpilibj.Timer;
 import frc.robot.RobotState;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
@@ -115,31 +116,31 @@ public class RobotStateEstimator extends Subsystem {
 
     @Override
     public String getLogHeaders() {
-        if (mLoggingEnabled) {
-            return sClassName + ".systemState," +
-                    sClassName + ".schedDeltaDesired";
-        }
-
-        return null;
-    }
-
-    private String generateLogValues(boolean telemetry) {
-        String values = "" + mSystemState + "," +
-                mPeriodicIO.schedDeltaDesired;
-        return values;
+        return  sClassName+".schedDeltaDesired,"+
+                sClassName+".schedDeltaActual,"+
+                sClassName+".schedDuration";
     }
 
     @Override
     public String getLogValues(boolean telemetry) {
-        if (mLoggingEnabled) {
-            return generateLogValues(telemetry);
+        String start;
+        if (telemetry){
+            start = ",,";
         }
-
-        return null;
+        else{
+            start = mPeriodicIO.schedDeltaDesired+","+
+                    mPeriodicIO.schedDeltaActual+","+
+                    (Timer.getFPGATimestamp()-mPeriodicIO.lastSchedStart);
+        }
+        return  start;
     }
 
     @Override
     public void readPeriodicInputs() {
+        double now = Timer.getFPGATimestamp();
+        mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
+        mPeriodicIO.lastSchedStart = now;
+
     }
 
     @Override
@@ -158,5 +159,7 @@ public class RobotStateEstimator extends Subsystem {
     public static class PeriodicIO {
         // LOGGING
         public int schedDeltaDesired;
+        public double schedDeltaActual;
+        private double lastSchedStart;
     }
 }

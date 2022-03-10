@@ -437,52 +437,22 @@ public class SwerveDriveModule extends Subsystem {
 
     @Override
     public String getLogHeaders() {
-        if (mLoggingEnabled) {
-            String shortName = mModuleName;
-
-            return shortName + ".steerPosition," +
-                    shortName + ".drivePosition," +
-                    shortName + ".steerControlMode," +
-                    shortName + ".driveControlMode," +
-                    shortName + ".steerDemand," +
-                    shortName + ".driveDemand," +
-                    shortName + ".steerCurrent," +
-                    shortName + ".driveCurrent";
-        }
-        return null;
-    }
-
-    private String generateLogValues(boolean telemetry) {
-        String values;
-
-        if (telemetry) {
-            values = "" + mPeriodicIO.steerPosition + "," +
-                    mPeriodicIO.drivePosition + "," +
-                    mPeriodicIO.steerControlMode + "," +
-                    mPeriodicIO.driveControlMode + "," +
-                    mPeriodicIO.steerDemand + "," +
-                    mPeriodicIO.driveDemand + "," +
-                    mPeriodicIO.steerCurrent + "," +
-                    mPeriodicIO.driveCurrent;
-        } else {
-            values = "" + mPeriodicIO.steerPosition + "," +
-                    mPeriodicIO.drivePosition + "," +
-                    mPeriodicIO.steerControlMode + "," +
-                    mPeriodicIO.driveControlMode + "," +
-                    mPeriodicIO.steerDemand + "," +
-                    mPeriodicIO.driveDemand + "," +
-                    /* periodicIO.steerCurrent+ */"," +
-                    /* periodicIO.driveCurrent+ */",";
-        }
-        return values;
+        return  mModuleName + ".driveDemand," +
+                mModuleName + ".drivePosition," +
+                mModuleName + ".steerDemand," +
+                mModuleName + ".steerPosition," +
+                mModuleName + ".driveCurrent,"+
+                mModuleName + ".steerCurrent";
     }
 
     @Override
     public String getLogValues(boolean telemetry) {
-        if (mLoggingEnabled) {
-            return generateLogValues(telemetry);
-        }
-        return null;
+        return  mPeriodicIO.driveDemand + "," +
+                mPeriodicIO.drivePosition + "," +
+                mPeriodicIO.steerDemand + "," +
+                mPeriodicIO.steerPosition + "," +
+                mPeriodicIO.driveCurrent + "," +
+                mPeriodicIO.steerCurrent;
     }
 
     @Override
@@ -492,9 +462,6 @@ public class SwerveDriveModule extends Subsystem {
         mPeriodicIO.driveVelocity = mDriveMotor.getSelectedSensorVelocity(0);
         mPeriodicIO.steerVelocity = mSteerMotor.getSelectedSensorVelocity(0);
         mPeriodicIO.steerError = mSteerMotor.getClosedLoopError(0);
-
-        mPeriodicIO.steerCurrent = mSteerMotor.getStatorCurrent();
-        mPeriodicIO.driveCurrent = mDriveMotor.getStatorCurrent();
     }
 
     @Override
@@ -517,6 +484,8 @@ public class SwerveDriveModule extends Subsystem {
 
     @Override
     public void outputTelemetry() {
+        mPeriodicIO.steerCurrent = mSteerMotor.getStatorCurrent();
+        mPeriodicIO.driveCurrent = mDriveMotor.getStatorCurrent();
         // SmartDashboard.putNumber(mModuleName + "Steer velocity",
         // mSteerMotor.getSelectedSensorVelocity(0));
         // SmartDashboard.putNumber(mModuleName + "Steer (cancoder)",

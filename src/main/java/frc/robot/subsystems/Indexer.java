@@ -300,12 +300,37 @@ public class Indexer extends Subsystem {
 
     @Override
     public String getLogHeaders() {
-        return "Indexer";
+        return  sClassName+".schedDeltaDesired,"+
+                sClassName+".schedDeltaActual,"+
+                sClassName+".schedDuration,"+
+                sClassName+".mSystemState,"+
+                sClassName+".mWantedState,"+
+                sClassName+".exitBeamBlocked,"+
+                sClassName+".enterBeamBlocked,"+
+                sClassName+".indexerDemand,"+
+                sClassName+".loadingCompleted,"+
+                sClassName+".feedingCompleted";    
     }
 
     @Override
     public String getLogValues(boolean telemetry) {
-        return "Indexer.Values";
+        String start;
+        if (telemetry){
+            start = ",,,";
+        }
+        else{
+            start = mPeriodicIO.schedDeltaDesired+","+
+                    mPeriodicIO.schedDeltaActual+","+
+                    (Timer.getFPGATimestamp()-mPeriodicIO.lastSchedStart)+",";
+        }
+        return  start+
+                mSystemState+","+
+                mWantedState+","+
+                mPeriodicIO.exitBeamBlocked+","+
+                mPeriodicIO.enterBeamBlocked+","+
+                mPeriodicIO.indexerDemand+","+
+                loadingCompleted+","+
+                feedingCompleted;
     }
 
     @Override
@@ -324,7 +349,6 @@ public class Indexer extends Subsystem {
         public final int mSleepCycle = 0;
         public int schedDeltaDesired;
         public double schedDeltaActual;
-        public double schedDuration;
         public double lastSchedStart;
 
         // Inputs
