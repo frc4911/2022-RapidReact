@@ -79,7 +79,7 @@ public class RobotState {
 
     private InterpolatingTreeMap<InterpolatingDouble, Pose2d> field_to_vehicle_;
     private InterpolatingTreeMap<InterpolatingDouble, Rotation2d> field_to_orientation_;
-    private GoalTracker goal_tracker_ = new GoalTracker();
+    private GoalTracker goal_tracker_ = new GoalTracker(Constants.kGoalTrackerConfig);
     private double distance_driven_;
 
 
@@ -95,7 +95,7 @@ public class RobotState {
         field_to_vehicle_.put(new InterpolatingDouble(start_time), initial_field_to_vehicle);
         field_to_orientation_ = new InterpolatingTreeMap<>(kObservationBufferSize);
         field_to_orientation_.put(new InterpolatingDouble(start_time), initial_field_to_orientation);
-        goal_tracker_ = new GoalTracker();
+        goal_tracker_ = new GoalTracker(Constants.kGoalTrackerConfig);
         distance_driven_ = 0.0;
     }
 
@@ -232,7 +232,8 @@ public class RobotState {
                 Constants.kTrackStabilityWeight,
                 Constants.kTrackAgeWeight,
                 Constants.kTrackSwitchingWeight,
-                prev_track_id, timestamp);
+                prev_track_id, timestamp,
+                Constants.kGoalTrackerConfig);
         reports.sort(comparator);
 
         GoalTracker.TrackReport report = null;

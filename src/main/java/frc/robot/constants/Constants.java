@@ -9,6 +9,7 @@ import libraries.cheesylib.geometry.Rotation2d;
 import libraries.cheesylib.geometry.Translation2d;
 import libraries.cheesylib.util.InterpolatingDouble;
 import libraries.cheesylib.util.InterpolatingTreeMap;
+import libraries.cheesylib.vision.GoalTrackerConfig;
 
 public class Constants {
     /* All distance measurements are in inches, unless otherwise noted. */
@@ -129,6 +130,9 @@ public class Constants {
     public static final double kMaxGoalTrackAge = 2.5;
     public static final double kMaxGoalTrackSmoothingTime = 0.5;
     public static final double kCameraFrameRate = 90.0; // fps
+
+    public static GoalTrackerConfig kGoalTrackerConfig = new GoalTrackerConfig(
+            kMaxTrackerDistance, kMaxGoalTrackAge, kMaxGoalTrackSmoothingTime, kCameraFrameRate);
 
     public static final double kTrackStabilityWeight = 0.0;
     public static final double kTrackAgeWeight = 10.0;
