@@ -35,7 +35,7 @@ import libraries.cheesylib.vision.TargetInfo;
  * 3. Camera frame: origin is the center of the Limelight relative to the
  * shooter.
  *
- * 4. Target frame: origin is the center of the vision target, facing outwards
+ * 4. Target (aka Goal) frame: origin is the center of the vision target, facing outwards
  * along the normal.
  *
  * As a kinematic chain with 3 frames, there are 2 transforms of interest:
@@ -78,14 +78,9 @@ public class RobotState {
 
 
     private InterpolatingTreeMap<InterpolatingDouble, Pose2d> field_to_vehicle_;
-    private InterpolatingTreeMap<InterpolatingDouble, Rotation2d> field_to_orientation_;
     private GoalTracker goal_tracker_ = new GoalTracker(Constants.kGoalTrackerConfig);
     private double distance_driven_;
 
-
-    /**
-     * Resets the field to robot transform (robot's position on the field)
-     */
     /**
      * Resets the field to robot transform (robot's position on the field)
      */
@@ -93,8 +88,6 @@ public class RobotState {
             double start_time, Pose2d initial_field_to_vehicle, Rotation2d initial_field_to_orientation) {
         field_to_vehicle_ = new InterpolatingTreeMap<>(kObservationBufferSize);
         field_to_vehicle_.put(new InterpolatingDouble(start_time), initial_field_to_vehicle);
-        field_to_orientation_ = new InterpolatingTreeMap<>(kObservationBufferSize);
-        field_to_orientation_.put(new InterpolatingDouble(start_time), initial_field_to_orientation);
         goal_tracker_ = new GoalTracker(Constants.kGoalTrackerConfig);
         distance_driven_ = 0.0;
     }
@@ -113,15 +106,6 @@ public class RobotState {
 
     public synchronized Map.Entry<InterpolatingDouble, Pose2d> getLatestFieldToVehicle() {
         return field_to_vehicle_.lastEntry();
-    }
-
-
-    public synchronized Rotation2d getFieldToOrientation(double timestamp) {
-        return field_to_orientation_.getInterpolated(new InterpolatingDouble(timestamp));
-    }
-
-    public synchronized Map.Entry<InterpolatingDouble, Rotation2d> getLatestFieldToOrientation() {
-        return field_to_orientation_.lastEntry();
     }
 
     public synchronized void addFieldToVehicleObservation(double timestamp, Pose2d observation) {

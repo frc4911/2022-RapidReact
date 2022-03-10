@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import edu.wpi.first.wpilibj.Timer;
 import frc.robot.RobotState;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
@@ -16,14 +17,14 @@ public class RobotStateEstimator extends Subsystem {
 
     private SystemState mSystemState;
     private WantedState mWantedState;
-    private PeriodicIO mPeriodicIO;
+    private final PeriodicIO mPeriodicIO;
     @SuppressWarnings("unused")
     private boolean mStateChanged;
     private final boolean mLoggingEnabled = true; // used to disable logging for this subsystem only
     private static int mDefaultSchedDelta = 20;
     RobotState robotState;// = RobotState.getInstance();
     Swerve mSwerve;
-    @SuppressWarnings("unused")
+    private double prev_timestamp_ = -1.0;
 
     private static String sClassName;
     private static int sInstanceCount;
@@ -58,6 +59,7 @@ public class RobotStateEstimator extends Subsystem {
             mStateChanged = true;
             System.out.println(sClassName + " state " + mSystemState);
             mPeriodicIO.schedDeltaDesired = mDefaultSchedDelta;
+            prev_timestamp_ = Timer.getFPGATimestamp();
         }
     }
 
@@ -82,7 +84,11 @@ public class RobotStateEstimator extends Subsystem {
     }
 
     private SystemState handleEstimating(double timestamp) {
+        final double dt = timestamp - prev_timestamp_;
+        // TODO:  Add prediction values based on current velocities
+
         robotState.addFieldToVehicleObservation(timestamp, mSwerve.getPose());
+        prev_timestamp_ = timestamp;
         return defaultStateTransfer();
     }
 
