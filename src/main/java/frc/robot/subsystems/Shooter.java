@@ -458,27 +458,58 @@ public class Shooter extends Subsystem {
 
     @Override
     public String getLogHeaders() {
-        return "Shooter";
+        return  sClassName+".schedDeltaDesired,"+
+                sClassName+".schedDeltaActual,"+
+                sClassName+".schedDuration,"+
+                sClassName+".mSystemState,"+
+                sClassName+".mWantedState,"+
+                sClassName+".flywheelVelocity,"+
+                sClassName+".hoodPosition,"+
+                sClassName+".flywheelVelocityDemand,"+
+                sClassName+".hoodDemand,"+
+                sClassName+".reachedDesiredSpeed,"+
+                sClassName+".reachedDesiredHoodPosition,"+
+                sClassName+".mDistance,"+
+                sClassName+".hoodHomed";
     }
 
     @Override
     public String getLogValues(boolean telemetry) {
-        return "Shooter.Values";
+        String start;
+        if (telemetry){
+            start = ",,,";
+        }
+        else{
+            start = mPeriodicIO.schedDeltaDesired+","+
+                    mPeriodicIO.schedDeltaActual+","+
+                    (Timer.getFPGATimestamp()-mPeriodicIO.lastSchedStart)+",";
+        }
+        return  start+
+        mSystemState+","+
+        mWantedState+","+
+        mPeriodicIO.flywheelVelocity+","+
+        mPeriodicIO.hoodPosition+","+
+        mPeriodicIO.flywheelVelocityDemand+","+
+        mPeriodicIO.hoodDemand+","+
+        mPeriodicIO.reachedDesiredSpeed+","+
+        mPeriodicIO.reachedDesiredHoodPosition+","+
+        mDistance+","+
+        hoodHomed;
     }
 
     @Override
     public void outputTelemetry() {
-        SmartDashboard.putNumber("Hood Position", mPeriodicIO.hoodPosition);
-        SmartDashboard.putNumber("Flywheel Speed", mPeriodicIO.flywheelVelocity);
-        SmartDashboard.putBoolean("Reached Desired Speed", mPeriodicIO.reachedDesiredSpeed);
-        SmartDashboard.putBoolean("Reached Desired Hood", mPeriodicIO.reachedDesiredHoodPosition);
-        SmartDashboard.putBoolean("Ready To Shoot", readyToShoot());
-        // these next values are bypassing readPeriodicInputs to reduce the ctre errors
-        // in
-        // riolog
-        SmartDashboard.putNumber("Flywheel Right Current", mFXRightFlyWheel.getStatorCurrent());
-        SmartDashboard.putNumber("Flywheel Left Current", mFXLeftFlyWheel.getStatorCurrent());
-        SmartDashboard.putNumber("Hood Current", mFXHood.getStatorCurrent());
+        // SmartDashboard.putNumber("Hood Position", mPeriodicIO.hoodPosition);
+        // SmartDashboard.putNumber("Flywheel Speed", mPeriodicIO.flywheelVelocity);
+        // SmartDashboard.putBoolean("Reached Desired Speed", mPeriodicIO.reachedDesiredSpeed);
+        // SmartDashboard.putBoolean("Reached Desired Hood", mPeriodicIO.reachedDesiredHoodPosition);
+        // SmartDashboard.putBoolean("Ready To Shoot", readyToShoot());
+        // // these next values are bypassing readPeriodicInputs to reduce the ctre errors
+        // // in
+        // // riolog
+        // SmartDashboard.putNumber("Flywheel Right Current", mFXRightFlyWheel.getStatorCurrent());
+        // SmartDashboard.putNumber("Flywheel Left Current", mFXLeftFlyWheel.getStatorCurrent());
+        // SmartDashboard.putNumber("Hood Current", mFXHood.getStatorCurrent());
     }
 
     public static class PeriodicIO {
@@ -486,7 +517,6 @@ public class Shooter extends Subsystem {
         public final int mDefaultSchedDelta = 20; // loop run every 20 msec
         public int schedDeltaDesired;
         public double schedDeltaActual;
-        public double schedDuration;
         public double lastSchedStart;
 
         // Inputs

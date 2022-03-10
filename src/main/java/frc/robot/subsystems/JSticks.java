@@ -385,12 +385,77 @@ public class JSticks extends Subsystem {
 
     @Override
     public String getLogHeaders() {
-        return "Jsticks";
+        return  sClassName+".schedDeltaDesired,"+
+                sClassName+".schedDeltaActual,"+
+                sClassName+".schedDuration,"+
+                sClassName+".dr_LeftStickX_Translate,"+
+                sClassName+".dr_LeftStickY_Translate,"+
+                sClassName+".dr_RightStickX_Rotate,"+
+                sClassName+".dr_RightTrigger_AutoShoot,"+
+                sClassName+".dr_LeftTrigger_SlowSpeed,"+
+                sClassName+".dr_RightBumper_RobotOrient,"+
+                sClassName+".dr_YButton_ResetIMU = false,"+
+                sClassName+".dr_AButton_ToggleDriveMode,"+
+                sClassName+".dr_StartButton_ResetWheels,"+
+                sClassName+".op_LeftStickY_ClimberElevator,"+
+                sClassName+".op_RightTrigger_Collect,"+
+                sClassName+".op_RightTrigger_Collect_Stop,"+
+                sClassName+".op_LeftTrigger_Back,"+
+                sClassName+".op_LeftTrigger_Back_Stop,"+
+                sClassName+".op_BButton_StopShooter,"+
+                sClassName+".op_AButton_ClimberLockout,"+
+                sClassName+".op_LeftBumper_RetractSlappySticks,"+
+                sClassName+".op_RightBumper_ExtendSlappySticks,"+
+                sClassName+".op_POV0_ManualShot_Fender,"+
+                sClassName+".op_POV90_ManualShot_Ball,"+
+                sClassName+".op_POV180_ManualShot_Robot,"+
+                sClassName+".op_POV270_ManualShot_Tarmac,"+
+                sClassName+".op_ManualShoot,"+
+                sClassName+".op_POV0_ManualShot_Fender_Stop,"+
+                sClassName+".op_POV90_ManualShot_Ball_Stop,"+
+                sClassName+".op_POV180_ManualShot_Robot_Stop,"+
+                sClassName+".op_POV270_ManualShot_Tarmac_Stop";
     }
 
     @Override
     public String getLogValues(boolean telemetry) {
-        return "Jsticks.Values";
+        String start;
+        if (telemetry){
+            start = ",,,";
+        }
+        else{
+            start = mPeriodicIO.schedDeltaDesired+","+
+                    mPeriodicIO.schedDeltaActual+","+
+                    (Timer.getFPGATimestamp()-mPeriodicIO.lastSchedStart)+",";
+        }
+        return  start+        
+        mPeriodicIO.dr_LeftStickX_Translate+","+
+        mPeriodicIO.dr_LeftStickY_Translate+","+
+        mPeriodicIO.dr_RightStickX_Rotate+","+
+        mPeriodicIO.dr_RightTrigger_AutoShoot+","+
+        mPeriodicIO.dr_LeftTrigger_SlowSpeed+","+
+        mPeriodicIO.dr_RightBumper_RobotOrient+","+
+        mPeriodicIO.dr_YButton_ResetIMU+","+
+        mPeriodicIO.dr_AButton_ToggleDriveMode+","+
+        mPeriodicIO.dr_StartButton_ResetWheels+","+
+        mPeriodicIO.op_LeftStickY_ClimberElevator+","+
+        mPeriodicIO.op_RightTrigger_Collect+","+
+        mPeriodicIO.op_RightTrigger_Collect_Stop+","+
+        mPeriodicIO.op_LeftTrigger_Back+","+
+        mPeriodicIO.op_LeftTrigger_Back_Stop+","+
+        mPeriodicIO.op_BButton_StopShooter+","+
+        mPeriodicIO.op_AButton_ClimberLockout+","+
+        mPeriodicIO.op_LeftBumper_RetractSlappySticks+","+
+        mPeriodicIO.op_RightBumper_ExtendSlappySticks+","+
+        mPeriodicIO.op_POV0_ManualShot_Fender+","+
+        mPeriodicIO.op_POV90_ManualShot_Ball+","+
+        mPeriodicIO.op_POV180_ManualShot_Robot+","+
+        mPeriodicIO.op_POV270_ManualShot_Tarmac+","+
+        mPeriodicIO.op_ManualShoot+","+
+        mPeriodicIO.op_POV0_ManualShot_Fender_Stop+","+
+        mPeriodicIO.op_POV90_ManualShot_Ball_Stop+","+
+        mPeriodicIO.op_POV180_ManualShot_Robot_Stop+","+
+        mPeriodicIO.op_POV270_ManualShot_Tarmac_Stop;
     }
 
     @Override
@@ -408,7 +473,6 @@ public class JSticks extends Subsystem {
         private final int mDefaultSchedDelta = 100; // axis updated every 100 msec
         public int schedDeltaDesired;
         public double schedDeltaActual;
-        public double schedDuration;
         private double lastSchedStart;
 
         // Joystick Inputs
