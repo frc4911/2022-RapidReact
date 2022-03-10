@@ -1,12 +1,12 @@
-package frc.robot.subsystems.LimeLights;
+package frc.robot.subsystems;
 
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.RobotState;
-import frc.robot.config.LimelightConfig;
-import frc.robot.config.PipelineConfiguration;
+import frc.robot.limelight.LimelightConfig;
+import frc.robot.limelight.PipelineConfiguration;
 import frc.robot.constants.Constants;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Rotation2d;
@@ -161,6 +161,10 @@ public class Limelight extends Subsystem {
 
     @Override
     public synchronized void readPeriodicInputs() {
+        double now = Timer.getFPGATimestamp();
+        mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
+        mPeriodicIO.lastSchedStart = now;
+
         mPeriodicIO.latency = mNetworkTable.getEntry("tl").getDouble(0) / 1000.0 + Constants.kImageCaptureLatency;
         mPeriodicIO.givenLedMode = (int) mNetworkTable.getEntry("ledMode").getDouble(1.0);
         mPeriodicIO.givenPipeline = (int) mNetworkTable.getEntry("pipeline").getDouble(0);
@@ -393,6 +397,8 @@ public class Limelight extends Subsystem {
         public int schedDeltaDesired;
         public double schedDeltaActual;
         public double schedDuration;
+        private double lastSchedStart;
+
         // INPUTS
         public double latency;
         public int givenLedMode;
@@ -400,12 +406,12 @@ public class Limelight extends Subsystem {
         public double xOffset;
         public double yOffset;
         public double area;
+
         // OUTPUTS
         public int ledMode = 1; // 0 - use pipeline mode, 1 - off, 2 - blink, 3 - on
         public int camMode = 0; // 0 - vision processing, 1 - driver camera
         public int pipeline = 0; // 0 - 9
         public int stream = 2; // sets stream layout if another webcam is attached
         public int snapshot = 0; // 0 - stop snapshots, 1 - 2 Hz
-        private double lastSchedStart;
     }
 }

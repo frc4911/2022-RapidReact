@@ -1,4 +1,4 @@
-package frc.robot.config;
+package frc.robot.limelight;
 
 public enum CameraResolution {
     F_320x240(320, 240),

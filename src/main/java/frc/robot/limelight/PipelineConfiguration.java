@@ -1,4 +1,4 @@
-package frc.robot.config;
+package frc.robot.limelight;
 
 public class PipelineConfiguration {
     public final CameraResolution fullFrameCameraResolution;

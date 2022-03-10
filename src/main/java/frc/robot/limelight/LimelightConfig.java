@@ -1,4 +1,4 @@
-package frc.robot.config;
+package frc.robot.limelight;
 
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Rotation2d;

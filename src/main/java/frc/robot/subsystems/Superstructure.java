@@ -3,12 +3,21 @@ package frc.robot.subsystems;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.RobotState;
+import frc.robot.constants.Constants;
 import frc.robot.constants.Ports;
+import frc.robot.limelight.LimelightManager;
+import libraries.cheesylib.geometry.Rotation2d;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.subsystems.SubsystemManager;
 import libraries.cheesylib.util.LatchedBoolean;
+import libraries.cheesylib.util.Util;
+import libraries.cheesylib.vision.AimingParameters;
+import libraries.cyberlib.utils.Angles;
 import libraries.cyberlib.utils.CyberMath;
+
+import java.util.Optional;
 
 public class Superstructure extends Subsystem {
 
@@ -19,8 +28,10 @@ public class Superstructure extends Subsystem {
     private Collector mCollector;
     private Shooter mShooter;
     private Climber mClimber;
-  
+    private LimelightManager mLLManager = LimelightManager.getInstance();
     private final AnalogInput mAIPressureSensor;
+
+    private RobotState mRobotState;
 
     // Superstructure States
     public enum SystemState {
@@ -47,6 +58,19 @@ public class Superstructure extends Subsystem {
     private WantedState mWantedState;
     private boolean mStateChanged;
     private LatchedBoolean mSystemStateChange = new LatchedBoolean();
+
+    private boolean mHasTarget = false;
+    private boolean mOnTarget = false;
+    private int mTrackId = -1;
+
+    private Optional<AimingParameters> mLatestAimingParameters = Optional.empty();
+    private boolean mEnforceAutoAimMinDistance = false;
+    private double mAutoAimMinDistance = 500;
+    private double mLastShootingParamsPrintTime = 0.0;
+
+    private boolean mOverrideLimelightLEDs = false;
+
+
     private PeriodicIO mPeriodicIO = new PeriodicIO();
     private int mFastCycle = 20;
     private int mSlowCycle = 100;
@@ -82,6 +106,7 @@ public class Superstructure extends Subsystem {
         mCollector = Collector.getInstance(sClassName);
         mShooter = Shooter.getInstance(sClassName);
         mClimber = Climber.getInstance(sClassName);
+        mRobotState = RobotState.getInstance(sClassName);
         mAIPressureSensor = new AnalogInput(Ports.PRESSURE_SENSOR);
     }
 
@@ -99,6 +124,7 @@ public class Superstructure extends Subsystem {
                     mSystemState = SystemState.HOLDING;
                     mWantedState = WantedState.HOLD;
                     mPeriodicIO.schedDeltaDesired = 100;
+                    mOverrideLimelightLEDs = false;
                     break;
             }
             System.out.println(sClassName + " state " + mSystemState);
@@ -118,10 +144,10 @@ public class Superstructure extends Subsystem {
                         newState = handleBacking();
                         break;
                     case AUTO_SHOOTING:
-                        newState = handleAutoShooting();
+                        newState = handleAutoShooting(timestamp);
                         break;
                     case MANUAL_SHOOTING:
-                        newState = handleManualShooting();
+                        newState = handleManualShooting(timestamp);
                         break;
                     case AUTO_CLIMBING:
                         newState = handleAutoClimbing();
@@ -149,6 +175,9 @@ public class Superstructure extends Subsystem {
     // Handling methods
     private SystemState handleDisabling() {
         if (mStateChanged) {
+            if (!mOverrideLimelightLEDs) {
+                mLLManager.getLimelight().setLed(Limelight.LedMode.OFF);
+            }
             mPeriodicIO.schedDeltaDesired = mSlowCycle;
         }
 
@@ -157,6 +186,9 @@ public class Superstructure extends Subsystem {
 
     private SystemState handleHolding() {
         if (mStateChanged) {
+            if (!mOverrideLimelightLEDs) {
+                mLLManager.getLimelight().setLed(Limelight.LedMode.PIPELINE);
+            }
             mCollector.setWantedState(Collector.WantedState.HOLD, sClassName);
             mIndexer.setWantedState(Indexer.WantedState.HOLD, sClassName);
             mShooter.setWantedState(Shooter.WantedState.HOLD, sClassName);
@@ -169,6 +201,9 @@ public class Superstructure extends Subsystem {
 
     private SystemState handleCollecting() {
         if (mStateChanged) {
+            if (!mOverrideLimelightLEDs) {
+                mLLManager.getLimelight().setLed(Limelight.LedMode.PIPELINE);
+            }
             mPeriodicIO.schedDeltaDesired = mFastCycle;
             mCollector.setWantedState(Collector.WantedState.COLLECT, sClassName);
             mIndexer.setWantedState(Indexer.WantedState.LOAD, sClassName);
@@ -179,6 +214,9 @@ public class Superstructure extends Subsystem {
 
     private SystemState handleBacking() {
         if (mStateChanged) {
+            if (!mOverrideLimelightLEDs) {
+                mLLManager.getLimelight().setLed(Limelight.LedMode.PIPELINE);
+            }
             mPeriodicIO.schedDeltaDesired = mFastCycle;
             mCollector.setWantedState(Collector.WantedState.BACK, sClassName);
             mIndexer.setWantedState(Indexer.WantedState.BACK, sClassName);
@@ -189,10 +227,19 @@ public class Superstructure extends Subsystem {
 
     // TODO: Get help with logic and limelight implementation - CURRENTLY UNUSED
     // If time constrains, may not be complete by Week 1
-    private SystemState handleAutoShooting() {
+    private SystemState handleAutoShooting(double timestamp) {
         if (mStateChanged) {
+            if (!mOverrideLimelightLEDs) {
+                mLLManager.getLimelight().setLed(Limelight.LedMode.PIPELINE);
+            }
             mShootSetup = true;
             mPeriodicIO.schedDeltaDesired = mFastCycle;
+        }
+
+        double range = Double.NaN;
+        getAimSetpointFromVision(timestamp);
+        if (mLatestAimingParameters.isPresent()) {
+            range = mLatestAimingParameters.get().getRange();
         }
 
         if (mShooter.readyToShoot() || !mShootSetup) {
@@ -205,13 +252,23 @@ public class Superstructure extends Subsystem {
         return defaultStateTransfer();
     }
 
-    private SystemState handleManualShooting() {
+    private SystemState handleManualShooting(double timestamp) {
         if (mStateChanged) {
+            if (!mOverrideLimelightLEDs) {
+                mLLManager.getLimelight().setLed(Limelight.LedMode.PIPELINE);
+            }
             mShooter.setShootDistance(mManualDistance);
             // shooter must be in shoot state for readyToShoot to return true
             mShooter.setWantedState(Shooter.WantedState.SHOOT, sClassName);
             mPeriodicIO.schedDeltaDesired = mFastCycle; // Set aligned with shooter frequency
         }
+
+        double range = Double.NaN;
+        getAimSetpointFromVision(timestamp);
+        if (mLatestAimingParameters.isPresent()) {
+            range = mLatestAimingParameters.get().getRange();
+        }
+
 
         if (!mShooter.getWantedState().equals(Shooter.WantedState.HOMEHOOD) &&
             !mShooter.getWantedState().equals(Shooter.WantedState.SHOOT)){
@@ -232,8 +289,10 @@ public class Superstructure extends Subsystem {
     // Unused: Lower priority in reference to other states
     private SystemState handleAutoClimbing() {
         if (mStateChanged) {
-
-        }
+            if (!mOverrideLimelightLEDs) {
+                mLLManager.getLimelight().setLed(Limelight.LedMode.BLINK);
+            }
+       }
 
         return defaultStateTransfer();
     }
@@ -299,7 +358,73 @@ public class Superstructure extends Subsystem {
     private double convertSensorToPSI(double sensorValue){
         return sensorValue * ((100-0)/(2.6-.5)) - 24.3;
     }
-  
+
+
+    public boolean visionHasTarget() {
+        return mHasTarget;
+    }
+
+    public void setOverrideLimelightLEDs(boolean should_override) {
+        mOverrideLimelightLEDs = should_override;
+    }
+
+    public synchronized void resetAimingParameters() {
+        mHasTarget = false;
+        mOnTarget = false;
+        mTrackId = -1;
+        mLatestAimingParameters = Optional.empty();
+    }
+
+    public synchronized boolean isOnTarget() {
+        return mOnTarget;
+    }
+
+
+    /**
+     * Get the setpoint to be used when aiming the chassis.
+     *
+     * <p>The state variables mHasTarget and mOnTarget are updated to reflect
+     * the validity of the setpoint.
+     *
+     * @param timestamp current time
+     * @return The setpoint
+     */
+    public synchronized double getAimSetpointFromVision(double timestamp) {
+        mLatestAimingParameters = mRobotState.getAimingParameters(-1,
+                Constants.kMaxGoalTrackAge, Constants.kVisionTargetToGoalOffset);
+        if (mLatestAimingParameters.isPresent()) {
+            mTrackId = mLatestAimingParameters.get().getTrackId();
+
+            // if (Constants.kIsHoodTuning) {
+            SmartDashboard.putNumber("Range To Target", mLatestAimingParameters.get().getRange());
+            // }
+
+            // Don't aim if not in min distance
+            if (mEnforceAutoAimMinDistance && mLatestAimingParameters.get().getRange() > mAutoAimMinDistance) {
+                return mSwerve.getHeading().getRadians();
+            }
+
+            Rotation2d error = mRobotState.getFieldToVehicle(timestamp).inverse()
+                    .transformBy(mLatestAimingParameters.get().getFieldToGoal()).getTranslation().direction();
+
+            double setPointInRadians =  mSwerve.getHeading().getRadians() + error.getRadians();
+
+            mHasTarget = true;
+
+            // TODO:  Within 3 degrees?  And make a constant.
+            mOnTarget = Util.epsilonEquals(error.getDegrees(), 0.0,3.0);
+
+            return Angles.normalizeAngle(setPointInRadians);
+
+        } else {
+            mHasTarget = false;
+            mOnTarget = false;
+
+            return mSwerve.getHeading().getRadians();
+        }
+    }
+
+
     @Override
     public void writePeriodicOutputs() {
         

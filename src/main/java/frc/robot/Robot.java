@@ -11,12 +11,13 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.TimedRobot;
 import frc.robot.autos.AutoModeSelector;
 import frc.robot.constants.Constants;
+import frc.robot.limelight.LimelightManager;
 import frc.robot.paths.TrajectoryGenerator;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Collector;
 import frc.robot.subsystems.Indexer;
 import frc.robot.subsystems.JSticks;
-import frc.robot.subsystems.LimeLights.Limelight;
+import frc.robot.subsystems.Limelight;
 import frc.robot.subsystems.RobotStateEstimator;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Superstructure;
@@ -124,6 +125,9 @@ public class Robot extends TimedRobot {
             // Always generate trajectories when robot code starts
             mTrajectoryGenerator.generateTrajectories(mSwerve.mSwerveConfiguration.trajectoryConfig);
         }
+
+        LimelightManager.getInstance().setLimelight(mLimelight);
+
         System.out.println("RobotInit() ends");
     }
 
@@ -214,6 +218,8 @@ public class Robot extends TimedRobot {
             mAutoModeExecutor = new AutoModeExecutor();
 
             mSubsystemLooper.start();
+            LimelightManager.getInstance().writePeriodicOutputs();
+
         } catch (Throwable t) {
             CrashTracker.logThrowableCrash(t);
             throw t;
