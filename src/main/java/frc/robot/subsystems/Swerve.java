@@ -167,7 +167,7 @@ public class Swerve extends Subsystem {
     }
 
     public void convertCancoderToFX(){
-        mModules.forEach((m) -> m.convertCancoderToFX());
+        mModules.forEach((m) -> m.convertCancoderToFX2());
     }
 
     @Override
@@ -495,48 +495,39 @@ public class Swerve extends Subsystem {
 
     @Override
     public String getLogHeaders() {
-        StringBuilder allHeaders = new StringBuilder(256);
-        for (SwerveDriveModule m : mModules) {
-            if (allHeaders.length() > 0) {
-                allHeaders.append(",");
-            }
-            allHeaders.append(m.getLogHeaders());
-        }
+        String headers;
 
-        allHeaders.append("," + sClassName + ".schedDeltaDesired," +
-                sClassName + ".schedDeltaActual," +
-                sClassName + ".schedDuration");
+        headers =   sClassName + ".schedDeltaDesired," +
+                    sClassName + ".schedDeltaActual," +
+                    sClassName + ".schedDuration," +
+                    sClassName + ".gyro_heading,";
 
-        return allHeaders.toString();
+                    headers += mModules.get(0).getLogHeaders()+",";
+                    headers += mModules.get(1).getLogHeaders()+",";
+                    headers += mModules.get(2).getLogHeaders()+",";
+                    headers += mModules.get(3).getLogHeaders();
+        return headers;
     }
 
-    private String generateLogValues(boolean telemetry) {
-        String values;
-        if (telemetry) {
-            values = "" + /* mPeriodicIO.schedDeltaDesired+ */"," +
-            /* mPeriodicIO.schedDeltaActual+ */","
-            /* mPeriodicIO.schedDuration */;
-        } else {
-            mPeriodicIO.schedDuration = Timer.getFPGATimestamp() - mPeriodicIO.lastSchedStart;
-            values = "" + mPeriodicIO.schedDeltaDesired + "," +
-                    mPeriodicIO.schedDeltaActual + "," +
-                    mPeriodicIO.schedDuration;
-        }
-
-        return values;
-    }
 
     @Override
     public String getLogValues(boolean telemetry) {
-        StringBuilder allValues = new StringBuilder(256);
-        for (SwerveDriveModule m : mModules) {
-            if (allValues.length() > 0) {
-                allValues.append(",");
-            }
-            allValues.append(m.getLogValues(telemetry));
+        String values;
+        if (telemetry) {
+            values = ",,,";
+        } else {
+            values = "" + mPeriodicIO.schedDeltaDesired + "," +
+                         mPeriodicIO.schedDeltaActual + "," +
+                         (Timer.getFPGATimestamp() - mPeriodicIO.lastSchedStart)+","+
+                         mPeriodicIO.gyro_heading.getDegrees()+",";
         }
-        allValues.append("," + generateLogValues(telemetry));
-        return allValues.toString();
+
+        values += mModules.get(0).getLogValues(telemetry)+",";
+        values += mModules.get(1).getLogValues(telemetry)+",";
+        values += mModules.get(2).getLogValues(telemetry)+",";
+        values += mModules.get(3).getLogValues(telemetry);
+
+        return values;
     }
 
     @Override
@@ -545,7 +536,7 @@ public class Swerve extends Subsystem {
         mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
         mPeriodicIO.lastSchedStart = now;
         mPeriodicIO.gyro_heading = Rotation2d.fromDegrees(mIMU.getYaw().getDegrees()).rotateBy(mGyroOffset);
-        mPeriodicIO.gyroYaw = mIMU.getYaw();
+        // mPeriodicIO.gyroYaw = mIMU.getYaw();
 
         // read modules
         mModules.forEach((m) -> m.readPeriodicInputs());
@@ -569,10 +560,10 @@ public class Swerve extends Subsystem {
 
     @Override
     public void outputTelemetry() {
-        mModules.forEach((m) -> m.outputTelemetry());
-        SmartDashboard.putString("Swerve/Swerve State", mControlState.toString());
-        SmartDashboard.putString("Swerve/Pose", mPeriodicIO.robotPose.toString());
-        SmartDashboard.putString("Swerve/Chassis Speeds", mPeriodicIO.chassisSpeeds.toString());
+        // mModules.forEach((m) -> m.outputTelemetry());
+        // SmartDashboard.putString("Swerve/Swerve State", mControlState.toString());
+        // SmartDashboard.putString("Swerve/Pose", mPeriodicIO.robotPose.toString());
+        // SmartDashboard.putString("Swerve/Chassis Speeds", mPeriodicIO.chassisSpeeds.toString());
         // SmartDashboard.putBoolean("Swerve/isOnTarget", isOnTarget());
 
         if (Constants.kDebuggingOutput) {
@@ -595,7 +586,7 @@ public class Swerve extends Subsystem {
 
             
             SmartDashboard.putString("Swerve/Pigeon Heading", mPeriodicIO.gyro_heading.toString());
-            SmartDashboard.putString("Swerve/Pigeon Raw Yaw", mPeriodicIO.gyroYaw.toString());
+            // SmartDashboard.putString("Swerve/Pigeon Raw Yaw", mPeriodicIO.gyroYaw.toString());
         }
     }
 
@@ -603,7 +594,6 @@ public class Swerve extends Subsystem {
         // LOGGING
         public int schedDeltaDesired;
         public double schedDeltaActual;
-        public double schedDuration;
         private double lastSchedStart;
 
         // Updated as part of periodic odometry
@@ -616,7 +606,7 @@ public class Swerve extends Subsystem {
 
         // Inputs
         public Rotation2d gyro_heading = Rotation2d.identity();
-        public Rotation2d gyroYaw = Rotation2d.identity();
+        // public Rotation2d gyroYaw = Rotation2d.identity();
         public double forward;
         public double strafe;
         public double rotation;

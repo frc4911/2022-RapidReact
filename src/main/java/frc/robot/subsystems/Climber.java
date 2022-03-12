@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.constants.Constants;
 import frc.robot.constants.Ports;
+import frc.robot.subsystems.Shooter.SystemState;
 import libraries.cheesylib.drivers.TalonFXFactory;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
@@ -26,7 +27,7 @@ public class Climber extends Subsystem {
     private final Solenoid mSlapSticks;
 
     // Subsystem Constants
-    private final double kClimberCurrentLimit = 80;
+    private final double kClimberCurrentLimit = 60; // temp change while testing autoclimb reset to 80 when done
     private final int kHomingZeroAdjustment = -1000; // Tick adjustment to accomodate physical overdriving on the elevator
     private final int kSlappySticksElevatorConflictLimit = 140000; // Max theory is 140k
     private final int kElevatorMaxHeight = 162000; // Max theory is 165k
@@ -53,7 +54,9 @@ public class Climber extends Subsystem {
         HOMING,
         CLIMBING,
         MOVINGELEVATOR,
-        GRABBINGBARDYNAMICCLAW
+        GRABBING_BAR_DYNAMIC_CLAW,
+        PRECLIMBING,
+        AUTOCLIMBING
     }
 
     public enum WantedState {
@@ -62,7 +65,9 @@ public class Climber extends Subsystem {
         HOME,
         CLIMB,
         MOVEELEVATOR,
-        GRABBARDYNAMICCLAW
+        GRAB_BAR_DYNAMIC_CLAW,
+        PRECLIMB,
+        AUTOCLIMB
     }
 
     public enum ElevatorPositions {
@@ -85,15 +90,20 @@ public class Climber extends Subsystem {
     private enum GrabBarDynamicClawSubState {
         EXTENDTOTOP,
         RETRACTTOENGAGECLAW,
+        EXTENDSLAPPIES,
+        RETRACTSLAPPIES,
+        DISENGAGECLAW,
         DONE
     }
 
     private GrabBarDynamicClawSubState gbdcSubState = GrabBarDynamicClawSubState.EXTENDTOTOP;
     private boolean gbdcSubStateChange = false;
     // TODO: get the correct values for these constants
-    private final double kExtendToTopPos = 160000;
-    private final double kDescendToBar = 145000;
+    private final double kExtendToTopPos = kElevatorMaxHeight-2000;
+    private final double kDescendToBar = 2000;
     private final double kElevPosTolerance = 1000;
+    private double mSlappyExtendTimeout;
+    private final double kSlappyExtendDuration = 1;
 
 
 
@@ -119,7 +129,7 @@ public class Climber extends Subsystem {
     private final double climberNonMovementDuration = .1; // reading below threshhold encoder reads for this long is
                                                            // considered stopped
     private final double climberHomingDemand = -0.1;
-    private boolean climberHomed = false; // global flag
+    private boolean climberHomed = true; // global flag
     private double climberNonMovementTimeout; // timestamp of when low readings are sufficient
     private WantedState wantedStateAfterHoming = WantedState.HOLD; // state to transition to after homed
 
@@ -188,7 +198,7 @@ public class Climber extends Subsystem {
 
         // TODO: all values must be tuned
         double kClosedError = 50;
-        double config_kP = 0;
+        double config_kP = 0.2;
         double config_kI = 0;
         double config_kD = 0;
         double config_kF = 0;
@@ -245,7 +255,7 @@ public class Climber extends Subsystem {
                     break;
             }
             mPeriodicIO.slappyDemand = SolenoidState.RETRACT;
-            mSolenoidState = SolenoidState.RETRACT;
+            mSolenoidState = SolenoidState.EXTEND;
             System.out.println(sClassName + " state " + mSystemState);
             stop(); // put into a known state
         }
@@ -266,10 +276,13 @@ public class Climber extends Subsystem {
                     case CLIMBING:
                         newState = handleClimbing();
                         break;
+                    case PRECLIMBING:
+                        newState = handlePreclimbing();
+                        break;
                     case MOVINGELEVATOR:
                         newState = handleMovingElevator();
                         break;
-                    case GRABBINGBARDYNAMICCLAW:
+                    case GRABBING_BAR_DYNAMIC_CLAW:
                         newState = handleGrabbingBarDynamicClaw();
                         break;
                     case HOLDING:
@@ -317,7 +330,8 @@ public class Climber extends Subsystem {
         if (mStateChanged) {
             mPeriodicIO.schedDeltaDesired = mDefaultSchedDelta; // stay awake
             if (climberHomed) {
-                mPeriodicIO.climberDemand = mPeriodicIO.climberPosition;
+                System.out.println("climber hold position = "+mPeriodicIO.climberPosition);
+                mPeriodicIO.climberDemand = Math.max(mPeriodicIO.climberPosition,0);
                 mPeriodicIO.climberControlMode = ControlMode.Position;
             } else {
                 mWantedState = WantedState.HOME;
@@ -348,6 +362,7 @@ public class Climber extends Subsystem {
             System.out.println("Climber Homing Sequence Complete");
             mFXRightClimber.setSelectedSensorPosition(kHomingZeroAdjustment);
             mFXLeftClimber.setSelectedSensorPosition(kHomingZeroAdjustment);
+            mPeriodicIO.climberPosition = 0;
 
             // Set maximum climber height after homing
             mFXLeftClimber.configForwardSoftLimitThreshold(kElevatorMaxHeight, Constants.kLongCANTimeoutMs);
@@ -405,32 +420,63 @@ public class Climber extends Subsystem {
         return elevatorAtDesiredPosition;
     }
 
-    // This is preliminary only. It is intended to give us a starting if we decide to automate any of the climb
+    private SystemState handlePreclimbing() {
+        if(mStateChanged) {
+            mPeriodicIO.slappyDemand = SolenoidState.RETRACT;
+            mPeriodicIO.climberDemand = kExtendToTopPos;
+            mPeriodicIO.climberControlMode = ControlMode.Position;
+            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
+        }
+
+        return defaultStateTransfer();
+    }
+
+    // This is preliminary only. It is intended to give us a running start if we decide to automate any of the climb
     private SystemState handleGrabbingBarDynamicClaw(){
         if (mStateChanged) {
             mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
             if (!climberHomed) {
-                wantedStateAfterHoming = WantedState.GRABBARDYNAMICCLAW;
+                wantedStateAfterHoming = WantedState.GRAB_BAR_DYNAMIC_CLAW;
                 mWantedState = WantedState.HOME;
                 return defaultStateTransfer();
             } else {
-                gbdcSubState = GrabBarDynamicClawSubState.EXTENDTOTOP;
+                gbdcSubState = GrabBarDynamicClawSubState.RETRACTTOENGAGECLAW;
                 gbdcSubStateChange = true;
             }
         }
 
         if (gbdcSubStateChange){
-
+            gbdcSubStateChange = false;
             switch (gbdcSubState){
-                case EXTENDTOTOP:
-                    mPeriodicIO.climberDemand = kExtendToTopPos;
-                    mPeriodicIO.climberControlMode = ControlMode.Position;
-                    break;
                 case RETRACTTOENGAGECLAW:
+                System.out.println("Climber substate RETRACTTOENGAGECLAW 1st time");
                     mPeriodicIO.climberDemand = kDescendToBar;
                     mPeriodicIO.climberControlMode = ControlMode.Position;
+                    mPeriodicIO.slappyDemand = SolenoidState.RETRACT;
                     break;
-                case DONE:
+                case EXTENDSLAPPIES:
+                System.out.println("Climber substate EXTENDSLAPPIES 1st time");
+                    mPeriodicIO.slappyDemand = SolenoidState.EXTEND;
+                    mSlappyExtendTimeout = Timer.getFPGATimestamp() + kSlappyExtendDuration;
+                    break;
+                case EXTENDTOTOP:
+                    System.out.println("Climber substate EXTENDTOTOP 1st time");
+                        mPeriodicIO.climberDemand = kSlappySticksElevatorConflictLimit;
+                        mPeriodicIO.climberControlMode = ControlMode.Position;
+                        mPeriodicIO.slappyDemand = SolenoidState.RETRACT;
+                        break;
+                case RETRACTSLAPPIES:
+                    System.out.println("Climber substate RETRACTSLAPPIES 1st time");
+                        mPeriodicIO.slappyDemand = SolenoidState.RETRACT;
+                        mSlappyExtendTimeout = Timer.getFPGATimestamp() + kSlappyExtendDuration;
+                        break;
+                case DISENGAGECLAW:
+                        mPeriodicIO.climberDemand = kSlappySticksElevatorConflictLimit-20000;
+                        mPeriodicIO.climberControlMode = ControlMode.Position;
+                        mPeriodicIO.slappyDemand = SolenoidState.RETRACT;
+                        break;
+                
+                        case DONE:
                     break;
             }
         }
@@ -439,21 +485,49 @@ public class Climber extends Subsystem {
         distance = Math.abs(mPeriodicIO.climberPosition - mPeriodicIO.climberDemand);
 
         switch (gbdcSubState){
-            case EXTENDTOTOP:
+            case RETRACTTOENGAGECLAW:
+            System.out.println("Climber substate RETRACTTOENGAGECLAW dist "+distance);
                 if (distance < kElevPosTolerance) {
                     gbdcSubStateChange = true;
-                    gbdcSubState = GrabBarDynamicClawSubState.RETRACTTOENGAGECLAW;
+                    gbdcSubState = GrabBarDynamicClawSubState.EXTENDSLAPPIES;
                 }
                 break;
-            case RETRACTTOENGAGECLAW:
-                gbdcSubStateChange = true;
-                gbdcSubState = GrabBarDynamicClawSubState.DONE;
+            case EXTENDSLAPPIES:
+                double now = Timer.getFPGATimestamp();
+                System.out.println("EXTENDSLAPPIES now = "+now+" "+mSlappyExtendTimeout);
+                if (Timer.getFPGATimestamp() >= mSlappyExtendTimeout){
+                    gbdcSubStateChange = true;
+                    gbdcSubState = GrabBarDynamicClawSubState.EXTENDTOTOP;
+                }
+                break;
+            case EXTENDTOTOP:
+                System.out.println("Climber substate EXTENDTOTOP dist "+distance);
+                if (distance < kElevPosTolerance) {
+                    gbdcSubStateChange = true;
+                    gbdcSubState = GrabBarDynamicClawSubState.RETRACTSLAPPIES;
+                }
+                break;
+            case RETRACTSLAPPIES:
+                // double now = Timer.getFPGATimestamp();
+                // System.out.println("RETRACTSLAPPIES now = "+now+" "+mSlappyExtendTimeout);
+                if (Timer.getFPGATimestamp() >= mSlappyExtendTimeout){
+                    gbdcSubStateChange = true;
+                    gbdcSubState = GrabBarDynamicClawSubState.DISENGAGECLAW;
+                }
+                break;
+            case DISENGAGECLAW:
+                System.out.println("Climber substate DISENGAGECLAW dist "+distance);
+                if (distance < kElevPosTolerance) {
+                    gbdcSubStateChange = true;
+                    gbdcSubState = GrabBarDynamicClawSubState.DONE;
+                }
                 break;
             case DONE:
+                System.out.println("Climber substate DONE");
                 break;
         }
 
-        if (mWantedState != WantedState.GRABBARDYNAMICCLAW) {
+        if (mWantedState != WantedState.GRAB_BAR_DYNAMIC_CLAW) {
             gbdcSubState = GrabBarDynamicClawSubState.RETRACTTOENGAGECLAW; // anystate that is not DONE
         }
         return defaultStateTransfer();
@@ -474,12 +548,16 @@ public class Climber extends Subsystem {
                 return SystemState.MOVINGELEVATOR;
             case DISABLE:
                 return SystemState.DISABLING;
-            case GRABBARDYNAMICCLAW:
-                return SystemState.GRABBINGBARDYNAMICCLAW;
+            case GRAB_BAR_DYNAMIC_CLAW:
+                return SystemState.GRABBING_BAR_DYNAMIC_CLAW;
+            case AUTOCLIMB:
+                return SystemState.AUTOCLIMBING;
+            case PRECLIMB:
+                return SystemState.PRECLIMBING;
             case HOLD:
-            default:
-                return SystemState.HOLDING;
-        }
+                default:
+                    return SystemState.HOLDING;
+            }
     }
 
     public void setDesiredElevatorPosition(ElevatorPositions desiredElevatorPosition) {
@@ -487,14 +565,14 @@ public class Climber extends Subsystem {
     }
 
     public void setClimbSpeed(double speed) {
-        if(mSystemState != SystemState.HOMING && mSystemState != SystemState.DISABLING) {
-            climbSpeed = speed;
-            if(speed == 0.0) {
-                mWantedState = WantedState.HOLD;
-            } else {
-                mWantedState = WantedState.CLIMB;
-            }
-        }
+        // if(mSystemState != SystemState.HOMING && mSystemState != SystemState.DISABLING) {
+        //     climbSpeed = speed;
+        //     if(speed == 0.0) {
+        //         mWantedState = WantedState.HOLD;
+        //     } else {
+        //         mWantedState = WantedState.CLIMB;
+        //     }
+        // }
     }
 
     public void setSlappyStickState(boolean state) {
@@ -557,19 +635,46 @@ public class Climber extends Subsystem {
 
     @Override
     public String getLogHeaders() {
-        return "Climber";
+        return  sClassName+".schedDeltaDesired,"+
+                sClassName+".schedDeltaActual,"+
+                sClassName+".schedDuration,"+
+                sClassName+".mSystemState,"+
+                sClassName+".mWantedState,"+
+                sClassName+".gbdcSubState,"+
+                sClassName+".climberPosition,"+
+                sClassName+".climberDemand,"+
+                sClassName+".climberControlMode,"+
+                sClassName+".slappyDemand,"+
+                sClassName+".climberHomed";
     }
 
     @Override
     public String getLogValues(boolean telemetry) {
-        return "Climber.Values";
+        String start;
+        if (telemetry){
+            start = ",,,";
+        }
+        else{
+            start = mPeriodicIO.schedDeltaDesired+","+
+                    mPeriodicIO.schedDeltaActual+","+
+                    (Timer.getFPGATimestamp()-mPeriodicIO.lastSchedStart)+",";
+        }
+        return  start+
+                mSystemState+","+
+                mWantedState+","+
+                mPeriodicIO.climberPosition+","+
+                gbdcSubState+","+
+                mPeriodicIO.climberDemand+","+
+                mPeriodicIO.climberControlMode+","+
+                mPeriodicIO.slappyDemand+","+
+                climberHomed;
     }
 
     @Override
     public void outputTelemetry() {
-        SmartDashboard.putNumber("Left Climber Encoder", mPeriodicIO.climberPosition);
-        SmartDashboard.putNumber("Left Climb Current", mFXLeftClimber.getStatorCurrent());
-        SmartDashboard.putNumber("Right Climb Current", mFXRightClimber.getStatorCurrent());
+        // SmartDashboard.putNumber("Left Climber Encoder", mPeriodicIO.climberPosition);
+        // SmartDashboard.putNumber("Left Climb Current", mFXLeftClimber.getStatorCurrent());
+        // SmartDashboard.putNumber("Right Climb Current", mFXRightClimber.getStatorCurrent());
         // SmartDashboard.putNumber("Left Climb Supply Current", mFXLeftClimber.getSupplyCurrent());
         // SmartDashboard.putNumber("Right Climb Supply Current", mFXRightClimber.getSupplyCurrent());
     }
@@ -579,7 +684,6 @@ public class Climber extends Subsystem {
         public final int mDefaultSchedDelta = 20; // axis updated every 20 msec
         public int schedDeltaDesired;
         public double schedDeltaActual;
-        public double schedDuration;
         public double lastSchedStart;
 
         // Inputs

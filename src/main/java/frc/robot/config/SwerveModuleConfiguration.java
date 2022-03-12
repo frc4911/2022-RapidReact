@@ -28,7 +28,7 @@ public class SwerveModuleConfiguration {
     public int kCANCoderId = -1;
     public SensorInitializationStrategy kCANCoderSensorInitializationStrategy = SensorInitializationStrategy.BootToAbsolutePosition;
     public int kCANCoderStatusFramePeriodVbatAndFaults = 255;
-    public int kCANCoderStatusFramePeriodSensorData = 255;
+    public int kCANCoderStatusFramePeriodSensorData = 20;
     public double kCANCoderOffsetDegrees = 0.0;
 
     // Steer Motor motion

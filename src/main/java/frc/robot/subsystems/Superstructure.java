@@ -4,6 +4,7 @@ import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.constants.Ports;
+import frc.robot.subsystems.Shooter.SystemState;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.subsystems.SubsystemManager;
@@ -30,7 +31,8 @@ public class Superstructure extends Subsystem {
         BACKING,
         AUTO_SHOOTING,
         MANUAL_SHOOTING,
-        AUTO_CLIMBING
+        AUTO_CLIMBING,
+        AUTO_PRE_CLIMBING
     }
 
     public enum WantedState {
@@ -40,6 +42,7 @@ public class Superstructure extends Subsystem {
         BACK,
         AUTO_SHOOT,
         MANUAL_SHOOT,
+        AUTO_PRE_CLIMB,
         AUTO_CLIMB
     }
 
@@ -125,6 +128,9 @@ public class Superstructure extends Subsystem {
                         break;
                     case AUTO_CLIMBING:
                         newState = handleAutoClimbing();
+                        break;
+                    case AUTO_PRE_CLIMBING:
+                        newState = handlePreClimbing();
                         break;
                     case DISABLING:
                         newState = handleDisabling();
@@ -232,7 +238,15 @@ public class Superstructure extends Subsystem {
     // Unused: Lower priority in reference to other states
     private SystemState handleAutoClimbing() {
         if (mStateChanged) {
+            mClimber.setWantedState(Climber.WantedState.GRAB_BAR_DYNAMIC_CLAW, sClassName);
+        }
 
+        return defaultStateTransfer();
+    }
+
+    private SystemState handlePreClimbing() {
+        if (mStateChanged) {
+            mClimber.setWantedState(Climber.WantedState.PRECLIMB,sClassName);
         }
 
         return defaultStateTransfer();
@@ -252,6 +266,8 @@ public class Superstructure extends Subsystem {
                 return SystemState.MANUAL_SHOOTING;
             case AUTO_CLIMB:
                 return SystemState.AUTO_CLIMBING;
+            case AUTO_PRE_CLIMB:
+                return SystemState.AUTO_PRE_CLIMBING;
             case HOLD:
             default:
                 return SystemState.HOLDING;
@@ -281,12 +297,12 @@ public class Superstructure extends Subsystem {
     }
 
     public void setOpenLoopClimb(double climbSpeed, int deploySlappyState) {
-        mClimber.setClimbSpeed(climbSpeed);
-        if (deploySlappyState == 0) {
-            mClimber.setSlappyStickState(true);
-        } else if (deploySlappyState == 1) {
-            mClimber.setSlappyStickState(false);
-        }
+        // mClimber.setClimbSpeed(climbSpeed);
+        // if (deploySlappyState == 0) {
+        //     mClimber.setSlappyStickState(true);
+        // } else if (deploySlappyState == 1) {
+        //     mClimber.setSlappyStickState(false);
+        // }
     }
 
     // used in auto
@@ -326,12 +342,29 @@ public class Superstructure extends Subsystem {
 
     @Override
     public String getLogHeaders() {
-        return "Superstructure";
+        return  sClassName+".schedDeltaDesired,"+
+                sClassName+".schedDeltaActual,"+
+                sClassName+".schedDuration,"+
+                sClassName+".mSystemState,"+
+                sClassName+".mWantedState,"+
+                sClassName+".pressure";
     }
 
     @Override
     public String getLogValues(boolean telemetry) {
-        return "Superstructure.Values";
+        String start;
+        if (telemetry){
+            start = ",,,";
+        }
+        else{
+            start = mPeriodicIO.schedDeltaDesired+","+
+                    mPeriodicIO.schedDeltaActual+","+
+                    (Timer.getFPGATimestamp()-mPeriodicIO.lastSchedStart)+",";
+        }
+        return  start+
+        mSystemState+","+
+        mWantedState+","+
+        mPeriodicIO.pressure;
     }
 
     @Override
@@ -343,7 +376,6 @@ public class Superstructure extends Subsystem {
         // Logging
         private int schedDeltaDesired;
         public double schedDeltaActual;
-        public double schedDuration;
         private double lastSchedStart;
 
         // Inputs

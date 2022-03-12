@@ -129,7 +129,7 @@ public class Robot extends TimedRobot {
 
     @Override
     public void autonomousInit() {
-        System.out.println("AutonomousInit() begins");
+        System.out.println("*********** AutonomousInit() begins ***********");
         try {
             autoConfig();
 
@@ -160,7 +160,7 @@ public class Robot extends TimedRobot {
 
     @Override
     public void teleopInit() {
-        System.out.println("TeleopInit() begins");
+        System.out.println("*********** TeleopInit() begins ***********");
         try {
             mSubsystemLooper.stop();
 
@@ -194,7 +194,7 @@ public class Robot extends TimedRobot {
 
     @Override
     public void disabledInit() {
-        System.out.println("disabledInit() begins");
+        System.out.println("*********** disabledInit() begins ***********");
         try {
             System.gc();
 
@@ -236,7 +236,7 @@ public class Robot extends TimedRobot {
 
     @Override
     public void testInit() {
-        System.out.println("testInit() begins");
+        System.out.println("*********** testInit() begins ***********");
         System.out.println("testInit() ends");
     }
 
