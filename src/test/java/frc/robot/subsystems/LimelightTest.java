@@ -33,7 +33,7 @@ public class LimelightTest {
                 "limelight", // table name
                 Units.inches_to_meters(26.25), // height
                 Pose2d.identity(), // shooter to lens
-                Rotation2d.fromDegrees(20.00), // horizontalPlaneToLens,
+                Rotation2d.fromDegrees(20.25), // horizontalPlaneToLens,
                 65.0, //64.03840065743408,
                 50.0 //50.34836606499798
         );
@@ -62,8 +62,9 @@ public class LimelightTest {
         var robotState = RobotState.getInstance("test");
         robotState.addVisionUpdate(Timer.getFPGATimestamp(), targets, limelight);
 
+        // Get distance between LL and vision tape
         var aimingParams = robotState.getAimingParameters(-1,
-                Constants.kMaxGoalTrackAge, Constants.kVisionTargetToGoalOffset);
+                Constants.kMaxGoalTrackAge, Pose2d.identity());
 
         if (aimingParams.isPresent()) {
             // if (Constants.kIsHoodTuning) {

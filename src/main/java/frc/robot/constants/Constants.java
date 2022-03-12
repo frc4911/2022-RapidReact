@@ -112,18 +112,11 @@ public class Constants {
     // LIMELIGHT
     // TODO:  Create Robot specific configurations
     // Goal Tracker
-//    public static final double kHorizontalFOV = Math.toRadians(59.6);
-//    public static final double kVerticalFOV = Math.toRadians(49.7);
-
-//    public static final double kVPW = 2.0 * Math.tan(kHorizontalFOV / 2);
-//    public static final double kVPH = 2.0 * Math.tan(kVerticalFOV / 2);
-
-    public static final boolean kUseTopCorners = false;
-
+    public static final boolean kUseTopCorners = true;
 
     public static final double kImageCaptureLatency = 11.0 / 1000.0; // seconds
 
-    public static final double kMaxTrackerDistance = Units.feetToMeters(9.0);
+    public static final double kMaxTrackerDistance = Units.feetToMeters(20.0);
     public static final double kMaxGoalTrackAge = 2.5;
     public static final double kMaxGoalTrackSmoothingTime = 0.5;
     public static final double kCameraFrameRate = 90.0; // fps
@@ -140,7 +133,7 @@ public class Constants {
 
     // Rim thickness + inner diameter of upper hub.  Reflective tape is at front rim.  Shot should land in center.
     public static final Pose2d kVisionTargetToGoalOffset = new Pose2d(
-            Units.inchesToMeters(3.0 + 24.0) , 0, Rotation2d.identity());
+            -Units.inchesToMeters(3.0 + 24.0) , 0, Rotation2d.identity());
 
     public static final PipelineConfiguration kLowRes1xZoom = new PipelineConfiguration(
             CameraResolution.F_320x240, 1.0);

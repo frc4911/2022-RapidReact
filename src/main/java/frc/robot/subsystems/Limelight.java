@@ -305,7 +305,7 @@ public class Limelight extends Subsystem {
         mSeesTarget = mNetworkTable.getEntry("tv").getDouble(0) == 1.0;
 
         // something went wrong
-        if (!mSeesTarget || corners.length != 8 || corners == mZeroArray) {
+        if (!mSeesTarget || corners.length < 8 || corners == mZeroArray || corners.length % 2 != 0) {
             return null;
         }
 
