@@ -1,5 +1,7 @@
 package frc.robot.subsystems;
 
+import java.util.Arrays;
+
 import com.ctre.phoenix.ErrorCode;
 import com.ctre.phoenix.motorcontrol.ControlFrame;
 import com.ctre.phoenix.motorcontrol.ControlMode;
@@ -100,8 +102,8 @@ public class SwerveDriveModule extends Subsystem {
         mSteerMotor.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
         mSteerMotor.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
 
-        convertCancoderToFX();
-        convertCancoderToFX();
+        convertCancoderToFX2();
+        // convertCancoderToFX();
 
         mSteerMotor.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, mConfig.kSteerMotorStatusFrame2UpdateRate,
                 Constants.kLongCANTimeoutMs);
@@ -235,29 +237,46 @@ public class SwerveDriveModule extends Subsystem {
         // }
     }
 
-    protected void convertCancoderToFX(){
-        // multiple (usually 2) sets were needed to set new encoder value
-        double fxTicksBefore = mSteerMotor.getSelectedSensorPosition();
-        double cancoderDegrees = mCANCoder.getAbsolutePosition();
-        int limit = 5;
-        do{
-            if (mCANCoder.getLastError() != ErrorCode.OK) {
-                System.out.println("error reading cancoder. Trying again!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! value read was "
-                        + cancoderDegrees);
-                Timer.delay(.1);
-                cancoderDegrees = mCANCoder.getAbsolutePosition();
-            }
-            else{
-                break;
-            }
-        }while (limit-- > 0);
+    protected void convertCancoderToFX2(){
+        int limit = 500;
+        // mCANCoder.setStatusFramePeriod(CANCoderStatusFrame.SensorData, 50);
+        double lastFrameTimestamp = -1;
+        double frameTimestamp;
+        double position;
+        int index = 0;
+        double[] cancoderPositions = {-10000,-1000,-100,-1,100}; // just need to be different numbers
+        boolean allDone = false;
 
+        do{
+            frameTimestamp = mCANCoder.getLastTimestamp();
+            if (frameTimestamp != lastFrameTimestamp){
+                position = mCANCoder.getAbsolutePosition();
+                cancoderPositions[(++index)%cancoderPositions.length]=position;
+                allDone = true;
+                for (int kk=0; kk<cancoderPositions.length;kk++){
+                    if ( Math.abs(cancoderPositions[kk]-cancoderPositions[(kk+1)%cancoderPositions.length]) >1 ){
+                        allDone=false;
+                        break;
+                    }
+                }
+                System.out.println(limit+" ("+mModuleName+")"+": CANCoder last frame timestamp = "+ frameTimestamp + 
+                                     " current time = "+Timer.getFPGATimestamp() +" pos="+position);
+                lastFrameTimestamp = frameTimestamp;
+            }
+            Timer.delay(.1);
+
+        } while (!allDone && (limit-- > 0));
+        
+        System.out.println(mModuleName+": allDone "+Arrays.toString(cancoderPositions));
+
+        double fxTicksBefore = mSteerMotor.getSelectedSensorPosition();
+        double cancoderDegrees = cancoderPositions[0];
         double fxTicksTarget = degreesToEncUnits(cancoderDegrees);
         double fxTicksNow = fxTicksBefore;
         int loops = 0;
         final double acceptableTickErr = 10;
 
-        while (Math.abs(fxTicksNow - fxTicksTarget) > acceptableTickErr && loops < 5) {
+        while ((Math.abs(fxTicksNow - fxTicksTarget) > acceptableTickErr) && (loops < 5)) {
             mSteerMotor.setSelectedSensorPosition(fxTicksTarget, 0, 0);
             Timer.delay(.1);
             fxTicksNow = mSteerMotor.getSelectedSensorPosition();
@@ -268,6 +287,41 @@ public class SwerveDriveModule extends Subsystem {
                 ",  fx encoder ticks (before, target, adjusted): (" + fxTicksBefore + "," + fxTicksTarget + ","
                 + fxTicksNow + ") loops:" + loops);
     }
+
+    // protected void convertCancoderToFX(){
+    //     // multiple (usually 2) sets were needed to set new encoder value
+    //     double fxTicksBefore = mSteerMotor.getSelectedSensorPosition();
+    //     double cancoderDegrees = mCANCoder.getAbsolutePosition();
+        
+    //     int limit = 5;
+    //     do{
+    //         if (mCANCoder.getLastError() != ErrorCode.OK) {
+    //             System.out.println("error reading cancoder. Trying again!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! value read was "
+    //                     + cancoderDegrees);
+    //             Timer.delay(.1);
+    //             cancoderDegrees = mCANCoder.getAbsolutePosition();
+    //         }
+    //         else{
+    //             break;
+    //         }
+    //     }while (limit-- > 0);
+
+    //     double fxTicksTarget = degreesToEncUnits(cancoderDegrees);
+    //     double fxTicksNow = fxTicksBefore;
+    //     int loops = 0;
+    //     final double acceptableTickErr = 10;
+
+    //     while (Math.abs(fxTicksNow - fxTicksTarget) > acceptableTickErr && loops < 5) {
+    //         mSteerMotor.setSelectedSensorPosition(fxTicksTarget, 0, 0);
+    //         Timer.delay(.1);
+    //         fxTicksNow = mSteerMotor.getSelectedSensorPosition();
+    //         loops++;
+    //     }
+
+    //     System.out.println(mConfig.kName + " cancoder degrees: " + cancoderDegrees +
+    //             ",  fx encoder ticks (before, target, adjusted): (" + fxTicksBefore + "," + fxTicksTarget + ","
+    //             + fxTicksNow + ") loops:" + loops);
+    // }
 
     /**
      * Gets the current state of the module.
