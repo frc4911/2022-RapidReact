@@ -24,7 +24,8 @@ import java.util.List;
 /**
  * Subsystem for interacting with Limelight 2+.
  *
- * <p>The Limelight is used to detect targets and feed them to a GoalTracker in RobotState</p>
+ * <p>The Limelight is used to detect targets and feeds them to a {@link libraries.cheesylib.vision.GoalTracker GoalTracker}
+ * in {@link RobotState} RobotState.</p>
  */
 public class Limelight extends Subsystem {
 
@@ -326,7 +327,7 @@ public class Limelight extends Subsystem {
         return mPeriodicIO.latency;
     }
 
-    public LimelightConfig getConstants() {
+    public LimelightConfig getConfig() {
         return mConfig;
     }
 
