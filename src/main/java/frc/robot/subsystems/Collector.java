@@ -249,12 +249,31 @@ public class Collector extends Subsystem {
 
     @Override
     public String getLogHeaders() {
-        return "Collector";
+        return  sClassName+".schedDeltaDesired,"+
+                sClassName+".schedDeltaActual,"+
+                sClassName+".schedDuration,"+
+                sClassName+".mSystemState,"+
+                sClassName+".mWantedState,"+
+                sClassName+".collectorDemand,"+
+                sClassName+".solenoidDemand";
     }
 
     @Override
     public String getLogValues(boolean telemetry) {
-        return "Collector.Values";
+        String start;
+        if (telemetry){
+            start = ",,,";
+        }
+        else{
+            start = mPeriodicIO.schedDeltaDesired+","+
+                    mPeriodicIO.schedDeltaActual+","+
+                    (Timer.getFPGATimestamp()-mPeriodicIO.lastSchedStart)+",";
+        }
+        return  start+
+                mSystemState+","+
+                mWantedState+","+
+                mPeriodicIO.collectorDemand+","+
+                mPeriodicIO.solenoidDemand;
     }
 
     @Override
@@ -268,7 +287,6 @@ public class Collector extends Subsystem {
         private final int mDefaultSchedDelta = 100; // axis updated every 100 msec
         private int schedDeltaDesired;
         public double schedDeltaActual;
-        public double schedDuration;
         private double lastSchedStart;
 
         // Inputs

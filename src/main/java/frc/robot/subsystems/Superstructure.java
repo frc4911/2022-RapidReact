@@ -6,6 +6,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.RobotState;
 import frc.robot.constants.Constants;
 import frc.robot.constants.Ports;
+import frc.robot.subsystems.Shooter.SystemState;
 import frc.robot.limelight.LimelightManager;
 import libraries.cheesylib.geometry.Rotation2d;
 import libraries.cheesylib.loops.Loop.Phase;
@@ -23,15 +24,15 @@ public class Superstructure extends Subsystem {
 
     // Subsystem Instances
     @SuppressWarnings("unused")
-    private Swerve mSwerve;
-    private Indexer mIndexer;
-    private Collector mCollector;
-    private Shooter mShooter;
-    private Climber mClimber;
-    private LimelightManager mLLManager = LimelightManager.getInstance();
+    private final Swerve mSwerve;
+    private final Indexer mIndexer;
+    private final Collector mCollector;
+    private final Shooter mShooter;
+    private final Climber mClimber;
+    private final LimelightManager mLLManager = LimelightManager.getInstance();
     private final AnalogInput mAIPressureSensor;
 
-    private RobotState mRobotState;
+    private final RobotState mRobotState;
 
     // Superstructure States
     public enum SystemState {
@@ -41,7 +42,8 @@ public class Superstructure extends Subsystem {
         BACKING,
         AUTO_SHOOTING,
         MANUAL_SHOOTING,
-        AUTO_CLIMBING
+        AUTO_CLIMBING,
+        AUTO_PRE_CLIMBING
     }
 
     public enum WantedState {
@@ -51,13 +53,14 @@ public class Superstructure extends Subsystem {
         BACK,
         AUTO_SHOOT,
         MANUAL_SHOOT,
+        AUTO_PRE_CLIMB,
         AUTO_CLIMB
     }
 
     private SystemState mSystemState;
     private WantedState mWantedState;
     private boolean mStateChanged;
-    private LatchedBoolean mSystemStateChange = new LatchedBoolean();
+    private final LatchedBoolean mSystemStateChange = new LatchedBoolean();
 
     private boolean mHasTarget = false;
     private boolean mOnTarget = false;
@@ -71,7 +74,7 @@ public class Superstructure extends Subsystem {
     private boolean mOverrideLimelightLEDs = false;
 
 
-    private PeriodicIO mPeriodicIO = new PeriodicIO();
+    private final PeriodicIO mPeriodicIO = new PeriodicIO();
     private int mFastCycle = 20;
     private int mSlowCycle = 100;
 
@@ -81,7 +84,7 @@ public class Superstructure extends Subsystem {
     private static String sClassName;
     private static int sInstanceCount;
     private static Superstructure sInstance = null;
-    private SubsystemManager mSubsystemManager;
+    private final SubsystemManager mSubsystemManager;
 
     public static Superstructure getInstance(String caller) {
         if (sInstance == null) {
@@ -151,6 +154,9 @@ public class Superstructure extends Subsystem {
                         break;
                     case AUTO_CLIMBING:
                         newState = handleAutoClimbing();
+                        break;
+                    case AUTO_PRE_CLIMBING:
+                        newState = handlePreClimbing();
                         break;
                     case DISABLING:
                         newState = handleDisabling();
@@ -291,8 +297,17 @@ public class Superstructure extends Subsystem {
         if (mStateChanged) {
             if (!mOverrideLimelightLEDs) {
                 mLLManager.getLimelight().setLed(Limelight.LedMode.BLINK);
+                mClimber.setWantedState(Climber.WantedState.GRAB_BAR_DYNAMIC_CLAW, sClassName);
             }
-       }
+        }
+
+        return defaultStateTransfer();
+    }
+
+    private SystemState handlePreClimbing() {
+        if (mStateChanged) {
+            mClimber.setWantedState(Climber.WantedState.PRECLIMB,sClassName);
+        }
 
         return defaultStateTransfer();
     }
@@ -311,6 +326,8 @@ public class Superstructure extends Subsystem {
                 return SystemState.MANUAL_SHOOTING;
             case AUTO_CLIMB:
                 return SystemState.AUTO_CLIMBING;
+            case AUTO_PRE_CLIMB:
+                return SystemState.AUTO_PRE_CLIMBING;
             case HOLD:
             default:
                 return SystemState.HOLDING;
@@ -340,12 +357,12 @@ public class Superstructure extends Subsystem {
     }
 
     public void setOpenLoopClimb(double climbSpeed, int deploySlappyState) {
-        mClimber.setClimbSpeed(climbSpeed);
-        if (deploySlappyState == 0) {
-            mClimber.setSlappyStickState(true);
-        } else if (deploySlappyState == 1) {
-            mClimber.setSlappyStickState(false);
-        }
+        // mClimber.setClimbSpeed(climbSpeed);
+        // if (deploySlappyState == 0) {
+        //     mClimber.setSlappyStickState(true);
+        // } else if (deploySlappyState == 1) {
+        //     mClimber.setSlappyStickState(false);
+        // }
     }
 
     // used in auto
@@ -451,12 +468,29 @@ public class Superstructure extends Subsystem {
 
     @Override
     public String getLogHeaders() {
-        return "Superstructure";
+        return  sClassName+".schedDeltaDesired,"+
+                sClassName+".schedDeltaActual,"+
+                sClassName+".schedDuration,"+
+                sClassName+".mSystemState,"+
+                sClassName+".mWantedState,"+
+                sClassName+".pressure";
     }
 
     @Override
     public String getLogValues(boolean telemetry) {
-        return "Superstructure.Values";
+        String start;
+        if (telemetry){
+            start = ",,,";
+        }
+        else{
+            start = mPeriodicIO.schedDeltaDesired+","+
+                    mPeriodicIO.schedDeltaActual+","+
+                    (Timer.getFPGATimestamp()-mPeriodicIO.lastSchedStart)+",";
+        }
+        return  start+
+        mSystemState+","+
+        mWantedState+","+
+        mPeriodicIO.pressure;
     }
 
     @Override
@@ -468,11 +502,9 @@ public class Superstructure extends Subsystem {
         // Logging
         private int schedDeltaDesired;
         public double schedDeltaActual;
-        public double schedDuration;
         private double lastSchedStart;
 
         // Inputs
         private double pressure;
     }
-
 }
