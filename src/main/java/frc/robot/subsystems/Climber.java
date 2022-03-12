@@ -129,7 +129,7 @@ public class Climber extends Subsystem {
     private final double climberNonMovementDuration = .1; // reading below threshhold encoder reads for this long is
                                                            // considered stopped
     private final double climberHomingDemand = -0.1;
-    private boolean climberHomed = false; // global flag
+    private boolean climberHomed = true; // global flag
     private double climberNonMovementTimeout; // timestamp of when low readings are sufficient
     private WantedState wantedStateAfterHoming = WantedState.HOLD; // state to transition to after homed
 

@@ -168,7 +168,7 @@ public class Swerve extends Subsystem {
     }
 
     public void convertCancoderToFX(){
-        mModules.forEach((m) -> m.convertCancoderToFX());
+        mModules.forEach((m) -> m.convertCancoderToFX2());
     }
 
     @Override
