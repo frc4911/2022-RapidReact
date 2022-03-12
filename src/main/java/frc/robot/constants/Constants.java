@@ -2,13 +2,10 @@ package frc.robot.constants;
 
 import edu.wpi.first.math.util.Units;
 import frc.robot.limelight.CameraResolution;
-import frc.robot.limelight.LimelightConfig;
 import frc.robot.limelight.PipelineConfiguration;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Rotation2d;
 import libraries.cheesylib.geometry.Translation2d;
-import libraries.cheesylib.util.InterpolatingDouble;
-import libraries.cheesylib.util.InterpolatingTreeMap;
 import libraries.cheesylib.vision.GoalTrackerConfig;
 
 public class Constants {
@@ -138,15 +135,8 @@ public class Constants {
     public static final double kTrackAgeWeight = 10.0;
     public static final double kTrackSwitchingWeight = 100.0;
 
-    public static final double kLimelightLensOffGroundHeight = Units.inchesToMeters(39.8);
-    public static final Rotation2d kLimelightHorizontalPlaneToLens = Rotation2d.fromDegrees(38.00);
-
     // Approximately 8' 8 inches per manual
     public static final double kVisionTargetHeight = Units.inchesToMeters(12.0 * 8.0 + 8.0);
-
-    // Distance between center of shooter and limelight's camera lens
-    public static final Pose2d kShooterToLens  = new Pose2d(
-            0.0, Units.inchesToMeters(-9.373 - (-1.85)), Rotation2d.identity());
 
     // Rim thickness + inner diameter of upper hub.  Reflective tape is at front rim.  Shot should land in center.
     public static final Pose2d kVisionTargetToGoalOffset = new Pose2d(
@@ -157,34 +147,22 @@ public class Constants {
     public static final PipelineConfiguration kLowRes2xZoom = new PipelineConfiguration(
             CameraResolution.F_320x240, 2.0);
 
-    public static LimelightConfig kLimelight2Config = new LimelightConfig(
-            1, // label id
-                LimelightConfig.Type.Shooter,
-                "Shooter Limelight #1", // name
-                "limelight", // table name
-                Constants.kLimelightLensOffGroundHeight, // height
-                Constants.kShooterToLens, // shooter to lens
-                Constants.kLimelightHorizontalPlaneToLens, // horizontalPlaneToLens,
-                65.0, //64.03840065743408,
-                50.0 //50.34836606499798
-            );
-
-    // Goal tracker constants
-    public static final double kDefaultCurveDistance = kRobotHalfLength + 36.0;
-    public static final double kVisionUpdateDistance = kRobotHalfLength + 75.0;
-    public static final double kVisionDistanceStep = 4.0;
-    public static final double kClosestVisionDistance = 26.0;// 36.0
-    public static final double kDefaultVisionTrackingSpeed = 42.0;
-    public static final double kCurvedVisionYOffset = 0.375;// 1.25
-
-    // Vision Speed Constraint Treemap
-    public static InterpolatingTreeMap<InterpolatingDouble, InterpolatingDouble> kVisionSpeedTreemap = new InterpolatingTreeMap<>();
-    static {
-        kVisionSpeedTreemap.put(new InterpolatingDouble(-6.0), new InterpolatingDouble(24.0));
-        kVisionSpeedTreemap.put(new InterpolatingDouble(kClosestVisionDistance), new InterpolatingDouble(24.0));
-        kVisionSpeedTreemap.put(new InterpolatingDouble(60.0), new InterpolatingDouble(48.0));
-        kVisionSpeedTreemap.put(new InterpolatingDouble(300.0), new InterpolatingDouble(48.0));
-    }
+//    // Goal tracker constants
+//    public static final double kDefaultCurveDistance = kRobotHalfLength + 36.0;
+//    public static final double kVisionUpdateDistance = kRobotHalfLength + 75.0;
+//    public static final double kVisionDistanceStep = 4.0;
+//    public static final double kClosestVisionDistance = 26.0;// 36.0
+//    public static final double kDefaultVisionTrackingSpeed = 42.0;
+//    public static final double kCurvedVisionYOffset = 0.375;// 1.25
+//
+//    // Vision Speed Constraint Treemap
+//    public static InterpolatingTreeMap<InterpolatingDouble, InterpolatingDouble> kVisionSpeedTreemap = new InterpolatingTreeMap<>();
+//    static {
+//        kVisionSpeedTreemap.put(new InterpolatingDouble(-6.0), new InterpolatingDouble(24.0));
+//        kVisionSpeedTreemap.put(new InterpolatingDouble(kClosestVisionDistance), new InterpolatingDouble(24.0));
+//        kVisionSpeedTreemap.put(new InterpolatingDouble(60.0), new InterpolatingDouble(48.0));
+//        kVisionSpeedTreemap.put(new InterpolatingDouble(300.0), new InterpolatingDouble(48.0));
+//    }
     // END LIMELIGHT
 
 

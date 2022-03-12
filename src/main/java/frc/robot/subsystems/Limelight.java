@@ -5,7 +5,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.RobotState;
-import frc.robot.limelight.LimelightConfig;
+import frc.robot.limelight.LimelightConfiguration;
 import frc.robot.limelight.PipelineConfiguration;
 import frc.robot.constants.Constants;
 import libraries.cheesylib.geometry.Pose2d;
@@ -36,7 +36,7 @@ public class Limelight extends Subsystem {
     private final double[] mZeroArray = new double[]{0, 0, 0, 0, 0, 0, 0, 0};
     private final List<TargetInfo> mTargets = new ArrayList<>();
     private final boolean mLoggingEnabled = true;
-    private LimelightConfig mConfig;
+    private LimelightConfiguration mConfig;
     private PipelineConfiguration mPipelineConfig;
     private boolean mOutputsHaveChanged = true;
     private boolean mSeesTarget = false;
@@ -44,7 +44,7 @@ public class Limelight extends Subsystem {
     private int mDefaultSchedDelta = 20;
     private String sClassName;
 
-    public Limelight(LimelightConfig limelight2Config, PipelineConfiguration pipelineConfig) {
+    public Limelight(LimelightConfiguration limelight2Config, PipelineConfiguration pipelineConfig) {
         sClassName = "Limelight2";
         mConfig = limelight2Config;
         setPipelineConfig(pipelineConfig);
@@ -327,11 +327,11 @@ public class Limelight extends Subsystem {
         return mPeriodicIO.latency;
     }
 
-    public LimelightConfig getConfig() {
+    public LimelightConfiguration getConfig() {
         return mConfig;
     }
 
-    public void setConstants(LimelightConfig mConstants) {
+    public void setConstants(LimelightConfiguration mConstants) {
         this.mConfig = mConstants;
     }
 

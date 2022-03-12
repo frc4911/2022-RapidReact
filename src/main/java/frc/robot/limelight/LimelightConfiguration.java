@@ -3,7 +3,7 @@ package frc.robot.limelight;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Rotation2d;
 
-public class LimelightConfig {
+public class LimelightConfiguration {
 
     private final int id;
     private final String name;
@@ -15,7 +15,7 @@ public class LimelightConfig {
     private final double horizontalFOV;
     private final double verticalFOV;
 
-    public LimelightConfig(int id, Type type, String name, String tableName, double height, Pose2d
+    public LimelightConfiguration(int id, Type type, String name, String tableName, double height, Pose2d
             shooterToLens, Rotation2d horizontalPlaneToLens, double horizontalFOV, double verticalFOV) {
         this.id = id;
         this.type = type;

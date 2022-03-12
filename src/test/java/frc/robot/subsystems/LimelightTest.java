@@ -1,10 +1,9 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.RobotState;
 import frc.robot.constants.Constants;
-import frc.robot.limelight.LimelightConfig;
+import frc.robot.limelight.LimelightConfiguration;
 import frc.robot.limelight.PipelineConfiguration;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Rotation2d;
@@ -27,9 +26,9 @@ public class LimelightTest {
     public void test() {
         List<TargetInfo> mTargets = new ArrayList<>();
         PipelineConfiguration mPipelineConfig = Constants.kLowRes1xZoom;
-        LimelightConfig mConfig = new LimelightConfig(
+        LimelightConfiguration mConfig = new LimelightConfiguration(
                 1, // label id
-                LimelightConfig.Type.Shooter,
+                LimelightConfiguration.Type.Shooter,
                 "Shooter Limelight #1", // name
                 "limelight", // table name
                 Units.inches_to_meters(26.25), // height

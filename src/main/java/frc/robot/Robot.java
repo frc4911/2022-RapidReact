@@ -10,6 +10,7 @@ import java.util.Optional;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.TimedRobot;
 import frc.robot.autos.AutoModeSelector;
+import frc.robot.config.RobotConfiguration;
 import frc.robot.constants.Constants;
 import frc.robot.limelight.LimelightManager;
 import frc.robot.paths.TrajectoryGenerator;
@@ -90,7 +91,9 @@ public class Robot extends TimedRobot {
         mClimber = Climber.getInstance(mClassName);
         mCollector = Collector.getInstance(mClassName);
         mRobotStateEstimator = RobotStateEstimator.getInstance(mClassName);
-        mLimelight = new Limelight(Constants.kLimelight2Config, Constants.kLowRes1xZoom);
+        mLimelight = new Limelight(
+                RobotConfiguration.getRobotConfiguration(RobotName.name).getLimelightConfiguration(),
+                Constants.kLowRes1xZoom);
 
         // Create subsystem manager and add all subsystems it will manage
         mSubsystemManager = SubsystemManager.getInstance(mClassName);

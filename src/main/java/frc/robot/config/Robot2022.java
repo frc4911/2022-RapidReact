@@ -6,7 +6,10 @@ import static frc.robot.constants.Constants.kMK4_L2iWheelDiameter;
 
 import edu.wpi.first.math.util.Units;
 import frc.robot.constants.Ports;
+import frc.robot.limelight.LimelightConfiguration;
 import frc.robot.sensors.IMU.ImuType;
+import libraries.cheesylib.geometry.Pose2d;
+import libraries.cheesylib.geometry.Rotation2d;
 
 // New Swerve requires SI units
 public class Robot2022 implements RobotConfiguration {
@@ -132,5 +135,22 @@ public class Robot2022 implements RobotConfiguration {
     @Override
     public ImuType getImuType() {
         return ImuType.PIGEON2;
+    }
+
+    @Override
+    public LimelightConfiguration getLimelightConfiguration()
+    {
+        return new LimelightConfiguration(
+                1, // label id
+                LimelightConfiguration.Type.Shooter,
+                "Shooter Limelight #1", // name
+                "limelight", // table name
+                Units.inchesToMeters(39.8), // height
+                // Distance between center of shooter and limelight's camera lens
+                new Pose2d(0.0, Units.inchesToMeters(-9.373 - (-1.85)), Rotation2d.identity()), // shooter to lens
+                Rotation2d.fromDegrees(38.00), // horizontalPlaneToLens,
+                65.0, //64.03840065743408,
+                50.0 //50.34836606499798
+        );
     }
 }
