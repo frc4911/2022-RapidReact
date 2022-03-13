@@ -10,11 +10,15 @@ import java.util.Optional;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.TimedRobot;
 import frc.robot.autos.AutoModeSelector;
+import frc.robot.config.RobotConfiguration;
+import frc.robot.constants.Constants;
+import frc.robot.limelight.LimelightManager;
 import frc.robot.paths.TrajectoryGenerator;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Collector;
 import frc.robot.subsystems.Indexer;
 import frc.robot.subsystems.JSticks;
+import frc.robot.subsystems.Limelight;
 import frc.robot.subsystems.RobotStateEstimator;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Superstructure;
@@ -63,6 +67,7 @@ public class Robot extends TimedRobot {
     private Climber mClimber;
     private Collector mCollector;
     private RobotStateEstimator mRobotStateEstimator;
+    private Limelight mLimelight;
 
     private AutoModeSelector mAutoModeSelector = new AutoModeSelector();
     private AutoModeExecutor mAutoModeExecutor;
@@ -86,6 +91,9 @@ public class Robot extends TimedRobot {
         mClimber = Climber.getInstance(mClassName);
         mCollector = Collector.getInstance(mClassName);
         mRobotStateEstimator = RobotStateEstimator.getInstance(mClassName);
+        mLimelight = new Limelight(
+                RobotConfiguration.getRobotConfiguration(RobotName.name).getLimelightConfiguration(),
+                Constants.kLowRes1xZoom);
 
         // Create subsystem manager and add all subsystems it will manage
         mSubsystemManager = SubsystemManager.getInstance(mClassName);
@@ -99,6 +107,7 @@ public class Robot extends TimedRobot {
                         mIndexer,
                         mClimber,
                         mCollector,
+                        mLimelight,
                         mRobotStateEstimator));
 
         // ask each subsystem to register itself
@@ -119,6 +128,9 @@ public class Robot extends TimedRobot {
             // Always generate trajectories when robot code starts
             mTrajectoryGenerator.generateTrajectories(mSwerve.mSwerveConfiguration.trajectoryConfig);
         }
+
+        LimelightManager.getInstance().setLimelight(mLimelight);
+
         System.out.println("RobotInit() ends");
     }
 
@@ -209,6 +221,8 @@ public class Robot extends TimedRobot {
             mAutoModeExecutor = new AutoModeExecutor();
 
             mSubsystemLooper.start();
+            LimelightManager.getInstance().writePeriodicOutputs();
+
         } catch (Throwable t) {
             CrashTracker.logThrowableCrash(t);
             throw t;

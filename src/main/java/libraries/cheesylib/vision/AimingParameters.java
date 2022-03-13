@@ -5,35 +5,28 @@ import libraries.cheesylib.geometry.Rotation2d;
 
 public class AimingParameters {
     private final double range;
-    private final Pose2d robot_to_goal;
+    private final Pose2d field_to_vehicle;
     private final Pose2d field_to_goal;
     private final Rotation2d robot_to_goal_rotation;
     private final double last_seen_timestamp;
     private final double stability;
-    private final Rotation2d field_to_vision_target_normal;
-    private final Rotation2d targetOrientation;
     private final int track_id;
 
-    public AimingParameters(Pose2d robot_to_goal,
-                            Pose2d field_to_goal,
-                            Rotation2d field_to_vision_target_normal,
-                            double last_seen_timestamp,
-                            double stability,
-                            Rotation2d targetOrientation,
-                            int track_id) {
-        this.robot_to_goal = robot_to_goal;
-        this.field_to_vision_target_normal = field_to_vision_target_normal;
+    public AimingParameters(Pose2d field_to_vehicle,
+                            Pose2d field_to_goal, double last_seen_timestamp,
+                            double stability, int track_id) {
+        this.field_to_vehicle = field_to_vehicle;
         this.field_to_goal = field_to_goal;
-        this.range = robot_to_goal.getTranslation().norm();
-        this.robot_to_goal_rotation = robot_to_goal.getTranslation().direction();
+        final Pose2d vehicle_to_goal = field_to_vehicle.inverse().transformBy(field_to_goal);
+        this.range = vehicle_to_goal.getTranslation().norm();
+        this.robot_to_goal_rotation = vehicle_to_goal.getTranslation().direction();
         this.last_seen_timestamp = last_seen_timestamp;
         this.stability = stability;
-        this.targetOrientation = targetOrientation;
         this.track_id = track_id;
     }
 
-    public Pose2d getRobotToGoal() {
-        return robot_to_goal;
+    public Pose2d getFieldToVehicle() {
+        return field_to_vehicle;
     }
 
     public Pose2d getFieldToGoal() {
@@ -54,14 +47,6 @@ public class AimingParameters {
 
     public double getStability() {
         return stability;
-    }
-
-    public Rotation2d getFieldToVisionTargetNormal() {
-        return field_to_vision_target_normal;
-    }
-
-    public Rotation2d getTargetOrientation() {
-        return targetOrientation;
     }
 
     public int getTrackId() {

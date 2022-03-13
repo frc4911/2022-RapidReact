@@ -18,28 +18,26 @@ import java.util.TreeMap;
  * @see GoalTracker
  */
 public class GoalTrack {
-    // These came from Constants.java and should be initialized in Robot.java
-    public static double maxTrackerDistance  = 4.0;//9.0;
-    public static double maxGoalTrackAge = 2.5;
-    public static double maxGoalTrackSmoothingTime = 0.5;
-    public static double cameraFrameRate = 90.0;
+    private GoalTrackerConfig mConfig;
 
     TreeMap<Double, Pose2d> mObservedPositions = new TreeMap<>();
     Pose2d mSmoothedPosition = null;
     int mId;
 
-    private GoalTrack() {
-	}
+    private GoalTrack() {}
 
     /**
      * Makes a new track based on the timestamp and the goal's coordinates (from vision)
      */
-    public static synchronized GoalTrack makeNewTrack(double timestamp, Pose2d first_observation, int id) {
+    public static synchronized GoalTrack makeNewTrack(double timestamp, Pose2d first_observation, int id,
+                                                      GoalTrackerConfig goalTrackerConfig) {
         GoalTrack rv = new GoalTrack();
         rv.mObservedPositions.put(timestamp, first_observation);
         rv.mSmoothedPosition = first_observation;
         rv.mId = id;
+        rv.mConfig = goalTrackerConfig;
         return rv;
+
     }
 
     public synchronized void emptyUpdate() {
@@ -56,7 +54,7 @@ public class GoalTrack {
             return false;
         }
         double distance = mSmoothedPosition.inverse().transformBy(new_observation).getTranslation().norm();
-        if (distance < maxTrackerDistance) {
+        if (distance < mConfig.maxTrackerDistance) {
             mObservedPositions.put(timestamp, new_observation);
             pruneByTime();
             return true;
@@ -64,16 +62,6 @@ public class GoalTrack {
             emptyUpdate();
             return false;
         }
-    }
-
-    public synchronized void forceUpdate(double timestamp, Pose2d new_observation){
-        if (!isAlive()) {
-            mSmoothedPosition = new_observation;
-        } else if (mSmoothedPosition.distance(new_observation) > maxTrackerDistance){
-            mObservedPositions.clear();
-        } 
-        mObservedPositions.put(timestamp, new_observation);
-        pruneByTime();
     }
 
     public synchronized boolean isAlive() {
@@ -84,7 +72,7 @@ public class GoalTrack {
      * Removes the track if it is older than the set "age" described in the Constants file.
      */
     synchronized void pruneByTime() {
-        double delete_before = Timer.getFPGATimestamp() - maxGoalTrackAge;
+        double delete_before = Timer.getFPGATimestamp() - mConfig.maxGoalTrackAge;
         mObservedPositions.entrySet().removeIf(entry -> entry.getKey() < delete_before);
         if (mObservedPositions.isEmpty()) {
             mSmoothedPosition = null;
@@ -105,7 +93,7 @@ public class GoalTrack {
             double t_now = Timer.getFPGATimestamp();
             int num_samples = 0;
             for (Map.Entry<Double, Pose2d> entry : mObservedPositions.entrySet()) {
-                if (t_now - entry.getKey() > maxGoalTrackSmoothingTime) {
+                if (t_now - entry.getKey() > mConfig.maxGoalTrackSmoothingTime) {
                     continue;
                 }
                 ++num_samples;
@@ -141,7 +129,7 @@ public class GoalTrack {
     }
 
     public synchronized double getStability() {
-        return Math.min(1.0, mObservedPositions.size() / (cameraFrameRate * maxGoalTrackAge));
+        return Math.min(1.0, mObservedPositions.size() / (mConfig.cameraFrameRate * mConfig.maxGoalTrackAge));
     }
 
     public synchronized int getId() {
