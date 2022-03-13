@@ -144,7 +144,7 @@ public class Robot2022 implements RobotConfiguration {
                 1, // label id
                 LimelightConfiguration.Type.Shooter,
                 "Shooter Limelight #1", // name
-                "limelight", // table name
+                "limelight-shoot", // table name
                 Units.inchesToMeters(39.8), // height
                 // Distance between center of shooter and limelight's camera lens
                 new Pose2d(0.0, Units.inchesToMeters(-9.373 - (-1.85)), Rotation2d.identity()), // shooter to lens

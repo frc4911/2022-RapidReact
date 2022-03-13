@@ -139,7 +139,7 @@ public class Junior implements RobotConfiguration {
                 1, // label id
                 LimelightConfiguration.Type.Shooter,
                 "Shooter Limelight #1", // name
-                "limelight", // table name
+                "limelight-shoot", // table name
                 Units.inchesToMeters(26.25), // height
                 Pose2d.identity(), // shooter to lens
                 Rotation2d.fromDegrees(20.00), // horizontalPlaneToLens,

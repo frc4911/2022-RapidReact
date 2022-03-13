@@ -32,6 +32,7 @@ public class Limelight extends Subsystem {
     private static final Comparator<Translation2d> xSort = Comparator.comparingDouble(Translation2d::x);
     private static final Comparator<Translation2d> ySort = Comparator.comparingDouble(Translation2d::y);
     private final NetworkTable mNetworkTable;
+    private final RobotState mRobotState;
     private final PeriodicIO mPeriodicIO = new PeriodicIO();
     private final double[] mZeroArray = new double[]{0, 0, 0, 0, 0, 0, 0, 0};
     private final List<TargetInfo> mTargets = new ArrayList<>();
@@ -48,7 +49,9 @@ public class Limelight extends Subsystem {
         sClassName = "Limelight2";
         mConfig = limelight2Config;
         setPipelineConfig(pipelineConfig);
+        mRobotState = RobotState.getInstance(sClassName);
         mNetworkTable = NetworkTableInstance.getDefault().getTable(limelight2Config.getTableName());
+        mNetworkTable.getEntry("stream").setNumber(2);
     }
 
     public static List<TargetInfo> getRawTargetInfos(List<double[]> corners, PipelineConfiguration pipeline, List<TargetInfo> targets,
@@ -197,7 +200,7 @@ public class Limelight extends Subsystem {
     public void onStart(Loop.Phase phase) {
         synchronized (Limelight.this) {
             setLed(Limelight.LedMode.OFF);
-            RobotState.getInstance(sClassName).resetVision();
+            mRobotState.resetVision();
             switch (phase) {
                 case DISABLED:
                     mPeriodicIO.schedDeltaDesired = 0; // goto sleep
@@ -212,7 +215,7 @@ public class Limelight extends Subsystem {
     @Override
     public void onLoop(double timestamp) {
         synchronized (Limelight.this) {
-            RobotState.getInstance(sClassName).addVisionUpdate(
+            mRobotState.addVisionUpdate(
                     timestamp - getLatency(),
                     getTarget(),
                     Limelight.this);
@@ -240,7 +243,7 @@ public class Limelight extends Subsystem {
 
     public synchronized void setPipelineNumber(int mode) {
         if (mode != mPeriodicIO.pipeline) {
-            RobotState.getInstance(sClassName).resetVision();
+            mRobotState.resetVision();
             mPeriodicIO.pipeline = mode;
 
             System.out.println(mPeriodicIO.pipeline + ", " + mode);
