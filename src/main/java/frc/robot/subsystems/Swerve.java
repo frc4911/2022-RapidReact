@@ -22,6 +22,8 @@ import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.trajectory.TrajectoryIterator;
 import libraries.cheesylib.trajectory.timing.TimedState;
+import libraries.cheesylib.util.SynchronousPIDF;
+import libraries.cheesylib.util.Util;
 import libraries.cyberlib.kinematics.ChassisSpeeds;
 import libraries.cyberlib.kinematics.SwerveDriveKinematics;
 import libraries.cyberlib.kinematics.SwerveDriveOdometry;
@@ -64,6 +66,12 @@ public class Swerve extends Subsystem {
 
     private final SwerveDriveOdometry mOdometry;
     private final SwerveDriveKinematics mKinematics;
+
+    // Aiming Controller to turn in place when using vision system to aim
+    private SynchronousPIDF mAimingController = new SynchronousPIDF(
+            Constants.kAimingKP, Constants.kAimingKI, Constants.kAimingKD
+    );
+    private double lastAimTimestamp = -1.0;
 
     // Trajectory following
     private static DriveMotionPlanner mMotionPlanner;
@@ -148,6 +156,9 @@ public class Swerve extends Subsystem {
                     break;
                 case PATH_FOLLOWING:
                     updatePathFollower(lastUpdateTimestamp);
+                    break;
+                case VISION_AIM:
+                    handleAiming(timestamp);
                     break;
                 case NEUTRAL:
                 case DISABLED:
@@ -276,6 +287,22 @@ public class Swerve extends Subsystem {
         // maximum.
         SwerveDriveKinematics.desaturateWheelSpeeds(
                 mPeriodicIO.swerveModuleStates, mSwerveConfiguration.maxSpeedInMetersPerSecond);
+    }
+
+    private void handleAiming(double timestamp) {
+        var dt = timestamp - lastAimTimestamp;
+        lastAimTimestamp = timestamp;
+
+        if (dt > Util.kEpsilon) {
+            var rotation = mAimingController.calculate(mPeriodicIO.visionSetpointInRadians, dt);
+
+            HolonomicDriveSignal driveSignal = new HolonomicDriveSignal(
+                    Constants.kAimingVelocity,
+                    rotation,
+                    true);
+
+            updateModules(driveSignal);
+        }
     }
 
     // //Assigns appropriate directions for scrub factors
@@ -466,6 +493,23 @@ public class Swerve extends Subsystem {
         // mModules.forEach((m) -> m.zeroSensors(startingPose));
     }
 
+
+    /**
+     * Set the setpoint used when aiming the robot for auto shooting.
+     *
+     * @param setPointInRadians Setpoint in radians
+     */
+    public synchronized void setAimingSetpoint(double setPointInRadians, double timestamp) {
+        if (mControlState != ControlState.VISION_AIM) {
+            mControlState = ControlState.VISION_AIM;
+            // seed the last timestamp
+            lastAimTimestamp = timestamp;
+            mAimingController.reset();
+        }
+        mPeriodicIO.visionSetpointInRadians = setPointInRadians;
+    }
+
+
     /**
      * Sets inputs from driver in teleop mode.
      * <p>
@@ -604,6 +648,10 @@ public class Swerve extends Subsystem {
         // Updated as part of trajectory following
         public Pose2d error = Pose2d.identity();
         public TimedState<Pose2dWithCurvature> path_setpoint = new TimedState<>(Pose2dWithCurvature.identity());
+
+        // Updated as part of vision aiming
+        public double visionSetpointInRadians;
+
 
         // Inputs
         public Rotation2d gyro_heading = Rotation2d.identity();

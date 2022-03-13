@@ -6,7 +6,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.RobotState;
 import frc.robot.constants.Constants;
 import frc.robot.constants.Ports;
-import frc.robot.subsystems.Shooter.SystemState;
 import frc.robot.limelight.LimelightManager;
 import libraries.cheesylib.geometry.Rotation2d;
 import libraries.cheesylib.loops.Loop.Phase;
@@ -238,23 +237,32 @@ public class Superstructure extends Subsystem {
             if (!mOverrideLimelightLEDs) {
                 mLLManager.getLimelight().setLed(Limelight.LedMode.PIPELINE);
             }
+
             mShootSetup = true;
             mPeriodicIO.schedDeltaDesired = mFastCycle;
         }
 
-        double range = Double.NaN;
-        getAimSetpointFromVision(timestamp);
-        if (mLatestAimingParameters.isPresent()) {
-            range = mLatestAimingParameters.get().getRange();
-        }
+        var setPointInRadians = getAimSetpointFromVision(timestamp);
 
-        if (mShooter.readyToShoot() || !mShootSetup) {
-            mIndexer.setWantedState(Indexer.WantedState.FEED, sClassName);
-            mShootSetup = false;
+        // Need do aim robot
+        if (!mOnTarget) {
+            mSwerve.setAimingSetpoint(setPointInRadians, timestamp);
         } else {
-            mIndexer.setWantedState(Indexer.WantedState.HOLD, sClassName);
-        }
+            // Stop robot from moving in case aiming PID is still moving it
+            mSwerve.setState(Swerve.ControlState.NEUTRAL);
 
+            double range = Double.NaN;
+            if (mLatestAimingParameters.isPresent()) {
+                range = mLatestAimingParameters.get().getRange();
+            }
+
+            if (mShooter.readyToShoot() || !mShootSetup) {
+                mIndexer.setWantedState(Indexer.WantedState.FEED, sClassName);
+                mShootSetup = false;
+            } else {
+                mIndexer.setWantedState(Indexer.WantedState.HOLD, sClassName);
+            }
+        }
         return defaultStateTransfer();
     }
 
