@@ -1,6 +1,7 @@
 package frc.robot.config;
 
 import frc.robot.constants.Constants;
+import frc.robot.limelight.LimelightConfiguration;
 import frc.robot.sensors.IMU.ImuType;
 
 public interface RobotConfiguration {
@@ -16,6 +17,8 @@ public interface RobotConfiguration {
     public SwerveModuleConfiguration getBackRightModuleConstants();
 
     public ImuType getImuType();
+
+    public LimelightConfiguration getLimelightConfiguration();
 
     public static RobotConfiguration getRobotConfiguration(String robotName) {
         switch (robotName) {

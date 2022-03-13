@@ -1,15 +1,12 @@
 package frc.robot.constants;
 
-import java.util.Arrays;
-import java.util.List;
-
 import edu.wpi.first.math.util.Units;
-import frc.robot.config.LimelightConfig;
+import frc.robot.limelight.CameraResolution;
+import frc.robot.limelight.PipelineConfiguration;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Rotation2d;
 import libraries.cheesylib.geometry.Translation2d;
-import libraries.cheesylib.util.InterpolatingDouble;
-import libraries.cheesylib.util.InterpolatingTreeMap;
+import libraries.cheesylib.vision.GoalTrackerConfig;
 
 public class Constants {
     /* All distance measurements are in inches, unless otherwise noted. */
@@ -60,16 +57,6 @@ public class Constants {
     public static final Pose2d farShipPosition = new Pose2d(new Translation2d(304.3, -28.87),
             Rotation2d.fromDegrees(90.0));
 
-    public static final double kOuterTargetHeight = 98.25 - 7.5;
-    public static final double kDiskTargetHeight = 28.625;// 28.1875
-    public static final double kBallTargetHeight = 36.9375;
-    public static final List<Rotation2d> kPossibleDiskTargetAngles = Arrays.asList(
-            /* Rotation2d.fromDegrees(0.0), */ Rotation2d.fromDegrees(30.0), Rotation2d.fromDegrees(150.0),
-            /* Rotation2d.fromDegrees(180.0), */ Rotation2d.fromDegrees(-150.0),
-            Rotation2d.fromDegrees(-30.0));
-    public static final List<Rotation2d> kPossibleBallTargetAngles = Arrays.asList(Rotation2d.fromDegrees(90.0),
-            Rotation2d.fromDegrees(-90.0));
-
     public static final Pose2d kRobotStartingPose = Pose2d.identity();
     public static final Pose2d kRobotSpecialPose = new Pose2d(new Translation2d(0, 0), Rotation2d.fromDegrees(180));
     public static final Pose2d kRobotLeftStartingPose = new Pose2d(
@@ -84,168 +71,13 @@ public class Constants {
     public static final Pose2d kRobotRightRampExitPose = new Pose2d(
             new Translation2d(95.25 + kRobotHalfLength, -(97.0 + kRobotHalfWidth - 162.0)),
             Rotation2d.fromDegrees(0));
-    // public static final Pose2d kRobotLeftRampExitPose = new Pose2d(new
-    // Translation2d(48.0 + kRobotHalfLength, -75.25 - kRobotHalfWidth),
-    // Rotation2d.fromDegrees(0));
-    // public static final Pose2d kRobotRightRampExitPose = new Pose2d(new
-    // Translation2d(48.0 + kRobotHalfLength, 75.25 + kRobotHalfWidth),
-    // Rotation2d.fromDegrees(0));
 
-    public static double kMaxAngleAimError = 1;
-    public static final double kMaxAimTurningVelocity = 0.1;
 
-    // TODO: "fix em up later" -Ram
-    // shootwards limelight
-    public static final LimelightConfig kShootwardsLimelightConfig = new LimelightConfig();
-    static {
-        kShootwardsLimelightConfig.kName = "ShootwardsLimelight";
-        kShootwardsLimelightConfig.kTableName = "limelight-shooter";
-        kShootwardsLimelightConfig.kHeight = 23 /* 22.25 */;// cetus: 11 // robot1: 22.25// pinkeye: 23// inches
-        kShootwardsLimelightConfig.kSubsystemToLens = new Pose2d(new Translation2d(0, 0.0),
-                Rotation2d.fromDegrees(0.0)); // 0.0 brian // right is positive // -1.5
-        kShootwardsLimelightConfig.kHorizontalPlaneToLens = Rotation2d.fromDegrees(20.5); // 38 // degrees
-        kShootwardsLimelightConfig.kExpectedTargetCount = new double[] { 1, 3 }; // expect 2 targets (2 top
-                                                                                 // corners)
-        kShootwardsLimelightConfig.kPipelineZoom = new int[] { 1, 2 };
-        kShootwardsLimelightConfig.kTargets = new Target[] {
-                Target.OUTER_GOAL_MAIN_COUNTOUR,
-                Target.OUTER_GOAL_CORNERS,
-                Target.OUTER_GOAL_CORNERS
-        };
-    }
-
-    // shootwards zoom constants
-
-    // when zoomed in (2), if robot closer than 12.5 ft, zoom out (1) will occur.
-    // if zoomed out (1), if robot farther than 13.5, zoom in may occur (2).
-    // overlap keeps zooms from jumping back and forth
-    public static final double kZoomOutDistance = 13.5; // ft
-    public static final double kZoomInDistance = 14.5; // ft
-    public static final double kZoomInProportion = 0.4; // for zoom 1 - 2, target must be within kZoomConstant * FOV
-                                                        // for each x and y
-    public static final double kZoomOutProportion = 0.95;
-    public static final double kTimeBeforeZoomSwitch = 0.1; // 0.1 sec must pass to zoom in or out
-
-    // collectwards limelight
-    public static final LimelightConfig kCollectwardsLimelightConfig = new LimelightConfig();
-    static {
-        kCollectwardsLimelightConfig.kName = "CollectwardsLimelight";
-        kCollectwardsLimelightConfig.kTableName = "limelight-collect"; // TODO: "limelight-collect"
-        kCollectwardsLimelightConfig.kHeight = 22; // deadeye 23, pinkeye 22
-        kCollectwardsLimelightConfig.kSubsystemToLens = new Pose2d(new Translation2d(0, 0),
-                Rotation2d.fromDegrees(0));
-        kCollectwardsLimelightConfig.kHorizontalPlaneToLens = Rotation2d.fromDegrees(-29.0);
-        kCollectwardsLimelightConfig.kExpectedTargetCount = new double[] { 1, 3 };
-        kCollectwardsLimelightConfig.kPipelineZoom = new int[] { 1 };
-        kCollectwardsLimelightConfig.kTargets = new Target[] {
-                Target.POWER_CELL,
-                Target.POWER_CELL,
-                Target.POWER_CELL
-        };
-    }
-
-    // collectwards limelight testing
-    // public static final LimelightConstants kCollectwardsLimelightConstants = new
-    // LimelightConstants();
-    // static {
-    // kCollectwardsLimelightConstants.kName = "Collectwards Limelight";
-    // kCollectwardsLimelightConstants.kTableName = "limelight-shooter";
-    // kCollectwardsLimelightConstants.kHeight = 25.25/*22.25*/;// cetus: 11 //
-    // robot1: 22.25// inches
-    // kCollectwardsLimelightConstants.kSubsystemToLens = new Pose2d(new
-    // Translation2d(0, 0.0), Rotation2d.fromDegrees(-0.7)); // right is positive
-    // kCollectwardsLimelightConstants.kHorizontalPlaneToLens =
-    // Rotation2d.fromDegrees(20.5); //38 // degrees
-    // kCollectwardsLimelightConstants.kExpectedTargetCount = new double[] {1, 3};
-    // // expect 2 targets (2 top corners)
-    // kCollectwardsLimelightConstants.kPiplineZoom = new int[] {1, 2};
-    // }
-
-    // target constants
-    public enum Target {
-        OUTER_GOAL_MAIN_COUNTOUR,
-        OUTER_GOAL_CORNERS,
-        POWER_CELL;
-
-        double[] targetHeights = new double[] {
-                /* 98.25 */ 70 - 7.5,
-                /* 98.25 */70,
-                // raynli
-                /* 43.5 */ 4.5
-        };
-
-        public double getHeight() {
-            return targetHeights[this.ordinal()];
-        }
-    }
-
-    public static final double kGoalTargetHeight = 98.25;
-    public static final double kPowerCellTargetHeight = 4.5;
-    public static final double kCornerToCornerLength = 39.26;
-
-    public static final double kImageCaptureLatency = 11.0 / 1000.0; // seconds
-    public static final double kHorizontalFOV = Math.toRadians(59.6);
-    public static final double kVerticalFOV = Math.toRadians(49.7);
-
-    public static final double kVPW = 2.0 * Math.tan(kHorizontalFOV / 2);
-    public static final double kVPH = 2.0 * Math.tan(kVerticalFOV / 2);
-
-    public static final int[] pixelFrameLowRes = new int[] { 320, 240 };
-    public static final int[] pixelFrameHighRes = new int[] { 960, 720 };
-
-    // Goal tracker constants
-    public static double kMaxGoalTrackAge = 0.5;// 0.5
-    public static double kMaxTrackerDistance = 60.0;// 18.0
-    public static double kCameraFrameRate = 90.0;
-    public static double kTrackReportComparatorStablityWeight = 1.0;
-    public static double kTrackReportComparatorAgeWeight = 1.0;
-    public static final double kDefaultCurveDistance = kRobotHalfLength + 36.0;
-    public static final double kVisionUpdateDistance = kRobotHalfLength + 75.0;
-    public static final double kVisionDistanceStep = 4.0;
-    public static final double kClosestVisionDistance = 26.0;// 36.0
-    public static final double kDefaultVisionTrackingSpeed = 42.0;
-    public static final double kCurvedVisionYOffset = 0.375;// 1.25
-
-    // Vision Speed Constraint Treemap
-    public static InterpolatingTreeMap<InterpolatingDouble, InterpolatingDouble> kVisionSpeedTreemap = new InterpolatingTreeMap<>();
-    static {
-        kVisionSpeedTreemap.put(new InterpolatingDouble(-6.0), new InterpolatingDouble(24.0));
-        kVisionSpeedTreemap.put(new InterpolatingDouble(kClosestVisionDistance), new InterpolatingDouble(24.0));
-        kVisionSpeedTreemap.put(new InterpolatingDouble(60.0), new InterpolatingDouble(48.0));
-        kVisionSpeedTreemap.put(new InterpolatingDouble(300.0), new InterpolatingDouble(48.0));
-    }
 
     // Path following constants
     public static final double kPathLookaheadTime = 0.25; // seconds to look ahead along the path for steering 0.4
     public static final double kPathMinLookaheadDistance = Units.inchesToMeters(6.0); // inches 24.0 (we've been
                                                                                       // using 3.0)
-
-    // Swerve Odometry Constants
-    public static final double kSwerveWheelDiameter = 4.0901; // inches (actual diamter is closer to 3.87, but
-                                                              // secondary algorithm prefers 4.0901) 3.76
-    // public static final double kSwerveRotationMotorTicksPerRotation = 2048.0 *
-    // 21.5; // FX encoder ticks per module rotation
-
-    /**
-     * The number of rotations the swerve drive encoder undergoes for every rotation
-     * of the wheel.
-     */
-    // public static final double kSwerveDriveTicksPerWheelRev = .85*14178; //brian
-    // 1.21 new gear ratio 2048 * 6.923 //SwerveDriveEncoderResolution *
-    // kSwerveEncoderToWheelRatio;
-    // public static final double kSwerveEncUnitsPerInch =
-    // kSwerveDriveTicksPerWheelRev / (Math.PI * kSwerveWheelDiameter);
-
-    // TODO - Replace the following constants with configuration
-
-    // public static final double kSwerveDriveMaxSpeed = 21000.0; // drive motor
-    // ticks/100ms
-    // start with velocity of motor shaft kSwerveDriveMaxSpeed*10 in ticks/sec *
-    // 6.923 (gear ratio) * wheel diameter * pi
-    // TODO: This is used by Trajectory code etc. Replace later.
-    // public static final double kSwerveMaxSpeedInchesPerSecond =
-    // kSwerveDriveMaxSpeed*10.0/(6.923*2048)*kSwerveWheelDiameter*Math.PI;
-
     // NEW SWERVE
     // TODO: use SDS MK4 module configurations file.
 
@@ -276,6 +108,56 @@ public class Constants {
     public static final double kSwerveHeadingControllerErrorTolerance = 1.0; // degrees
 
     // END NEW SWERVE
+
+    // LIMELIGHT
+    // TODO:  Create Robot specific configurations
+    // Goal Tracker
+    public static final boolean kUseTopCorners = true;
+
+    public static final double kImageCaptureLatency = 11.0 / 1000.0; // seconds
+
+    public static final double kMaxTrackerDistance = Units.feetToMeters(20.0);
+    public static final double kMaxGoalTrackAge = 2.5;
+    public static final double kMaxGoalTrackSmoothingTime = 0.5;
+    public static final double kCameraFrameRate = 90.0; // fps
+
+    public static GoalTrackerConfig kGoalTrackerConfig = new GoalTrackerConfig(
+            kMaxTrackerDistance, kMaxGoalTrackAge, kMaxGoalTrackSmoothingTime, kCameraFrameRate);
+
+    public static final double kTrackStabilityWeight = 0.0;
+    public static final double kTrackAgeWeight = 10.0;
+    public static final double kTrackSwitchingWeight = 100.0;
+
+    // Approximately 8' 8 inches per manual
+    public static final double kVisionTargetHeight = Units.inchesToMeters(12.0 * 8.0 + 8.0);
+
+    // Rim thickness + inner diameter of upper hub.  Reflective tape is at front rim.  Shot should land in center.
+    public static final Pose2d kVisionTargetToGoalOffset = new Pose2d(
+            -Units.inchesToMeters(3.0 + 24.0) , 0, Rotation2d.identity());
+
+    public static final PipelineConfiguration kLowRes1xZoom = new PipelineConfiguration(
+            CameraResolution.F_320x240, 1.0);
+    public static final PipelineConfiguration kLowRes2xZoom = new PipelineConfiguration(
+            CameraResolution.F_320x240, 2.0);
+
+//    // Goal tracker constants
+//    public static final double kDefaultCurveDistance = kRobotHalfLength + 36.0;
+//    public static final double kVisionUpdateDistance = kRobotHalfLength + 75.0;
+//    public static final double kVisionDistanceStep = 4.0;
+//    public static final double kClosestVisionDistance = 26.0;// 36.0
+//    public static final double kDefaultVisionTrackingSpeed = 42.0;
+//    public static final double kCurvedVisionYOffset = 0.375;// 1.25
+//
+//    // Vision Speed Constraint Treemap
+//    public static InterpolatingTreeMap<InterpolatingDouble, InterpolatingDouble> kVisionSpeedTreemap = new InterpolatingTreeMap<>();
+//    static {
+//        kVisionSpeedTreemap.put(new InterpolatingDouble(-6.0), new InterpolatingDouble(24.0));
+//        kVisionSpeedTreemap.put(new InterpolatingDouble(kClosestVisionDistance), new InterpolatingDouble(24.0));
+//        kVisionSpeedTreemap.put(new InterpolatingDouble(60.0), new InterpolatingDouble(48.0));
+//        kVisionSpeedTreemap.put(new InterpolatingDouble(300.0), new InterpolatingDouble(48.0));
+//    }
+    // END LIMELIGHT
+
 
     // Panel Manipulator Constants
     public static final int kPanelManipulatorTalonID = 0; // TODO: temporary value, need adjustments

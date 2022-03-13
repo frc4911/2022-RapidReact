@@ -15,6 +15,8 @@ import libraries.cheesylib.geometry.Pose2d;
  * @see GoalTrack
  */
 public class GoalTracker {
+    private GoalTrackerConfig mConfig;
+
     /**
      * Track reports contain all of the relevant information about a given goal track.
      */
@@ -32,16 +34,16 @@ public class GoalTracker {
         // The track id
         public int id;
 
-        public TrackReport(GoalTrack track) {
+        private GoalTrackerConfig mConfig;
+
+        public TrackReport(GoalTrack track, GoalTrackerConfig goalTrackerConfig) {
             this.field_to_target = track.getSmoothedPosition();
             this.latest_timestamp = track.getLatestTimestamp();
             this.stability = track.getStability();
             this.id = track.getId();
+            this.mConfig = goalTrackerConfig;
         }
     }
-
-    // This came from Constants.java and should be initialized in Robot.java
-    public static double maxGoalTrackAge = 2.5;
 
     /**
      * TrackReportComparators are used in the case that multiple tracks are active (e.g. we see or have recently seen
@@ -59,20 +61,23 @@ public class GoalTracker {
         double mSwitchingWeight;
         int mLastTrackId;
 
+        private GoalTrackerConfig mConfig;
+
         public TrackReportComparator(double stability_weight, double age_weight, double switching_weight,
-                                     int last_track_id, double current_timestamp) {
+                                     int last_track_id, double current_timestamp, GoalTrackerConfig goalTrackerConfig) {
             this.mStabilityWeight = stability_weight;
             this.mAgeWeight = age_weight;
             this.mSwitchingWeight = switching_weight;
             this.mLastTrackId = last_track_id;
             this.mCurrentTimestamp = current_timestamp;
+            this.mConfig = goalTrackerConfig;
         }
 
         double score(TrackReport report) {
             double stability_score = mStabilityWeight * report.stability;
             double age_score = mAgeWeight
-                    * Math.max(0, (maxGoalTrackAge - (mCurrentTimestamp - report.latest_timestamp))
-                    / maxGoalTrackAge);
+                    * Math.max(0, (mConfig.maxGoalTrackAge - (mCurrentTimestamp - report.latest_timestamp))
+                    / mConfig.maxGoalTrackAge);
             double switching_score = (report.id == mLastTrackId ? mSwitchingWeight : 0);
             return stability_score + age_score + switching_score;
         }
@@ -94,50 +99,40 @@ public class GoalTracker {
     List<GoalTrack> mCurrentTracks = new ArrayList<>();
     int mNextId = 0;
 
-    public GoalTracker() {
-	}
+    public GoalTracker(GoalTrackerConfig goalTrackerConfig) {
+        this.mConfig = goalTrackerConfig;
+    }
 
     public synchronized void reset() {
         mCurrentTracks.clear();
     }
 
-    double xTarget = 0.0;
-    double acceptableError = 6.0;
-    boolean useXTarget = false;
-    public void setXTarget(double x, double error){
-        xTarget = x;
-        acceptableError = error;
-        useXTarget = true;
-    }
-    public void enableXTarget(boolean enable){
-        useXTarget = enable;
-    }
-
     public synchronized void update(double timestamp, List<Pose2d> field_to_goals) {
-        // make new tracks to accommadate for each observation
-        if (mCurrentTracks.size() < field_to_goals.size()) {
-            for (int i = mCurrentTracks.size(); i < field_to_goals.size(); i++) {
-                mCurrentTracks.add(GoalTrack.makeNewTrack(timestamp, field_to_goals.get(i), mNextId));
+        // Try to update existing tracks
+        for (Pose2d target : field_to_goals) {
+            boolean hasUpdatedTrack = false;
+            for (GoalTrack track : mCurrentTracks) {
+                if (!hasUpdatedTrack) {
+                    if (track.tryUpdate(timestamp, target)) {
+                        hasUpdatedTrack = true;
+                    }
+                } else {
+                    track.emptyUpdate();
+                }
+            }
+            if (!hasUpdatedTrack) {
+                // Add a new track.
+                // System.out.println("Created new track");
+                mCurrentTracks.add(GoalTrack.makeNewTrack(timestamp, target, mNextId, mConfig));
                 ++mNextId;
             }
         }
 
-        for (int i = 0; i < mCurrentTracks.size(); i++) {
-            // if there as an observation to update the track
-            if (field_to_goals.size() > i) {
-                // try to update the given track
-                mCurrentTracks.get(i).tryUpdate(timestamp, field_to_goals.get(i));
+        maybePruneTracks();
+    }
 
-                // if dead after update, force update to reset the target position
-                if (!mCurrentTracks.get(i).isAlive()) {
-                    mCurrentTracks.get(i).forceUpdate(timestamp, field_to_goals.get(i));
-                }
-        
-                // if no observation for an update empty update 
-            } else {
-                mCurrentTracks.get(i).emptyUpdate();
-            }
-        }
+    public synchronized void maybePruneTracks() {
+        mCurrentTracks.removeIf(track -> !track.isAlive());
     }
 
     public synchronized boolean hasTracks() {
@@ -147,12 +142,8 @@ public class GoalTracker {
     public synchronized List<TrackReport> getTracks() {
         List<TrackReport> rv = new ArrayList<>();
         for (GoalTrack track : mCurrentTracks) {
-            rv.add(new TrackReport(track));
+            rv.add(new TrackReport(track, mConfig));
         }
         return rv;
-    }
-
-    public synchronized void clearTracks(){
-        mCurrentTracks = new ArrayList<>();
     }
 }
