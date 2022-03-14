@@ -119,6 +119,7 @@ public class Superstructure extends Subsystem {
             mStateChanged = true;
             switch (phase) {
                 case DISABLED:
+                case TEST:
                     mSystemState = SystemState.DISABLING;
                     mWantedState = WantedState.DISABLE;
                     mPeriodicIO.schedDeltaDesired = 0; // goto sleep
@@ -281,10 +282,11 @@ public class Superstructure extends Subsystem {
             mShooter.setWantedState(Shooter.WantedState.SHOOT, sClassName);
         }
         // now only do something if shooter is ready and we have not already started shooting
-        if (mShooter.readyToShoot()) {
+        if (mShooter.readyToShoot() && 
+            !mIndexer.getWantedState().equals(Indexer.WantedState.FEED)) {
             mIndexer.setWantedState(Indexer.WantedState.FEED, sClassName);
         }
-        else{
+        else if(!mIndexer.getWantedState().equals(Indexer.WantedState.HOLD)){
             mIndexer.setWantedState(Indexer.WantedState.HOLD, sClassName);
         }
 
