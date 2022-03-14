@@ -351,8 +351,10 @@ public class Swerve extends Subsystem {
     }
 
     public Rotation2d getHeading() {
-        return mOdometry.getPose().getRotation();
+        return mPeriodicIO.robotPose.getRotation();
     }
+
+    public ChassisSpeeds getChassisSpeeds() { return mPeriodicIO.chassisSpeeds; }
 
     /**
      * Sets the current robot position on the field.
