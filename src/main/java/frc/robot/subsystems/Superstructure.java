@@ -299,7 +299,7 @@ public class Superstructure extends Subsystem {
         if (mStateChanged) {
             if (!mOverrideLimelightLEDs) {
                 mLLManager.getLimelight().setLed(Limelight.LedMode.BLINK);
-                mClimber.setWantedState(Climber.WantedState.GRAB_BAR_DYNAMIC_CLAW, sClassName);
+                mClimber.setWantedState(Climber.WantedState.CLIMB_1_LIFT, sClassName);
             }
         }
 

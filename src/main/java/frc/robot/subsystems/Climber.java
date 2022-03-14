@@ -52,7 +52,11 @@ public class Climber extends Subsystem {
         DISABLING,
         HOLDING,
         HOMING,
-        GRABBING_BAR_DYNAMIC_CLAW,
+        CLIMBING_1_LIFT,
+        CLIMBING_2_ROTATE_UP,
+        CLIMBING_3_LIFT_MORE,
+        CLIMBING_4_ENGAGE_TRAV,
+        CLIMBING_5_RELEASE_MID,
         PRECLIMBING,
         TESTING
     }
@@ -61,7 +65,11 @@ public class Climber extends Subsystem {
         DISABLE,
         HOLD,
         HOME,
-        GRAB_BAR_DYNAMIC_CLAW,
+        CLIMB_1_LIFT,
+        CLIMB_2_ROTATE_UP,
+        CLIMB_3_LIFT_MORE,
+        CLIMB_4_ENGAGE_TRAV,
+        CLIMB_5_RELEASE_MID,
         PRECLIMB,
         TEST
     }
@@ -265,9 +273,21 @@ public class Climber extends Subsystem {
                     case PRECLIMBING:
                         newState = handlePreclimbing();
                         break;
-                    case GRABBING_BAR_DYNAMIC_CLAW:
-                        newState = handleGrabbingBarDynamicClaw();
+                    case CLIMBING_1_LIFT:
+                        newState = handleClimbing_1_Lift();
                         break;
+                    case CLIMBING_2_ROTATE_UP:
+                    newState = handleClimbing_2_RotateUp();
+                    break;
+                    case CLIMBING_3_LIFT_MORE:
+                    newState = handleClimbing_3_LiftMore();
+                    break;
+                    case CLIMBING_4_ENGAGE_TRAV:
+                    newState = handleClimbing_4_EngageTrav();
+                    break;
+                    case CLIMBING_5_RELEASE_MID:
+                    newState = handleClimbing_5_ReleaseMid();
+                    break;
                     case TESTING:
                         newState = handleTesting();
                         break;
@@ -394,12 +414,11 @@ public class Climber extends Subsystem {
         return defaultStateTransfer();
     }
 
-    // This is preliminary only. It is intended to give us a running start if we decide to automate any of the climb
-    private SystemState handleGrabbingBarDynamicClaw(){
+    private SystemState handleClimbing_1_Lift(){
         if (mStateChanged) {
             mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
             if (!climberHomed) {
-                wantedStateAfterHoming = WantedState.GRAB_BAR_DYNAMIC_CLAW;
+                wantedStateAfterHoming = WantedState.CLIMB_1_LIFT;
                 mWantedState = WantedState.HOME;
                 return defaultStateTransfer();
             } else {
@@ -490,7 +509,7 @@ public class Climber extends Subsystem {
                 break;
         }
 
-        if (mWantedState != WantedState.GRAB_BAR_DYNAMIC_CLAW) {
+        if (mWantedState != WantedState.CLIMB_1_LIFT) {
             gbdcSubState = GrabBarDynamicClawSubState.RETRACTTOENGAGECLAW; // anystate that is not DONE
         }
         return defaultStateTransfer();
@@ -500,15 +519,112 @@ public class Climber extends Subsystem {
         return gbdcSubState.equals(GrabBarDynamicClawSubState.DONE);
     }
 
+    private SystemState handleClimbing_2_RotateUp(){
+        if (mStateChanged) {
+            masterConfig(kClimberCurrentLimitHigh, true, 
+                        Double.Nan, false,)
+            //set demmands
+            // state done flag
+            // set magic motion params?
+        }
+        return defaultStateTransfer();
+    }
 
+    private SystemState handleClimbing_3_LiftMore(){
+        if (mStateChanged) {
+            //set whenRun
+            //set demmands
+            // set controlMode
+            // set current limit
+            // set soft limit
+            // set status/control frame
+            // state done flag
+            // set magic motion params?
+        }
+        return defaultStateTransfer();
+    }
+
+    private SystemState handleClimbing_4_EngageTrav(){
+        if (mStateChanged) {
+            //set whenRun
+            //set demmands
+            // set controlMode
+            // set current limit
+            // set soft limit
+            // set status/control frame
+            // state done flag
+            // set magic motion params?
+        }
+        return defaultStateTransfer();
+
+    }
+
+    private SystemState handleClimbing_5_ReleaseMid(){
+        if (mStateChanged) {
+            //set whenRun
+            //set demmands
+            // set controlMode
+            // set current limit
+            // set soft limit
+            // set status/control frame
+            // state done flag
+            // set magic motion params?
+        }
+        return defaultStateTransfer();
+    }
+
+    private void masterConfig(double statorLimit, boolean statorEnable, 
+                              double softLimitFwd, boolean softLimitFwdEnable, 
+                              double softLimitRev, boolean softLimitRevEnable, 
+                              double statusFramePeriod, double controlFramePeriod, double whenRun){
+        if (statorLimit != Double.NaN){
+            mFXLeftClimber.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(statorEnable, statorLimit, statorLimit, 0));
+            mFXRightClimber.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(statorEnable, statorLimit, statorLimit, 0));    
+        }
+
+        if (softLimitFwd != Double.NaN){
+            mFXLeftClimber.configForwardSoftLimitThreshold(softLimitFwd, Constants.kLongCANTimeoutMs);
+            mFXRightClimber.configForwardSoftLimitThreshold(softLimitFwd, Constants.kLongCANTimeoutMs);
+
+            mFXLeftClimber.configForwardSoftLimitEnable(softLimitFwdEnable, Constants.kLongCANTimeoutMs);    
+            mFXRightClimber.configForwardSoftLimitEnable(softLimitFwdEnable, Constants.kLongCANTimeoutMs);
+        }
+
+        if (softLimitRev != Double.NaN){
+            mFXLeftClimber.configReverseSoftLimitThreshold(softLimitFwd, Constants.kLongCANTimeoutMs);
+            mFXRightClimber.configReverseSoftLimitThreshold(softLimitFwd, Constants.kLongCANTimeoutMs);
+            
+            mFXLeftClimber.configReverseSoftLimitEnable(softLimitRevEnable, Constants.kLongCANTimeoutMs);
+            mFXRightClimber.configReverseSoftLimitEnable(softLimitRevEnable, Constants.kLongCANTimeoutMs);
+        }
+        if (statusFramePeriod != Double.NaN){
+            mFXLeftClimber.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, (int)statusFramePeriod, Constants.kLongCANTimeoutMs);
+        }
+        if (controlFramePeriod != Double.NaN){
+            mFXLeftClimber.setControlFramePeriod(ControlFrame.Control_3_General, (int)controlFramePeriod);
+            mFXRightClimber.setControlFramePeriod(ControlFrame.Control_3_General, (int)controlFramePeriod);
+        }
+        if (whenRun != Double.NaN){
+            mPeriodicIO.schedDeltaDesired = (int) whenRun;
+        }
+
+    }
     private SystemState defaultStateTransfer() {
         switch (mWantedState) {
             case HOME:
                 return SystemState.HOMING;
             case DISABLE:
                 return SystemState.DISABLING;
-            case GRAB_BAR_DYNAMIC_CLAW:
-                return SystemState.GRABBING_BAR_DYNAMIC_CLAW;
+            case CLIMB_1_LIFT:
+                return SystemState.CLIMBING_1_LIFT;
+            case CLIMB_2_ROTATE_UP:
+                return SystemState.CLIMBING_2_ROTATE_UP;
+            case CLIMB_3_LIFT_MORE:
+                return SystemState.CLIMBING_3_LIFT_MORE;
+            case CLIMB_4_ENGAGE_TRAV:
+                return SystemState.CLIMBING_4_ENGAGE_TRAV;
+            case CLIMB_5_RELEASE_MID:
+                return SystemState.CLIMBING_5_RELEASE_MID;
             case PRECLIMB:
                 return SystemState.PRECLIMBING;
             case TEST:
