@@ -121,6 +121,10 @@ public class RobotState {
                 .transformBy(Pose2d.exp(vehicle_velocity_predicted_.scaled(lookahead_time)));
     }
 
+    public synchronized Twist2d getMeasuredVelocity() {
+        return vehicle_velocity_measured_;
+    }
+
     public synchronized void addFieldToVehicleObservation(
             double timestamp, Pose2d observation, Twist2d measured_velocity, Twist2d predicted_velocity) {
         field_to_vehicle_.put(new InterpolatingDouble(timestamp), observation);

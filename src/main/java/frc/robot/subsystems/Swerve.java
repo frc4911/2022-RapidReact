@@ -296,8 +296,9 @@ public class Swerve extends Subsystem {
         if (dt > Util.kEpsilon) {
             var rotation = mAimingController.calculate(mPeriodicIO.visionSetpointInRadians, dt);
 
+            // Turn in place implies no translational velocity.
             HolonomicDriveSignal driveSignal = new HolonomicDriveSignal(
-                    Constants.kAimingVelocity,
+                    Translation2d.identity(),
                     rotation,
                     true);
 
@@ -500,8 +501,10 @@ public class Swerve extends Subsystem {
      * Set the setpoint used when aiming the robot for auto shooting.
      *
      * @param setPointInRadians Setpoint in radians
+     * @param feedforward Feed-forward term
+     * @param timestamp Current timestamp
      */
-    public synchronized void setAimingSetpoint(double setPointInRadians, double timestamp) {
+    public synchronized void setAimingSetpoint(double setPointInRadians, double feedforward, double timestamp) {
         if (mControlState != ControlState.VISION_AIM) {
             mControlState = ControlState.VISION_AIM;
             // seed the last timestamp
@@ -509,8 +512,8 @@ public class Swerve extends Subsystem {
             mAimingController.reset();
         }
         mPeriodicIO.visionSetpointInRadians = setPointInRadians;
+        mPeriodicIO.visionFeedForward = feedforward;
     }
-
 
     /**
      * Sets inputs from driver in teleop mode.
@@ -653,7 +656,7 @@ public class Swerve extends Subsystem {
 
         // Updated as part of vision aiming
         public double visionSetpointInRadians;
-
+        public double visionFeedForward;
 
         // Inputs
         public Rotation2d gyro_heading = Rotation2d.identity();
