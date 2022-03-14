@@ -9,6 +9,7 @@ import java.util.Optional;
 
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import frc.robot.autos.AutoModeSelector;
 import frc.robot.paths.TrajectoryGenerator;
 import frc.robot.subsystems.Climber;
@@ -76,6 +77,8 @@ public class Robot extends TimedRobot {
         System.out.println("robotInit() begins");
 
         mClassName = this.getClass().getSimpleName();
+        LiveWindow.disableAllTelemetry();
+        LiveWindow.setEnabled(false);
         // Initializing subsystems
         mSubsystemManager = SubsystemManager.getInstance(mClassName);
         mJSticks = JSticks.getInstance(mClassName);
@@ -237,6 +240,8 @@ public class Robot extends TimedRobot {
     @Override
     public void testInit() {
         System.out.println("*********** testInit() begins ***********");
+        mSubsystemLooper.stop();
+        mSubsystemLooper.start();
         System.out.println("testInit() ends");
     }
 
