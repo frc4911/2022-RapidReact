@@ -23,11 +23,15 @@ public class Climber extends Subsystem {
 
     // Hardware
     private final TalonFX mFXLeftClimber, mFXRightClimber;
-    private final Solenoid mSlapSticks;
+    private final Solenoid mSolenoidDeploy;
 
     // Subsystem Constants
     private final double kClimberCurrentLimitLow = 60; // temp change while testing autoclimb reset to 80 when done
     private final double kClimberCurrentLimitHigh = 60; // temp change while testing autoclimb reset to 80 when done
+    private final double kStatusFramePeriodActive = 20;
+    private final double kControlFrameActive = 18;
+    private final double kStatusFramePeriodDormant = 100;
+    private final double kControlFrameDormant = 100;
     private final int kHomingZeroAdjustment = -1000; // Tick adjustment to accomodate physical overdriving on the elevator
     private final int kSlappySticksElevatorConflictLimit = 140000; // Max theory is 140k
     private final int kElevatorMaxHeight = 162000; // Max theory is 165k
@@ -74,7 +78,7 @@ public class Climber extends Subsystem {
         TEST
     }
 
-    public enum ElevatorPositions {
+    public enum MidArmPosition {
         BAR(80000),
         CLAWS(40000),
         DOWN(0),
@@ -82,7 +86,7 @@ public class Climber extends Subsystem {
 
         double position;
 
-        private ElevatorPositions(double position) {
+        private MidArmPosition(double position) {
             this.position = position;
         }
 
@@ -108,6 +112,11 @@ public class Climber extends Subsystem {
     private final double kElevPosTolerance = 1000;
     private double mSlappyExtendTimeout;
     private final double kSlappyExtendDuration = 1;
+    private boolean stageOneComplete;
+    private boolean stageTwoComplete;
+    private boolean stageThreeComplete;
+    private boolean stageFourComplete;
+    private boolean stageFiveComplete;
 
     private SystemState mSystemState;
     private WantedState mWantedState;
@@ -158,7 +167,7 @@ public class Climber extends Subsystem {
         printUsage(caller);
         mFXLeftClimber = TalonFXFactory.createDefaultTalon(Ports.LEFT_CLIMBER);
         mFXRightClimber = TalonFXFactory.createDefaultTalon(Ports.RIGHT_CLIMBER);
-        mSlapSticks = new Solenoid(PneumaticsModuleType.CTREPCM, Ports.CLIMBER_STAGE);
+        mSolenoidDeploy = new Solenoid(PneumaticsModuleType.CTREPCM, Ports.CLIMBER_DEPLOY);
         mSubsystemManager = SubsystemManager.getInstance(sClassName);
         configMotors();
     }
@@ -251,7 +260,12 @@ public class Climber extends Subsystem {
                     mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
                     break;
             }
-            mPeriodicIO.slappyDemand = SolenoidState.RETRACT;
+            stageOneComplete = false;
+            stageTwoComplete = false;
+            stageThreeComplete = false;
+            stageFourComplete = false;
+            stageFiveComplete = false;
+            mPeriodicIO.deployDemand = SolenoidState.RETRACT;
             mSolenoidState = SolenoidState.EXTEND;
             System.out.println(sClassName + " state " + mSystemState);
             stop(); // put into a known state
@@ -277,17 +291,17 @@ public class Climber extends Subsystem {
                         newState = handleClimbing_1_Lift();
                         break;
                     case CLIMBING_2_ROTATE_UP:
-                    newState = handleClimbing_2_RotateUp();
-                    break;
+                        newState = handleClimbing_2_RotateUp();
+                        break;
                     case CLIMBING_3_LIFT_MORE:
-                    newState = handleClimbing_3_LiftMore();
-                    break;
+                        newState = handleClimbing_3_LiftMore();
+                        break;
                     case CLIMBING_4_ENGAGE_TRAV:
-                    newState = handleClimbing_4_EngageTrav();
-                    break;
+                        newState = handleClimbing_4_EngageTrav();
+                        break;
                     case CLIMBING_5_RELEASE_MID:
-                    newState = handleClimbing_5_ReleaseMid();
-                    break;
+                        newState = handleClimbing_5_ReleaseMid();
+                        break;
                     case TESTING:
                         newState = handleTesting();
                         break;
@@ -320,6 +334,10 @@ public class Climber extends Subsystem {
         } else {
             System.out.println(who + " is setting wanted state of " + sClassName + " to " + state + " again!!!");
         }
+    }
+
+    public WantedState getWantedState() {
+        return mWantedState;
     }
 
     private SystemState handleDisabling() {
@@ -384,7 +402,11 @@ public class Climber extends Subsystem {
 
     private SystemState handlePreclimbing() {
         if(mStateChanged) {
-            mPeriodicIO.slappyDemand = SolenoidState.RETRACT;
+            masterConfig(kClimberCurrentLimitHigh, true,
+                         Double.NaN, false, //TODO: Check what soft limits need to be
+                         Double.NaN, false, //TODO: Check what soft limits need to be
+                         kStatusFramePeriodActive, kControlFrameActive, mPeriodicIO.mDefaultSchedDelta);
+            mPeriodicIO.deployDemand = SolenoidState.RETRACT;
             mPeriodicIO.climberDemand = kExtendToTopPos;
             mPeriodicIO.climberControlMode = ControlMode.Position;
             mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
@@ -416,101 +438,17 @@ public class Climber extends Subsystem {
 
     private SystemState handleClimbing_1_Lift(){
         if (mStateChanged) {
-            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
-            if (!climberHomed) {
-                wantedStateAfterHoming = WantedState.CLIMB_1_LIFT;
-                mWantedState = WantedState.HOME;
-                return defaultStateTransfer();
-            } else {
-                gbdcSubState = GrabBarDynamicClawSubState.RETRACTTOENGAGECLAW;
-                gbdcSubStateChange = true;
-            }
+            masterConfig(Double.NaN, true,
+                         Double.NaN, false,
+                         Double.NaN, false,
+                         Double.NaN, Double.NaN, Double.NaN);
+            stageOneComplete = false; // redundant
         }
-
-        if (gbdcSubStateChange){
-            gbdcSubStateChange = false;
-            switch (gbdcSubState){
-                case RETRACTTOENGAGECLAW:
-                System.out.println("Climber substate RETRACTTOENGAGECLAW 1st time");
-                    mPeriodicIO.climberDemand = kDescendToBar;
-                    mPeriodicIO.climberControlMode = ControlMode.Position;
-                    mPeriodicIO.slappyDemand = SolenoidState.RETRACT;
-                    break;
-                case EXTENDSLAPPIES:
-                System.out.println("Climber substate EXTENDSLAPPIES 1st time");
-                    mPeriodicIO.slappyDemand = SolenoidState.EXTEND;
-                    mSlappyExtendTimeout = Timer.getFPGATimestamp() + kSlappyExtendDuration;
-                    break;
-                case EXTENDTOTOP:
-                    System.out.println("Climber substate EXTENDTOTOP 1st time");
-                        mPeriodicIO.climberDemand = kSlappySticksElevatorConflictLimit;
-                        mPeriodicIO.climberControlMode = ControlMode.Position;
-                        mPeriodicIO.slappyDemand = SolenoidState.RETRACT;
-                        break;
-                case RETRACTSLAPPIES:
-                    System.out.println("Climber substate RETRACTSLAPPIES 1st time");
-                        mPeriodicIO.slappyDemand = SolenoidState.RETRACT;
-                        mSlappyExtendTimeout = Timer.getFPGATimestamp() + kSlappyExtendDuration;
-                        break;
-                case DISENGAGECLAW:
-                        mPeriodicIO.climberDemand = kSlappySticksElevatorConflictLimit-20000;
-                        mPeriodicIO.climberControlMode = ControlMode.Position;
-                        mPeriodicIO.slappyDemand = SolenoidState.RETRACT;
-                        break;
-                
-                        case DONE:
-                    break;
-            }
+        if (true /*Mid claw motor is to position*/) {
+            stageOneComplete = true;
         }
-
-        double distance;
-        distance = Math.abs(mPeriodicIO.climberPosition - mPeriodicIO.climberDemand);
-
-        switch (gbdcSubState){
-            case RETRACTTOENGAGECLAW:
-            System.out.println("Climber substate RETRACTTOENGAGECLAW dist "+distance);
-                if (distance < kElevPosTolerance) {
-                    gbdcSubStateChange = true;
-                    gbdcSubState = GrabBarDynamicClawSubState.EXTENDSLAPPIES;
-                }
-                break;
-            case EXTENDSLAPPIES:
-                double now = Timer.getFPGATimestamp();
-                System.out.println("EXTENDSLAPPIES now = "+now+" "+mSlappyExtendTimeout);
-                if (Timer.getFPGATimestamp() >= mSlappyExtendTimeout){
-                    gbdcSubStateChange = true;
-                    gbdcSubState = GrabBarDynamicClawSubState.EXTENDTOTOP;
-                }
-                break;
-            case EXTENDTOTOP:
-                System.out.println("Climber substate EXTENDTOTOP dist "+distance);
-                if (distance < kElevPosTolerance) {
-                    gbdcSubStateChange = true;
-                    gbdcSubState = GrabBarDynamicClawSubState.RETRACTSLAPPIES;
-                }
-                break;
-            case RETRACTSLAPPIES:
-                // double now = Timer.getFPGATimestamp();
-                // System.out.println("RETRACTSLAPPIES now = "+now+" "+mSlappyExtendTimeout);
-                if (Timer.getFPGATimestamp() >= mSlappyExtendTimeout){
-                    gbdcSubStateChange = true;
-                    gbdcSubState = GrabBarDynamicClawSubState.DISENGAGECLAW;
-                }
-                break;
-            case DISENGAGECLAW:
-                System.out.println("Climber substate DISENGAGECLAW dist "+distance);
-                if (distance < kElevPosTolerance) {
-                    gbdcSubStateChange = true;
-                    gbdcSubState = GrabBarDynamicClawSubState.DONE;
-                }
-                break;
-            case DONE:
-                System.out.println("Climber substate DONE");
-                break;
-        }
-
         if (mWantedState != WantedState.CLIMB_1_LIFT) {
-            gbdcSubState = GrabBarDynamicClawSubState.RETRACTTOENGAGECLAW; // anystate that is not DONE
+            stageOneComplete = false;
         }
         return defaultStateTransfer();
     }
@@ -521,39 +459,57 @@ public class Climber extends Subsystem {
 
     private SystemState handleClimbing_2_RotateUp(){
         if (mStateChanged) {
-            masterConfig(kClimberCurrentLimitHigh, true, 
-                        Double.Nan, false,)
-            //set demmands
-            // state done flag
+            masterConfig(Double.NaN, true,
+                         Double.NaN, false,
+                         Double.NaN, false,
+                         Double.NaN, Double.NaN, Double.NaN);
+            // set demands
             // set magic motion params?
+            stageTwoComplete = false; // redundant
+        }
+        if (true /*Move Slappy sticks to position*/) {
+            stageTwoComplete = true;
+        }
+        if (mWantedState != WantedState.CLIMB_2_ROTATE_UP) {
+            stageTwoComplete = false;
         }
         return defaultStateTransfer();
     }
 
     private SystemState handleClimbing_3_LiftMore(){
         if (mStateChanged) {
-            //set whenRun
-            //set demmands
-            // set controlMode
-            // set current limit
-            // set soft limit
-            // set status/control frame
-            // state done flag
+            masterConfig(Double.NaN, true,
+                         Double.NaN, false,
+                         Double.NaN, false,
+                         Double.NaN, Double.NaN, Double.NaN);
+            // set demands
             // set magic motion params?
+            stageThreeComplete = false; // redundant
+        }
+        if (true /*Mid claw motor is to position*/) {
+            stageThreeComplete = true;
+        }
+        if (mWantedState != WantedState.CLIMB_3_LIFT_MORE) {
+            stageThreeComplete = false;
         }
         return defaultStateTransfer();
     }
 
     private SystemState handleClimbing_4_EngageTrav(){
         if (mStateChanged) {
-            //set whenRun
-            //set demmands
-            // set controlMode
-            // set current limit
-            // set soft limit
-            // set status/control frame
-            // state done flag
+            masterConfig(Double.NaN, true,
+                         Double.NaN, false,
+                         Double.NaN, false,
+                         Double.NaN, Double.NaN, Double.NaN);
+            // set demands
             // set magic motion params?
+            stageFourComplete = false; // redundant
+        }
+        if (true /*Mid claw motor is to position*/) {
+            stageFourComplete = true;
+        }
+        if (mWantedState != WantedState.CLIMB_4_ENGAGE_TRAV) {
+            stageFourComplete = false;
         }
         return defaultStateTransfer();
 
@@ -561,14 +517,24 @@ public class Climber extends Subsystem {
 
     private SystemState handleClimbing_5_ReleaseMid(){
         if (mStateChanged) {
-            //set whenRun
-            //set demmands
-            // set controlMode
-            // set current limit
-            // set soft limit
-            // set status/control frame
-            // state done flag
+            masterConfig(Double.NaN, true,
+                         Double.NaN, false,
+                         Double.NaN, false,
+                         Double.NaN, Double.NaN, Double.NaN);
+            // set demands
             // set magic motion params?
+            stageFiveComplete = false; // redundant
+        }
+        if (true /*Mid claw motor is to position*/) {
+            stageFiveComplete = true;
+            masterConfig(0, false, //TODO: Confirm if this actually disables stator currents
+                         Double.NaN, false,
+                         Double.NaN, false,
+                         kStatusFramePeriodDormant, kControlFrameDormant, Double.NaN);
+            System.out.println("* * * Finished Climbing Sequence * * *");
+        }
+        if (mWantedState != WantedState.CLIMB_5_RELEASE_MID) {
+            stageFiveComplete = false;
         }
         return defaultStateTransfer();
     }
@@ -635,15 +601,33 @@ public class Climber extends Subsystem {
         }
     }
 
+    public boolean isClimbingStageDone(WantedState state) {
+        switch(state) {
+            case CLIMB_1_LIFT:
+                return stageOneComplete;
+            case CLIMB_2_ROTATE_UP:
+                return stageTwoComplete;
+            case CLIMB_3_LIFT_MORE:
+                return stageThreeComplete;
+            case CLIMB_4_ENGAGE_TRAV:
+                return stageFourComplete;
+            case CLIMB_5_RELEASE_MID:
+                return stageFiveComplete;
+            default:
+                System.out.println("Uh oh something is not right");
+                return false;
+        }
+    }
+
     public void setClimberTestDemand(double newDemand){
         testClimberDemand = newDemand;
     }
 
     public void setSlappyStickState(boolean state) {
         if (state) {
-            mPeriodicIO.slappyDemand = SolenoidState.EXTEND;
+            mPeriodicIO.deployDemand = SolenoidState.EXTEND;
         } else {
-            mPeriodicIO.slappyDemand = SolenoidState.RETRACT;
+            mPeriodicIO.deployDemand = SolenoidState.RETRACT;
         }
     }
 
@@ -659,13 +643,13 @@ public class Climber extends Subsystem {
 
     @Override
     public void writePeriodicOutputs() {
-        if (mSolenoidState != mPeriodicIO.slappyDemand) {
+        if (mSolenoidState != mPeriodicIO.deployDemand) {
             // If we're extending, only do it if the elevator is below the height where
             // they'll hit
-            if (!mPeriodicIO.slappyDemand.get() || (mPeriodicIO.slappyDemand.get()
+            if (!mPeriodicIO.deployDemand.get() || (mPeriodicIO.deployDemand.get()
                     && mPeriodicIO.climberPosition < kSlappySticksElevatorConflictLimit)) {
-                mSolenoidState = mPeriodicIO.slappyDemand;
-                mSlapSticks.set(mPeriodicIO.slappyDemand.get());
+                mSolenoidState = mPeriodicIO.deployDemand;
+                mSolenoidDeploy.set(mPeriodicIO.deployDemand.get());
             }
 
             if (mSolenoidState.get()) {
@@ -730,7 +714,7 @@ public class Climber extends Subsystem {
                 gbdcSubState+","+
                 mPeriodicIO.climberDemand+","+
                 mPeriodicIO.climberControlMode+","+
-                mPeriodicIO.slappyDemand+","+
+                mPeriodicIO.deployDemand+","+
                 climberHomed;
     }
 
@@ -750,14 +734,17 @@ public class Climber extends Subsystem {
 
         // Inputs
         public double climberPosition;
+        public double slappyPosition;
 
         // Outputs
         public double climberDemand;
+        public double slappyDemand;
         public ControlMode climberControlMode;
-        public SolenoidState slappyDemand;
+        public SolenoidState deployDemand;
 
         // Other
         public double lastClimberPosition;
+        public double lastSlappyPosition;
 
     }
 

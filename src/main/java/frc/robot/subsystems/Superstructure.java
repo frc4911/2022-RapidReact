@@ -299,9 +299,39 @@ public class Superstructure extends Subsystem {
         if (mStateChanged) {
             if (!mOverrideLimelightLEDs) {
                 mLLManager.getLimelight().setLed(Limelight.LedMode.BLINK);
-                mClimber.setWantedState(Climber.WantedState.CLIMB_1_LIFT, sClassName);
             }
+            mClimber.setWantedState(Climber.WantedState.CLIMB_1_LIFT, sClassName);
         }
+
+        switch(mClimber.getWantedState()) {
+            case CLIMB_1_LIFT:
+                if (mClimber.isClimbingStageDone(Climber.WantedState.CLIMB_1_LIFT)) {
+                    mClimber.setWantedState(Climber.WantedState.CLIMB_2_ROTATE_UP, sClassName);
+                }
+                break;
+            case CLIMB_2_ROTATE_UP:
+                if (mClimber.isClimbingStageDone(Climber.WantedState.CLIMB_2_ROTATE_UP)) {
+                    mClimber.setWantedState(Climber.WantedState.CLIMB_3_LIFT_MORE, sClassName);
+                }
+                break;
+            case CLIMB_3_LIFT_MORE:
+                if (mClimber.isClimbingStageDone(Climber.WantedState.CLIMB_3_LIFT_MORE)) {
+                    mClimber.setWantedState(Climber.WantedState.CLIMB_4_ENGAGE_TRAV, sClassName);
+                }
+                break;
+            case CLIMB_4_ENGAGE_TRAV:
+                if (mClimber.isClimbingStageDone(Climber.WantedState.CLIMB_4_ENGAGE_TRAV)) {
+                    mClimber.setWantedState(Climber.WantedState.CLIMB_5_RELEASE_MID, sClassName);
+                }
+                break;
+            case CLIMB_5_RELEASE_MID: // Done with climb
+                break;
+            default:
+                System.out.println("Climber Exiting Auto Sequence!!!");
+                break;
+        }
+            
+               
 
         return defaultStateTransfer();
     }

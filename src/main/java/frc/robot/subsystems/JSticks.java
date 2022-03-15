@@ -240,17 +240,17 @@ public class JSticks extends Subsystem {
         // END NEW SWERVE
 
         // CLIMBER CONTROL
-        if(mPeriodicIO.op_AButton_ClimberLockout) {
-            // -1: Do nothing
-            // 0: Extend
-            // 1: Retract
-            int deploySlappyState = -1;
-            if (mPeriodicIO.op_RightBumper_ExtendSlappySticks) {
-                deploySlappyState = 0;
-            } else if (mPeriodicIO.op_LeftBumper_RetractSlappySticks) {
-                deploySlappyState = 1;
+        if(mPeriodicIO.op_LeftBumper_ClimberLockout) {
+            if (mPeriodicIO.op_AButton_PreClimb) {
+                mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_PRE_CLIMB, sClassName);
+            // } else if (mPeriodicIO.op_YButton_ResetClimb) {
+
+            } else if (mPeriodicIO.op_XButton_AutoClimb) {
+                mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_CLIMB, sClassName);
+            } else if (mPeriodicIO.op_XButton_AutoClimb_Stop) {
+                mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
             }
-            mSuperstructure.setOpenLoopClimb(mPeriodicIO.op_LeftStickY_ClimberElevator, deploySlappyState);
+
         } else {
             if (mPeriodicIO.op_RightTrigger_Collect) {
                 mSuperstructure.setWantedState(Superstructure.WantedState.COLLECT, sClassName);
@@ -260,7 +260,6 @@ public class JSticks extends Subsystem {
                 mSuperstructure.setWantedState(Superstructure.WantedState.BACK, sClassName);
             }
 
-            mSuperstructure.setOpenLoopClimb(0.0, -1);
         }
 
         if (mPeriodicIO.op_BButton_StopShooter) {
@@ -320,9 +319,11 @@ public class JSticks extends Subsystem {
 
         //Climbing
         mPeriodicIO.op_LeftStickY_ClimberElevator = -mOperator.getRaw(Xbox.LEFT_STICK_Y, mDeadBand);
-        mPeriodicIO.op_AButton_ClimberLockout = mOperator.getButton(Xbox.A_BUTTON, CW.PRESSED_LEVEL);
-        mPeriodicIO.op_LeftBumper_RetractSlappySticks = mOperator.getButton(Xbox.LEFT_BUMPER, CW.PRESSED_EDGE);
-        mPeriodicIO.op_RightBumper_ExtendSlappySticks = mOperator.getButton(Xbox.RIGHT_BUMPER, CW.PRESSED_EDGE);
+        mPeriodicIO.op_LeftBumper_ClimberLockout = mOperator.getButton(Xbox.LEFT_BUMPER, CW.PRESSED_LEVEL);
+        mPeriodicIO.op_AButton_PreClimb = mOperator.getButton(Xbox.A_BUTTON, CW.PRESSED_EDGE);
+        mPeriodicIO.op_XButton_AutoClimb = mOperator.getButton(Xbox.X_BUTTON, CW.PRESSED_EDGE);
+        mPeriodicIO.op_XButton_AutoClimb_Stop = mOperator.getButton(Xbox.X_BUTTON, CW.RELEASED_EDGE);
+        mPeriodicIO.op_YButton_ResetClimb = mOperator.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
 
         //Collecting
         mPeriodicIO.op_RightTrigger_Collect = mOperator.getButton(Xbox.RIGHT_TRIGGER, CW.PRESSED_EDGE);
@@ -424,9 +425,9 @@ public class JSticks extends Subsystem {
         mPeriodicIO.op_LeftTrigger_Back+","+
         mPeriodicIO.op_LeftTrigger_Back_Stop+","+
         mPeriodicIO.op_BButton_StopShooter+","+
-        mPeriodicIO.op_AButton_ClimberLockout+","+
-        mPeriodicIO.op_LeftBumper_RetractSlappySticks+","+
-        mPeriodicIO.op_RightBumper_ExtendSlappySticks+","+
+        mPeriodicIO.op_LeftBumper_ClimberLockout+","+
+        mPeriodicIO.op_XButton_AutoClimb+","+
+        mPeriodicIO.op_AButton_PreClimb+","+
         mPeriodicIO.op_POV0_ManualShot_Fender+","+
         mPeriodicIO.op_POV90_ManualShot_Ball+","+
         mPeriodicIO.op_POV180_ManualShot_Robot+","+
@@ -472,9 +473,11 @@ public class JSticks extends Subsystem {
         public boolean op_LeftTrigger_Back = false;
         public boolean op_LeftTrigger_Back_Stop = false;
         public boolean op_BButton_StopShooter = false;
-        public boolean op_AButton_ClimberLockout = false;
-        public boolean op_LeftBumper_RetractSlappySticks = false;
-        public boolean op_RightBumper_ExtendSlappySticks = false;
+        public boolean op_LeftBumper_ClimberLockout = false;
+        public boolean op_AButton_PreClimb = false;
+        public boolean op_XButton_AutoClimb = false;
+        public boolean op_XButton_AutoClimb_Stop = false;
+        public boolean op_YButton_ResetClimb = false;
 
         public boolean op_POV0_ManualShot_Fender = false;
         public boolean op_POV90_ManualShot_Ball = false;
