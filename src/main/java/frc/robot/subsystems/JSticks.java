@@ -182,8 +182,8 @@ public class JSticks extends Subsystem {
             mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
         }
 
-        mShooter.setHoodTestDemand(mPeriodicIO.tst_LeftAxis_TestDemand);
-        // mClimber.setClimberTestDemand(mPeriodicIO.tst_LeftAxis_TestDemand);
+        // mShooter.setHoodTestDemand(mPeriodicIO.tst_LeftAxis_TestDemand);
+        mClimber.setClimberTestDemand(mPeriodicIO.tst_LeftAxis_TestDemand,mPeriodicIO.tst_RightAxis_TestDemand);
         return defaultStateTransfer();
     }
 
@@ -350,6 +350,7 @@ public class JSticks extends Subsystem {
         mPeriodicIO.tst_BButton_AutoPre = mTest.getButton(LogitechPS4.B_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.tst_BButton_AutoPre_Stop = mTest.getButton(LogitechPS4.B_BUTTON, CW.RELEASED_EDGE);
         mPeriodicIO.tst_LeftAxis_TestDemand = mTest.getRaw(LogitechPS4.LEFT_STICK_Y,.15);
+        mPeriodicIO.tst_RightAxis_TestDemand = mTest.getRaw(LogitechPS4.RIGHT_STICK_Y,.15);
     }
 
     private SystemState defaultStateTransfer() {
@@ -495,5 +496,6 @@ public class JSticks extends Subsystem {
         public boolean tst_BButton_AutoPre = false;
         public boolean tst_BButton_AutoPre_Stop = false;
         public double  tst_LeftAxis_TestDemand = 0;
+        public double  tst_RightAxis_TestDemand = 0;
     }
 }

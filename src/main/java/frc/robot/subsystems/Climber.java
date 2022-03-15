@@ -126,7 +126,8 @@ public class Climber extends Subsystem {
     private SolenoidState mSolenoidState;
     private int mDefaultSchedDelta = 20;
 
-    private double testClimberDemand;
+    private double testMidArmDemand;
+    private double testSlappyDemand;
 
     // Climber homing state variables
     // Homing is done by sending the Climber to a negative position
@@ -418,7 +419,8 @@ public class Climber extends Subsystem {
     private SystemState handleTesting(){
         if(mStateChanged) {
             mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
-            testClimberDemand = 0;
+            testMidArmDemand = 0;
+            testSlappyDemand = 0;
             mPeriodicIO.climberControlMode = ControlMode.PercentOutput;
 
             mFXLeftClimber.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
@@ -428,8 +430,13 @@ public class Climber extends Subsystem {
             mFXRightClimber.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
     
         }
-        if (testClimberDemand != mPeriodicIO.climberDemand){
-            mPeriodicIO.climberDemand = testClimberDemand;
+        if (testMidArmDemand != mPeriodicIO.climberDemand){
+            mPeriodicIO.climberDemand = testMidArmDemand;
+            mPeriodicIO.climberControlMode = ControlMode.PercentOutput;
+        }
+
+        if (testSlappyDemand != mPeriodicIO.slappyDemand){
+            mPeriodicIO.slappyDemand = testSlappyDemand;
             mPeriodicIO.climberControlMode = ControlMode.PercentOutput;
         }
 
@@ -619,8 +626,9 @@ public class Climber extends Subsystem {
         }
     }
 
-    public void setClimberTestDemand(double newDemand){
-        testClimberDemand = newDemand;
+    public void setClimberTestDemand(double newMidArmDemand, double newSlappyDemand){
+        testMidArmDemand = newMidArmDemand;
+        testSlappyDemand = newSlappyDemand;
     }
 
     public void setSlappyStickState(boolean state) {

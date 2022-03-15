@@ -330,8 +330,6 @@ public class Superstructure extends Subsystem {
                 System.out.println("Climber Exiting Auto Sequence!!!");
                 break;
         }
-            
-               
 
         return defaultStateTransfer();
     }
