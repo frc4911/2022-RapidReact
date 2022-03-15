@@ -568,10 +568,10 @@ public class Swerve extends Subsystem {
         } else {
             values = "" + mPeriodicIO.schedDeltaDesired + "," +
                          mPeriodicIO.schedDeltaActual + "," +
-                         (Timer.getFPGATimestamp() - mPeriodicIO.lastSchedStart)+","+
-                         mPeriodicIO.gyro_heading.getDegrees()+",";
+                         (Timer.getFPGATimestamp() - mPeriodicIO.lastSchedStart)+",";
         }
 
+        values += mPeriodicIO.gyro_heading.getDegrees()+",";
         values += mModules.get(0).getLogValues(telemetry)+",";
         values += mModules.get(1).getLogValues(telemetry)+",";
         values += mModules.get(2).getLogValues(telemetry)+",";

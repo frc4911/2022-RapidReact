@@ -172,6 +172,10 @@ public class Indexer extends Subsystem {
         }
     }
 
+    public synchronized WantedState getWantedState() {
+        return mWantedState;
+    }
+
     private SystemState handleHolding() {
         if (mStateChanged) {
             mPeriodicIO.indexerDemand = 0;
