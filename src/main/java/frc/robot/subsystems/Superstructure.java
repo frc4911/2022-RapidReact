@@ -6,6 +6,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.RobotState;
 import frc.robot.constants.Constants;
 import frc.robot.constants.Ports;
+import frc.robot.subsystems.Climber.WantedState;
 import frc.robot.subsystems.Shooter.SystemState;
 import frc.robot.limelight.LimelightManager;
 import libraries.cheesylib.geometry.Rotation2d;
@@ -43,7 +44,8 @@ public class Superstructure extends Subsystem {
         AUTO_SHOOTING,
         MANUAL_SHOOTING,
         AUTO_CLIMBING,
-        AUTO_PRE_CLIMBING
+        AUTO_PRE_CLIMBING,
+        HOMING
     }
 
     public enum WantedState {
@@ -54,7 +56,8 @@ public class Superstructure extends Subsystem {
         AUTO_SHOOT,
         MANUAL_SHOOT,
         AUTO_PRE_CLIMB,
-        AUTO_CLIMB
+        AUTO_CLIMB,
+        HOME
     }
 
     private SystemState mSystemState;
@@ -162,6 +165,9 @@ public class Superstructure extends Subsystem {
                     case DISABLING:
                         newState = handleDisabling();
                         break;
+                    case HOMING:
+                        newState = handleHoming();
+                        break;
                     case HOLDING:
                     default:
                         newState = handleHolding();
@@ -191,6 +197,7 @@ public class Superstructure extends Subsystem {
         return defaultStateTransfer();
     }
 
+    private boolean homingClimber = false;
     private SystemState handleHolding() {
         if (mStateChanged) {
             if (!mOverrideLimelightLEDs) {
@@ -199,8 +206,42 @@ public class Superstructure extends Subsystem {
             mCollector.setWantedState(Collector.WantedState.HOLD, sClassName);
             mIndexer.setWantedState(Indexer.WantedState.HOLD, sClassName);
             mShooter.setWantedState(Shooter.WantedState.HOLD, sClassName);
-            mClimber.setWantedState(Climber.WantedState.HOLD, sClassName);
+            if (!mClimber.isHomed()){
+                homingClimber = true;
+                mClimber.setWantedState(Climber.WantedState.HOLD, sClassName);
+            }
+            else{
+                homingClimber = false;
+                mClimber.setWantedState(Climber.WantedState.HOME, sClassName);
+            }
             mPeriodicIO.schedDeltaDesired = mSlowCycle;
+        }
+
+        if (homingClimber && mClimber.isHomed()){
+            homingClimber = false;
+            mClimber.setWantedState(Climber.WantedState.HOLD, sClassName);
+        }
+
+        return defaultStateTransfer();
+    }
+
+    private SystemState handleHoming() {
+        if (mStateChanged) {
+            if (!mOverrideLimelightLEDs) {
+                mLLManager.getLimelight().setLed(Limelight.LedMode.PIPELINE);
+            }
+            // mShooter.setWantedState(Shooter.WantedState.HOLD, sClassName);
+            mClimber.setWantedState(Climber.WantedState.HOME, sClassName);
+            mPeriodicIO.schedDeltaDesired = mFastCycle;
+        }
+
+        if (mClimber.isClimbingStageDone(Climber.WantedState.HOME)){
+
+        }
+
+        if (mWantedState != WantedState.HOME){
+            // mShooter.setWantedState(Shooter.WantedState.TEST, sClassName);
+            mClimber.setWantedState(Climber.WantedState.TEST, sClassName);
         }
 
         return defaultStateTransfer();
@@ -350,6 +391,8 @@ public class Superstructure extends Subsystem {
                 return SystemState.COLLECTING;
             case BACK:
                 return SystemState.BACKING;
+            case HOME:
+                return SystemState.HOMING;
             case AUTO_SHOOT:
                 return SystemState.AUTO_SHOOTING;
             case MANUAL_SHOOT:

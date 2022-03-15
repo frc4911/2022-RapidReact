@@ -293,7 +293,6 @@ public class Indexer extends Subsystem {
 
     @Override
     public void stop() {
-        System.out.println(sClassName + " stop()");
         mFXIndexer.set(ControlMode.PercentOutput, 0);
     }
 

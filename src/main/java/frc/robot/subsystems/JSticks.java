@@ -147,7 +147,6 @@ public class JSticks extends Subsystem {
 
     @Override
     public void stop() {
-        System.out.println(sClassName + " stop()");
     }
 
     private SystemState handleDisabling() {
@@ -180,6 +179,22 @@ public class JSticks extends Subsystem {
 
         if (mPeriodicIO.tst_BButton_AutoPre_Stop){
             mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
+        }
+
+        if (mPeriodicIO.tst_LeftBumper_TestSolEngage){
+            mClimber.setSolenoidState(true);
+        }
+
+        if (mPeriodicIO.tst_RightBumper_TestSolDisengage){
+            mClimber.setSolenoidState(false);
+        }
+
+        if (mPeriodicIO.tst_XButton_HOME){
+            mSuperstructure.setWantedState(Superstructure.WantedState.HOME, sClassName);
+        }
+
+        if (mPeriodicIO.tst_XButton_HOME_STOP){
+            mSuperstructure.setWantedState(Superstructure.WantedState.DISABLE, sClassName);
         }
 
         // mShooter.setHoodTestDemand(mPeriodicIO.tst_LeftAxis_TestDemand);
@@ -243,8 +258,8 @@ public class JSticks extends Subsystem {
         if(mPeriodicIO.op_LeftBumper_ClimberLockout) {
             if (mPeriodicIO.op_AButton_PreClimb) {
                 mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_PRE_CLIMB, sClassName);
-            // } else if (mPeriodicIO.op_YButton_ResetClimb) {
-
+            } else if (mPeriodicIO.op_AButton_PreClimb_Stop) {
+                mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
             } else if (mPeriodicIO.op_XButton_AutoClimb) {
                 mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_CLIMB, sClassName);
             } else if (mPeriodicIO.op_XButton_AutoClimb_Stop) {
@@ -321,6 +336,7 @@ public class JSticks extends Subsystem {
         mPeriodicIO.op_LeftStickY_ClimberElevator = -mOperator.getRaw(Xbox.LEFT_STICK_Y, mDeadBand);
         mPeriodicIO.op_LeftBumper_ClimberLockout = mOperator.getButton(Xbox.LEFT_BUMPER, CW.PRESSED_LEVEL);
         mPeriodicIO.op_AButton_PreClimb = mOperator.getButton(Xbox.A_BUTTON, CW.PRESSED_EDGE);
+        mPeriodicIO.op_AButton_PreClimb_Stop = mOperator.getButton(Xbox.A_BUTTON, CW.RELEASED_EDGE);
         mPeriodicIO.op_XButton_AutoClimb = mOperator.getButton(Xbox.X_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.op_XButton_AutoClimb_Stop = mOperator.getButton(Xbox.X_BUTTON, CW.RELEASED_EDGE);
         mPeriodicIO.op_YButton_ResetClimb = mOperator.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
@@ -351,6 +367,10 @@ public class JSticks extends Subsystem {
         mPeriodicIO.tst_BButton_AutoPre_Stop = mTest.getButton(LogitechPS4.B_BUTTON, CW.RELEASED_EDGE);
         mPeriodicIO.tst_LeftAxis_TestDemand = mTest.getRaw(LogitechPS4.LEFT_STICK_Y,.15);
         mPeriodicIO.tst_RightAxis_TestDemand = mTest.getRaw(LogitechPS4.RIGHT_STICK_Y,.15);
+        mPeriodicIO.tst_LeftBumper_TestSolEngage = mTest.getButton(LogitechPS4.LEFT_BUMPER, CW.PRESSED_EDGE);
+        mPeriodicIO.tst_RightBumper_TestSolDisengage = mTest.getButton(LogitechPS4.RIGHT_BUMPER, CW.PRESSED_EDGE);
+        mPeriodicIO.tst_XButton_HOME = mTest.getButton(LogitechPS4.X_BUTTON, CW.PRESSED_EDGE);
+        mPeriodicIO.tst_XButton_HOME_STOP = mTest.getButton(LogitechPS4.X_BUTTON, CW.RELEASED_EDGE);
     }
 
     private SystemState defaultStateTransfer() {
@@ -476,6 +496,7 @@ public class JSticks extends Subsystem {
         public boolean op_BButton_StopShooter = false;
         public boolean op_LeftBumper_ClimberLockout = false;
         public boolean op_AButton_PreClimb = false;
+        public boolean op_AButton_PreClimb_Stop = false;
         public boolean op_XButton_AutoClimb = false;
         public boolean op_XButton_AutoClimb_Stop = false;
         public boolean op_YButton_ResetClimb = false;
@@ -497,5 +518,9 @@ public class JSticks extends Subsystem {
         public boolean tst_BButton_AutoPre_Stop = false;
         public double  tst_LeftAxis_TestDemand = 0;
         public double  tst_RightAxis_TestDemand = 0;
+        public boolean tst_LeftBumper_TestSolEngage = false;
+        public boolean tst_RightBumper_TestSolDisengage = false;
+        public boolean tst_XButton_HOME = false;
+        public boolean tst_XButton_HOME_STOP = false;
     }
 }

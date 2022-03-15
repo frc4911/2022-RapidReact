@@ -489,7 +489,6 @@ public class Shooter extends Subsystem {
 
     @Override
     public void stop() {
-        System.out.println(sClassName + " stop()");
         mFXLeftFlyWheel.set(ControlMode.PercentOutput, 0);
         mFXRightFlyWheel.set(ControlMode.PercentOutput, 0);
     }

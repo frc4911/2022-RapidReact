@@ -234,7 +234,6 @@ public class Collector extends Subsystem {
 
     @Override
     public void stop() {
-        System.out.println(sClassName + " stop()");
         mFXCollector.set(ControlMode.PercentOutput, 0.0);
         mSolenoid.set(SolenoidState.RETRACT.get());
 
