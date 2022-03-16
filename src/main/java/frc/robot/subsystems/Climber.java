@@ -26,8 +26,11 @@ public class Climber extends Subsystem {
     private final Solenoid mSolenoidDeploy;
 
     // Subsystem Constants
-    private final double kClimberCurrentLimitLow = 10; // temp change while testing autoclimb reset to 80 when done
-    private final double kClimberCurrentLimitHigh = 60; // temp change while testing autoclimb reset to 80 when done
+    private final double kMidArmCurrentLimitLow = 10; // temp change while testing autoclimb reset to 80 when done
+    private final double kMidArmCurrentLimitHigh = 80; // temp change while testing autoclimb reset to 80 when done
+    private final double kSlappyCurrentLimitLow = 5;
+    private final double kSlappyCurrentLimitHigh = 30;
+
     private final double kStatusFramePeriodActive = 20;
     private final double kControlFrameActive = 18;
     private final double kStatusFramePeriodDormant = 100;
@@ -35,7 +38,7 @@ public class Climber extends Subsystem {
 
     // Subsystem States
     public enum SolenoidState {
-        RELEASE(true), // Need to test
+        RELEASE(true),
         LOCK(false);
 
         private final boolean state;
@@ -78,7 +81,7 @@ public class Climber extends Subsystem {
     public enum MidArmPosition {
         MIDBAR(370000),
         MIDDLE(92500),
-        DOWN(0),
+        DOWN(-15900),
         HOME(-400),
         NOTSET(0);
 
@@ -93,16 +96,34 @@ public class Climber extends Subsystem {
         }
     }
 
-    // TODO: get the correct values for these constants
-    private double msolenoidExtendTimeout;
-    private final double kSolenoidExtendDuration = 1;
+    public enum SlappyPosition {
+        MAX(160000),
+        MID(120000), //165000 physical max
+        DOWN(10000),
+        HOME(-1000),
+        NOTSET(0);
+
+        double position;
+
+        private SlappyPosition(double position) {
+            this.position = position;
+        }
+
+        public double get() {
+            return position;
+        }
+    }
+
+    private boolean preClimbComplete;
     private boolean stageOneComplete;
     private boolean stageTwoComplete;
     private boolean stageThreeComplete;
     private boolean stageFourComplete;
     private boolean stageFiveComplete;
-    private boolean homingComplete;
-    private boolean preClimbComplete;
+
+    private boolean midArmHomingComplete;
+    private boolean slappyHomingComplete;
+    private boolean midArmJustFinishedHoming;
 
     private SystemState mSystemState;
     private WantedState mWantedState;
@@ -110,7 +131,11 @@ public class Climber extends Subsystem {
     private PeriodicIO mPeriodicIO = new PeriodicIO();
     private LatchedBoolean mSystemStateChange = new LatchedBoolean();
     private SolenoidState mSolenoidState;
-    private int mDefaultSchedDelta = 20;
+
+    private final double midBarPosTolerance = 2000;
+    private final double slappyPosTolerance = 2000;
+    private final double kSolenoidDuration = .25;
+    private double solenoidTimeout = 0;  
 
     private double testMidArmDemand;
     private double testSlappyDemand;
@@ -125,19 +150,13 @@ public class Climber extends Subsystem {
     private final double midArmNonMovementDuration = .1; // reading below threshhold encoder reads for this long is
                                                            // considered stopped
     private final double midArmHomingDemand = -0.4;
-    private boolean climberHomed = true; // global flag
     private double midArmNonMovementTimeout; // timestamp of when low readings are sufficient
-    private WantedState wantedStateAfterHoming = WantedState.HOLD; // state to transition to after homed
 
-    // Climber homing state variables
-    // Homing is done by sending the Climber to a negative position
-    // While watching for the climber encoder to stop changing for a sufficient
-    // amount of time
     private final double slappyMovementThreshhold = 50; // encoder movements below this threshhold are considered
                                                         // stopped
-    private final double slappyNonMovementDuration = .1; // reading below threshhold encoder reads for this long is
+    private final double slappyNonMovementDuration = 0.5; // reading below threshhold encoder reads for this long is
                                                            // considered stopped
-    private final double slappyHomingDemand = -0.1;
+    private final double slappyHomingDemand = -0.4;
     private double slappyNonMovementTimeout; // timestamp of when low readings are sufficient
 
     // Other
@@ -186,7 +205,7 @@ public class Climber extends Subsystem {
         // mFXSlappy.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
 
         mFXMidArm.setInverted(false);
-        mFXSlappy.setInverted(true);
+        mFXSlappy.setInverted(false);
 
         mFXMidArm.setNeutralMode(NeutralMode.Brake);
         mFXSlappy.setNeutralMode(NeutralMode.Brake);
@@ -199,41 +218,53 @@ public class Climber extends Subsystem {
 
         // TODO: all values must be tuned
         double kClosedError = 50;
-        double config_kP = 0.2;
-        double config_kI = 0;
-        double config_kD = 0;
-        double config_kF = 0;
-        double integralZone = 0;
+
+        double config_arm_kP = 0.2;
+        double config_arm_kI = 0;
+        double config_arm_kD = 0;
+        double config_arm_kF = 0;
+        double armIntegralZone = 0;
         double kClosedRamp = 0; // this makes a difference in Magic and Position modes 
                                 // but when using magic i prefer to use the Magic config values
                                 // so this should only be nonzero when using Position mode
-        double kCruiseVelocity = 10000; 
-        double kAcceleration = 10000;
-        int kCurveStrength = 0; // 0 is trapizoidal, larger values make the path more soft (curved) at velocity changes
 
-        mFXMidArm.config_kP(0, config_kP, Constants.kLongCANTimeoutMs);
-        mFXMidArm.config_kI(0, config_kI, Constants.kLongCANTimeoutMs);
-        mFXMidArm.config_kD(0, config_kD, Constants.kLongCANTimeoutMs);
-        mFXMidArm.config_kF(0, config_kF, Constants.kLongCANTimeoutMs);
-        mFXMidArm.config_IntegralZone(0, integralZone, Constants.kLongCANTimeoutMs);
+        double kArmCruiseVelocity = 10000; 
+        double kArmAcceleration = 10000;
+        int kArmCurveStrength = 0; // 0 is trapizoidal, larger values make the path more soft (curved) at velocity changes
+
+        double config_slappy_kP = 0.05;
+        double config_slappy_kI = 0;
+        double config_slappy_kD = 0;
+        double config_slappy_kF = 0;
+        double slappyIntegralZone = 0;
+
+        double kSlappyCruiseVelocity = 10000; 
+        double kSlappyAcceleration = 10000;
+        int kSlappyCurveStrength = 0; // 0 is trapizoidal, larger values make the path more soft (curved) at velocity changes
+
+        mFXMidArm.config_kP(0, config_arm_kP, Constants.kLongCANTimeoutMs);
+        mFXMidArm.config_kI(0, config_arm_kI, Constants.kLongCANTimeoutMs);
+        mFXMidArm.config_kD(0, config_arm_kD, Constants.kLongCANTimeoutMs);
+        mFXMidArm.config_kF(0, config_arm_kF, Constants.kLongCANTimeoutMs);
+        mFXMidArm.config_IntegralZone(0, armIntegralZone, Constants.kLongCANTimeoutMs);
         mFXMidArm.configClosedloopRamp(kClosedRamp, Constants.kLongCANTimeoutMs);
         mFXMidArm.configAllowableClosedloopError(0, kClosedError, Constants.kLongCANTimeoutMs);
 
-        mFXMidArm.configMotionCruiseVelocity(kCruiseVelocity); // 10000 ticks/second
-        mFXMidArm.configMotionAcceleration(kAcceleration); // 2500 ticks/(sec^2)
-        mFXMidArm.configMotionSCurveStrength(kCurveStrength); // trapizoidal curve
+        mFXMidArm.configMotionCruiseVelocity(kArmCruiseVelocity); // 10000 ticks/second
+        mFXMidArm.configMotionAcceleration(kArmAcceleration); // 2500 ticks/(sec^2)
+        mFXMidArm.configMotionSCurveStrength(kArmCurveStrength); // trapizoidal curve
         
-        mFXSlappy.config_kP(0, config_kP, Constants.kLongCANTimeoutMs);
-        mFXSlappy.config_kI(0, config_kI, Constants.kLongCANTimeoutMs);
-        mFXSlappy.config_kD(0, config_kD, Constants.kLongCANTimeoutMs);
-        mFXSlappy.config_kF(0, config_kF, Constants.kLongCANTimeoutMs);
-        mFXSlappy.config_IntegralZone(0, integralZone, Constants.kLongCANTimeoutMs);
+        mFXSlappy.config_kP(0, config_slappy_kP, Constants.kLongCANTimeoutMs);
+        mFXSlappy.config_kI(0, config_slappy_kI, Constants.kLongCANTimeoutMs);
+        mFXSlappy.config_kD(0, config_slappy_kD, Constants.kLongCANTimeoutMs);
+        mFXSlappy.config_kF(0, config_slappy_kF, Constants.kLongCANTimeoutMs);
+        mFXSlappy.config_IntegralZone(0, slappyIntegralZone, Constants.kLongCANTimeoutMs);
         mFXSlappy.configClosedloopRamp(kClosedRamp, Constants.kLongCANTimeoutMs);
         mFXSlappy.configAllowableClosedloopError(0, kClosedError, Constants.kLongCANTimeoutMs);
 
-        mFXSlappy.configMotionCruiseVelocity(kCruiseVelocity); // 10000 ticks/second
-        mFXSlappy.configMotionAcceleration(kAcceleration); // 2500 ticks/(sec^2)
-        mFXSlappy.configMotionSCurveStrength(kCurveStrength); // trapizoidal curve
+        mFXSlappy.configMotionCruiseVelocity(kSlappyCruiseVelocity); // 10000 ticks/second
+        mFXSlappy.configMotionAcceleration(kSlappyAcceleration); // 2500 ticks/(sec^2)
+        mFXSlappy.configMotionSCurveStrength(kSlappyCurveStrength); // trapizoidal curve
         
     }
 
@@ -265,16 +296,16 @@ public class Climber extends Subsystem {
             stageFourComplete = false;
             stageFiveComplete = false;
             preClimbComplete = false;
-            homingComplete = false;
+            midArmHomingComplete = false;
+            slappyHomingComplete = false;
+            midArmJustFinishedHoming = false;
 
             mPeriodicIO.solenoidDemand = SolenoidState.LOCK;
             if (mSolenoidDeploy.get()){
-                System.out.println("climber solenoid initial state Release");
                 mSolenoidState = SolenoidState.RELEASE;
             }
             else{
                 mSolenoidState = SolenoidState.LOCK;
-                System.out.println("climber solenoid initial state lock");
             }
 
             System.out.println(sClassName + " state " + mSystemState);
@@ -352,33 +383,20 @@ public class Climber extends Subsystem {
 
     private SystemState handleDisabling() {
         if (mStateChanged) {
-            masterConfig(kClimberCurrentLimitLow, false, 0, false, 0, false, kStatusFramePeriodDormant, kControlFrameDormant, mPeriodicIO.mDefaultSchedDelta);
+            masterConfig(0, true, 0, true, 0, false, 0, false, kStatusFramePeriodDormant, kControlFrameDormant, mPeriodicIO.mDefaultSchedDelta);
             mPeriodicIO.midArmDemand = 0;
             mPeriodicIO.midArmControlMode = ControlMode.PercentOutput;
             mPeriodicIO.slappyDemand = 0;
             mPeriodicIO.slappyControlMode = ControlMode.PercentOutput;
     
-            }
+        }
 
         return defaultStateTransfer();
     }
 
     private SystemState handleHolding() {
         if (mStateChanged) {
-            masterConfig(0, true, 0, false, 0, false, kStatusFramePeriodActive, kControlFrameActive, mPeriodicIO.mDefaultSchedDelta);
-            // if (climberHomed) {
-            //     // System.out.println("climber hold position = "+mPeriodicIO.midArmPosition);
-            //     // mPeriodicIO.midArmDemand = Math.max(mPeriodicIO.midArmPosition,0);
-            //     // mPeriodicIO.midArmControlMode = ControlMode.Position;
-            //     mPeriodicIO.midArmDemand = 0;
-            //     mPeriodicIO.midArmControlMode = ControlMode.PercentOutput;
-            //     mPeriodicIO.slappyDemand = 0;
-            //     mPeriodicIO.slappyControlMode = ControlMode.PercentOutput;
-            // } else {
-            //     mWantedState = WantedState.HOME;
-            //     wantedStateAfterHoming = WantedState.HOLD;
-            //     return defaultStateTransfer();
-            // }
+            masterConfig(0, true, 0, true, 0, false, 0, false, kStatusFramePeriodActive, kControlFrameActive, mPeriodicIO.mDefaultSchedDelta);
             mPeriodicIO.midArmDemand = mPeriodicIO.midArmPosition;
             mPeriodicIO.midArmControlMode = ControlMode.Position;
             mPeriodicIO.slappyDemand = 0;
@@ -389,18 +407,35 @@ public class Climber extends Subsystem {
     }
 
     private SystemState handleHoming() {
-        double now = Timer.getFPGATimestamp();
         if (mStateChanged) {
-            masterConfig(kClimberCurrentLimitLow, true,
+            masterConfig(kMidArmCurrentLimitLow, true,
+                         kSlappyCurrentLimitLow, true,
                          Double.NaN, false, //TODO: Check what soft limits need to be
                          Double.NaN, false, //TODO: Check what soft limits need to be
                          kStatusFramePeriodActive, kControlFrameActive, mPeriodicIO.mDefaultSchedDelta);
-            climberHomed = false;
+            mPeriodicIO.solenoidDemand = SolenoidState.RELEASE;
+        }
+
+        if (!midArmHomingComplete) {
+            homeArms();
+        } else if (!slappyHomingComplete) {
+            homeSlappySticks();
+        }
+
+        if (mWantedState != WantedState.HOME){
+            midArmHomingComplete = false;
+            slappyHomingComplete = false;
+        }
+        return defaultStateTransfer();
+    }
+
+    private void homeArms() {
+        double now = Timer.getFPGATimestamp();
+
+        if (mStateChanged) {
             midArmNonMovementTimeout = now + midArmNonMovementDuration;
             mPeriodicIO.midArmDemand = midArmHomingDemand;
             mPeriodicIO.midArmControlMode = ControlMode.PercentOutput;
-            mPeriodicIO.solenoidDemand = SolenoidState.RELEASE;
-            System.out.println("Climber Homing solenoidDemand = "+mPeriodicIO.solenoidDemand+" state = "+mSolenoidState);
         }
 
         double distance = Math.abs(mPeriodicIO.midArmPosition - mPeriodicIO.lastClimberPosition);
@@ -410,32 +445,51 @@ public class Climber extends Subsystem {
 
         if (now > midArmNonMovementTimeout) {
 
-            System.out.println("Climber Homing Sequence Complete");
-            // mFXSlappy.setSelectedSensorPosition(0); //kHomingZeroAdjustment);
+            System.out.println("Mid Arm Homing Sequence Complete");
             mFXMidArm.setSelectedSensorPosition(MidArmPosition.HOME.get()); //kHomingZeroAdjustment);
             mPeriodicIO.midArmPosition = MidArmPosition.HOME.get();
+            mPeriodicIO.midArmDemand = 0.0;
 
-            climberHomed = true;
-            mWantedState = wantedStateAfterHoming;
-            homingComplete = true;
+            midArmJustFinishedHoming = true;
+            midArmHomingComplete = true;
             mPeriodicIO.solenoidDemand = SolenoidState.LOCK;
-        }
 
-        if (mWantedState != WantedState.HOME){
-            homingComplete = false;
         }
-        return defaultStateTransfer();
     }
 
-    private final double kSolenoidDuration = .75;
-    private double solenoidTimeout = 0;  
-    private double midBarPosTolerance = 2000;
+    private void homeSlappySticks() {
+        double now = Timer.getFPGATimestamp();
+
+        if (midArmJustFinishedHoming) {
+            midArmJustFinishedHoming = false;
+            slappyNonMovementTimeout = now + slappyNonMovementDuration;
+            mPeriodicIO.slappyDemand = slappyHomingDemand;
+            mPeriodicIO.slappyControlMode = ControlMode.PercentOutput;
+        }
+
+        double distance = Math.abs(mPeriodicIO.slappyPosition - mPeriodicIO.lastSlappyPosition);
+        if (distance > slappyMovementThreshhold) {
+            slappyNonMovementTimeout = now + slappyNonMovementDuration;
+        }
+
+        if (now > slappyNonMovementTimeout) {
+
+            System.out.println("Slappy Sticks Homing Sequence Complete");
+            mFXSlappy.setSelectedSensorPosition(SlappyPosition.HOME.get());
+            mPeriodicIO.slappyPosition = SlappyPosition.HOME.get();
+            mPeriodicIO.slappyDemand = 0.0;
+
+            slappyHomingComplete = true;
+
+        }
+    }
 
     private SystemState handlePreclimbing() {
         double now = Timer.getFPGATimestamp();
 
         if(mStateChanged) {
-            masterConfig(kClimberCurrentLimitHigh, true,
+            masterConfig(kMidArmCurrentLimitHigh, true,
+                         kSlappyCurrentLimitHigh, true,
                          Double.NaN, false, //TODO: Check what soft limits need to be
                          Double.NaN, false, //TODO: Check what soft limits need to be
                          kStatusFramePeriodActive, kControlFrameActive, mPeriodicIO.mDefaultSchedDelta);
@@ -447,39 +501,12 @@ public class Climber extends Subsystem {
 
         if (now > solenoidTimeout){
             mPeriodicIO.midArmDemand = MidArmPosition.MIDBAR.get();
-            mPeriodicIO.midArmControlMode = ControlMode.Position;
+            mPeriodicIO.midArmControlMode = ControlMode.MotionMagic;
             solenoidTimeout += 360000; // set to big number so only come in here once
         }
 
-        if (mPeriodicIO.midArmPosition > (MidArmPosition.MIDBAR.get()-midBarPosTolerance)){
+        if (Math.abs(mPeriodicIO.midArmDemand - mPeriodicIO.midArmPosition) <= midBarPosTolerance){
             preClimbComplete = true;
-        }
-
-        return defaultStateTransfer();
-    }
-
-    private SystemState handleTesting(){
-        if(mStateChanged) {
-            masterConfig(60, true, 0, false, 0, false, 
-                         kControlFrameActive, kStatusFramePeriodActive, mPeriodicIO.mDefaultSchedDelta);
-            testMidArmDemand = 0;
-            testSlappyDemand = 0;
-            mPeriodicIO.midArmControlMode = ControlMode.PercentOutput;
-            mPeriodicIO.slappyControlMode = ControlMode.PercentOutput;
-        }
-
-        if (testMidArmDemand != mPeriodicIO.midArmDemand){
-            mPeriodicIO.midArmDemand = testMidArmDemand;
-        }
-
-        if (testSlappyDemand != mPeriodicIO.slappyDemand){
-            mPeriodicIO.slappyDemand = testSlappyDemand;
-        }
-
-        if (testSolenoidDemand) {
-            mPeriodicIO.solenoidDemand = SolenoidState.RELEASE;
-        } else {
-            mPeriodicIO.solenoidDemand = SolenoidState.LOCK;
         }
 
         return defaultStateTransfer();
@@ -487,7 +514,8 @@ public class Climber extends Subsystem {
 
     private SystemState handleClimbing_1_Lift(){
         if(mStateChanged) {
-            masterConfig(kClimberCurrentLimitHigh, true,
+            masterConfig(kMidArmCurrentLimitHigh, true,
+                         kSlappyCurrentLimitHigh, true,
                          Double.NaN, false, //TODO: Check what soft limits need to be
                          Double.NaN, false, //TODO: Check what soft limits need to be
                          kStatusFramePeriodActive, kControlFrameActive, mPeriodicIO.mDefaultSchedDelta);
@@ -506,23 +534,20 @@ public class Climber extends Subsystem {
         return defaultStateTransfer();
     }
 
-    private double slappyTimeout = 0;
     private SystemState handleClimbing_2_RotateUp(){
-        double now = Timer.getFPGATimestamp();
         if (mStateChanged) {
-            masterConfig(Double.NaN, true,
-                         Double.NaN, false,
-                         Double.NaN, false,
-                         Double.NaN, Double.NaN, Double.NaN);
-            // set demands
-            // set magic motion params?
+            masterConfig(kMidArmCurrentLimitHigh, true,
+                         kSlappyCurrentLimitHigh, true,
+                         Double.NaN, false, //TODO: Check what soft limits need to be
+                         Double.NaN, false, //TODO: Check what soft limits need to be
+                         kStatusFramePeriodActive, kControlFrameActive, mPeriodicIO.mDefaultSchedDelta);
+            mPeriodicIO.slappyDemand = SlappyPosition.MID.get();
+            mPeriodicIO.slappyControlMode = ControlMode.MotionMagic;
             stageTwoComplete = false; // redundant
-            slappyTimeout = now + 2;
         }
-        
-        if (now > slappyTimeout) {
+
+        if (Math.abs(mPeriodicIO.slappyPosition - mPeriodicIO.slappyDemand) < slappyPosTolerance) {
             stageTwoComplete = true;
-            slappyTimeout += 36000; // big number so only enter once
         }
 
         if (mWantedState != WantedState.CLIMB_2_ROTATE_UP) {
@@ -533,15 +558,17 @@ public class Climber extends Subsystem {
 
     private SystemState handleClimbing_3_LiftMore(){
         if(mStateChanged) {
-            masterConfig(kClimberCurrentLimitHigh, true,
+            masterConfig(kMidArmCurrentLimitHigh, true,
+                         kSlappyCurrentLimitHigh, true,
                          Double.NaN, false, //TODO: Check what soft limits need to be
                          Double.NaN, false, //TODO: Check what soft limits need to be
                          kStatusFramePeriodActive, kControlFrameActive, mPeriodicIO.mDefaultSchedDelta);
+            mPeriodicIO.slappyDemand = SlappyPosition.MAX.get();
             mPeriodicIO.midArmDemand = MidArmPosition.DOWN.get();
-            mPeriodicIO.midArmControlMode = ControlMode.MotionMagic;
+            mPeriodicIO.midArmControlMode = ControlMode.Position;
             stageOneComplete = false;
         }
-
+        System.out.println(mPeriodicIO.midArmPosition);
         if (Math.abs(mPeriodicIO.midArmPosition - mPeriodicIO.midArmDemand) < midBarPosTolerance){
             stageThreeComplete = true;
         }
@@ -553,21 +580,19 @@ public class Climber extends Subsystem {
     }
 
     private SystemState handleClimbing_4_EngageTrav(){
-        double now = Timer.getFPGATimestamp();
         if (mStateChanged) {
-            masterConfig(Double.NaN, true,
-                         Double.NaN, false,
-                         Double.NaN, false,
-                         Double.NaN, Double.NaN, Double.NaN);
-            // set demands
-            // set magic motion params?
+            masterConfig(kMidArmCurrentLimitHigh, true,
+                         kSlappyCurrentLimitHigh, true,
+                         Double.NaN, false, //TODO: Check what soft limits need to be
+                         Double.NaN, false, //TODO: Check what soft limits need to be
+                         kStatusFramePeriodActive, kControlFrameActive, mPeriodicIO.mDefaultSchedDelta);
+            mPeriodicIO.slappyDemand = SlappyPosition.DOWN.get();
+            mPeriodicIO.slappyControlMode = ControlMode.MotionMagic;
             stageFourComplete = false; // redundant
-            slappyTimeout = now + 2;
-
         }
-        if (now > slappyTimeout) {
+
+        if (Math.abs(mPeriodicIO.slappyPosition - mPeriodicIO.slappyDemand) < slappyPosTolerance) {
             stageFourComplete = true;
-            slappyTimeout += 36000; // big number so only enter once
         }
 
         if (mWantedState != WantedState.CLIMB_4_ENGAGE_TRAV) {
@@ -579,7 +604,8 @@ public class Climber extends Subsystem {
 
     private SystemState handleClimbing_5_ReleaseMid(){
         if(mStateChanged) {
-            masterConfig(kClimberCurrentLimitHigh, true,
+            masterConfig(kMidArmCurrentLimitHigh, true,
+                         kSlappyCurrentLimitHigh, true,
                          Double.NaN, false, //TODO: Check what soft limits need to be
                          Double.NaN, false, //TODO: Check what soft limits need to be
                          kStatusFramePeriodActive, kControlFrameActive, mPeriodicIO.mDefaultSchedDelta);
@@ -598,20 +624,51 @@ public class Climber extends Subsystem {
         return defaultStateTransfer();
     }
 
-    public boolean isHomed(){
-        return climberHomed;
+    private SystemState handleTesting(){
+        if(mStateChanged) {
+            masterConfig(80, true, kSlappyCurrentLimitHigh, true, 0, false, 0, false, 
+                         kControlFrameActive, kStatusFramePeriodActive, mPeriodicIO.mDefaultSchedDelta);
+            testMidArmDemand = 0;
+            testSlappyDemand = 0;
+            mPeriodicIO.midArmControlMode = ControlMode.PercentOutput;
+            mPeriodicIO.slappyControlMode = ControlMode.PercentOutput;
+
+            // mPeriodicIO.slappyControlMode = ControlMode.MotionMagic;
+            // testSlappyDemand = mPeriodicIO.slappyPosition;
+        }
+
+        if (testMidArmDemand != mPeriodicIO.midArmDemand){
+            mPeriodicIO.midArmDemand = testMidArmDemand;
+        }
+
+        if (testSlappyDemand != mPeriodicIO.slappyDemand){
+            mPeriodicIO.slappyDemand = testSlappyDemand;
+        }
+
+        if (testSolenoidDemand) {
+            mPeriodicIO.solenoidDemand = SolenoidState.RELEASE;
+        } else {
+            mPeriodicIO.solenoidDemand = SolenoidState.LOCK;
+        }
+        System.out.println(mPeriodicIO.midArmPosition);
+
+        return defaultStateTransfer();
     }
 
-    private void masterConfig(double statorLimit, boolean statorEnable, 
+    private void masterConfig(double midArmStatorLimit, boolean midArmStatorEnable,
+                              double slappyStatorLimit, boolean slappyStatorEnable, 
                               double softLimitFwd, boolean softLimitFwdEnable, 
                               double softLimitRev, boolean softLimitRevEnable, 
                               double statusFramePeriod, double controlFramePeriod, double whenRun){
-        if (statorLimit != Double.NaN){
-            mFXMidArm.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(statorEnable, statorLimit, statorLimit, 0));
-            mFXSlappy.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(statorEnable, statorLimit, statorLimit, 0));    
+        if (!Double.isNaN(midArmStatorLimit)){
+            mFXMidArm.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(midArmStatorEnable, midArmStatorLimit, midArmStatorLimit, 0));
         }
 
-        if (softLimitFwd != Double.NaN){
+        if (!Double.isNaN(slappyStatorLimit)){
+            mFXSlappy.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(slappyStatorEnable, slappyStatorLimit, slappyStatorLimit, 0));
+        }
+
+        if (!Double.isNaN(softLimitFwd)){
             mFXMidArm.configForwardSoftLimitThreshold(softLimitFwd, Constants.kLongCANTimeoutMs);
             mFXSlappy.configForwardSoftLimitThreshold(softLimitFwd, Constants.kLongCANTimeoutMs);
 
@@ -619,21 +676,21 @@ public class Climber extends Subsystem {
             mFXSlappy.configForwardSoftLimitEnable(softLimitFwdEnable, Constants.kLongCANTimeoutMs);
         }
 
-        if (softLimitRev != Double.NaN){
+        if (!Double.isNaN(softLimitRev)){
             mFXMidArm.configReverseSoftLimitThreshold(softLimitFwd, Constants.kLongCANTimeoutMs);
             mFXSlappy.configReverseSoftLimitThreshold(softLimitFwd, Constants.kLongCANTimeoutMs);
             
             mFXMidArm.configReverseSoftLimitEnable(softLimitRevEnable, Constants.kLongCANTimeoutMs);
             mFXSlappy.configReverseSoftLimitEnable(softLimitRevEnable, Constants.kLongCANTimeoutMs);
         }
-        if (statusFramePeriod != Double.NaN){
+        if (!Double.isNaN(statusFramePeriod)){
             mFXMidArm.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, (int)statusFramePeriod, Constants.kLongCANTimeoutMs);
         }
-        if (controlFramePeriod != Double.NaN){
+        if (!Double.isNaN(controlFramePeriod)){
             mFXMidArm.setControlFramePeriod(ControlFrame.Control_3_General, (int)controlFramePeriod);
             mFXSlappy.setControlFramePeriod(ControlFrame.Control_3_General, (int)controlFramePeriod);
         }
-        if (whenRun != Double.NaN){
+        if (!Double.isNaN(whenRun)){
             mPeriodicIO.schedDeltaDesired = (int) whenRun;
         }
 
@@ -679,7 +736,7 @@ public class Climber extends Subsystem {
             case CLIMB_5_RELEASE_MID:
                 return stageFiveComplete;
             case HOME:
-                return homingComplete;
+                return midArmHomingComplete && slappyHomingComplete;
             default:
                 System.out.println("Uh oh something is not right");
                 return false;
@@ -742,8 +799,7 @@ public class Climber extends Subsystem {
                 sClassName+".climberPosition,"+
                 sClassName+".climberDemand,"+
                 sClassName+".climberControlMode,"+
-                sClassName+".slappyDemand,"+
-                sClassName+".climberHomed";
+                sClassName+".slappyDemand";
     }
 
     @Override
@@ -763,8 +819,7 @@ public class Climber extends Subsystem {
                 mPeriodicIO.midArmPosition+","+
                 mPeriodicIO.midArmDemand+","+
                 mPeriodicIO.midArmControlMode+","+
-                mPeriodicIO.solenoidDemand+","+
-                climberHomed;
+                mPeriodicIO.solenoidDemand;
     }
 
     @Override

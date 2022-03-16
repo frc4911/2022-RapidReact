@@ -39,6 +39,7 @@ public class Superstructure extends Subsystem {
     public enum SystemState {
         DISABLING,
         HOLDING,
+        TESTING,
         COLLECTING,
         BACKING,
         AUTO_SHOOTING,
@@ -51,6 +52,7 @@ public class Superstructure extends Subsystem {
     public enum WantedState {
         DISABLE,
         HOLD,
+        TEST,
         COLLECT,
         BACK,
         AUTO_SHOOT,
@@ -162,11 +164,14 @@ public class Superstructure extends Subsystem {
                     case AUTO_PRE_CLIMBING:
                         newState = handlePreClimbing();
                         break;
-                    case DISABLING:
-                        newState = handleDisabling();
-                        break;
                     case HOMING:
                         newState = handleHoming();
+                        break;
+                    case TESTING:
+                        newState = handleTesting();
+                        break;
+                    case DISABLING:
+                        newState = handleDisabling();
                         break;
                     case HOLDING:
                     default:
@@ -197,7 +202,6 @@ public class Superstructure extends Subsystem {
         return defaultStateTransfer();
     }
 
-    private boolean homingClimber = false;
     private SystemState handleHolding() {
         if (mStateChanged) {
             if (!mOverrideLimelightLEDs) {
@@ -206,20 +210,17 @@ public class Superstructure extends Subsystem {
             mCollector.setWantedState(Collector.WantedState.HOLD, sClassName);
             mIndexer.setWantedState(Indexer.WantedState.HOLD, sClassName);
             mShooter.setWantedState(Shooter.WantedState.HOLD, sClassName);
-            if (!mClimber.isHomed()){
-                homingClimber = true;
-                mClimber.setWantedState(Climber.WantedState.HOLD, sClassName);
-            }
-            else{
-                homingClimber = false;
-                mClimber.setWantedState(Climber.WantedState.HOME, sClassName);
-            }
+            mClimber.setWantedState(Climber.WantedState.HOLD, sClassName);
             mPeriodicIO.schedDeltaDesired = mSlowCycle;
         }
 
-        if (homingClimber && mClimber.isHomed()){
-            homingClimber = false;
-            mClimber.setWantedState(Climber.WantedState.HOLD, sClassName);
+        return defaultStateTransfer();
+    }
+
+    private SystemState handleTesting() {
+        if (mStateChanged) {
+            mClimber.setWantedState(Climber.WantedState.TEST, sClassName);
+            mPeriodicIO.schedDeltaDesired = mFastCycle;
         }
 
         return defaultStateTransfer();
@@ -233,10 +234,6 @@ public class Superstructure extends Subsystem {
             // mShooter.setWantedState(Shooter.WantedState.HOLD, sClassName);
             mClimber.setWantedState(Climber.WantedState.HOME, sClassName);
             mPeriodicIO.schedDeltaDesired = mFastCycle;
-        }
-
-        if (mClimber.isClimbingStageDone(Climber.WantedState.HOME)){
-
         }
 
         if (mWantedState != WantedState.HOME){
@@ -335,11 +332,19 @@ public class Superstructure extends Subsystem {
         return defaultStateTransfer();
     }
 
+    private SystemState handlePreClimbing() {
+        if (mStateChanged) {
+            mClimber.setWantedState(Climber.WantedState.PRECLIMB,sClassName);
+        }
+
+        return defaultStateTransfer();
+    }
+
     // Unused: Lower priority in reference to other states
     private SystemState handleAutoClimbing() {
         if (mStateChanged) {
             if (!mOverrideLimelightLEDs) {
-                mLLManager.getLimelight().setLed(Limelight.LedMode.BLINK);
+                mLLManager.getLimelight().setLed(Limelight.LedMode.OFF);
             }
             mClimber.setWantedState(Climber.WantedState.CLIMB_1_LIFT, sClassName);
         }
@@ -375,18 +380,12 @@ public class Superstructure extends Subsystem {
         return defaultStateTransfer();
     }
 
-    private SystemState handlePreClimbing() {
-        if (mStateChanged) {
-            mClimber.setWantedState(Climber.WantedState.PRECLIMB,sClassName);
-        }
-
-        return defaultStateTransfer();
-    }
-
     private SystemState defaultStateTransfer() {
         switch (mWantedState) {
             case DISABLE:
                 return SystemState.DISABLING;
+            case TEST:
+                return SystemState.TESTING;
             case COLLECT:
                 return SystemState.COLLECTING;
             case BACK:
