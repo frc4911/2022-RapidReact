@@ -2,6 +2,7 @@ package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.constants.Constants;
+import frc.robot.subsystems.Shooter.SystemState;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.util.LatchedBoolean;
@@ -20,11 +21,13 @@ public class JSticks extends Subsystem {
 
     public enum SystemState {
         READINGBUTTONS,
+        READINGTESTBUTTONS,
         DISABLING,
     }
 
     public enum WantedState {
         READBUTTONS,
+        READTESTBUTTONS,
         DISABLE,
     }
 
@@ -40,6 +43,7 @@ public class JSticks extends Subsystem {
     private Swerve mSwerve;
     private Shooter mShooter;
     private Indexer mIndexer;
+    private Climber mClimber;
 
     @SuppressWarnings("unused")
     private LatchedBoolean mSystemStateChange = new LatchedBoolean();
@@ -68,6 +72,7 @@ public class JSticks extends Subsystem {
         mShooter = Shooter.getInstance(sClassName);
         mIndexer = Indexer.getInstance(sClassName); // Getting instance to reset ball count: hopefully will be a
                                                     // temporary fix
+        mClimber = Climber.getInstance(sClassName);
         mHeadingController.setPIDFConstants(
                 mSwerve.mSwerveConfiguration.kSwerveHeadingKp,
                 mSwerve.mSwerveConfiguration.kSwerveHeadingKi,
@@ -95,6 +100,11 @@ public class JSticks extends Subsystem {
                     mSystemState = SystemState.DISABLING;
                     mWantedState = WantedState.DISABLE;
                     break;
+                case TEST:
+                    mSystemState = SystemState.READINGTESTBUTTONS;
+                    mWantedState = WantedState.READTESTBUTTONS;
+                    mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
+                    break;
                 default:
                     mSystemState = SystemState.READINGBUTTONS;
                     mWantedState = WantedState.READBUTTONS;
@@ -113,6 +123,9 @@ public class JSticks extends Subsystem {
                 switch (mSystemState) {
                     case DISABLING:
                         newState = handleDisabling();
+                        break;
+                    case READINGTESTBUTTONS:
+                        newState = handleReadingTestButtons();
                         break;
                     case READINGBUTTONS:
                     default:
@@ -148,6 +161,29 @@ public class JSticks extends Subsystem {
         }
         teleopRoutines();
 
+        return defaultStateTransfer();
+    }
+
+    private SystemState handleReadingTestButtons() {
+
+        if (mPeriodicIO.tst_AButton_AutoElev){
+            mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_CLIMB, sClassName);
+        }
+
+        if (mPeriodicIO.tst_AButton_AutoElev_Stop){
+            mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
+        }
+
+        if (mPeriodicIO.tst_BButton_AutoPre){
+            mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_PRE_CLIMB, sClassName);
+        }
+
+        if (mPeriodicIO.tst_BButton_AutoPre_Stop){
+            mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
+        }
+
+        mShooter.setHoodTestDemand(mPeriodicIO.tst_LeftAxis_TestDemand);
+        // mClimber.setClimberTestDemand(mPeriodicIO.tst_LeftAxis_TestDemand);
         return defaultStateTransfer();
     }
 
@@ -237,12 +273,12 @@ public class JSticks extends Subsystem {
         }
 
         if (mPeriodicIO.op_POV90_ManualShot_Ball) {
-            mSuperstructure.setManualShootDistance(36);
+            mSuperstructure.setManualShootDistance(34);
             mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT, sClassName);
         }
 
         if (mPeriodicIO.op_POV180_ManualShot_Robot) {
-            mSuperstructure.setManualShootDistance(60);
+            mSuperstructure.setManualShootDistance(68);
             mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT, sClassName);
         }
 
@@ -263,66 +299,7 @@ public class JSticks extends Subsystem {
         if (mPeriodicIO.op_LeftTrigger_Back_Stop) {
             mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
         }
-
-        if (mPeriodicIO.tst_AButton_AutoElev){
-            mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_CLIMB, sClassName);
-        }
-
-        if (mPeriodicIO.tst_AButton_AutoElev_Stop){
-            mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
-        }
-
-        if (mPeriodicIO.tst_BButton_AutoPre){
-            mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_PRE_CLIMB, sClassName);
-        }
-
-        if (mPeriodicIO.tst_BButton_AutoPre_Stop){
-            mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
-        }
-
-        // // Will add clauses for different shoot distances, aimed/auto shooting, auto
-        // climbing, and others
-        // currentState = activeBtnIsReleased(currentState);
-        // if (currentState == Superstructure.WantedState.HOLD) {
-        // // if (mPeriodicIO.op_POV0_ManualShot_Fender) {
-        // // mSuperstructure.setManualShootDistance(0);
-        // // mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT,
-        // sClassName);
-        // // } else
-
-        // if (mPeriodicIO.op_POV90_ManualShot_Tarmac) {
-        // mSuperstructure.setManualShootDistance(60); //5 feet away: temporary test
-        // value
-        // mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT,
-        // sClassName);
-        // } else if (mPeriodicIO.op_RightTrigger_Collect) {
-        // mSuperstructure.setWantedState(Superstructure.WantedState.COLLECT,
-        // sClassName);
-        // } else if (mPeriodicIO.op_LeftTrigger_Back) {
-        // mSuperstructure.setWantedState(Superstructure.WantedState.BACK, sClassName);
-        // } else if (previousState != currentState) {
-        // // mSuperstructure.setWantedState(Superstructure.WantedState.HOLD,
-        // sClassName);
-        // }
-        // }
     }
-
-    // private Superstructure.WantedState
-    // activeBtnIsReleased(Superstructure.WantedState currentState) {
-    // switch (currentState) {
-    // // case MANUAL_SHOOT:
-    // // return !mPeriodicIO.op_POV0_ManualShot_Fender ?
-    // Superstructure.WantedState.HOLD : currentState;
-    // case COLLECT:
-    // return !mPeriodicIO.op_RightTrigger_Collect ? Superstructure.WantedState.HOLD
-    // : currentState;
-    // case BACK:
-    // return !mPeriodicIO.op_LeftTrigger_Back ? Superstructure.WantedState.HOLD :
-    // currentState;
-    // default:
-    // return Superstructure.WantedState.HOLD;
-    // }
-    // }
 
     @Override
     public void readPeriodicInputs() {
@@ -371,12 +348,15 @@ public class JSticks extends Subsystem {
         mPeriodicIO.tst_AButton_AutoElev_Stop = mTest.getButton(LogitechPS4.A_BUTTON, CW.RELEASED_EDGE);
         mPeriodicIO.tst_BButton_AutoPre = mTest.getButton(LogitechPS4.B_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.tst_BButton_AutoPre_Stop = mTest.getButton(LogitechPS4.B_BUTTON, CW.RELEASED_EDGE);
+        mPeriodicIO.tst_LeftAxis_TestDemand = mTest.getRaw(LogitechPS4.LEFT_STICK_Y,.15);
     }
 
     private SystemState defaultStateTransfer() {
         switch (mWantedState) {
             case DISABLE:
                 return SystemState.DISABLING;
+            case READTESTBUTTONS:
+                return SystemState.READINGTESTBUTTONS;
             case READBUTTONS:
             default:
                 return SystemState.READINGBUTTONS;
@@ -470,7 +450,7 @@ public class JSticks extends Subsystem {
 
     public static class PeriodicIO {
         // Logging
-        private final int mDefaultSchedDelta = 100; // axis updated every 100 msec
+        private final int mDefaultSchedDelta = 20; // axis updated every 20 msec
         public int schedDeltaDesired;
         public double schedDeltaActual;
         private double lastSchedStart;
@@ -511,5 +491,6 @@ public class JSticks extends Subsystem {
         public boolean tst_AButton_AutoElev_Stop = false;
         public boolean tst_BButton_AutoPre = false;
         public boolean tst_BButton_AutoPre_Stop = false;
+        public double  tst_LeftAxis_TestDemand = 0;
     }
 }
