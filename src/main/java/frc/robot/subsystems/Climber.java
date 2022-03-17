@@ -62,6 +62,13 @@ public class Climber extends Subsystem {
     private final double kSlappyAcceleration = 6400;
     private final int kSlappyCurveStrength = 0; // 0 is trapizoidal, larger values make the path more soft (curved) at velocity changes
 
+    private final double kConfig_slappy_stage4_kP = 0.1;
+    private final double kConfig_slappy_stage4_kI = 0;
+    private final double kConfig_slappy_stage4_kD = 0;
+    private final double kConfig_slappy_stage4_kF = 0;
+    private final double kSlappyCruiseStage4Velocity = 10000; 
+    private final double kSlappyStage4Acceleration = 10000;
+
     // Subsystem States
     public enum SolenoidState {
         RELEASE(true),
@@ -520,11 +527,11 @@ public class Climber extends Subsystem {
                          Double.NaN, false, //TODO: Check what soft limits need to be
                          kStatusFramePeriodActive, kControlFrameActive, mPeriodicIO.mDefaultSchedDelta);
             configPIDF(mFXSlappy,
-                       0.1, //kP
-                       0, //kI
-                       0, //kD
-                       0, //kF
-                       10000, 10000); //cruise veloctiy, cruise acceleration
+                       kConfig_slappy_stage4_kP, //kP
+                       kConfig_slappy_stage4_kI, //kI
+                       kConfig_slappy_stage4_kD, //kD
+                       kConfig_slappy_stage4_kF, //kF
+                       kSlappyCruiseStage4Velocity, kSlappyStage4Acceleration); //cruise veloctiy, cruise acceleration
             mPeriodicIO.slappyDemand = SlappyPosition.DOWN.get();
             mPeriodicIO.slappyControlMode = ControlMode.Position; //ControlMode.MotionMagic;
             stageFourComplete = false; // redundant
