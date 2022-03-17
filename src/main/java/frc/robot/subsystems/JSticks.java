@@ -224,7 +224,7 @@ public class JSticks extends Subsystem {
             } else if (mPeriodicIO.op_XButton_AutoClimb) {
                 mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_CLIMB, sClassName);
             } else if (mPeriodicIO.op_XButton_AutoClimb_Stop) {
-                mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
+                // mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
             }
 
         } else {
