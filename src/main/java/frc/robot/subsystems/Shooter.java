@@ -16,6 +16,8 @@ import libraries.cheesylib.drivers.TalonFXFactory;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.subsystems.SubsystemManager;
+import libraries.cheesylib.util.InterpolatingDouble;
+import libraries.cheesylib.util.InterpolatingTreeMap;
 import libraries.cheesylib.util.LatchedBoolean;
 
 public class Shooter extends Subsystem {
@@ -38,12 +40,13 @@ public class Shooter extends Subsystem {
     private final double kHoodSlope = (kMaxHoodPosition - kMinHoodPosition) / (kMaxShootDistance - kMinShootDistance);
 
     // Configuration Constants
-    private final double kFlywheelKp = 0.1;
-    private final double kFlywheelKi = 0.0;
-    private final double kFlywheelKd = 0.0;
+    private final double kFlywheelKp = 0.13;
+    private final double kFlywheelKi = 0.0;//001;
+    private final double kFlywheelKd = 2.0;
     private final double kFlywheelKf = 0.05;
-    private final double kClosedRamp = 0.5;
+    private final double kClosedRamp = 1;
     private final double kClosedError = 25.0;
+    private final double kFlyIntegralZone = 700;
 
     private final double kFlywheelCurrentLimit = 40;
     private final double kHoodCurrentLimitLow = 5;
@@ -87,6 +90,10 @@ public class Shooter extends Subsystem {
     private WantedState wantedStateAfterHoming = WantedState.HOLD; // state to transition to after homed
     private double hoodEncoderOffset = 0; // used after homing to avoid resetting encoder position
 
+
+    InterpolatingTreeMap<InterpolatingDouble, InterpolatingDouble> shooterSpeedMap= new InterpolatingTreeMap<>();
+    InterpolatingTreeMap<InterpolatingDouble, InterpolatingDouble> shooterHoodMap= new InterpolatingTreeMap<>();
+
     double minSpeed;
     double minHood;
     private double hoodTestDemand;
@@ -122,6 +129,7 @@ public class Shooter extends Subsystem {
         mFXHood = TalonFXFactory.createDefaultTalon(Ports.SHOOTER_HOOD);
         mSubsystemManager = SubsystemManager.getInstance(sClassName);
         configMotors();
+        buildInterpTree();
     }
 
     private void configMotors() {
@@ -167,7 +175,7 @@ public class Shooter extends Subsystem {
         mFXLeftFlyWheel.config_kI(0, kFlywheelKi, Constants.kLongCANTimeoutMs);
         mFXLeftFlyWheel.config_kD(0, kFlywheelKd, Constants.kLongCANTimeoutMs);
         mFXLeftFlyWheel.config_kF(0, kFlywheelKf, Constants.kLongCANTimeoutMs);
-        mFXLeftFlyWheel.config_IntegralZone(0, 0, Constants.kLongCANTimeoutMs);
+        mFXLeftFlyWheel.config_IntegralZone(0, kFlyIntegralZone, Constants.kLongCANTimeoutMs);
         mFXLeftFlyWheel.configClosedloopRamp(kClosedRamp, Constants.kLongCANTimeoutMs);
         mFXLeftFlyWheel.configAllowableClosedloopError(0, kClosedError, Constants.kLongCANTimeoutMs);
 
@@ -175,7 +183,7 @@ public class Shooter extends Subsystem {
         mFXRightFlyWheel.config_kI(0, kFlywheelKi, Constants.kLongCANTimeoutMs);
         mFXRightFlyWheel.config_kD(0, kFlywheelKd, Constants.kLongCANTimeoutMs);
         mFXRightFlyWheel.config_kF(0, kFlywheelKf, Constants.kLongCANTimeoutMs);
-        mFXRightFlyWheel.config_IntegralZone(0, 0, Constants.kLongCANTimeoutMs);
+        mFXRightFlyWheel.config_IntegralZone(0, kFlyIntegralZone, Constants.kLongCANTimeoutMs);
         mFXRightFlyWheel.configClosedloopRamp(kClosedRamp, Constants.kLongCANTimeoutMs);
         mFXRightFlyWheel.configAllowableClosedloopError(0, kClosedError, Constants.kLongCANTimeoutMs);
 
@@ -190,7 +198,24 @@ public class Shooter extends Subsystem {
         mFXHood.configMotionCruiseVelocity(10000); // ticks/100ms // measured 8800 ave ticks/second while traveling full path
         mFXHood.configMotionAcceleration(5400); // ticks/100mse/sec // 2500 ticks/(sec^2)
         mFXHood.configMotionSCurveStrength(0); // trapezoidal curve
+    }
 
+    private void buildInterpTree(){
+        shooterHoodMap.put( new InterpolatingDouble(0.0),new InterpolatingDouble(3000.0));
+        shooterHoodMap.put( new InterpolatingDouble(24.0),new InterpolatingDouble(12000.0));
+        shooterHoodMap.put( new InterpolatingDouble(48.0),new InterpolatingDouble(16500.0));
+        shooterHoodMap.put( new InterpolatingDouble(72.0),new InterpolatingDouble(22000.0));
+        shooterHoodMap.put( new InterpolatingDouble(96.0),new InterpolatingDouble(26000.0));
+        shooterHoodMap.put( new InterpolatingDouble(120.0),new InterpolatingDouble(28500.0));
+        shooterHoodMap.put( new InterpolatingDouble(144.0),new InterpolatingDouble(28500.0));
+
+        shooterSpeedMap.put( new InterpolatingDouble(0.0),new InterpolatingDouble(10900.0));
+        shooterSpeedMap.put( new InterpolatingDouble(24.0),new InterpolatingDouble(11300.0));
+        shooterSpeedMap.put( new InterpolatingDouble(48.0),new InterpolatingDouble(12000.0));
+        shooterSpeedMap.put( new InterpolatingDouble(72.0),new InterpolatingDouble(12300.0));
+        shooterSpeedMap.put( new InterpolatingDouble(96.0),new InterpolatingDouble(13000.0));
+        shooterSpeedMap.put( new InterpolatingDouble(120.0),new InterpolatingDouble(13500.0));
+        shooterSpeedMap.put( new InterpolatingDouble(144.0),new InterpolatingDouble(14400.0));
     }
 
     @Override
@@ -403,13 +428,45 @@ public class Shooter extends Subsystem {
         this.hoodTestDemand = hoodTestDemand;
     }
 
+    boolean modifiedFly = false;
+    boolean modifiedHood = false;
+    double tempFlyDemand = 0;
+    double tempHoodDemand = 0;
+
+    public synchronized void setTempDemands(double tempHoodDemand, double tempFlyDemand){
+        modifiedFly = true;
+        modifiedHood = true;
+        this.tempFlyDemand = tempFlyDemand;
+        this.tempHoodDemand = tempHoodDemand;
+        System.out.println("tempDemands hood:"+tempHoodDemand+" fly:"+tempFlyDemand);
+    }
+
+    public double getFlyDemand(){
+        return mPeriodicIO.flywheelVelocityDemand;
+    }
+
+    public double getHoodDemand(){
+        return mPeriodicIO.hoodDemand;
+    }
+
     private void updateShooterStatus() {
-        mPeriodicIO.flywheelVelocityDemand = distanceToTicksPer100Ms(mDistance);
+        if (modifiedFly){
+            mPeriodicIO.flywheelVelocityDemand = tempFlyDemand;
+        }
+        else {
+            mPeriodicIO.flywheelVelocityDemand = distanceToTicksPer100Ms(mDistance);
+        }
         mPeriodicIO.reachedDesiredSpeed = Math
                 .abs(mPeriodicIO.flywheelVelocity - mPeriodicIO.flywheelVelocityDemand) <= 300;
 
         if (hoodHomed) {
-            mPeriodicIO.hoodDemand = distanceToHoodPos(mDistance);
+            if (modifiedHood){
+                mPeriodicIO.hoodDemand = tempHoodDemand;
+            }
+            else{
+                mPeriodicIO.hoodDemand = distanceToHoodPos(mDistance);
+            }
+    
             mPeriodicIO.reachedDesiredHoodPosition = Math.abs(mPeriodicIO.hoodPosition - mPeriodicIO.hoodDemand) <= 100;
         } else {
             mPeriodicIO.hoodDemand = hoodHomingDemand;
@@ -489,7 +546,6 @@ public class Shooter extends Subsystem {
 
     @Override
     public void stop() {
-        System.out.println(sClassName + " stop()");
         mFXLeftFlyWheel.set(ControlMode.PercentOutput, 0);
         mFXRightFlyWheel.set(ControlMode.PercentOutput, 0);
     }
@@ -542,10 +598,12 @@ public class Shooter extends Subsystem {
 
     @Override
     public void outputTelemetry() {
-        // SmartDashboard.putNumber("Hood Position", mPeriodicIO.hoodPosition);
-        // SmartDashboard.putNumber("Flywheel Speed", mPeriodicIO.flywheelVelocity);
-        // SmartDashboard.putBoolean("Reached Desired Speed", mPeriodicIO.reachedDesiredSpeed);
-        // SmartDashboard.putBoolean("Reached Desired Hood", mPeriodicIO.reachedDesiredHoodPosition);
+        SmartDashboard.putNumber("Hood demand", mPeriodicIO.hoodDemand);
+        SmartDashboard.putNumber("Flywheel demand", mPeriodicIO.flywheelVelocityDemand);
+        SmartDashboard.putNumber("Hood Position", mPeriodicIO.hoodPosition);
+        SmartDashboard.putNumber("Flywheel Speed", mPeriodicIO.flywheelVelocity);
+        SmartDashboard.putBoolean("Reached Desired Speed", mPeriodicIO.reachedDesiredSpeed);
+        SmartDashboard.putBoolean("Reached Desired Hood", mPeriodicIO.reachedDesiredHoodPosition);
         // SmartDashboard.putBoolean("Ready To Shoot", readyToShoot());
         // // these next values are bypassing readPeriodicInputs to reduce the ctre errors
         // // in

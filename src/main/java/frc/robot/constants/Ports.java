@@ -45,7 +45,7 @@ public class Ports {
     // Climber
     public static final int LEFT_CLIMBER  = 40; // PDP 2
     public static final int RIGHT_CLIMBER = 41; // PDP 13
-    public static final int CLIMBER_STAGE = 1; //Solenoid
+    public static final int CLIMBER_DEPLOY = 1; //Solenoid
 
     // Superstructure
     public static final int PRESSURESENSOR = 2; //Analog Input

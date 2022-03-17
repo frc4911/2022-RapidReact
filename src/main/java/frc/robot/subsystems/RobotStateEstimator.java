@@ -136,7 +136,6 @@ public class RobotStateEstimator extends Subsystem {
 
     @Override
     public void stop() {
-        System.out.println(sClassName + " stop()");
     }
 
     @Override
