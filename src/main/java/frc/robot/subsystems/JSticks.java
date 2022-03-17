@@ -36,7 +36,7 @@ public class JSticks extends Subsystem {
     private boolean mStateChanged;
     private CW mDriver;
     private CW mOperator;
-    private LogitechPS4 mTest;
+    // private LogitechPS4 mTest;
     private PeriodicIO mPeriodicIO = new PeriodicIO();
     private final double mDeadBand = 0.15; // for the turnigy (driver) swerve controls
     private Superstructure mSuperstructure;
@@ -80,7 +80,7 @@ public class JSticks extends Subsystem {
                 mSwerve.mSwerveConfiguration.kSwerveHeadingKf);
         mDriver = new Xbox();
         mOperator = new Xbox();
-        mTest = new LogitechPS4();
+        // mTest = new LogitechPS4();
 
         printUsage(caller);
     }
@@ -387,16 +387,16 @@ public class JSticks extends Subsystem {
         mPeriodicIO.op_POV180_ManualShot_Robot_Stop = mOperator.getButton(Xbox.POV0_180, CW.RELEASED_EDGE);
         mPeriodicIO.op_POV270_ManualShot_Tarmac_Stop = mOperator.getButton(Xbox.POV0_270, CW.RELEASED_EDGE);
 
-        mPeriodicIO.tst_AButton_AutoElev = mTest.getButton(LogitechPS4.A_BUTTON, CW.PRESSED_EDGE);
-        mPeriodicIO.tst_AButton_AutoElev_Stop = mTest.getButton(LogitechPS4.A_BUTTON, CW.RELEASED_EDGE);
-        mPeriodicIO.tst_BButton_AutoPre = mTest.getButton(LogitechPS4.B_BUTTON, CW.PRESSED_EDGE);
-        mPeriodicIO.tst_BButton_AutoPre_Stop = mTest.getButton(LogitechPS4.B_BUTTON, CW.RELEASED_EDGE);
-        mPeriodicIO.tst_LeftAxis_TestDemand = mTest.getRaw(LogitechPS4.LEFT_STICK_Y,.15);
-        mPeriodicIO.tst_RightAxis_TestDemand = mTest.getRaw(LogitechPS4.RIGHT_STICK_Y,.15);
-        mPeriodicIO.tst_LeftBumper_TestSolEngage = mTest.getButton(LogitechPS4.LEFT_BUMPER, CW.PRESSED_EDGE);
-        mPeriodicIO.tst_RightBumper_TestSolDisengage = mTest.getButton(LogitechPS4.RIGHT_BUMPER, CW.PRESSED_EDGE);
-        mPeriodicIO.tst_XButton_HOME = mTest.getButton(LogitechPS4.X_BUTTON, CW.PRESSED_EDGE);
-        mPeriodicIO.tst_XButton_HOME_STOP = mTest.getButton(LogitechPS4.X_BUTTON, CW.RELEASED_EDGE);
+        // mPeriodicIO.tst_AButton_AutoElev = mTest.getButton(LogitechPS4.A_BUTTON, CW.PRESSED_EDGE);
+        // mPeriodicIO.tst_AButton_AutoElev_Stop = mTest.getButton(LogitechPS4.A_BUTTON, CW.RELEASED_EDGE);
+        // mPeriodicIO.tst_BButton_AutoPre = mTest.getButton(LogitechPS4.B_BUTTON, CW.PRESSED_EDGE);
+        // mPeriodicIO.tst_BButton_AutoPre_Stop = mTest.getButton(LogitechPS4.B_BUTTON, CW.RELEASED_EDGE);
+        // mPeriodicIO.tst_LeftAxis_TestDemand = mTest.getRaw(LogitechPS4.LEFT_STICK_Y,.15);
+        // mPeriodicIO.tst_RightAxis_TestDemand = mTest.getRaw(LogitechPS4.RIGHT_STICK_Y,.15);
+        // mPeriodicIO.tst_LeftBumper_TestSolEngage = mTest.getButton(LogitechPS4.LEFT_BUMPER, CW.PRESSED_EDGE);
+        // mPeriodicIO.tst_RightBumper_TestSolDisengage = mTest.getButton(LogitechPS4.RIGHT_BUMPER, CW.PRESSED_EDGE);
+        // mPeriodicIO.tst_XButton_HOME = mTest.getButton(LogitechPS4.X_BUTTON, CW.PRESSED_EDGE);
+        // mPeriodicIO.tst_XButton_HOME_STOP = mTest.getButton(LogitechPS4.X_BUTTON, CW.RELEASED_EDGE);
 
         // mPeriodicIO.tst_POV0_hoodup = mTest.getButton(LogitechPS4.POV0_0, CW.PRESSED_EDGE);
         // mPeriodicIO.tst_POV90_flyup = mTest.getButton(LogitechPS4.POV0_90, CW.PRESSED_EDGE);
@@ -550,16 +550,16 @@ public class JSticks extends Subsystem {
         public boolean op_POV180_ManualShot_Robot_Stop = false;
         public boolean op_POV270_ManualShot_Tarmac_Stop = false;
 
-        public boolean tst_AButton_AutoElev = false;
-        public boolean tst_AButton_AutoElev_Stop = false;
-        public boolean tst_BButton_AutoPre = false;
-        public boolean tst_BButton_AutoPre_Stop = false;
-        public double  tst_LeftAxis_TestDemand = 0;
-        public double  tst_RightAxis_TestDemand = 0;
-        public boolean tst_LeftBumper_TestSolEngage = false;
-        public boolean tst_RightBumper_TestSolDisengage = false;
-        public boolean tst_XButton_HOME = false;
-        public boolean tst_XButton_HOME_STOP = false;
+        // public boolean tst_AButton_AutoElev = false;
+        // public boolean tst_AButton_AutoElev_Stop = false;
+        // public boolean tst_BButton_AutoPre = false;
+        // public boolean tst_BButton_AutoPre_Stop = false;
+        // public double  tst_LeftAxis_TestDemand = 0;
+        // public double  tst_RightAxis_TestDemand = 0;
+        // public boolean tst_LeftBumper_TestSolEngage = false;
+        // public boolean tst_RightBumper_TestSolDisengage = false;
+        // public boolean tst_XButton_HOME = false;
+        // public boolean tst_XButton_HOME_STOP = false;
         // public boolean tst_POV0_hoodup = false;
         // public boolean tst_POV180_hooddn = false;
         // public boolean tst_POV90_flyup = false;
