@@ -22,6 +22,8 @@ import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.trajectory.TrajectoryIterator;
 import libraries.cheesylib.trajectory.timing.TimedState;
+import libraries.cheesylib.util.SynchronousPIDF;
+import libraries.cheesylib.util.Util;
 import libraries.cyberlib.kinematics.ChassisSpeeds;
 import libraries.cyberlib.kinematics.SwerveDriveKinematics;
 import libraries.cyberlib.kinematics.SwerveDriveOdometry;
@@ -64,6 +66,12 @@ public class Swerve extends Subsystem {
 
     private final SwerveDriveOdometry mOdometry;
     private final SwerveDriveKinematics mKinematics;
+
+    // Aiming Controller to turn in place when using vision system to aim
+    private SynchronousPIDF mAimingController = new SynchronousPIDF(
+            Constants.kAimingKP, Constants.kAimingKI, Constants.kAimingKD
+    );
+    private double lastAimTimestamp = -1.0;
 
     // Trajectory following
     private static DriveMotionPlanner mMotionPlanner;
@@ -148,6 +156,9 @@ public class Swerve extends Subsystem {
                     break;
                 case PATH_FOLLOWING:
                     updatePathFollower(lastUpdateTimestamp);
+                    break;
+                case VISION_AIM:
+                    handleAiming(timestamp);
                     break;
                 case NEUTRAL:
                 case DISABLED:
@@ -278,6 +289,23 @@ public class Swerve extends Subsystem {
                 mPeriodicIO.swerveModuleStates, mSwerveConfiguration.maxSpeedInMetersPerSecond);
     }
 
+    private void handleAiming(double timestamp) {
+        var dt = timestamp - lastAimTimestamp;
+        lastAimTimestamp = timestamp;
+
+        if (dt > Util.kEpsilon) {
+            var rotation = mAimingController.calculate(mPeriodicIO.visionSetpointInRadians, dt);
+
+            // Turn in place implies no translational velocity.
+            HolonomicDriveSignal driveSignal = new HolonomicDriveSignal(
+                    Translation2d.identity(),
+                    rotation,
+                    true);
+
+            updateModules(driveSignal);
+        }
+    }
+
     // //Assigns appropriate directions for scrub factors
     // public void setCarpetDirection(boolean standardDirection) {
     // mModules.forEach((m) -> m.setCarpetDirection(standardDirection));
@@ -324,8 +352,10 @@ public class Swerve extends Subsystem {
     }
 
     public Rotation2d getHeading() {
-        return mOdometry.getPose().getRotation();
+        return mPeriodicIO.robotPose.getRotation();
     }
+
+    public ChassisSpeeds getChassisSpeeds() { return mPeriodicIO.chassisSpeeds; }
 
     /**
      * Sets the current robot position on the field.
@@ -466,6 +496,25 @@ public class Swerve extends Subsystem {
         // mModules.forEach((m) -> m.zeroSensors(startingPose));
     }
 
+
+    /**
+     * Set the setpoint used when aiming the robot for auto shooting.
+     *
+     * @param setPointInRadians Setpoint in radians
+     * @param feedforward Feed-forward term
+     * @param timestamp Current timestamp
+     */
+    public synchronized void setAimingSetpoint(double setPointInRadians, double feedforward, double timestamp) {
+        if (mControlState != ControlState.VISION_AIM) {
+            mControlState = ControlState.VISION_AIM;
+            // seed the last timestamp
+            lastAimTimestamp = timestamp;
+            mAimingController.reset();
+        }
+        mPeriodicIO.visionSetpointInRadians = setPointInRadians;
+        mPeriodicIO.visionFeedForward = feedforward;
+    }
+
     /**
      * Sets inputs from driver in teleop mode.
      * <p>
@@ -604,6 +653,10 @@ public class Swerve extends Subsystem {
         // Updated as part of trajectory following
         public Pose2d error = Pose2d.identity();
         public TimedState<Pose2dWithCurvature> path_setpoint = new TimedState<>(Pose2dWithCurvature.identity());
+
+        // Updated as part of vision aiming
+        public double visionSetpointInRadians;
+        public double visionFeedForward;
 
         // Inputs
         public Rotation2d gyro_heading = Rotation2d.identity();

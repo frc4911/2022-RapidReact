@@ -140,6 +140,17 @@ public class Constants {
     public static final PipelineConfiguration kLowRes2xZoom = new PipelineConfiguration(
             CameraResolution.F_320x240, 2.0);
 
+    // To turn in place, a minimum velocity is required that can
+    // 1) overcome the initial inertia when standing still and
+    // 2) minimize overshooting (and oscillation).
+    public static final Translation2d kAimingVelocity = new Translation2d(
+            Units.feetToMeters(2.0), Units.feetToMeters(2.0));
+
+    // These worked for DeadEye's PID
+    public static double kAimingKP = 0.75;
+    public static double kAimingKI = 0.0;
+    public static double kAimingKD = 5.0;
+
 //    // Goal tracker constants
 //    public static final double kDefaultCurveDistance = kRobotHalfLength + 36.0;
 //    public static final double kVisionUpdateDistance = kRobotHalfLength + 75.0;
