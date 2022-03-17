@@ -152,6 +152,8 @@ public class Climber extends Subsystem {
     private boolean preClimbComplete;
     private boolean stageOneComplete;
     private boolean stageTwoComplete;
+    private boolean stageThreeMidArmComplete;
+    private boolean stageThreeSlappyComplete;
     private boolean stageThreeComplete;
     private boolean stageFourComplete;
     private boolean stageFiveComplete;
@@ -302,6 +304,8 @@ public class Climber extends Subsystem {
             }
             stageOneComplete = false;
             stageTwoComplete = false;
+            stageThreeMidArmComplete = false;
+            stageThreeSlappyComplete = false;
             stageThreeComplete = false;
             stageFourComplete = false;
             stageFiveComplete = false;
@@ -504,16 +508,29 @@ public class Climber extends Subsystem {
             mPeriodicIO.slappyDemand = SlappyPosition.MAX.get();
             mPeriodicIO.midArmDemand = MidArmPosition.DOWN.get();
             mPeriodicIO.midArmControlMode = ControlMode.Position;
+            stageThreeMidArmComplete = false;
+            stageThreeSlappyComplete = false;
             stageOneComplete = false;
         }
         System.out.println("MIDARM: Pos "+ mPeriodicIO.midArmPosition + ", Demand " + mPeriodicIO.midArmDemand + ", Current "+ mPeriodicIO.midArmStatorCurrent 
                         + " SLAPPY: Pos " + mPeriodicIO.slappyPosition + ", Demand " + mPeriodicIO.slappyDemand + ", Current "+ mPeriodicIO.slappyStatorCurrent);
-        if (isValueWithinTolerance(mPeriodicIO.midArmPosition, mPeriodicIO.midArmDemand, midBarPosTolerance) && 
-            isValueWithinTolerance(mPeriodicIO.slappyPosition, mPeriodicIO.slappyDemand, slappyPosTolerance)) {
+
+        
+        if (isValueWithinTolerance(mPeriodicIO.midArmPosition, mPeriodicIO.midArmDemand, midBarPosTolerance)) {
+            stageThreeMidArmComplete = true;
+        }
+
+        if (isValueWithinTolerance(mPeriodicIO.slappyPosition, mPeriodicIO.slappyDemand, slappyPosTolerance)) {
+            stageThreeSlappyComplete = true;
+        }
+
+        if (stageThreeMidArmComplete && stageThreeSlappyComplete) {
             stageThreeComplete = true;
         }
        
         if (mWantedState != WantedState.CLIMB_3_LIFT_MORE) {
+            stageThreeMidArmComplete = false;
+            stageThreeSlappyComplete = false;
             stageThreeComplete = false;
         }
         return defaultStateTransfer();
