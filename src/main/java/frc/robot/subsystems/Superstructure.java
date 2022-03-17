@@ -324,9 +324,9 @@ public class Superstructure extends Subsystem {
             !mIndexer.getWantedState().equals(Indexer.WantedState.FEED)) {
             mIndexer.setWantedState(Indexer.WantedState.FEED, sClassName);
         }
-        else if(!mIndexer.getWantedState().equals(Indexer.WantedState.HOLD)){
-            mIndexer.setWantedState(Indexer.WantedState.HOLD, sClassName);
-        }
+        // else if(!mIndexer.getWantedState().equals(Indexer.WantedState.HOLD)){
+        //     mIndexer.setWantedState(Indexer.WantedState.HOLD, sClassName);
+        // }
 
         // everything is put into hold when the state changes
         return defaultStateTransfer();

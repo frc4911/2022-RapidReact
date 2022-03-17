@@ -28,8 +28,8 @@ public class Climber extends Subsystem {
     // Subsystem Constants
     private final double kMidArmCurrentLimitLow = 10; // temp change while testing autoclimb reset to 80 when done
     private final double kMidArmCurrentLimitHigh = 80; // temp change while testing autoclimb reset to 80 when done
-    private final double kSlappyCurrentLimitLow = 5;
-    private final double kSlappyCurrentLimitHigh = 30;
+    private final double kSlappyCurrentLimitLow = 10;
+    private final double kSlappyCurrentLimitHigh = 70;
 
     private final double kStatusFramePeriodActive = 20;
     private final double kControlFrameActive = 18;
@@ -48,6 +48,7 @@ public class Climber extends Subsystem {
         }
 
         public boolean get() {
+
             return state;
         }
     }
@@ -81,7 +82,7 @@ public class Climber extends Subsystem {
     public enum MidArmPosition {
         MIDBAR(370000),
         MIDDLE(92500),
-        DOWN(-15900),
+        DOWN(-14900),
         HOME(-400),
         NOTSET(0);
 
@@ -99,7 +100,7 @@ public class Climber extends Subsystem {
     public enum SlappyPosition {
         MAX(160000),
         MID(120000), //165000 physical max
-        DOWN(10000),
+        DOWN(-2600),
         HOME(-1000),
         NOTSET(0);
 
@@ -568,11 +569,11 @@ public class Climber extends Subsystem {
             mPeriodicIO.midArmControlMode = ControlMode.Position;
             stageOneComplete = false;
         }
-        System.out.println(mPeriodicIO.midArmPosition);
+        
         if (Math.abs(mPeriodicIO.midArmPosition - mPeriodicIO.midArmDemand) < midBarPosTolerance){
             stageThreeComplete = true;
         }
-
+       
         if (mWantedState != WantedState.CLIMB_3_LIFT_MORE) {
             stageThreeComplete = false;
         }
@@ -587,7 +588,7 @@ public class Climber extends Subsystem {
                          Double.NaN, false, //TODO: Check what soft limits need to be
                          kStatusFramePeriodActive, kControlFrameActive, mPeriodicIO.mDefaultSchedDelta);
             mPeriodicIO.slappyDemand = SlappyPosition.DOWN.get();
-            mPeriodicIO.slappyControlMode = ControlMode.MotionMagic;
+            mPeriodicIO.slappyControlMode = ControlMode.Position; //ControlMode.MotionMagic;
             stageFourComplete = false; // redundant
         }
 
@@ -650,7 +651,6 @@ public class Climber extends Subsystem {
         } else {
             mPeriodicIO.solenoidDemand = SolenoidState.LOCK;
         }
-        System.out.println(mPeriodicIO.midArmPosition);
 
         return defaultStateTransfer();
     }
@@ -770,7 +770,7 @@ public class Climber extends Subsystem {
         if (mSolenoidState != mPeriodicIO.solenoidDemand) {
             mSolenoidState = mPeriodicIO.solenoidDemand;
             mSolenoidDeploy.set(mPeriodicIO.solenoidDemand.get());
-            System.out.println("climber solenoid "+mSolenoidState.toString());
+            // System.out.println("climber solenoid "+mSolenoidState.toString());
         }
 
         mFXMidArm.set(mPeriodicIO.midArmControlMode, mPeriodicIO.midArmDemand);
@@ -796,9 +796,9 @@ public class Climber extends Subsystem {
                 sClassName+".schedDuration,"+
                 sClassName+".mSystemState,"+
                 sClassName+".mWantedState,"+
-                sClassName+".climberPosition,"+
-                sClassName+".climberDemand,"+
-                sClassName+".climberControlMode,"+
+                sClassName+".midBarPosition,"+
+                sClassName+".midBarDemand,"+
+                sClassName+".slappyPosition,"+
                 sClassName+".slappyDemand";
     }
 
@@ -809,7 +809,9 @@ public class Climber extends Subsystem {
             start = ",,,";
         }
         else{
-            start = mPeriodicIO.schedDeltaDesired+","+
+            start = 
+            // mPeriodicIO.schedDeltaDesired+","+
+            mPeriodicIO.slappyStatorCurrent+","+
                     mPeriodicIO.schedDeltaActual+","+
                     (Timer.getFPGATimestamp()-mPeriodicIO.lastSchedStart)+",";
         }
@@ -818,7 +820,7 @@ public class Climber extends Subsystem {
                 mWantedState+","+
                 mPeriodicIO.midArmPosition+","+
                 mPeriodicIO.midArmDemand+","+
-                mPeriodicIO.midArmControlMode+","+
+                mPeriodicIO.slappyPosition+","+
                 mPeriodicIO.solenoidDemand;
     }
 
@@ -826,11 +828,15 @@ public class Climber extends Subsystem {
     public void outputTelemetry() {
         SmartDashboard.putNumber("midArmPos", mPeriodicIO.midArmPosition);
         SmartDashboard.putNumber("slappyPos", mPeriodicIO.slappyPosition);
+        mPeriodicIO.slappyStatorCurrent = mFXSlappy.getStatorCurrent();
         SmartDashboard.putNumber("midArmCurrent", mFXMidArm.getStatorCurrent());
-        SmartDashboard.putNumber("slappyCurrent", mFXSlappy.getStatorCurrent());
+        SmartDashboard.putNumber("slappyCurrent", mPeriodicIO.slappyStatorCurrent);
+        // System.out.println("slappycurrent "+mPeriodicIO.slappyStatorCurrent);
+        // System.out.println("slappyPos "+mPeriodicIO.slappyPosition);
     }
 
     public static class PeriodicIO {
+        double slappyStatorCurrent;
         // Logging
         public final int mDefaultSchedDelta = 20; // axis updated every 20 msec
         public int schedDeltaDesired;

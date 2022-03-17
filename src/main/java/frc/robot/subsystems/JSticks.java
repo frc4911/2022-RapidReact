@@ -274,6 +274,19 @@ public class JSticks extends Subsystem {
         if (mPeriodicIO.op_LeftTrigger_Back_Stop) {
             mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
         }
+
+        // if (mPeriodicIO.tst_POV90_flyup){
+        //     mShooter.setTempDemands(mShooter.getHoodDemand(), mShooter.getFlyDemand()+100);
+        // }
+        // if (mPeriodicIO.tst_POV270_flyDn){
+        //     mShooter.setTempDemands(mShooter.getHoodDemand(), mShooter.getFlyDemand()-50);
+        // }
+        // if (mPeriodicIO.tst_POV0_hoodup){
+        //     mShooter.setTempDemands(mShooter.getHoodDemand()+100, mShooter.getFlyDemand());
+        // }
+        // if (mPeriodicIO.tst_POV180_hooddn){
+        //     mShooter.setTempDemands(mShooter.getHoodDemand()-50, mShooter.getFlyDemand());
+        // }
     }
 
     private SystemState handleReadingTestButtons() {
@@ -384,6 +397,12 @@ public class JSticks extends Subsystem {
         mPeriodicIO.tst_RightBumper_TestSolDisengage = mTest.getButton(LogitechPS4.RIGHT_BUMPER, CW.PRESSED_EDGE);
         mPeriodicIO.tst_XButton_HOME = mTest.getButton(LogitechPS4.X_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.tst_XButton_HOME_STOP = mTest.getButton(LogitechPS4.X_BUTTON, CW.RELEASED_EDGE);
+
+        // mPeriodicIO.tst_POV0_hoodup = mTest.getButton(LogitechPS4.POV0_0, CW.PRESSED_EDGE);
+        // mPeriodicIO.tst_POV90_flyup = mTest.getButton(LogitechPS4.POV0_90, CW.PRESSED_EDGE);
+        // mPeriodicIO.tst_POV180_hooddn = mTest.getButton(LogitechPS4.POV0_180, CW.PRESSED_EDGE);
+        // mPeriodicIO.tst_POV270_flyDn = mTest.getButton(LogitechPS4.POV0_270, CW.PRESSED_EDGE);
+
     }
 
     private SystemState defaultStateTransfer() {
@@ -541,5 +560,9 @@ public class JSticks extends Subsystem {
         public boolean tst_RightBumper_TestSolDisengage = false;
         public boolean tst_XButton_HOME = false;
         public boolean tst_XButton_HOME_STOP = false;
+        // public boolean tst_POV0_hoodup = false;
+        // public boolean tst_POV180_hooddn = false;
+        // public boolean tst_POV90_flyup = false;
+        // public boolean tst_POV270_flyDn = false;
     }
 }
