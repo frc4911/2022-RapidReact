@@ -430,7 +430,7 @@ public class Climber extends Subsystem {
             solenoidTimeout += 360000; // set to big number so only come in here once
         }
 
-        if (Math.abs(mPeriodicIO.midArmDemand - mPeriodicIO.midArmPosition) <= midBarPosTolerance){
+        if (isValueWithinTolerance(mPeriodicIO.midArmPosition, mPeriodicIO.midArmDemand, midBarPosTolerance)) {
             preClimbComplete = true;
         }
 
@@ -449,7 +449,7 @@ public class Climber extends Subsystem {
             stageOneComplete = false;
         }
 
-        if (Math.abs(mPeriodicIO.midArmPosition - mPeriodicIO.midArmDemand) < midBarPosTolerance){
+        if (isValueWithinTolerance(mPeriodicIO.midArmPosition, mPeriodicIO.midArmDemand, midBarPosTolerance)) {
             stageOneComplete = true;
         }
 
@@ -477,7 +477,7 @@ public class Climber extends Subsystem {
             stageTwoComplete = false; // redundant
         }
 
-        if (Math.abs(mPeriodicIO.slappyPosition - mPeriodicIO.slappyDemand) < slappyPosTolerance) {
+        if (isValueWithinTolerance(mPeriodicIO.slappyPosition, mPeriodicIO.slappyDemand, slappyPosTolerance)) {
             stageTwoComplete = true;
         }
 
@@ -501,8 +501,8 @@ public class Climber extends Subsystem {
         }
         System.out.println("MIDARM: Pos "+ mPeriodicIO.midArmPosition + ", Demand " + mPeriodicIO.midArmDemand + ", Current "+ mPeriodicIO.midArmStatorCurrent 
                         + " SLAPPY: Pos " + mPeriodicIO.slappyPosition + ", Demand " + mPeriodicIO.slappyDemand + ", Current "+ mPeriodicIO.slappyStatorCurrent);
-        if ((Math.abs(mPeriodicIO.midArmPosition - mPeriodicIO.midArmDemand) < midBarPosTolerance) &&
-            (Math.abs(mPeriodicIO.slappyPosition - mPeriodicIO.slappyDemand) < slappyPosTolerance)){
+        if (isValueWithinTolerance(mPeriodicIO.midArmPosition, mPeriodicIO.midArmDemand, midBarPosTolerance) && 
+            isValueWithinTolerance(mPeriodicIO.slappyPosition, mPeriodicIO.slappyDemand, slappyPosTolerance)) {
             stageThreeComplete = true;
         }
        
@@ -531,7 +531,7 @@ public class Climber extends Subsystem {
         }
         System.out.println("MIDARM: Pos "+ mPeriodicIO.midArmPosition + ", Demand " + mPeriodicIO.midArmDemand + ", Current "+ mPeriodicIO.midArmStatorCurrent 
         + " SLAPPY: Pos " + mPeriodicIO.slappyPosition + ", Demand " + mPeriodicIO.slappyDemand + ", Current "+ mPeriodicIO.slappyStatorCurrent);
-        if (Math.abs(mPeriodicIO.slappyPosition - mPeriodicIO.slappyDemand) < slappyPosTolerance) {
+        if (isValueWithinTolerance(mPeriodicIO.slappyPosition, mPeriodicIO.slappyDemand, slappyPosTolerance)) {
             stageFourComplete = true;
         }
 
@@ -555,7 +555,7 @@ public class Climber extends Subsystem {
         }
         System.out.println("MIDARM: Pos "+ mPeriodicIO.midArmPosition + ", Demand " + mPeriodicIO.midArmDemand + ", Current "+ mPeriodicIO.midArmStatorCurrent 
         + " SLAPPY: Pos " + mPeriodicIO.slappyPosition + ", Demand " + mPeriodicIO.slappyDemand + ", Current "+ mPeriodicIO.slappyStatorCurrent);
-        if (Math.abs(mPeriodicIO.midArmPosition - mPeriodicIO.midArmDemand) < midBarPosTolerance){
+        if (isValueWithinTolerance(mPeriodicIO.midArmPosition, mPeriodicIO.midArmDemand, midBarPosTolerance)) {
             stageFiveComplete = true;
         }
 
@@ -685,6 +685,10 @@ public class Climber extends Subsystem {
             slappyHomingComplete = true;
 
         }
+    }
+
+    private boolean isValueWithinTolerance(double expected, double actual, double threshold) {
+        return Math.abs(expected-actual) < threshold;
     }
 
     private void masterConfig(double midArmStatorLimit, boolean midArmStatorEnable,
