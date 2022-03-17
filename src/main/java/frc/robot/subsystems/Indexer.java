@@ -27,7 +27,7 @@ public class Indexer extends Subsystem {
 
     // Subsystem Constants
     private final double kBackingSpeed = -.3;
-    private final double kFeedingSpeed = .9;
+    private final double kFeedingSpeed = .2;
     private final double kLoadingSpeed = .3;
 
     private boolean hasBallOnLoadingStart;
@@ -293,7 +293,6 @@ public class Indexer extends Subsystem {
 
     @Override
     public void stop() {
-        System.out.println(sClassName + " stop()");
         mFXIndexer.set(ControlMode.PercentOutput, 0);
     }
 

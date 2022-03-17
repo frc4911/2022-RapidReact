@@ -6,6 +6,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.RobotState;
 import frc.robot.constants.Constants;
 import frc.robot.constants.Ports;
+import frc.robot.subsystems.Climber.WantedState;
 import frc.robot.subsystems.Shooter.SystemState;
 import frc.robot.limelight.LimelightManager;
 import libraries.cheesylib.geometry.Rotation2d;
@@ -38,23 +39,27 @@ public class Superstructure extends Subsystem {
     public enum SystemState {
         DISABLING,
         HOLDING,
+        TESTING,
         COLLECTING,
         BACKING,
         AUTO_SHOOTING,
         MANUAL_SHOOTING,
         AUTO_CLIMBING,
-        AUTO_PRE_CLIMBING
+        AUTO_PRE_CLIMBING,
+        HOMING
     }
 
     public enum WantedState {
         DISABLE,
         HOLD,
+        TEST,
         COLLECT,
         BACK,
         AUTO_SHOOT,
         MANUAL_SHOOT,
         AUTO_PRE_CLIMB,
-        AUTO_CLIMB
+        AUTO_CLIMB,
+        HOME
     }
 
     private SystemState mSystemState;
@@ -159,6 +164,12 @@ public class Superstructure extends Subsystem {
                     case AUTO_PRE_CLIMBING:
                         newState = handlePreClimbing();
                         break;
+                    case HOMING:
+                        newState = handleHoming();
+                        break;
+                    case TESTING:
+                        newState = handleTesting();
+                        break;
                     case DISABLING:
                         newState = handleDisabling();
                         break;
@@ -201,6 +212,33 @@ public class Superstructure extends Subsystem {
             mShooter.setWantedState(Shooter.WantedState.HOLD, sClassName);
             mClimber.setWantedState(Climber.WantedState.HOLD, sClassName);
             mPeriodicIO.schedDeltaDesired = mSlowCycle;
+        }
+
+        return defaultStateTransfer();
+    }
+
+    private SystemState handleTesting() {
+        if (mStateChanged) {
+            mClimber.setWantedState(Climber.WantedState.TEST, sClassName);
+            mPeriodicIO.schedDeltaDesired = mFastCycle;
+        }
+
+        return defaultStateTransfer();
+    }
+
+    private SystemState handleHoming() {
+        if (mStateChanged) {
+            if (!mOverrideLimelightLEDs) {
+                mLLManager.getLimelight().setLed(Limelight.LedMode.PIPELINE);
+            }
+            // mShooter.setWantedState(Shooter.WantedState.HOLD, sClassName);
+            mClimber.setWantedState(Climber.WantedState.HOME, sClassName);
+            mPeriodicIO.schedDeltaDesired = mFastCycle;
+        }
+
+        if (mWantedState != WantedState.HOME){
+            // mShooter.setWantedState(Shooter.WantedState.TEST, sClassName);
+            mClimber.setWantedState(Climber.WantedState.TEST, sClassName);
         }
 
         return defaultStateTransfer();
@@ -286,23 +324,11 @@ public class Superstructure extends Subsystem {
             !mIndexer.getWantedState().equals(Indexer.WantedState.FEED)) {
             mIndexer.setWantedState(Indexer.WantedState.FEED, sClassName);
         }
-        else if(!mIndexer.getWantedState().equals(Indexer.WantedState.HOLD)){
-            mIndexer.setWantedState(Indexer.WantedState.HOLD, sClassName);
-        }
+        // else if(!mIndexer.getWantedState().equals(Indexer.WantedState.HOLD)){
+        //     mIndexer.setWantedState(Indexer.WantedState.HOLD, sClassName);
+        // }
 
         // everything is put into hold when the state changes
-        return defaultStateTransfer();
-    }
-
-    // Unused: Lower priority in reference to other states
-    private SystemState handleAutoClimbing() {
-        if (mStateChanged) {
-            if (!mOverrideLimelightLEDs) {
-                mLLManager.getLimelight().setLed(Limelight.LedMode.BLINK);
-                mClimber.setWantedState(Climber.WantedState.GRAB_BAR_DYNAMIC_CLAW, sClassName);
-            }
-        }
-
         return defaultStateTransfer();
     }
 
@@ -314,14 +340,58 @@ public class Superstructure extends Subsystem {
         return defaultStateTransfer();
     }
 
+    // Unused: Lower priority in reference to other states
+    private SystemState handleAutoClimbing() {
+        if (mStateChanged) {
+            if (!mOverrideLimelightLEDs) {
+                mLLManager.getLimelight().setLed(Limelight.LedMode.OFF);
+            }
+            mClimber.setWantedState(Climber.WantedState.CLIMB_1_LIFT, sClassName);
+        }
+
+        switch(mClimber.getWantedState()) {
+            case CLIMB_1_LIFT:
+                if (mClimber.isClimbingStageDone(Climber.WantedState.CLIMB_1_LIFT)) {
+                    mClimber.setWantedState(Climber.WantedState.CLIMB_2_ROTATE_UP, sClassName);
+                }
+                break;
+            case CLIMB_2_ROTATE_UP:
+                if (mClimber.isClimbingStageDone(Climber.WantedState.CLIMB_2_ROTATE_UP)) {
+                    mClimber.setWantedState(Climber.WantedState.CLIMB_3_LIFT_MORE, sClassName);
+                }
+                break;
+            case CLIMB_3_LIFT_MORE:
+                if (mClimber.isClimbingStageDone(Climber.WantedState.CLIMB_3_LIFT_MORE)) {
+                    mClimber.setWantedState(Climber.WantedState.CLIMB_4_ENGAGE_TRAV, sClassName);
+                }
+                break;
+            case CLIMB_4_ENGAGE_TRAV:
+                if (mClimber.isClimbingStageDone(Climber.WantedState.CLIMB_4_ENGAGE_TRAV)) {
+                    mClimber.setWantedState(Climber.WantedState.CLIMB_5_RELEASE_MID, sClassName);
+                }
+                break;
+            case CLIMB_5_RELEASE_MID: // Done with climb
+                break;
+            default:
+                System.out.println("Climber Exiting Auto Sequence!!!");
+                break;
+        }
+
+        return defaultStateTransfer();
+    }
+
     private SystemState defaultStateTransfer() {
         switch (mWantedState) {
             case DISABLE:
                 return SystemState.DISABLING;
+            case TEST:
+                return SystemState.TESTING;
             case COLLECT:
                 return SystemState.COLLECTING;
             case BACK:
                 return SystemState.BACKING;
+            case HOME:
+                return SystemState.HOMING;
             case AUTO_SHOOT:
                 return SystemState.AUTO_SHOOTING;
             case MANUAL_SHOOT:
