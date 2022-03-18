@@ -82,8 +82,8 @@ public class Robot extends TimedRobot {
         System.out.println("robotInit() begins");
 
         mClassName = this.getClass().getSimpleName();
-        LiveWindow.disableAllTelemetry();
-        LiveWindow.setEnabled(false);
+        // LiveWindow.disableAllTelemetry();
+        // LiveWindow.setEnabled(false);
         // Initializing subsystems
         mSubsystemManager = SubsystemManager.getInstance(mClassName);
         mJSticks = JSticks.getInstance(mClassName);

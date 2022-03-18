@@ -2,8 +2,10 @@ package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.RobotState;
+import libraries.cheesylib.geometry.Twist2d;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
+import libraries.cyberlib.kinematics.ChassisSpeeds;
 
 public class RobotStateEstimator extends Subsystem {
 
@@ -22,9 +24,11 @@ public class RobotStateEstimator extends Subsystem {
     private boolean mStateChanged;
     private final boolean mLoggingEnabled = true; // used to disable logging for this subsystem only
     private static int mDefaultSchedDelta = 20;
-    RobotState robotState;// = RobotState.getInstance();
+    RobotState mRobotState;
     Swerve mSwerve;
-    private double prev_timestamp_ = -1.0;
+
+    private ChassisSpeeds mPrevChassisSpeeds = null;
+    private double mPrevTimestamp = -1.0;
 
     private static String sClassName;
     private static int sInstanceCount;
@@ -48,7 +52,7 @@ public class RobotStateEstimator extends Subsystem {
         printUsage(caller);
         mPeriodicIO = new PeriodicIO();
         mSwerve = Swerve.getInstance(sClassName);
-        robotState = RobotState.getInstance(sClassName);
+        mRobotState = RobotState.getInstance(sClassName);
     }
 
     @Override
@@ -59,7 +63,7 @@ public class RobotStateEstimator extends Subsystem {
             mStateChanged = true;
             System.out.println(sClassName + " state " + mSystemState);
             mPeriodicIO.schedDeltaDesired = mDefaultSchedDelta;
-            prev_timestamp_ = Timer.getFPGATimestamp();
+            mPrevTimestamp = Timer.getFPGATimestamp();
         }
     }
 
@@ -84,11 +88,27 @@ public class RobotStateEstimator extends Subsystem {
     }
 
     private SystemState handleEstimating(double timestamp) {
-        final double dt = timestamp - prev_timestamp_;
-        // TODO:  Add prediction values based on current velocities
+        if (mPrevChassisSpeeds == null) {
+            mPrevChassisSpeeds = mSwerve.getChassisSpeeds();
+        }
 
-        robotState.addFieldToVehicleObservation(timestamp, mSwerve.getPose());
-        prev_timestamp_ = timestamp;
+        final double dt = timestamp - mPrevTimestamp;
+        final ChassisSpeeds chassisSpeeds = mSwerve.getChassisSpeeds();
+
+        final Twist2d measuredVelocity = new Twist2d(
+                chassisSpeeds.vxInMetersPerSecond,
+                chassisSpeeds.vyInMetersPerSecond,
+                chassisSpeeds.omegaInRadiansPerSecond);
+
+        final Twist2d predictedVelocity = new Twist2d(
+                chassisSpeeds.vxInMetersPerSecond - mPrevChassisSpeeds.vxInMetersPerSecond,
+                chassisSpeeds.vyInMetersPerSecond - mPrevChassisSpeeds.vyInMetersPerSecond,
+                chassisSpeeds.omegaInRadiansPerSecond - mPrevChassisSpeeds.omegaInRadiansPerSecond
+               ).scaled(1.0 / dt);
+
+        mRobotState.addFieldToVehicleObservation(timestamp, mSwerve.getPose(), measuredVelocity, predictedVelocity);
+        mPrevChassisSpeeds = chassisSpeeds;
+        mPrevTimestamp = timestamp;
         return defaultStateTransfer();
     }
 
@@ -116,7 +136,6 @@ public class RobotStateEstimator extends Subsystem {
 
     @Override
     public void stop() {
-        System.out.println(sClassName + " stop()");
     }
 
     @Override
