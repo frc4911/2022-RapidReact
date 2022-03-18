@@ -408,8 +408,10 @@ public class Climber extends Subsystem {
     private SystemState handleHolding() {
         if (mStateChanged) {
             if(currentStage >= 1){
+                // If auto climbing has started, change to active configs and deltadesires
                 masterConfig(0, true, 0, true, 0, false, 0, false, kStatusFramePeriodActive, kControlFrameActive, mPeriodicIO.mDefaultSchedDelta);
             } else {
+                // If climber has not been started, keep subsystem asleep
                 masterConfig(0, true, 0, true, 0, false, 0, false, kStatusFramePeriodDormant, kControlFrameDormant, 0);
             }
             mPeriodicIO.midArmDemand = mPeriodicIO.midArmPosition;
