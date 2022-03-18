@@ -73,8 +73,8 @@ public class SwerveDriveModule extends Subsystem {
 
         System.out.println("SwerveDriveModule " + mModuleName + "," + mConfig.kSteerMotorSlot0Kp);
 
-        mDriveMotor = TalonFXFactory.createDefaultTalon(mConfig.kDriveMotorTalonId);
-        mSteerMotor = TalonFXFactory.createDefaultTalon(mConfig.kSteerMotorTalonId);
+        mDriveMotor = TalonFXFactory.createDefaultTalon(mConfig.kDriveMotorTalonId, Constants.kCanivoreName);
+        mSteerMotor = TalonFXFactory.createDefaultTalon(mConfig.kSteerMotorTalonId, Constants.kCanivoreName);
 
         CANCoderConfiguration config = new CANCoderConfiguration();
         config.initializationStrategy = mConfig.kCANCoderSensorInitializationStrategy;
@@ -82,12 +82,14 @@ public class SwerveDriveModule extends Subsystem {
         config.magnetOffsetDegrees = constants.kCANCoderOffsetDegrees;
         config.sensorDirection = false; // TODO - Make cancoder direction configurable through robot config files
 
-        mCANCoder = new CANCoder(constants.kCANCoderId);
+        mCANCoder = new CANCoder(constants.kCANCoderId, Constants.kCanivoreName);
         mCANCoder.configAllSettings(config, Constants.kLongCANTimeoutMs);
 
         mCANCoder.setStatusFramePeriod(CANCoderStatusFrame.VbatAndFaults,
                 mConfig.kCANCoderStatusFramePeriodVbatAndFaults);
         mCANCoder.setStatusFramePeriod(CANCoderStatusFrame.SensorData, mConfig.kCANCoderStatusFramePeriodSensorData);
+
+        
 
         configureMotors();
     }

@@ -124,9 +124,9 @@ public class Shooter extends Subsystem {
     private Shooter(String caller) {
         sClassName = this.getClass().getSimpleName();
         printUsage(caller);
-        mFXLeftFlyWheel = TalonFXFactory.createDefaultTalon(Ports.LEFT_FLYWHEEL);
-        mFXRightFlyWheel = TalonFXFactory.createDefaultTalon(Ports.RIGHT_FLYWHEEL);
-        mFXHood = TalonFXFactory.createDefaultTalon(Ports.SHOOTER_HOOD);
+        mFXLeftFlyWheel = TalonFXFactory.createDefaultTalon(Ports.LEFT_FLYWHEEL, Constants.kCanivoreName);
+        mFXRightFlyWheel = TalonFXFactory.createDefaultTalon(Ports.RIGHT_FLYWHEEL, Constants.kCanivoreName);
+        mFXHood = TalonFXFactory.createDefaultTalon(Ports.SHOOTER_HOOD, Constants.kCanivoreName);
         mSubsystemManager = SubsystemManager.getInstance(sClassName);
         configMotors();
         buildInterpTree();

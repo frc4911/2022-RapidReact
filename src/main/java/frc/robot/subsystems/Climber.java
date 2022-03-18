@@ -212,8 +212,8 @@ public class Climber extends Subsystem {
     private Climber(String caller) {
         sClassName = this.getClass().getSimpleName();
         printUsage(caller);
-        mFXMidArm = TalonFXFactory.createDefaultTalon(Ports.LEFT_CLIMBER);
-        mFXSlappy = TalonFXFactory.createDefaultTalon(Ports.RIGHT_CLIMBER);
+        mFXMidArm = TalonFXFactory.createDefaultTalon(Ports.LEFT_CLIMBER, Constants.kCanivoreName);
+        mFXSlappy = TalonFXFactory.createDefaultTalon(Ports.RIGHT_CLIMBER, Constants.kCanivoreName);
         mSolenoidDeploy = new Solenoid(PneumaticsModuleType.CTREPCM, Ports.CLIMBER_DEPLOY);
         mSubsystemManager = SubsystemManager.getInstance(sClassName);
         configMotors();
@@ -605,6 +605,7 @@ public class Climber extends Subsystem {
             mPeriodicIO.solenoidDemand = SolenoidState.RELEASE;
         }
 
+        // Switch if statements to flip homing sequence order
         if (!slappyHomingComplete) {
             homeSlappySticks();
         } else if (!midArmHomingComplete) {

@@ -89,7 +89,7 @@ public class Collector extends Subsystem {
     private Collector(String caller) {
         sClassName = this.getClass().getSimpleName();
         printUsage(caller);
-        mFXCollector = TalonFXFactory.createDefaultTalon(Ports.COLLECTOR);
+        mFXCollector = TalonFXFactory.createDefaultTalon(Ports.COLLECTOR, Constants.kCanivoreName);
         mSolenoid = new Solenoid(PneumaticsModuleType.CTREPCM, Ports.COLLECTOR_DEPLOY);
         mSubsystemManager = SubsystemManager.getInstance(sClassName);
         configMotors();

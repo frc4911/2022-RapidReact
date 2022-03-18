@@ -14,7 +14,7 @@ public class PigeonTwo implements IMU {
 
     private PigeonTwo() {
         try {
-            pigeon = new Pigeon2(Ports.PIGEON);
+            pigeon = new Pigeon2(Ports.PIGEON, Constants.kCanivoreName);
         } catch (Exception e) {
             System.out.println(e);
         }

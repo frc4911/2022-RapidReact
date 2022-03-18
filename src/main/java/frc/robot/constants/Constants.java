@@ -15,6 +15,8 @@ public class Constants {
     public static final String kDeadEyeName = "DeadEye";
     public static final String kRobot2022Name = "Robot2022";
 
+    public static final String kCanivoreName = "CANivore";
+
     public static final double kLooperDt = 0.02;
 
     public static final double kEpsilon = 0.0001;
