@@ -305,6 +305,7 @@ public class Climber extends Subsystem {
             midArmHomingComplete = false;
             slappyHomingComplete = false;
             midArmJustFinishedHoming = false;
+            slappyJustFinishedHoming = false;
 
             mPeriodicIO.solenoidDemand = SolenoidState.LOCK;
             if (mSolenoidDeploy.get()){
