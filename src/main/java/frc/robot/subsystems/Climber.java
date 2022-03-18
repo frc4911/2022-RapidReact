@@ -391,8 +391,10 @@ public class Climber extends Subsystem {
     private SystemState handleDisabling() {
         if (mStateChanged) {
             if (currentStage == 4 || currentStage == 5) {
+                // Activate stator current limits on disable to allow mid arm to slide off the mid bar for a traversal climb
                 masterConfig(0, true, 0, true, 0, false, 0, false, kStatusFramePeriodDormant, kControlFrameDormant, mPeriodicIO.mDefaultSchedDelta);
             } else {
+                // Deactivate stator current limits to lock the mid arm if disabled, allowing a mid climb if needed
                 masterConfig(0, false, 0, true, 0, false, 0, false, kStatusFramePeriodDormant, kControlFrameDormant, mPeriodicIO.mDefaultSchedDelta);
             }
             mPeriodicIO.midArmDemand = 0;
@@ -408,10 +410,10 @@ public class Climber extends Subsystem {
     private SystemState handleHolding() {
         if (mStateChanged) {
             if(currentStage >= 1){
-                // If auto climbing has started, change to active configs and deltadesires
+                // If auto climb has started, change to active configs and deltadesires
                 masterConfig(0, true, 0, true, 0, false, 0, false, kStatusFramePeriodActive, kControlFrameActive, mPeriodicIO.mDefaultSchedDelta);
             } else {
-                // If climber has not been started, keep subsystem asleep
+                // If climb has not been started, keep subsystem asleep
                 masterConfig(0, true, 0, true, 0, false, 0, false, kStatusFramePeriodDormant, kControlFrameDormant, 0);
             }
             mPeriodicIO.midArmDemand = mPeriodicIO.midArmPosition;
