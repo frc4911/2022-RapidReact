@@ -5,6 +5,7 @@ import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.StatorCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.StatusFrame;
+import com.ctre.phoenix.motorcontrol.StatusFrameEnhanced;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
@@ -719,6 +720,9 @@ public class Climber extends Subsystem {
         if (!Double.isNaN(statusFramePeriod)){
             mFXMidArm.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, (int)statusFramePeriod, Constants.kLongCANTimeoutMs);
             mFXSlappy.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, (int)statusFramePeriod, Constants.kLongCANTimeoutMs);
+
+            mFXMidArm.setStatusFramePeriod(StatusFrameEnhanced.Status_Brushless_Current , (int) statusFramePeriod, Constants.kLongCANTimeoutMs);
+            mFXSlappy.setStatusFramePeriod(StatusFrameEnhanced.Status_Brushless_Current, (int)statusFramePeriod, Constants.kLongCANTimeoutMs);
         }
         if (!Double.isNaN(controlFramePeriod)){
             mFXMidArm.setControlFramePeriod(ControlFrame.Control_3_General, (int)controlFramePeriod);

@@ -51,8 +51,8 @@ public class SwerveModuleConfiguration {
     public int kSteerMotorVoltageMeasurementFilter = 8; // # of samples in rolling average
 
     // Steer Motor measurement
-    public int kSteerMotorStatusFrame2UpdateRate = 10; // feedback for selected sensor, ms
-    public int kSteerMotorStatusFrame10UpdateRate = 10; // motion magic, ms
+    public int kSteerMotorStatusFrame2UpdateRate = 20; // feedback for selected sensor, ms
+    public int kSteerMotorStatusFrame10UpdateRate = 20; // motion magic, ms
     // dt for velocity measurements, ms
     public SensorVelocityMeasPeriod kSteerMotorVelocityMeasurementPeriod = SensorVelocityMeasPeriod.Period_100Ms; 
     public int kSteerMotorVelocityMeasurementWindow = 64; // # of samples in rolling average
@@ -80,7 +80,7 @@ public class SwerveModuleConfiguration {
     public int kDriveVoltageMeasurementFilter = 8; // # of samples in rolling average
 
     // drive measurement
-    public int kDriveStatusFrame2UpdateRate = 15; // feedback for selected sensor, ms
+    public int kDriveStatusFrame2UpdateRate = 20; // feedback for selected sensor, ms
     public int kDriveStatusFrame10UpdateRate = 200; // motion magic, ms
     // dt for velocity measurements, ms
     public SensorVelocityMeasPeriod kDriveMotorVelocityMeasurementPeriod = SensorVelocityMeasPeriod.Period_100Ms;
