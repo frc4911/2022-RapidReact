@@ -10,10 +10,12 @@ import frc.robot.subsystems.Climber.WantedState;
 import frc.robot.subsystems.Shooter.SystemState;
 import frc.robot.limelight.LimelightManager;
 import libraries.cheesylib.geometry.Rotation2d;
+import libraries.cheesylib.geometry.Twist2d;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.subsystems.SubsystemManager;
 import libraries.cheesylib.util.LatchedBoolean;
+import libraries.cheesylib.util.Units;
 import libraries.cheesylib.util.Util;
 import libraries.cheesylib.vision.AimingParameters;
 import libraries.cyberlib.utils.Angles;
@@ -75,6 +77,9 @@ public class Superstructure extends Subsystem {
     private boolean mEnforceAutoAimMinDistance = false;
     private double mAutoAimMinDistance = 500;
     private double mLastShootingParamsPrintTime = 0.0;
+
+    private double mSwerveFeedforwardVFromVision = 0.0;
+
 
     private boolean mOverrideLimelightLEDs = false;
 
@@ -277,23 +282,32 @@ public class Superstructure extends Subsystem {
             if (!mOverrideLimelightLEDs) {
                 mLLManager.getLimelight().setLed(Limelight.LedMode.PIPELINE);
             }
+
             mShootSetup = true;
             mPeriodicIO.schedDeltaDesired = mFastCycle;
         }
 
-        double range = Double.NaN;
-        getAimSetpointFromVision(timestamp);
-        if (mLatestAimingParameters.isPresent()) {
-            range = mLatestAimingParameters.get().getRange();
-        }
+        var setPointInRadians = getSwerveSetpointFromVision(timestamp);
 
-        if (mShooter.readyToShoot() || !mShootSetup) {
-            mIndexer.setWantedState(Indexer.WantedState.FEED, sClassName);
-            mShootSetup = false;
+        // Need do aim robot
+        if (!mOnTarget) {
+            mSwerve.setAimingSetpoint(setPointInRadians, mSwerveFeedforwardVFromVision, timestamp);
         } else {
-            mIndexer.setWantedState(Indexer.WantedState.HOLD, sClassName);
-        }
+            // Stop robot from moving in case aiming PID is still moving it
+            mSwerve.setState(Swerve.ControlState.NEUTRAL);
 
+            double range = Double.NaN;
+            if (mLatestAimingParameters.isPresent()) {
+                range = mLatestAimingParameters.get().getRange();
+            }
+
+            if (mShooter.readyToShoot() || !mShootSetup) {
+                mIndexer.setWantedState(Indexer.WantedState.FEED, sClassName);
+                mShootSetup = false;
+            } else {
+                mIndexer.setWantedState(Indexer.WantedState.HOLD, sClassName);
+            }
+        }
         return defaultStateTransfer();
     }
 
@@ -309,7 +323,7 @@ public class Superstructure extends Subsystem {
         }
 
         double range = Double.NaN;
-        getAimSetpointFromVision(timestamp);
+        getSwerveSetpointFromVision(timestamp);
         if (mLatestAimingParameters.isPresent()) {
             range = mLatestAimingParameters.get().getRange();
         }
@@ -457,9 +471,19 @@ public class Superstructure extends Subsystem {
         mOverrideLimelightLEDs = should_override;
     }
 
+    /**
+     * pre condition: getSwerveSetpointFromVision() is called
+     *
+     * @return swerve feedforward voltage
+     */
+    public synchronized double getSwerveFeedforwardVFromVision() {
+        return mSwerveFeedforwardVFromVision;
+    }
+
     public synchronized void resetAimingParameters() {
         mHasTarget = false;
         mOnTarget = false;
+        mSwerveFeedforwardVFromVision = 0.0;
         mTrackId = -1;
         mLatestAimingParameters = Optional.empty();
     }
@@ -478,7 +502,7 @@ public class Superstructure extends Subsystem {
      * @param timestamp current time
      * @return The setpoint
      */
-    public synchronized double getAimSetpointFromVision(double timestamp) {
+    public synchronized double getSwerveSetpointFromVision(double timestamp) {
         mLatestAimingParameters = mRobotState.getAimingParameters(-1,
                 Constants.kMaxGoalTrackAge, Constants.kVisionTargetToGoalOffset);
         if (mLatestAimingParameters.isPresent()) {
@@ -498,7 +522,15 @@ public class Superstructure extends Subsystem {
 
             double setPointInRadians =  mSwerve.getHeading().getRadians() + error.getRadians();
 
+            Twist2d velocity = mRobotState.getMeasuredVelocity();
+            // Angular velocity component from tangential robot motion about the goal.
+            double tangential_component = mLatestAimingParameters.get().getRobotToGoalRotation().sin() * velocity.dx / mLatestAimingParameters.get().getRange();
+            double angular_component = Units.radians_to_degrees(velocity.dtheta);
+            // Add (opposite) of tangential velocity about goal + angular velocity in local frame.
+            mSwerveFeedforwardVFromVision = -(angular_component + tangential_component);
+
             mHasTarget = true;
+
 
             // TODO:  Within 3 degrees?  And make a constant.
             mOnTarget = Util.epsilonEquals(error.getDegrees(), 0.0,3.0);

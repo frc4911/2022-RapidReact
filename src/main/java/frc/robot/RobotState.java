@@ -12,8 +12,10 @@ import frc.robot.subsystems.Limelight;
 import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Rotation2d;
 import libraries.cheesylib.geometry.Translation2d;
+import libraries.cheesylib.geometry.Twist2d;
 import libraries.cheesylib.util.InterpolatingDouble;
 import libraries.cheesylib.util.InterpolatingTreeMap;
+import libraries.cheesylib.util.MovingAverageTwist2d;
 import libraries.cheesylib.vision.AimingParameters;
 import libraries.cheesylib.vision.GoalTracker;
 import libraries.cheesylib.vision.GoalTracker.TrackReportComparator;
@@ -79,6 +81,9 @@ public class RobotState {
 
     private InterpolatingTreeMap<InterpolatingDouble, Pose2d> field_to_vehicle_;
     private GoalTracker goal_tracker_ = new GoalTracker(Constants.kGoalTrackerConfig);
+    private Twist2d vehicle_velocity_predicted_;
+    private Twist2d vehicle_velocity_measured_;
+    private MovingAverageTwist2d vehicle_velocity_measured_filtered_;
     private double distance_driven_;
 
     /**
@@ -89,6 +94,9 @@ public class RobotState {
         field_to_vehicle_ = new InterpolatingTreeMap<>(kObservationBufferSize);
         field_to_vehicle_.put(new InterpolatingDouble(start_time), initial_field_to_vehicle);
         goal_tracker_ = new GoalTracker(Constants.kGoalTrackerConfig);
+        vehicle_velocity_predicted_ = Twist2d.identity();
+        vehicle_velocity_measured_ = Twist2d.identity();
+        vehicle_velocity_measured_filtered_ = new MovingAverageTwist2d(25);
         distance_driven_ = 0.0;
     }
 
@@ -108,8 +116,28 @@ public class RobotState {
         return field_to_vehicle_.lastEntry();
     }
 
-    public synchronized void addFieldToVehicleObservation(double timestamp, Pose2d observation) {
+    public synchronized Pose2d getPredictedFieldToVehicle(double lookahead_time) {
+        return getLatestFieldToVehicle().getValue()
+                .transformBy(Pose2d.exp(vehicle_velocity_predicted_.scaled(lookahead_time)));
+    }
+
+    public synchronized Twist2d getMeasuredVelocity() {
+        return vehicle_velocity_measured_;
+    }
+
+    public synchronized void addFieldToVehicleObservation(
+            double timestamp, Pose2d observation, Twist2d measured_velocity, Twist2d predicted_velocity) {
         field_to_vehicle_.put(new InterpolatingDouble(timestamp), observation);
+
+        vehicle_velocity_measured_ = measured_velocity;
+        if (Math.abs(vehicle_velocity_measured_.dtheta) < 2.0 * Math.PI) {
+            // Reject really high angular velocities from the filter.
+            vehicle_velocity_measured_filtered_.add(vehicle_velocity_measured_);
+        } else {
+            vehicle_velocity_measured_filtered_.add(
+                    new Twist2d(vehicle_velocity_measured_.dx, vehicle_velocity_measured_.dy, 0.0));
+        }
+        vehicle_velocity_predicted_ = predicted_velocity;
     }
 
     public synchronized void resetVision() {
