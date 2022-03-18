@@ -407,7 +407,11 @@ public class Climber extends Subsystem {
 
     private SystemState handleHolding() {
         if (mStateChanged) {
-            masterConfig(0, true, 0, true, 0, false, 0, false, kStatusFramePeriodActive, kControlFrameActive, mPeriodicIO.mDefaultSchedDelta);
+            if(currentStage >= 1){
+                masterConfig(0, true, 0, true, 0, false, 0, false, kStatusFramePeriodActive, kControlFrameActive, mPeriodicIO.mDefaultSchedDelta);
+            } else {
+                masterConfig(0, true, 0, true, 0, false, 0, false, kStatusFramePeriodDormant, kControlFrameDormant, 0);
+            }
             mPeriodicIO.midArmDemand = mPeriodicIO.midArmPosition;
             mPeriodicIO.midArmControlMode = ControlMode.Position;
             mPeriodicIO.slappyDemand = 0;
@@ -510,9 +514,11 @@ public class Climber extends Subsystem {
             stageOneComplete = false;
             currentStage = 3;
         }
-        System.out.println("MIDARM: Pos "+ mPeriodicIO.midArmPosition + ", Demand " + mPeriodicIO.midArmDemand + ", Current "+ mPeriodicIO.midArmStatorCurrent 
-                        + " SLAPPY: Pos " + mPeriodicIO.slappyPosition + ", Demand " + mPeriodicIO.slappyDemand + ", Current "+ mPeriodicIO.slappyStatorCurrent);
-        if ((Math.abs(mPeriodicIO.midArmPosition - mPeriodicIO.midArmDemand) < midBarPosTolerance) &&
+
+        // System.out.println("MIDARM: Pos "+ mPeriodicIO.midArmPosition + ", Demand " + mPeriodicIO.midArmDemand + ", Current "+ mPeriodicIO.midArmStatorCurrent 
+        //                 + " SLAPPY: Pos " + mPeriodicIO.slappyPosition + ", Demand " + mPeriodicIO.slappyDemand + ", Current "+ mPeriodicIO.slappyStatorCurrent);
+        
+                        if ((Math.abs(mPeriodicIO.midArmPosition - mPeriodicIO.midArmDemand) < midBarPosTolerance) &&
             (Math.abs(mPeriodicIO.slappyPosition - mPeriodicIO.slappyDemand) < slappyPosTolerance)){
             stageThreeComplete = true;
         }
@@ -541,8 +547,10 @@ public class Climber extends Subsystem {
             stageFourComplete = false; // redundant
             currentStage = 4;
         }
-        System.out.println("MIDARM: Pos "+ mPeriodicIO.midArmPosition + ", Demand " + mPeriodicIO.midArmDemand + ", Current "+ mPeriodicIO.midArmStatorCurrent 
-                        + " SLAPPY: Pos " + mPeriodicIO.slappyPosition + ", Demand " + mPeriodicIO.slappyDemand + ", Current "+ mPeriodicIO.slappyStatorCurrent);
+
+        // System.out.println("MIDARM: Pos "+ mPeriodicIO.midArmPosition + ", Demand " + mPeriodicIO.midArmDemand + ", Current "+ mPeriodicIO.midArmStatorCurrent 
+        //                 + " SLAPPY: Pos " + mPeriodicIO.slappyPosition + ", Demand " + mPeriodicIO.slappyDemand + ", Current "+ mPeriodicIO.slappyStatorCurrent);
+        
         if (Math.abs(mPeriodicIO.slappyPosition - mPeriodicIO.slappyDemand) < slappyPosTolerance) {
             stageFourComplete = true;
         }
@@ -566,8 +574,10 @@ public class Climber extends Subsystem {
             stageFiveComplete = false;
             currentStage = 5;
         }
-        System.out.println("MIDARM: Pos "+ mPeriodicIO.midArmPosition + ", Demand " + mPeriodicIO.midArmDemand + ", Current "+ mPeriodicIO.midArmStatorCurrent 
-                        + " SLAPPY: Pos " + mPeriodicIO.slappyPosition + ", Demand " + mPeriodicIO.slappyDemand + ", Current "+ mPeriodicIO.slappyStatorCurrent);
+
+        // System.out.println("MIDARM: Pos "+ mPeriodicIO.midArmPosition + ", Demand " + mPeriodicIO.midArmDemand + ", Current "+ mPeriodicIO.midArmStatorCurrent 
+        //                 + " SLAPPY: Pos " + mPeriodicIO.slappyPosition + ", Demand " + mPeriodicIO.slappyDemand + ", Current "+ mPeriodicIO.slappyStatorCurrent);
+        
         if (Math.abs(mPeriodicIO.midArmPosition - mPeriodicIO.midArmDemand) < midBarPosTolerance){
             stageFiveComplete = true;
         }
@@ -892,10 +902,10 @@ public class Climber extends Subsystem {
     public void outputTelemetry() {
         SmartDashboard.putNumber("midArmPos", mPeriodicIO.midArmPosition);
         SmartDashboard.putNumber("slappyPos", mPeriodicIO.slappyPosition);
-        mPeriodicIO.slappyStatorCurrent = mFXSlappy.getStatorCurrent();
-        mPeriodicIO.midArmStatorCurrent = mFXMidArm.getStatorCurrent();
-        SmartDashboard.putNumber("midArmCurrent", mPeriodicIO.midArmStatorCurrent);
-        SmartDashboard.putNumber("slappyCurrent", mPeriodicIO.slappyStatorCurrent);
+        // mPeriodicIO.slappyStatorCurrent = mFXSlappy.getStatorCurrent();
+        // mPeriodicIO.midArmStatorCurrent = mFXMidArm.getStatorCurrent();
+        // SmartDashboard.putNumber("midArmCurrent", mPeriodicIO.midArmStatorCurrent);
+        // SmartDashboard.putNumber("slappyCurrent", mPeriodicIO.slappyStatorCurrent);
         
     }
 

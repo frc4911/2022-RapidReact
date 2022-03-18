@@ -229,9 +229,9 @@ public class Limelight extends Subsystem {
 
     @Override
     public synchronized void outputTelemetry() {
-        SmartDashboard.putBoolean(mConfig.getName() + ": Has Target", mSeesTarget);
+        // SmartDashboard.putBoolean(mConfig.getName() + ": Has Target", mSeesTarget);
         SmartDashboard.putNumber(mConfig.getName() + ": Pipeline Latency (ms)", mPeriodicIO.latency);
-        SmartDashboard.putNumber(mConfig.getName() + ": LED Mode", mPeriodicIO.ledMode);
+        // SmartDashboard.putNumber(mConfig.getName() + ": LED Mode", mPeriodicIO.ledMode);
     }
 
     public synchronized void setLed(LedMode mode) {
