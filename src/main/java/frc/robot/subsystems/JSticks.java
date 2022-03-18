@@ -223,9 +223,9 @@ public class JSticks extends Subsystem {
                 mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
             } else if (mPeriodicIO.op_XButton_AutoClimb) {
                 mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_CLIMB, sClassName);
-            } else if (mPeriodicIO.op_XButton_AutoClimb_Stop) {
-                mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
-            }
+            } // else if (mPeriodicIO.op_XButton_AutoClimb_Stop) {
+                // mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
+            // }
 
         } else {
             if (mPeriodicIO.op_RightTrigger_Collect) {
@@ -349,7 +349,7 @@ public class JSticks extends Subsystem {
         mPeriodicIO.dr_LeftTrigger_SlowSpeed = mDriver.getButton(Xbox.LEFT_TRIGGER, CW.PRESSED_LEVEL);
         mPeriodicIO.dr_RightBumper_RobotOrient = mDriver.getButton(Xbox.RIGHT_BUMPER, CW.PRESSED_LEVEL); // field/robot
         mPeriodicIO.dr_YButton_ResetIMU = mDriver.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
-        mPeriodicIO.dr_AButton_ToggleDriveMode = mDriver.getButton(Xbox.A_BUTTON, CW.PRESSED_EDGE);
+        // mPeriodicIO.dr_AButton_ToggleDriveMode = mDriver.getButton(Xbox.A_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.dr_StartButton_ResetWheels = mDriver.getButton(Xbox.START_BUTTON, CW.PRESSED_EDGE);
 
         //Climbing
@@ -359,8 +359,8 @@ public class JSticks extends Subsystem {
         mPeriodicIO.op_AButton_PreClimb = mOperator.getButton(Xbox.A_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.op_AButton_PreClimb_Stop = mOperator.getButton(Xbox.A_BUTTON, CW.RELEASED_EDGE);
         mPeriodicIO.op_XButton_AutoClimb = mOperator.getButton(Xbox.X_BUTTON, CW.PRESSED_EDGE);
-        mPeriodicIO.op_XButton_AutoClimb_Stop = mOperator.getButton(Xbox.X_BUTTON, CW.RELEASED_EDGE);
-        mPeriodicIO.op_YButton_ResetClimb = mOperator.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE); // Unused
+        // mPeriodicIO.op_XButton_AutoClimb_Stop = mOperator.getButton(Xbox.X_BUTTON, CW.RELEASED_EDGE);
+        // mPeriodicIO.op_YButton_ResetClimb = mOperator.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE); // Unused
 
         mPeriodicIO.op_BackButton_TestHome = mOperator.getButton(Xbox.BACK_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.op_BackButton_TestHome_Stop = mOperator.getButton(Xbox.BACK_BUTTON, CW.RELEASED_EDGE);

@@ -201,21 +201,21 @@ public class Shooter extends Subsystem {
     }
 
     private void buildInterpTree(){
-        shooterHoodMap.put( new InterpolatingDouble(0.0),new InterpolatingDouble(3000.0));
-        shooterHoodMap.put( new InterpolatingDouble(24.0),new InterpolatingDouble(12000.0));
-        shooterHoodMap.put( new InterpolatingDouble(48.0),new InterpolatingDouble(16500.0));
-        shooterHoodMap.put( new InterpolatingDouble(72.0),new InterpolatingDouble(22000.0));
-        shooterHoodMap.put( new InterpolatingDouble(96.0),new InterpolatingDouble(26000.0));
-        shooterHoodMap.put( new InterpolatingDouble(120.0),new InterpolatingDouble(28500.0));
-        shooterHoodMap.put( new InterpolatingDouble(144.0),new InterpolatingDouble(28500.0));
+        shooterHoodMap.put(new InterpolatingDouble(0.0),   new InterpolatingDouble(3000.0));
+        shooterHoodMap.put(new InterpolatingDouble(24.0),  new InterpolatingDouble(12000.0));
+        shooterHoodMap.put(new InterpolatingDouble(48.0),  new InterpolatingDouble(16500.0));
+        shooterHoodMap.put(new InterpolatingDouble(72.0),  new InterpolatingDouble(22000.0));
+        shooterHoodMap.put(new InterpolatingDouble(96.0),  new InterpolatingDouble(26000.0));
+        shooterHoodMap.put(new InterpolatingDouble(120.0), new InterpolatingDouble(28500.0));
+        shooterHoodMap.put(new InterpolatingDouble(144.0), new InterpolatingDouble(28500.0));
 
-        shooterSpeedMap.put( new InterpolatingDouble(0.0),new InterpolatingDouble(10900.0));
-        shooterSpeedMap.put( new InterpolatingDouble(24.0),new InterpolatingDouble(11300.0));
-        shooterSpeedMap.put( new InterpolatingDouble(48.0),new InterpolatingDouble(12000.0));
-        shooterSpeedMap.put( new InterpolatingDouble(72.0),new InterpolatingDouble(12300.0));
-        shooterSpeedMap.put( new InterpolatingDouble(96.0),new InterpolatingDouble(13000.0));
-        shooterSpeedMap.put( new InterpolatingDouble(120.0),new InterpolatingDouble(13500.0));
-        shooterSpeedMap.put( new InterpolatingDouble(144.0),new InterpolatingDouble(14400.0));
+        shooterSpeedMap.put(new InterpolatingDouble(0.0),   new InterpolatingDouble(10900.0));
+        shooterSpeedMap.put(new InterpolatingDouble(24.0),  new InterpolatingDouble(11300.0));
+        shooterSpeedMap.put(new InterpolatingDouble(48.0),  new InterpolatingDouble(12000.0));
+        shooterSpeedMap.put(new InterpolatingDouble(72.0),  new InterpolatingDouble(12300.0));
+        shooterSpeedMap.put(new InterpolatingDouble(96.0),  new InterpolatingDouble(13000.0));
+        shooterSpeedMap.put(new InterpolatingDouble(120.0), new InterpolatingDouble(13500.0));
+        shooterSpeedMap.put(new InterpolatingDouble(144.0), new InterpolatingDouble(14400.0));
     }
 
     @Override
@@ -424,48 +424,48 @@ public class Shooter extends Subsystem {
         }
     }
 
-    public synchronized void setHoodTestDemand(double hoodTestDemand) {
-        this.hoodTestDemand = hoodTestDemand;
-    }
+    // public synchronized void setHoodTestDemand(double hoodTestDemand) {
+    //     this.hoodTestDemand = hoodTestDemand;
+    // }
 
-    boolean modifiedFly = false;
-    boolean modifiedHood = false;
-    double tempFlyDemand = 0;
-    double tempHoodDemand = 0;
+    // boolean modifiedFly = false;
+    // boolean modifiedHood = false;
+    // double tempFlyDemand = 0;
+    // double tempHoodDemand = 0;
 
-    public synchronized void setTempDemands(double tempHoodDemand, double tempFlyDemand){
-        modifiedFly = true;
-        modifiedHood = true;
-        this.tempFlyDemand = tempFlyDemand;
-        this.tempHoodDemand = tempHoodDemand;
-        System.out.println("tempDemands hood:"+tempHoodDemand+" fly:"+tempFlyDemand);
-    }
+    // public synchronized void setTempDemands(double tempHoodDemand, double tempFlyDemand){
+    //     modifiedFly = true;
+    //     modifiedHood = true;
+    //     this.tempFlyDemand = tempFlyDemand;
+    //     this.tempHoodDemand = tempHoodDemand;
+    //     System.out.println("tempDemands hood:"+tempHoodDemand+" fly:"+tempFlyDemand);
+    // }
 
-    public double getFlyDemand(){
-        return mPeriodicIO.flywheelVelocityDemand;
-    }
+    // public double getFlyDemand(){
+    //     return mPeriodicIO.flywheelVelocityDemand;
+    // }
 
-    public double getHoodDemand(){
-        return mPeriodicIO.hoodDemand;
-    }
+    // public double getHoodDemand(){
+    //     return mPeriodicIO.hoodDemand;
+    // }
 
     private void updateShooterStatus() {
-        if (modifiedFly){
-            mPeriodicIO.flywheelVelocityDemand = tempFlyDemand;
-        }
-        else {
-            mPeriodicIO.flywheelVelocityDemand = distanceToTicksPer100Ms(mDistance);
-        }
+        // if (modifiedFly){
+        //     mPeriodicIO.flywheelVelocityDemand = tempFlyDemand;
+        // }
+        // else {
+        //     mPeriodicIO.flywheelVelocityDemand = distanceToTicksPer100Ms(mDistance);
+        // }
         mPeriodicIO.reachedDesiredSpeed = Math
                 .abs(mPeriodicIO.flywheelVelocity - mPeriodicIO.flywheelVelocityDemand) <= 300;
 
         if (hoodHomed) {
-            if (modifiedHood){
-                mPeriodicIO.hoodDemand = tempHoodDemand;
-            }
-            else{
-                mPeriodicIO.hoodDemand = distanceToHoodPos(mDistance);
-            }
+            // if (modifiedHood){
+            //     mPeriodicIO.hoodDemand = tempHoodDemand;
+            // }
+            // else{
+            //     mPeriodicIO.hoodDemand = distanceToHoodPos(mDistance);
+            // }
     
             mPeriodicIO.reachedDesiredHoodPosition = Math.abs(mPeriodicIO.hoodPosition - mPeriodicIO.hoodDemand) <= 100;
         } else {
