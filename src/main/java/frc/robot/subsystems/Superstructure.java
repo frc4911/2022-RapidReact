@@ -299,6 +299,10 @@ public class Superstructure extends Subsystem {
             double range = Double.NaN;
             if (mLatestAimingParameters.isPresent()) {
                 range = mLatestAimingParameters.get().getRange();
+                // difference between the range (center of shooter to center of hub) 
+                // and shooter distance (fender to front of bumper) is 52.5 inches.
+                range -=  52.5;
+                mShooter.setShootDistance(range);
             }
 
             if (mShooter.readyToShoot() || !mShootSetup) {

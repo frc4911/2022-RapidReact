@@ -216,6 +216,8 @@ public class Shooter extends Subsystem {
         shooterSpeedMap.put(new InterpolatingDouble(96.0),  new InterpolatingDouble(13000.0));
         shooterSpeedMap.put(new InterpolatingDouble(120.0), new InterpolatingDouble(13500.0));
         shooterSpeedMap.put(new InterpolatingDouble(144.0), new InterpolatingDouble(14400.0));
+
+        System.out.println("interp 60 => 12150 answer is "+(shooterSpeedMap.getInterpolated(new InterpolatingDouble(60.0))).value);
     }
 
     @Override
@@ -321,6 +323,7 @@ public class Shooter extends Subsystem {
     private SystemState handleHomingHood() {
         double now = Timer.getFPGATimestamp();
         if (mStateChanged) {
+            System.out.println("Start homing hood");
             mFXHood.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kHoodCurrentLimitLow, kHoodCurrentLimitLow, 0));    
             hoodHomed = false;
             hoodEncoderOffset = 0;
@@ -339,7 +342,7 @@ public class Shooter extends Subsystem {
             hoodHomed = true;
             mFXHood.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kHoodCurrentLimitHigh, kHoodCurrentLimitHigh, 0));
             mWantedState = wantedStateAfterHoming;
-            System.out.println("homing is complete");
+            System.out.println("homing hood is complete");
         }
 
         return defaultStateTransfer();
@@ -481,14 +484,17 @@ public class Shooter extends Subsystem {
     }
 
     private double distanceToTicksPer100Ms(double distance) {
-        return (kFlywheelSlope * distance) + kMinShootSpeed;
+        return (shooterSpeedMap.getInterpolated(new InterpolatingDouble(distance))).value;
+
+        // return shooterSpeedMap.get(new InterpolatingDouble(distance)).;
     }
 
     // Hood range is from 0 to 27800 ticks
     // Hood range is from 15.82 degrees to 35.82 degrees
     // 1390 falcon ticks per degree
     private double distanceToHoodPos(double distance) {
-        return (kHoodSlope * distance) + kMinHoodPosition;
+        return (shooterHoodMap.getInterpolated(new InterpolatingDouble(distance))).value;
+        // return (kHoodSlope * distance) + kMinHoodPosition;
     }
 
     @Override
@@ -527,7 +533,17 @@ public class Shooter extends Subsystem {
 
     }
 
+    double lastHoodDemand;
+    double lastFlyDemand;
     private void setMotors(double flyDemand, double hoodDemand) {
+        if (lastHoodDemand != hoodDemand){
+            System.out.println("new hoodDemand "+hoodDemand);
+            lastHoodDemand = hoodDemand;
+        }
+        if (lastFlyDemand != flyDemand){
+            System.out.println("new flyDemand "+flyDemand);
+            lastFlyDemand = flyDemand;
+        }
         mFXLeftFlyWheel.set(ControlMode.Velocity, flyDemand);
         mFXRightFlyWheel.set(ControlMode.Velocity, flyDemand);
         // TODO: see if there is a better way to "flush" a magicmotion path
