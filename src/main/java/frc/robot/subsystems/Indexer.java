@@ -84,7 +84,7 @@ public class Indexer extends Subsystem {
     private Indexer(String caller) {
         sClassName = this.getClass().getSimpleName();
         printUsage(caller);
-        mFXIndexer = TalonFXFactory.createDefaultTalon(Ports.INDEXER);
+        mFXIndexer = TalonFXFactory.createDefaultTalon(Ports.INDEXER, Constants.kCanivoreName);
         mAIEnterBeamBreak = new AnalogInput(Ports.ENTRANCE_BEAM_BREAK);
         mAIExitBeamBreak = new AnalogInput(Ports.EXIT_BEAM_BREAK);
         mSubsystemManager = SubsystemManager.getInstance(sClassName);
