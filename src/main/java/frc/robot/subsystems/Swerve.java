@@ -294,7 +294,8 @@ public class Swerve extends Subsystem {
         lastAimTimestamp = timestamp;
 
         if (dt > Util.kEpsilon) {
-            var rotation = mAimingController.calculate(mPeriodicIO.visionSetpointInRadians, dt);
+            mAimingController.setSetpoint(mPeriodicIO.visionSetpointInRadians);
+            var rotation = mAimingController.calculate(getHeading().getRadians(), dt);
 
             // Turn in place implies no translational velocity.
             HolonomicDriveSignal driveSignal = new HolonomicDriveSignal(
@@ -303,6 +304,7 @@ public class Swerve extends Subsystem {
                     true);
 
             updateModules(driveSignal);
+            System.out.println("Robot Pose " + mPeriodicIO.robotPose);
         }
     }
 
@@ -330,6 +332,9 @@ public class Swerve extends Subsystem {
             System.out.println(mControlState + " to " + newState);
             switch (newState) {
                 case NEUTRAL:
+                    mPeriodicIO.strafe = 0;
+                    mPeriodicIO.forward = 0;
+                    mPeriodicIO.rotation = 0;
                     stopSwerveDriveModules();
                     mPeriodicIO.schedDeltaDesired = 10; // this is a fast cycle used while testing
                     break;
@@ -615,7 +620,7 @@ public class Swerve extends Subsystem {
         // SmartDashboard.putString("Swerve/Pose", mPeriodicIO.robotPose.toString());
         // SmartDashboard.putString("Swerve/Chassis Speeds", mPeriodicIO.chassisSpeeds.toString());
         // SmartDashboard.putBoolean("Swerve/isOnTarget", isOnTarget());
-
+        
         if (Constants.kDebuggingOutput) {
             // Get the current pose from odometry state
             SmartDashboard.putString("Swerve/Pose", mPeriodicIO.robotPose.toString());

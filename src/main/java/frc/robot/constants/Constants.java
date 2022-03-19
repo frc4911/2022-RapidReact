@@ -24,7 +24,7 @@ public class Constants {
     public static final boolean kIsUsingCompBot = true;
     public static final boolean kIsUsingTractionWheels = true;
 
-    public static final boolean kDebuggingOutput = false;
+    public static final boolean kDebuggingOutput = true;
 
     // Physical Robot Dimensions (including bumpers)
     public static final double kRobotWidth = 28.0;
@@ -135,7 +135,7 @@ public class Constants {
 
     // Rim thickness + inner diameter of upper hub.  Reflective tape is at front rim.  Shot should land in center.
     public static final Pose2d kVisionTargetToGoalOffset = new Pose2d(
-            -Units.inchesToMeters(3.0 + 24.0) , 0, Rotation2d.identity());
+            -Units.inchesToMeters(2.625 + 24.0) , 0, Rotation2d.identity());
 
     public static final PipelineConfiguration kLowRes1xZoom = new PipelineConfiguration(
             CameraResolution.F_320x240, 1.0);
@@ -149,9 +149,9 @@ public class Constants {
             Units.feetToMeters(2.0), Units.feetToMeters(2.0));
 
     // These worked for DeadEye's PID
-    public static double kAimingKP = 0.75;
+    public static double kAimingKP = 1.35;
     public static double kAimingKI = 0.0;
-    public static double kAimingKD = 5.0;
+    public static double kAimingKD = 0.0;
 
 //    // Goal tracker constants
 //    public static final double kDefaultCurveDistance = kRobotHalfLength + 36.0;

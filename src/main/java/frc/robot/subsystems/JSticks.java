@@ -3,6 +3,7 @@ package frc.robot.subsystems;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.constants.Constants;
 import frc.robot.subsystems.Shooter.SystemState;
+import frc.robot.subsystems.Swerve.ControlState;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.util.LatchedBoolean;
@@ -167,40 +168,37 @@ public class JSticks extends Subsystem {
         Superstructure.WantedState currentState = mSuperstructure.getWantedState();
         Superstructure.WantedState previousState = currentState;
 
-        // disable for the competition
-        // if(mPeriodicIO.dr_AButton_ToggleDriveMode) {
-        //     mSwerve.toggleThroughDriveModes();
-        // }
-
-        // All driver assist to raw inputs should be implemented Swerve#handleManual()
-        double swerveYInput = mPeriodicIO.dr_LeftStickX_Translate;
-        double swerveXInput = mPeriodicIO.dr_LeftStickY_Translate;
-        double swerveRotationInput = mPeriodicIO.dr_RightStickX_Rotate;
-
-        if (mPeriodicIO.dr_LeftTrigger_SlowSpeed) {
-            swerveYInput *= 0.5;
-            swerveXInput *= 0.5;
-            swerveRotationInput *= 0.5;
-        }
-
         // NEW SWERVE
-        boolean maintainHeading = mShouldMaintainHeading.update(swerveRotationInput == 0, 0.2);
-        boolean changeHeadingSetpoint = shouldChangeHeadingSetpoint.update(maintainHeading);
+        if (mSuperstructure.getWantedState() != Superstructure.WantedState.AUTO_SHOOT) {
+        // All driver assist to raw inputs should be implemented Swerve#handleManual()
+            double swerveYInput = mPeriodicIO.dr_LeftStickX_Translate;
+            double swerveXInput = mPeriodicIO.dr_LeftStickY_Translate;
+            double swerveRotationInput = mPeriodicIO.dr_RightStickX_Rotate;
 
-        if (!maintainHeading) {
-            mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.OFF);
-        } else if (changeHeadingSetpoint) {
-            mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.MAINTAIN);
-            mHeadingController.setGoal(mSwerve.getHeading().getDegrees());
-        }
+            if (mPeriodicIO.dr_LeftTrigger_SlowSpeed) {
+                swerveYInput *= 0.5;
+                swerveXInput *= 0.5;
+                swerveRotationInput *= 0.5;
+            }
 
-        var isFieldOriented = !mPeriodicIO.dr_RightBumper_RobotOrient;
-        if (mHeadingController.getHeadingControllerState() != SwerveHeadingController.HeadingControllerState.OFF) {
-            mSwerve.setTeleopInputs(swerveXInput, swerveYInput, mHeadingController.update(),
-                    false/*mPeriodicIO.dr_LeftTrigger_SlowSpeed*/, isFieldOriented, true);
-        } else {
-            mSwerve.setTeleopInputs(swerveXInput, swerveYInput, swerveRotationInput,
-                    false/*mPeriodicIO.dr_LeftTrigger_SlowSpeed*/, isFieldOriented, false);
+            boolean maintainHeading = mShouldMaintainHeading.update(swerveRotationInput == 0, 0.2);
+            boolean changeHeadingSetpoint = shouldChangeHeadingSetpoint.update(maintainHeading);
+
+            if (!maintainHeading) {
+                mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.OFF);
+            } else if (changeHeadingSetpoint) {
+                mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.MAINTAIN);
+                mHeadingController.setGoal(mSwerve.getHeading().getDegrees());
+            }
+
+            var isFieldOriented = !mPeriodicIO.dr_RightBumper_RobotOrient;
+            if (mHeadingController.getHeadingControllerState() != SwerveHeadingController.HeadingControllerState.OFF) {
+                mSwerve.setTeleopInputs(swerveXInput, swerveYInput, mHeadingController.update(),
+                        false, isFieldOriented, true);
+            } else {
+                mSwerve.setTeleopInputs(swerveXInput, swerveYInput, swerveRotationInput,
+                        false, isFieldOriented, false);
+            }
         }
 
         if (mPeriodicIO.dr_YButton_ResetIMU) {
@@ -240,6 +238,16 @@ public class JSticks extends Subsystem {
 
         if (mPeriodicIO.op_BButton_StopShooter) {
             mShooter.stopFlywheel();
+        }
+
+        if (mPeriodicIO.dr_RightTrigger_AutoShoot) {
+            mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.OFF);
+            mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_SHOOT, sClassName);
+        }
+
+        if (mPeriodicIO.dr_RightTrigger_AutoShoot_Stop) {
+            mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
+            mHeadingController.setGoal(mSwerve.getHeading().getDegrees());
         }
 
         if (mPeriodicIO.op_POV0_ManualShot_Fender) {
@@ -347,6 +355,8 @@ public class JSticks extends Subsystem {
         mPeriodicIO.dr_LeftStickY_Translate = -mDriver.getRaw(Xbox.LEFT_STICK_Y, mDeadBand);
         mPeriodicIO.dr_RightStickX_Rotate = -mDriver.getRaw(Xbox.RIGHT_STICK_X, mDeadBand);
         mPeriodicIO.dr_LeftTrigger_SlowSpeed = mDriver.getButton(Xbox.LEFT_TRIGGER, CW.PRESSED_LEVEL);
+        mPeriodicIO.dr_RightTrigger_AutoShoot = mDriver.getButton(Xbox.RIGHT_TRIGGER, CW.PRESSED_EDGE);
+        mPeriodicIO.dr_RightTrigger_AutoShoot_Stop = mDriver.getButton(Xbox.RIGHT_TRIGGER, CW.RELEASED_EDGE);
         mPeriodicIO.dr_RightBumper_RobotOrient = mDriver.getButton(Xbox.RIGHT_BUMPER, CW.PRESSED_LEVEL); // field/robot
         mPeriodicIO.dr_YButton_ResetIMU = mDriver.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
         // mPeriodicIO.dr_AButton_ToggleDriveMode = mDriver.getButton(Xbox.A_BUTTON, CW.PRESSED_EDGE);
@@ -426,6 +436,7 @@ public class JSticks extends Subsystem {
                 sClassName+".dr_LeftStickY_Translate,"+
                 sClassName+".dr_RightStickX_Rotate,"+
                 sClassName+".dr_RightTrigger_AutoShoot,"+
+                sClassName+".dr_RightTrigger_AutoShoot_Stop,"+
                 sClassName+".dr_LeftTrigger_SlowSpeed,"+
                 sClassName+".dr_RightBumper_RobotOrient,"+
                 sClassName+".dr_YButton_ResetIMU = false,"+
@@ -467,6 +478,7 @@ public class JSticks extends Subsystem {
         mPeriodicIO.dr_LeftStickY_Translate+","+
         mPeriodicIO.dr_RightStickX_Rotate+","+
         mPeriodicIO.dr_RightTrigger_AutoShoot+","+
+        mPeriodicIO.dr_RightTrigger_AutoShoot_Stop+","+
         mPeriodicIO.dr_LeftTrigger_SlowSpeed+","+
         mPeriodicIO.dr_RightBumper_RobotOrient+","+
         mPeriodicIO.dr_YButton_ResetIMU+","+
@@ -514,6 +526,7 @@ public class JSticks extends Subsystem {
         public double dr_LeftStickY_Translate; // drive
         public double dr_RightStickX_Rotate; // drive
         public boolean dr_RightTrigger_AutoShoot = false;
+        public boolean dr_RightTrigger_AutoShoot_Stop = false;
         public boolean dr_LeftTrigger_SlowSpeed = false;
         public boolean dr_RightBumper_RobotOrient = false; // field/robot oriented
         public boolean dr_YButton_ResetIMU = false; // reset direction
