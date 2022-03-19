@@ -8,6 +8,7 @@ import frc.robot.constants.Constants;
 import frc.robot.constants.Ports;
 import frc.robot.subsystems.Climber.WantedState;
 import frc.robot.subsystems.Shooter.SystemState;
+import frc.robot.subsystems.Swerve.ControlState;
 import frc.robot.limelight.LimelightManager;
 import libraries.cheesylib.geometry.Rotation2d;
 import libraries.cheesylib.geometry.Twist2d;
@@ -78,7 +79,7 @@ public class Superstructure extends Subsystem {
     private double mAutoAimMinDistance = 500;
     private double mLastShootingParamsPrintTime = 0.0;
 
-    private double mSwerveFeedforwardVFromVision = 0.0;
+    private double mSwerveFeedforwardFromVision = 0.0;
 
 
     private boolean mOverrideLimelightLEDs = false;
@@ -288,10 +289,16 @@ public class Superstructure extends Subsystem {
         }
 
         var setPointInRadians = getSwerveSetpointFromVision(timestamp);
-
+       
         // Need do aim robot
         if (!mOnTarget) {
-            mSwerve.setAimingSetpoint(setPointInRadians, mSwerveFeedforwardVFromVision, timestamp);
+            mSwerve.setAimingSetpoint(setPointInRadians, 0.0/*mSwerveFeedforwardFromVision*/, timestamp);
+            if (mLatestAimingParameters.isPresent() && mHasTarget){
+                System.out.println("Distance: " + mLatestAimingParameters.get().getRange());
+            }
+            System.out.println("SetPointInRadians: " + setPointInRadians + " Degrees: " + Math.toDegrees(setPointInRadians));
+            System.out.println("FeedForwardFromVision: " + mSwerveFeedforwardFromVision);
+            System.out.println("Has Target: " + mHasTarget + " On Target: " + mOnTarget);
         } else {
             // Stop robot from moving in case aiming PID is still moving it
             mSwerve.setState(Swerve.ControlState.NEUTRAL);
@@ -306,11 +313,19 @@ public class Superstructure extends Subsystem {
             }
 
             if (mShooter.readyToShoot() || !mShootSetup) {
-                mIndexer.setWantedState(Indexer.WantedState.FEED, sClassName);
+                if(mIndexer.getWantedState() != Indexer.WantedState.FEED){
+                    mIndexer.setWantedState(Indexer.WantedState.FEED, sClassName);
+                }
                 mShootSetup = false;
             } else {
-                mIndexer.setWantedState(Indexer.WantedState.HOLD, sClassName);
+                if(mIndexer.getWantedState() != Indexer.WantedState.HOLD){
+                    mIndexer.setWantedState(Indexer.WantedState.HOLD, sClassName);
+                }
             }
+        }
+
+        if (mWantedState != WantedState.AUTO_SHOOT) {
+            mSwerve.setState(ControlState.MANUAL);
         }
         return defaultStateTransfer();
     }
@@ -481,13 +496,13 @@ public class Superstructure extends Subsystem {
      * @return swerve feedforward voltage
      */
     public synchronized double getSwerveFeedforwardVFromVision() {
-        return mSwerveFeedforwardVFromVision;
+        return mSwerveFeedforwardFromVision;
     }
 
     public synchronized void resetAimingParameters() {
         mHasTarget = false;
         mOnTarget = false;
-        mSwerveFeedforwardVFromVision = 0.0;
+        mSwerveFeedforwardFromVision = 0.0;
         mTrackId = -1;
         mLatestAimingParameters = Optional.empty();
     }
@@ -525,13 +540,13 @@ public class Superstructure extends Subsystem {
                     .transformBy(mLatestAimingParameters.get().getFieldToGoal()).getTranslation().direction();
 
             double setPointInRadians =  mSwerve.getHeading().getRadians() + error.getRadians();
-
+            System.out.println("super.getSwervsetpointfromvision:"+error.toString());
             Twist2d velocity = mRobotState.getMeasuredVelocity();
             // Angular velocity component from tangential robot motion about the goal.
             double tangential_component = mLatestAimingParameters.get().getRobotToGoalRotation().sin() * velocity.dx / mLatestAimingParameters.get().getRange();
             double angular_component = Units.radians_to_degrees(velocity.dtheta);
             // Add (opposite) of tangential velocity about goal + angular velocity in local frame.
-            mSwerveFeedforwardVFromVision = -(angular_component + tangential_component);
+            mSwerveFeedforwardFromVision = -(angular_component + tangential_component);
 
             mHasTarget = true;
 

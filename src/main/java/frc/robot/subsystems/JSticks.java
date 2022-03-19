@@ -3,6 +3,7 @@ package frc.robot.subsystems;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.constants.Constants;
 import frc.robot.subsystems.Shooter.SystemState;
+import frc.robot.subsystems.Swerve.ControlState;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.util.LatchedBoolean;
@@ -167,40 +168,37 @@ public class JSticks extends Subsystem {
         Superstructure.WantedState currentState = mSuperstructure.getWantedState();
         Superstructure.WantedState previousState = currentState;
 
-        // disable for the competition
-        // if(mPeriodicIO.dr_AButton_ToggleDriveMode) {
-        //     mSwerve.toggleThroughDriveModes();
-        // }
-
-        // All driver assist to raw inputs should be implemented Swerve#handleManual()
-        double swerveYInput = mPeriodicIO.dr_LeftStickX_Translate;
-        double swerveXInput = mPeriodicIO.dr_LeftStickY_Translate;
-        double swerveRotationInput = mPeriodicIO.dr_RightStickX_Rotate;
-
-        if (mPeriodicIO.dr_LeftTrigger_SlowSpeed) {
-            swerveYInput *= 0.5;
-            swerveXInput *= 0.5;
-            swerveRotationInput *= 0.5;
-        }
-
         // NEW SWERVE
-        boolean maintainHeading = mShouldMaintainHeading.update(swerveRotationInput == 0, 0.2);
-        boolean changeHeadingSetpoint = shouldChangeHeadingSetpoint.update(maintainHeading);
+        if (mSuperstructure.getWantedState() != Superstructure.WantedState.AUTO_SHOOT) {
+        // All driver assist to raw inputs should be implemented Swerve#handleManual()
+            double swerveYInput = mPeriodicIO.dr_LeftStickX_Translate;
+            double swerveXInput = mPeriodicIO.dr_LeftStickY_Translate;
+            double swerveRotationInput = mPeriodicIO.dr_RightStickX_Rotate;
 
-        if (!maintainHeading) {
-            mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.OFF);
-        } else if (changeHeadingSetpoint) {
-            mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.MAINTAIN);
-            mHeadingController.setGoal(mSwerve.getHeading().getDegrees());
-        }
+            if (mPeriodicIO.dr_LeftTrigger_SlowSpeed) {
+                swerveYInput *= 0.5;
+                swerveXInput *= 0.5;
+                swerveRotationInput *= 0.5;
+            }
 
-        var isFieldOriented = !mPeriodicIO.dr_RightBumper_RobotOrient;
-        if (mHeadingController.getHeadingControllerState() != SwerveHeadingController.HeadingControllerState.OFF) {
-            mSwerve.setTeleopInputs(swerveXInput, swerveYInput, mHeadingController.update(),
-                    false/*mPeriodicIO.dr_LeftTrigger_SlowSpeed*/, isFieldOriented, true);
-        } else {
-            mSwerve.setTeleopInputs(swerveXInput, swerveYInput, swerveRotationInput,
-                    false/*mPeriodicIO.dr_LeftTrigger_SlowSpeed*/, isFieldOriented, false);
+            boolean maintainHeading = mShouldMaintainHeading.update(swerveRotationInput == 0, 0.2);
+            boolean changeHeadingSetpoint = shouldChangeHeadingSetpoint.update(maintainHeading);
+
+            if (!maintainHeading) {
+                mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.OFF);
+            } else if (changeHeadingSetpoint) {
+                mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.MAINTAIN);
+                mHeadingController.setGoal(mSwerve.getHeading().getDegrees());
+            }
+
+            var isFieldOriented = !mPeriodicIO.dr_RightBumper_RobotOrient;
+            if (mHeadingController.getHeadingControllerState() != SwerveHeadingController.HeadingControllerState.OFF) {
+                mSwerve.setTeleopInputs(swerveXInput, swerveYInput, mHeadingController.update(),
+                        false, isFieldOriented, true);
+            } else {
+                mSwerve.setTeleopInputs(swerveXInput, swerveYInput, swerveRotationInput,
+                        false, isFieldOriented, false);
+            }
         }
 
         if (mPeriodicIO.dr_YButton_ResetIMU) {

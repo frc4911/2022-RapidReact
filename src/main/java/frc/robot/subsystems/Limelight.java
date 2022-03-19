@@ -229,9 +229,9 @@ public class Limelight extends Subsystem {
 
     @Override
     public synchronized void outputTelemetry() {
-        // SmartDashboard.putBoolean(mConfig.getName() + ": Has Target", mSeesTarget);
+        SmartDashboard.putBoolean(mConfig.getName() + ": Has Target", mSeesTarget);
         SmartDashboard.putNumber(mConfig.getName() + ": Pipeline Latency (ms)", mPeriodicIO.latency);
-        // SmartDashboard.putNumber(mConfig.getName() + ": LED Mode", mPeriodicIO.ledMode);
+        SmartDashboard.putNumber(mConfig.getName() + ": LED Mode", mPeriodicIO.ledMode);
     }
 
     public synchronized void setLed(LedMode mode) {
@@ -283,6 +283,8 @@ public class Limelight extends Subsystem {
     private List<double[]> getTopCorners() {
         double[] corners = mNetworkTable.getEntry("tcornxy").getDoubleArray(mZeroArray);
         mSeesTarget = mNetworkTable.getEntry("tv").getDouble(0) == 1.0;
+
+        // System.out.println("tcornxy: " + Arrays.toString(corners));
 
         // something went wrong
         if (!mSeesTarget || corners.length < 8 || corners == mZeroArray || corners.length % 2 != 0) {
