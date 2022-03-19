@@ -16,6 +16,8 @@ import libraries.cheesylib.drivers.TalonFXFactory;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.subsystems.SubsystemManager;
+import libraries.cheesylib.util.InterpolatingDouble;
+import libraries.cheesylib.util.InterpolatingTreeMap;
 import libraries.cheesylib.util.LatchedBoolean;
 
 public class Shooter extends Subsystem {
@@ -38,22 +40,25 @@ public class Shooter extends Subsystem {
     private final double kHoodSlope = (kMaxHoodPosition - kMinHoodPosition) / (kMaxShootDistance - kMinShootDistance);
 
     // Configuration Constants
-    private final double kFlywheelKp = 0.1;
-    private final double kFlywheelKi = 0.0;
-    private final double kFlywheelKd = 0.0;
+    private final double kFlywheelKp = 0.13;
+    private final double kFlywheelKi = 0.0;//001;
+    private final double kFlywheelKd = 2.0;
     private final double kFlywheelKf = 0.05;
-    private final double kClosedRamp = 0.5;
+    private final double kClosedRamp = 1;
     private final double kClosedError = 25.0;
+    private final double kFlyIntegralZone = 700;
 
     private final double kFlywheelCurrentLimit = 40;
-    private final double kHoodCurrentLimit = 5;
+    private final double kHoodCurrentLimitLow = 5;
+    private final double kHoodCurrentLimitHigh = 15;
 
     // Subsystem States
     public enum SystemState {
         DISABLING,
         HOMINGHOOD,
         HOLDING,
-        SHOOTING
+        SHOOTING,
+        TESTING
     }
 
     public enum WantedState {
@@ -61,6 +66,7 @@ public class Shooter extends Subsystem {
         HOMEHOOD,
         HOLD,
         SHOOT,
+        TEST
     }
 
     private SystemState mSystemState;
@@ -84,8 +90,13 @@ public class Shooter extends Subsystem {
     private WantedState wantedStateAfterHoming = WantedState.HOLD; // state to transition to after homed
     private double hoodEncoderOffset = 0; // used after homing to avoid resetting encoder position
 
+
+    InterpolatingTreeMap<InterpolatingDouble, InterpolatingDouble> shooterSpeedMap= new InterpolatingTreeMap<>();
+    InterpolatingTreeMap<InterpolatingDouble, InterpolatingDouble> shooterHoodMap= new InterpolatingTreeMap<>();
+
     double minSpeed;
     double minHood;
+    private double hoodTestDemand;
 
     private double mDistance = -1;
     private boolean turnOffFlywheel = false;
@@ -113,11 +124,12 @@ public class Shooter extends Subsystem {
     private Shooter(String caller) {
         sClassName = this.getClass().getSimpleName();
         printUsage(caller);
-        mFXLeftFlyWheel = TalonFXFactory.createDefaultTalon(Ports.LEFT_FLYWHEEL);
-        mFXRightFlyWheel = TalonFXFactory.createDefaultTalon(Ports.RIGHT_FLYWHEEL);
-        mFXHood = TalonFXFactory.createDefaultTalon(Ports.SHOOTER_HOOD);
+        mFXLeftFlyWheel = TalonFXFactory.createDefaultTalon(Ports.LEFT_FLYWHEEL, Constants.kCanivoreName);
+        mFXRightFlyWheel = TalonFXFactory.createDefaultTalon(Ports.RIGHT_FLYWHEEL, Constants.kCanivoreName);
+        mFXHood = TalonFXFactory.createDefaultTalon(Ports.SHOOTER_HOOD, Constants.kCanivoreName);
         mSubsystemManager = SubsystemManager.getInstance(sClassName);
         configMotors();
+        buildInterpTree();
     }
 
     private void configMotors() {
@@ -152,12 +164,8 @@ public class Shooter extends Subsystem {
 
         // parameters are enable, current limit after triggering, trigger limit, time
         // allowed to exceed trigger limit before triggering
-        mFXLeftFlyWheel.configStatorCurrentLimit(
-                new StatorCurrentLimitConfiguration(true, kFlywheelCurrentLimit, kFlywheelCurrentLimit, 0));
-        mFXRightFlyWheel.configStatorCurrentLimit(
-                new StatorCurrentLimitConfiguration(true, kFlywheelCurrentLimit, kFlywheelCurrentLimit, 0));
-        mFXHood.configStatorCurrentLimit(
-                new StatorCurrentLimitConfiguration(true, kHoodCurrentLimit, kHoodCurrentLimit, 0));
+         mFXLeftFlyWheel.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kFlywheelCurrentLimit, kFlywheelCurrentLimit, 0));
+        mFXRightFlyWheel.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kFlywheelCurrentLimit, kFlywheelCurrentLimit, 0));
 
         mFXRightFlyWheel.selectProfileSlot(0, 0);
         mFXLeftFlyWheel.selectProfileSlot(0, 0);
@@ -167,7 +175,7 @@ public class Shooter extends Subsystem {
         mFXLeftFlyWheel.config_kI(0, kFlywheelKi, Constants.kLongCANTimeoutMs);
         mFXLeftFlyWheel.config_kD(0, kFlywheelKd, Constants.kLongCANTimeoutMs);
         mFXLeftFlyWheel.config_kF(0, kFlywheelKf, Constants.kLongCANTimeoutMs);
-        mFXLeftFlyWheel.config_IntegralZone(0, 0, Constants.kLongCANTimeoutMs);
+        mFXLeftFlyWheel.config_IntegralZone(0, kFlyIntegralZone, Constants.kLongCANTimeoutMs);
         mFXLeftFlyWheel.configClosedloopRamp(kClosedRamp, Constants.kLongCANTimeoutMs);
         mFXLeftFlyWheel.configAllowableClosedloopError(0, kClosedError, Constants.kLongCANTimeoutMs);
 
@@ -175,22 +183,41 @@ public class Shooter extends Subsystem {
         mFXRightFlyWheel.config_kI(0, kFlywheelKi, Constants.kLongCANTimeoutMs);
         mFXRightFlyWheel.config_kD(0, kFlywheelKd, Constants.kLongCANTimeoutMs);
         mFXRightFlyWheel.config_kF(0, kFlywheelKf, Constants.kLongCANTimeoutMs);
-        mFXRightFlyWheel.config_IntegralZone(0, 0, Constants.kLongCANTimeoutMs);
+        mFXRightFlyWheel.config_IntegralZone(0, kFlyIntegralZone, Constants.kLongCANTimeoutMs);
         mFXRightFlyWheel.configClosedloopRamp(kClosedRamp, Constants.kLongCANTimeoutMs);
         mFXRightFlyWheel.configAllowableClosedloopError(0, kClosedError, Constants.kLongCANTimeoutMs);
 
-        mFXHood.config_kP(0, 0.5, Constants.kLongCANTimeoutMs); // May need to tune more?
-        mFXHood.config_kI(0, 0, Constants.kLongCANTimeoutMs);
-        mFXHood.config_kD(0, 0, Constants.kLongCANTimeoutMs);
+        mFXHood.config_kP(0, 0.7, Constants.kLongCANTimeoutMs); // May need to tune more? .7,.1,15
+        mFXHood.config_kI(0, 0.04, Constants.kLongCANTimeoutMs);
+        mFXHood.config_kD(0, 10.0, Constants.kLongCANTimeoutMs);
         mFXHood.config_kF(0, 0, Constants.kLongCANTimeoutMs);
-        mFXHood.config_IntegralZone(0, 0, Constants.kLongCANTimeoutMs);
+        mFXHood.config_IntegralZone(0, 200, Constants.kLongCANTimeoutMs);
         mFXHood.configClosedloopRamp(0/* kClosedRamp */, Constants.kLongCANTimeoutMs);
-        mFXHood.configAllowableClosedloopError(0, kClosedError, Constants.kLongCANTimeoutMs);
+        mFXHood.configAllowableClosedloopError(0, 15 /*kClosedError*/, Constants.kLongCANTimeoutMs);
 
-        mFXHood.configMotionCruiseVelocity(5000); // 10000 ticks/second
-        mFXHood.configMotionAcceleration(1000); // 2500 ticks/(sec^2)
-        mFXHood.configMotionSCurveStrength(0); // trapizoidal curve
+        mFXHood.configMotionCruiseVelocity(10000); // ticks/100ms // measured 8800 ave ticks/second while traveling full path
+        mFXHood.configMotionAcceleration(5400); // ticks/100mse/sec // 2500 ticks/(sec^2)
+        mFXHood.configMotionSCurveStrength(0); // trapezoidal curve
+    }
 
+    private void buildInterpTree(){
+        shooterHoodMap.put(new InterpolatingDouble(0.0),   new InterpolatingDouble(3000.0));
+        shooterHoodMap.put(new InterpolatingDouble(24.0),  new InterpolatingDouble(12000.0));
+        shooterHoodMap.put(new InterpolatingDouble(48.0),  new InterpolatingDouble(16500.0));
+        shooterHoodMap.put(new InterpolatingDouble(72.0),  new InterpolatingDouble(22000.0));
+        shooterHoodMap.put(new InterpolatingDouble(96.0),  new InterpolatingDouble(26000.0));
+        shooterHoodMap.put(new InterpolatingDouble(120.0), new InterpolatingDouble(28500.0));
+        shooterHoodMap.put(new InterpolatingDouble(144.0), new InterpolatingDouble(28500.0));
+
+        shooterSpeedMap.put(new InterpolatingDouble(0.0),   new InterpolatingDouble(10900.0));
+        shooterSpeedMap.put(new InterpolatingDouble(24.0),  new InterpolatingDouble(11300.0));
+        shooterSpeedMap.put(new InterpolatingDouble(48.0),  new InterpolatingDouble(12000.0));
+        shooterSpeedMap.put(new InterpolatingDouble(72.0),  new InterpolatingDouble(12300.0));
+        shooterSpeedMap.put(new InterpolatingDouble(96.0),  new InterpolatingDouble(13000.0));
+        shooterSpeedMap.put(new InterpolatingDouble(120.0), new InterpolatingDouble(13500.0));
+        shooterSpeedMap.put(new InterpolatingDouble(144.0), new InterpolatingDouble(14400.0));
+
+        System.out.println("interp 60 => 12150 answer is "+(shooterSpeedMap.getInterpolated(new InterpolatingDouble(60.0))).value);
     }
 
     @Override
@@ -198,8 +225,13 @@ public class Shooter extends Subsystem {
         synchronized (Shooter.this) {
             mStateChanged = true;
             switch (phase) {
-                case DISABLED:
                 case TEST:
+                    mSystemState = SystemState.TESTING;
+                    mWantedState = WantedState.TEST;
+                    mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
+                    hoodTestDemand = 0;
+                    break;
+                case DISABLED:
                     mSystemState = SystemState.DISABLING;
                     mWantedState = WantedState.DISABLE;
                     mPeriodicIO.schedDeltaDesired = 0; // goto sleep
@@ -214,6 +246,12 @@ public class Shooter extends Subsystem {
             }
             stop();
             System.out.println(sClassName + " state " + mSystemState);
+            if (!hoodHomed){
+                mFXHood.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kHoodCurrentLimitLow, kHoodCurrentLimitLow, 0));    
+            }
+            else{
+                mFXHood.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kHoodCurrentLimitHigh, kHoodCurrentLimitHigh, 0));
+            }
         }
     }
 
@@ -225,6 +263,9 @@ public class Shooter extends Subsystem {
                 switch (mSystemState) {
                     case DISABLING:
                         newState = handleDisabling();
+                        break;
+                    case TESTING:
+                        newState = handleTesting();
                         break;
                     case HOMINGHOOD:
                         newState = handleHomingHood();
@@ -282,6 +323,8 @@ public class Shooter extends Subsystem {
     private SystemState handleHomingHood() {
         double now = Timer.getFPGATimestamp();
         if (mStateChanged) {
+            System.out.println("Start homing hood");
+            mFXHood.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kHoodCurrentLimitLow, kHoodCurrentLimitLow, 0));    
             hoodHomed = false;
             hoodEncoderOffset = 0;
             hoodNonMovementTimeout = now + hoodNonMovementDuration;
@@ -295,11 +338,11 @@ public class Shooter extends Subsystem {
 
         if (now > hoodNonMovementTimeout) {
             // instead of resetting the sensor the code remembers the offset
-            // mFXHood.setSelectedSensorPosition(0); // brian
             hoodEncoderOffset = mPeriodicIO.hoodPosition;
             hoodHomed = true;
+            mFXHood.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kHoodCurrentLimitHigh, kHoodCurrentLimitHigh, 0));
             mWantedState = wantedStateAfterHoming;
-            System.out.println("homing is complete");
+            System.out.println("homing hood is complete");
         }
 
         return defaultStateTransfer();
@@ -319,6 +362,18 @@ public class Shooter extends Subsystem {
         updateShooterStatus();
 
         return holdingStateTransfer();
+    }
+
+    private SystemState handleTesting() {
+        if (mStateChanged) {
+            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
+            turnOffFlywheel = true; // only testing hood right now
+            // test code runs open loop so don't care if it is homed and current limit must be low
+            mFXHood.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kHoodCurrentLimitHigh, kHoodCurrentLimitHigh, 0));
+        }
+        mPeriodicIO.hoodDemand = hoodTestDemand;
+
+        return defaultStateTransfer();
     }
 
     private SystemState handleShooting() {
@@ -348,6 +403,8 @@ public class Shooter extends Subsystem {
         switch (mWantedState) {
             case SHOOT:
                 return SystemState.SHOOTING;
+            case TEST:
+                return SystemState.TESTING;
             case DISABLE:
                 return SystemState.DISABLING;
             case HOMEHOOD:
@@ -370,13 +427,49 @@ public class Shooter extends Subsystem {
         }
     }
 
+    // public synchronized void setHoodTestDemand(double hoodTestDemand) {
+    //     this.hoodTestDemand = hoodTestDemand;
+    // }
+
+    // boolean modifiedFly = false;
+    // boolean modifiedHood = false;
+    // double tempFlyDemand = 0;
+    // double tempHoodDemand = 0;
+
+    // public synchronized void setTempDemands(double tempHoodDemand, double tempFlyDemand){
+    //     modifiedFly = true;
+    //     modifiedHood = true;
+    //     this.tempFlyDemand = tempFlyDemand;
+    //     this.tempHoodDemand = tempHoodDemand;
+    //     System.out.println("tempDemands hood:"+tempHoodDemand+" fly:"+tempFlyDemand);
+    // }
+
+    // public double getFlyDemand(){
+    //     return mPeriodicIO.flywheelVelocityDemand;
+    // }
+
+    // public double getHoodDemand(){
+    //     return mPeriodicIO.hoodDemand;
+    // }
+
     private void updateShooterStatus() {
-        mPeriodicIO.flywheelVelocityDemand = distanceToTicksPer100Ms(mDistance);
+        // if (modifiedFly){
+        //     mPeriodicIO.flywheelVelocityDemand = tempFlyDemand;
+        // }
+        // else {
+            mPeriodicIO.flywheelVelocityDemand = distanceToTicksPer100Ms(mDistance);
+        // }
         mPeriodicIO.reachedDesiredSpeed = Math
                 .abs(mPeriodicIO.flywheelVelocity - mPeriodicIO.flywheelVelocityDemand) <= 300;
 
         if (hoodHomed) {
-            mPeriodicIO.hoodDemand = distanceToHoodPos(mDistance);
+            // if (modifiedHood){
+            //     mPeriodicIO.hoodDemand = tempHoodDemand;
+            // }
+            // else{
+                mPeriodicIO.hoodDemand = distanceToHoodPos(mDistance);
+            // }
+    
             mPeriodicIO.reachedDesiredHoodPosition = Math.abs(mPeriodicIO.hoodPosition - mPeriodicIO.hoodDemand) <= 100;
         } else {
             mPeriodicIO.hoodDemand = hoodHomingDemand;
@@ -391,14 +484,17 @@ public class Shooter extends Subsystem {
     }
 
     private double distanceToTicksPer100Ms(double distance) {
-        return (kFlywheelSlope * distance) + kMinShootSpeed;
+        return (shooterSpeedMap.getInterpolated(new InterpolatingDouble(distance))).value;
+
+        // return shooterSpeedMap.get(new InterpolatingDouble(distance)).;
     }
 
     // Hood range is from 0 to 27800 ticks
     // Hood range is from 15.82 degrees to 35.82 degrees
     // 1390 falcon ticks per degree
     private double distanceToHoodPos(double distance) {
-        return (kHoodSlope * distance) + kMinHoodPosition;
+        return (shooterHoodMap.getInterpolated(new InterpolatingDouble(distance))).value;
+        // return (kHoodSlope * distance) + kMinHoodPosition;
     }
 
     @Override
@@ -429,9 +525,25 @@ public class Shooter extends Subsystem {
     public void writePeriodicOutputs() {
         double velocity = turnOffFlywheel ? 0.0 : mPeriodicIO.flywheelVelocityDemand;
         setMotors(velocity, mPeriodicIO.hoodDemand);
+
+        // SmartDashboard.putNumber("Hood Position", mPeriodicIO.hoodPosition);
+        // SmartDashboard.putNumber("Flywheel Speed", mPeriodicIO.flywheelVelocity);
+        // SmartDashboard.putNumber("Hood Demand", mPeriodicIO.hoodDemand);
+        // SmartDashboard.putNumber("Flywheel demand", mPeriodicIO.flywheelVelocityDemand);
+
     }
 
+    double lastHoodDemand;
+    double lastFlyDemand;
     private void setMotors(double flyDemand, double hoodDemand) {
+        if (lastHoodDemand != hoodDemand){
+            System.out.println("new hoodDemand "+hoodDemand);
+            lastHoodDemand = hoodDemand;
+        }
+        if (lastFlyDemand != flyDemand){
+            System.out.println("new flyDemand "+flyDemand);
+            lastFlyDemand = flyDemand;
+        }
         mFXLeftFlyWheel.set(ControlMode.Velocity, flyDemand);
         mFXRightFlyWheel.set(ControlMode.Velocity, flyDemand);
         // TODO: see if there is a better way to "flush" a magicmotion path
@@ -439,14 +551,17 @@ public class Shooter extends Subsystem {
         // until moving up
         if (mSystemState == SystemState.HOMINGHOOD) {
             mFXHood.set(ControlMode.Position, unadjustHoodEncoderPosition(hoodDemand));
-        } else {
+        }
+        else if (mSystemState == SystemState.TESTING){
+            mFXHood.set(ControlMode.PercentOutput, hoodDemand);
+        }
+        else {
             mFXHood.set(ControlMode.MotionMagic, unadjustHoodEncoderPosition(hoodDemand));
         }
     }
 
     @Override
     public void stop() {
-        System.out.println(sClassName + " stop()");
         mFXLeftFlyWheel.set(ControlMode.PercentOutput, 0);
         mFXRightFlyWheel.set(ControlMode.PercentOutput, 0);
     }
@@ -458,27 +573,63 @@ public class Shooter extends Subsystem {
 
     @Override
     public String getLogHeaders() {
-        return "Shooter";
+        return  sClassName+".schedDeltaDesired,"+
+                sClassName+".schedDeltaActual,"+
+                sClassName+".schedDuration,"+
+                sClassName+".mSystemState,"+
+                sClassName+".mWantedState,"+
+                sClassName+".flywheelVelocity,"+
+                sClassName+".hoodPosition,"+
+                sClassName+".flywheelVelocityDemand,"+
+                sClassName+".hoodDemand,"+
+                sClassName+".reachedDesiredSpeed,"+
+                sClassName+".reachedDesiredHoodPosition,"+
+                sClassName+".mDistance,"+
+                sClassName+".hoodHomed";
     }
 
     @Override
     public String getLogValues(boolean telemetry) {
-        return "Shooter.Values";
+        String start;
+        if (telemetry){
+            start = ",,,";
+        }
+        else{
+            start = mPeriodicIO.schedDeltaDesired+","+
+                    mPeriodicIO.schedDeltaActual+","+
+                    (Timer.getFPGATimestamp()-mPeriodicIO.lastSchedStart)+",";
+        }
+        return  start+
+        mSystemState+","+
+        mWantedState+","+
+        mPeriodicIO.flywheelVelocity+","+
+        mPeriodicIO.hoodPosition+","+
+        mPeriodicIO.flywheelVelocityDemand+","+
+        mPeriodicIO.hoodDemand+","+
+        mPeriodicIO.reachedDesiredSpeed+","+
+        mPeriodicIO.reachedDesiredHoodPosition+","+
+        mDistance+","+
+        hoodHomed;
     }
 
     @Override
     public void outputTelemetry() {
+        SmartDashboard.putNumber("Hood demand", mPeriodicIO.hoodDemand);
+        SmartDashboard.putNumber("Flywheel demand", mPeriodicIO.flywheelVelocityDemand);
         SmartDashboard.putNumber("Hood Position", mPeriodicIO.hoodPosition);
         SmartDashboard.putNumber("Flywheel Speed", mPeriodicIO.flywheelVelocity);
         SmartDashboard.putBoolean("Reached Desired Speed", mPeriodicIO.reachedDesiredSpeed);
         SmartDashboard.putBoolean("Reached Desired Hood", mPeriodicIO.reachedDesiredHoodPosition);
-        SmartDashboard.putBoolean("Ready To Shoot", readyToShoot());
-        // these next values are bypassing readPeriodicInputs to reduce the ctre errors
-        // in
-        // riolog
-        SmartDashboard.putNumber("Flywheel Right Current", mFXRightFlyWheel.getStatorCurrent());
-        SmartDashboard.putNumber("Flywheel Left Current", mFXLeftFlyWheel.getStatorCurrent());
-        SmartDashboard.putNumber("Hood Current", mFXHood.getStatorCurrent());
+        // SmartDashboard.putBoolean("Ready To Shoot", readyToShoot());
+        // // these next values are bypassing readPeriodicInputs to reduce the ctre errors
+        // // in
+        // // riolog
+        // SmartDashboard.putNumber("FlyStatorRight", mFXRightFlyWheel.getStatorCurrent());
+        // SmartDashboard.putNumber("FlyStatorLeft", mFXLeftFlyWheel.getStatorCurrent());
+        // SmartDashboard.putNumber("HoodStator", mFXHood.getStatorCurrent());
+        // SmartDashboard.putNumber("FlySupplyRight", mFXRightFlyWheel.getSupplyCurrent());
+        // SmartDashboard.putNumber("FlySupplyLeft", mFXLeftFlyWheel.getSupplyCurrent());
+        // SmartDashboard.putNumber("HoodSupply", mFXHood.getSupplyCurrent());
     }
 
     public static class PeriodicIO {
@@ -486,7 +637,6 @@ public class Shooter extends Subsystem {
         public final int mDefaultSchedDelta = 20; // loop run every 20 msec
         public int schedDeltaDesired;
         public double schedDeltaActual;
-        public double schedDuration;
         public double lastSchedStart;
 
         // Inputs

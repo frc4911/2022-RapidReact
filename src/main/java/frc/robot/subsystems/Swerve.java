@@ -22,6 +22,8 @@ import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.trajectory.TrajectoryIterator;
 import libraries.cheesylib.trajectory.timing.TimedState;
+import libraries.cheesylib.util.SynchronousPIDF;
+import libraries.cheesylib.util.Util;
 import libraries.cyberlib.kinematics.ChassisSpeeds;
 import libraries.cyberlib.kinematics.SwerveDriveKinematics;
 import libraries.cyberlib.kinematics.SwerveDriveOdometry;
@@ -64,6 +66,12 @@ public class Swerve extends Subsystem {
 
     private final SwerveDriveOdometry mOdometry;
     private final SwerveDriveKinematics mKinematics;
+
+    // Aiming Controller to turn in place when using vision system to aim
+    private SynchronousPIDF mAimingController = new SynchronousPIDF(
+            Constants.kAimingKP, Constants.kAimingKI, Constants.kAimingKD
+    );
+    private double lastAimTimestamp = -1.0;
 
     // Trajectory following
     private static DriveMotionPlanner mMotionPlanner;
@@ -149,6 +157,9 @@ public class Swerve extends Subsystem {
                 case PATH_FOLLOWING:
                     updatePathFollower(lastUpdateTimestamp);
                     break;
+                case VISION_AIM:
+                    handleAiming(timestamp);
+                    break;
                 case NEUTRAL:
                 case DISABLED:
                 default:
@@ -168,7 +179,7 @@ public class Swerve extends Subsystem {
     }
 
     public void convertCancoderToFX(){
-        mModules.forEach((m) -> m.convertCancoderToFX());
+        mModules.forEach((m) -> m.convertCancoderToFX2());
     }
 
     @Override
@@ -278,6 +289,25 @@ public class Swerve extends Subsystem {
                 mPeriodicIO.swerveModuleStates, mSwerveConfiguration.maxSpeedInMetersPerSecond);
     }
 
+    private void handleAiming(double timestamp) {
+        var dt = timestamp - lastAimTimestamp;
+        lastAimTimestamp = timestamp;
+
+        if (dt > Util.kEpsilon) {
+            mAimingController.setSetpoint(mPeriodicIO.visionSetpointInRadians);
+            var rotation = mAimingController.calculate(getHeading().getRadians(), dt);
+
+            // Turn in place implies no translational velocity.
+            HolonomicDriveSignal driveSignal = new HolonomicDriveSignal(
+                    Translation2d.identity(),
+                    rotation,
+                    true);
+
+            updateModules(driveSignal);
+            System.out.println("Robot Pose " + mPeriodicIO.robotPose);
+        }
+    }
+
     // //Assigns appropriate directions for scrub factors
     // public void setCarpetDirection(boolean standardDirection) {
     // mModules.forEach((m) -> m.setCarpetDirection(standardDirection));
@@ -302,6 +332,9 @@ public class Swerve extends Subsystem {
             System.out.println(mControlState + " to " + newState);
             switch (newState) {
                 case NEUTRAL:
+                    mPeriodicIO.strafe = 0;
+                    mPeriodicIO.forward = 0;
+                    mPeriodicIO.rotation = 0;
                     stopSwerveDriveModules();
                     mPeriodicIO.schedDeltaDesired = 10; // this is a fast cycle used while testing
                     break;
@@ -324,8 +357,10 @@ public class Swerve extends Subsystem {
     }
 
     public Rotation2d getHeading() {
-        return mOdometry.getPose().getRotation();
+        return mPeriodicIO.robotPose.getRotation();
     }
+
+    public ChassisSpeeds getChassisSpeeds() { return mPeriodicIO.chassisSpeeds; }
 
     /**
      * Sets the current robot position on the field.
@@ -466,6 +501,25 @@ public class Swerve extends Subsystem {
         // mModules.forEach((m) -> m.zeroSensors(startingPose));
     }
 
+
+    /**
+     * Set the setpoint used when aiming the robot for auto shooting.
+     *
+     * @param setPointInRadians Setpoint in radians
+     * @param feedforward Feed-forward term
+     * @param timestamp Current timestamp
+     */
+    public synchronized void setAimingSetpoint(double setPointInRadians, double feedforward, double timestamp) {
+        if (mControlState != ControlState.VISION_AIM) {
+            mControlState = ControlState.VISION_AIM;
+            // seed the last timestamp
+            lastAimTimestamp = timestamp;
+            mAimingController.reset();
+        }
+        mPeriodicIO.visionSetpointInRadians = setPointInRadians;
+        mPeriodicIO.visionFeedForward = feedforward;
+    }
+
     /**
      * Sets inputs from driver in teleop mode.
      * <p>
@@ -496,48 +550,39 @@ public class Swerve extends Subsystem {
 
     @Override
     public String getLogHeaders() {
-        StringBuilder allHeaders = new StringBuilder(256);
-        for (SwerveDriveModule m : mModules) {
-            if (allHeaders.length() > 0) {
-                allHeaders.append(",");
-            }
-            allHeaders.append(m.getLogHeaders());
-        }
+        String headers;
 
-        allHeaders.append("," + sClassName + ".schedDeltaDesired," +
-                sClassName + ".schedDeltaActual," +
-                sClassName + ".schedDuration");
+        headers =   sClassName + ".schedDeltaDesired," +
+                    sClassName + ".schedDeltaActual," +
+                    sClassName + ".schedDuration," +
+                    sClassName + ".gyro_heading,";
 
-        return allHeaders.toString();
+                    headers += mModules.get(0).getLogHeaders()+",";
+                    headers += mModules.get(1).getLogHeaders()+",";
+                    headers += mModules.get(2).getLogHeaders()+",";
+                    headers += mModules.get(3).getLogHeaders();
+        return headers;
     }
 
-    private String generateLogValues(boolean telemetry) {
-        String values;
-        if (telemetry) {
-            values = "" + /* mPeriodicIO.schedDeltaDesired+ */"," +
-            /* mPeriodicIO.schedDeltaActual+ */","
-            /* mPeriodicIO.schedDuration */;
-        } else {
-            mPeriodicIO.schedDuration = Timer.getFPGATimestamp() - mPeriodicIO.lastSchedStart;
-            values = "" + mPeriodicIO.schedDeltaDesired + "," +
-                    mPeriodicIO.schedDeltaActual + "," +
-                    mPeriodicIO.schedDuration;
-        }
-
-        return values;
-    }
 
     @Override
     public String getLogValues(boolean telemetry) {
-        StringBuilder allValues = new StringBuilder(256);
-        for (SwerveDriveModule m : mModules) {
-            if (allValues.length() > 0) {
-                allValues.append(",");
-            }
-            allValues.append(m.getLogValues(telemetry));
+        String values;
+        if (telemetry) {
+            values = ",,,";
+        } else {
+            values = "" + mPeriodicIO.schedDeltaDesired + "," +
+                         mPeriodicIO.schedDeltaActual + "," +
+                         (Timer.getFPGATimestamp() - mPeriodicIO.lastSchedStart)+",";
         }
-        allValues.append("," + generateLogValues(telemetry));
-        return allValues.toString();
+
+        values += mPeriodicIO.gyro_heading.getDegrees()+",";
+        values += mModules.get(0).getLogValues(telemetry)+",";
+        values += mModules.get(1).getLogValues(telemetry)+",";
+        values += mModules.get(2).getLogValues(telemetry)+",";
+        values += mModules.get(3).getLogValues(telemetry);
+
+        return values;
     }
 
     @Override
@@ -546,7 +591,7 @@ public class Swerve extends Subsystem {
         mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
         mPeriodicIO.lastSchedStart = now;
         mPeriodicIO.gyro_heading = Rotation2d.fromDegrees(mIMU.getYaw().getDegrees()).rotateBy(mGyroOffset);
-        mPeriodicIO.gyroYaw = mIMU.getYaw();
+        // mPeriodicIO.gyroYaw = mIMU.getYaw();
 
         // read modules
         mModules.forEach((m) -> m.readPeriodicInputs());
@@ -570,12 +615,12 @@ public class Swerve extends Subsystem {
 
     @Override
     public void outputTelemetry() {
-        mModules.forEach((m) -> m.outputTelemetry());
-        SmartDashboard.putString("Swerve/Swerve State", mControlState.toString());
-        SmartDashboard.putString("Swerve/Pose", mPeriodicIO.robotPose.toString());
-        SmartDashboard.putString("Swerve/Chassis Speeds", mPeriodicIO.chassisSpeeds.toString());
+        // mModules.forEach((m) -> m.outputTelemetry());
+        // SmartDashboard.putString("Swerve/Swerve State", mControlState.toString());
+        // SmartDashboard.putString("Swerve/Pose", mPeriodicIO.robotPose.toString());
+        // SmartDashboard.putString("Swerve/Chassis Speeds", mPeriodicIO.chassisSpeeds.toString());
         // SmartDashboard.putBoolean("Swerve/isOnTarget", isOnTarget());
-
+        
         if (Constants.kDebuggingOutput) {
             // Get the current pose from odometry state
             SmartDashboard.putString("Swerve/Pose", mPeriodicIO.robotPose.toString());
@@ -596,7 +641,7 @@ public class Swerve extends Subsystem {
 
             
             SmartDashboard.putString("Swerve/Pigeon Heading", mPeriodicIO.gyro_heading.toString());
-            SmartDashboard.putString("Swerve/Pigeon Raw Yaw", mPeriodicIO.gyroYaw.toString());
+            // SmartDashboard.putString("Swerve/Pigeon Raw Yaw", mPeriodicIO.gyroYaw.toString());
         }
     }
 
@@ -604,7 +649,6 @@ public class Swerve extends Subsystem {
         // LOGGING
         public int schedDeltaDesired;
         public double schedDeltaActual;
-        public double schedDuration;
         private double lastSchedStart;
 
         // Updated as part of periodic odometry
@@ -615,9 +659,13 @@ public class Swerve extends Subsystem {
         public Pose2d error = Pose2d.identity();
         public TimedState<Pose2dWithCurvature> path_setpoint = new TimedState<>(Pose2dWithCurvature.identity());
 
+        // Updated as part of vision aiming
+        public double visionSetpointInRadians;
+        public double visionFeedForward;
+
         // Inputs
         public Rotation2d gyro_heading = Rotation2d.identity();
-        public Rotation2d gyroYaw = Rotation2d.identity();
+        // public Rotation2d gyroYaw = Rotation2d.identity();
         public double forward;
         public double strafe;
         public double rotation;

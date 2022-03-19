@@ -1,8 +1,11 @@
 package frc.robot.subsystems;
 
+import edu.wpi.first.wpilibj.Timer;
 import frc.robot.RobotState;
+import libraries.cheesylib.geometry.Twist2d;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
+import libraries.cyberlib.kinematics.ChassisSpeeds;
 
 public class RobotStateEstimator extends Subsystem {
 
@@ -16,14 +19,16 @@ public class RobotStateEstimator extends Subsystem {
 
     private SystemState mSystemState;
     private WantedState mWantedState;
-    private PeriodicIO mPeriodicIO;
+    private final PeriodicIO mPeriodicIO;
     @SuppressWarnings("unused")
     private boolean mStateChanged;
     private final boolean mLoggingEnabled = true; // used to disable logging for this subsystem only
     private static int mDefaultSchedDelta = 20;
-    RobotState robotState;// = RobotState.getInstance();
+    RobotState mRobotState;
     Swerve mSwerve;
-    @SuppressWarnings("unused")
+
+    private ChassisSpeeds mPrevChassisSpeeds = null;
+    private double mPrevTimestamp = -1.0;
 
     private static String sClassName;
     private static int sInstanceCount;
@@ -47,7 +52,7 @@ public class RobotStateEstimator extends Subsystem {
         printUsage(caller);
         mPeriodicIO = new PeriodicIO();
         mSwerve = Swerve.getInstance(sClassName);
-        robotState = RobotState.getInstance(sClassName);
+        mRobotState = RobotState.getInstance(sClassName);
     }
 
     @Override
@@ -58,6 +63,7 @@ public class RobotStateEstimator extends Subsystem {
             mStateChanged = true;
             System.out.println(sClassName + " state " + mSystemState);
             mPeriodicIO.schedDeltaDesired = mDefaultSchedDelta;
+            mPrevTimestamp = Timer.getFPGATimestamp();
         }
     }
 
@@ -82,7 +88,27 @@ public class RobotStateEstimator extends Subsystem {
     }
 
     private SystemState handleEstimating(double timestamp) {
-        robotState.addFieldToVehicleObservation(timestamp, mSwerve.getPose());
+        if (mPrevChassisSpeeds == null) {
+            mPrevChassisSpeeds = mSwerve.getChassisSpeeds();
+        }
+
+        final double dt = timestamp - mPrevTimestamp;
+        final ChassisSpeeds chassisSpeeds = mSwerve.getChassisSpeeds();
+
+        final Twist2d measuredVelocity = new Twist2d(
+                chassisSpeeds.vxInMetersPerSecond,
+                chassisSpeeds.vyInMetersPerSecond,
+                chassisSpeeds.omegaInRadiansPerSecond);
+
+        final Twist2d predictedVelocity = new Twist2d(
+                chassisSpeeds.vxInMetersPerSecond - mPrevChassisSpeeds.vxInMetersPerSecond,
+                chassisSpeeds.vyInMetersPerSecond - mPrevChassisSpeeds.vyInMetersPerSecond,
+                chassisSpeeds.omegaInRadiansPerSecond - mPrevChassisSpeeds.omegaInRadiansPerSecond
+               ).scaled(1.0 / dt);
+
+        mRobotState.addFieldToVehicleObservation(timestamp, mSwerve.getPose(), measuredVelocity, predictedVelocity);
+        mPrevChassisSpeeds = chassisSpeeds;
+        mPrevTimestamp = timestamp;
         return defaultStateTransfer();
     }
 
@@ -110,36 +136,35 @@ public class RobotStateEstimator extends Subsystem {
 
     @Override
     public void stop() {
-        System.out.println(sClassName + " stop()");
     }
 
     @Override
     public String getLogHeaders() {
-        if (mLoggingEnabled) {
-            return sClassName + ".systemState," +
-                    sClassName + ".schedDeltaDesired";
-        }
-
-        return null;
-    }
-
-    private String generateLogValues(boolean telemetry) {
-        String values = "" + mSystemState + "," +
-                mPeriodicIO.schedDeltaDesired;
-        return values;
+        return  sClassName+".schedDeltaDesired,"+
+                sClassName+".schedDeltaActual,"+
+                sClassName+".schedDuration";
     }
 
     @Override
     public String getLogValues(boolean telemetry) {
-        if (mLoggingEnabled) {
-            return generateLogValues(telemetry);
+        String start;
+        if (telemetry){
+            start = ",,";
         }
-
-        return null;
+        else{
+            start = mPeriodicIO.schedDeltaDesired+","+
+                    mPeriodicIO.schedDeltaActual+","+
+                    (Timer.getFPGATimestamp()-mPeriodicIO.lastSchedStart);
+        }
+        return  start;
     }
 
     @Override
     public void readPeriodicInputs() {
+        double now = Timer.getFPGATimestamp();
+        mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
+        mPeriodicIO.lastSchedStart = now;
+
     }
 
     @Override
@@ -158,5 +183,7 @@ public class RobotStateEstimator extends Subsystem {
     public static class PeriodicIO {
         // LOGGING
         public int schedDeltaDesired;
+        public double schedDeltaActual;
+        private double lastSchedStart;
     }
 }

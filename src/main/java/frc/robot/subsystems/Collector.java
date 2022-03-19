@@ -89,7 +89,7 @@ public class Collector extends Subsystem {
     private Collector(String caller) {
         sClassName = this.getClass().getSimpleName();
         printUsage(caller);
-        mFXCollector = TalonFXFactory.createDefaultTalon(Ports.COLLECTOR);
+        mFXCollector = TalonFXFactory.createDefaultTalon(Ports.COLLECTOR, Constants.kCanivoreName);
         mSolenoid = new Solenoid(PneumaticsModuleType.CTREPCM, Ports.COLLECTOR_DEPLOY);
         mSubsystemManager = SubsystemManager.getInstance(sClassName);
         configMotors();
@@ -234,7 +234,6 @@ public class Collector extends Subsystem {
 
     @Override
     public void stop() {
-        System.out.println(sClassName + " stop()");
         mFXCollector.set(ControlMode.PercentOutput, 0.0);
         mSolenoid.set(SolenoidState.RETRACT.get());
 
@@ -249,12 +248,31 @@ public class Collector extends Subsystem {
 
     @Override
     public String getLogHeaders() {
-        return "Collector";
+        return  sClassName+".schedDeltaDesired,"+
+                sClassName+".schedDeltaActual,"+
+                sClassName+".schedDuration,"+
+                sClassName+".mSystemState,"+
+                sClassName+".mWantedState,"+
+                sClassName+".collectorDemand,"+
+                sClassName+".solenoidDemand";
     }
 
     @Override
     public String getLogValues(boolean telemetry) {
-        return "Collector.Values";
+        String start;
+        if (telemetry){
+            start = ",,,";
+        }
+        else{
+            start = mPeriodicIO.schedDeltaDesired+","+
+                    mPeriodicIO.schedDeltaActual+","+
+                    (Timer.getFPGATimestamp()-mPeriodicIO.lastSchedStart)+",";
+        }
+        return  start+
+                mSystemState+","+
+                mWantedState+","+
+                mPeriodicIO.collectorDemand+","+
+                mPeriodicIO.solenoidDemand;
     }
 
     @Override
@@ -268,7 +286,6 @@ public class Collector extends Subsystem {
         private final int mDefaultSchedDelta = 100; // axis updated every 100 msec
         private int schedDeltaDesired;
         public double schedDeltaActual;
-        public double schedDuration;
         private double lastSchedStart;
 
         // Inputs

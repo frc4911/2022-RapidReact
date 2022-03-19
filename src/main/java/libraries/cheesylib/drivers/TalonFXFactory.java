@@ -26,7 +26,7 @@ public class TalonFXFactory {
         public boolean INVERTED = false;
         public boolean SENSOR_PHASE = false;
 
-        public int CONTROL_FRAME_PERIOD_MS = 100;
+        public int CONTROL_FRAME_PERIOD_MS = 20;
         public int MOTION_CONTROL_FRAME_PERIOD_MS = 100;
         public int GENERAL_STATUS_FRAME_RATE_MS = 5;
         public int FEEDBACK_STATUS_FRAME_RATE_MS = 100;
@@ -59,17 +59,28 @@ public class TalonFXFactory {
 
     // create a TalonFX with the default (out of the box) configuration
     public static TalonFX createDefaultTalon(int id) {
-        return createTalon(id, kDefaultConfiguration);
+        return createTalon(id, kDefaultConfiguration, "");
+    }
+
+    public static TalonFX createDefaultTalon(int id, String canivore) {
+        return createTalon(id, kDefaultConfiguration, canivore);
     }
 
     public static TalonFX createPermanentSlaveTalon(int id, int master_id) {
-        final TalonFX talon = createTalon(id, kSlaveConfiguration);
+        final TalonFX talon = createTalon(id, kSlaveConfiguration, "");
         talon.set(ControlMode.Follower, master_id);
         return talon;
     }
 
-    public static TalonFX createTalon(int id, TalonFXFactory.Configuration config) {
-        TalonFX talon = new LazyTalonFX(id);
+    public static TalonFX createTalon(int id, TalonFXFactory.Configuration config, String canivore) {
+        TalonFX talon;
+        if (canivore.length() > 0){
+            talon = new LazyTalonFX(id, canivore);
+        }
+        else {
+            talon = new LazyTalonFX(id);
+        }
+        
         if (talon.getFirmwareVersion() < 0) {
             return talon;
         }

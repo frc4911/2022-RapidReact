@@ -2,12 +2,15 @@ package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.constants.Constants;
+import frc.robot.subsystems.Shooter.SystemState;
+import frc.robot.subsystems.Swerve.ControlState;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.util.LatchedBoolean;
 import libraries.cheesylib.util.TimeDelayedBoolean;
 import libraries.cyberlib.control.SwerveHeadingController;
 import libraries.cyberlib.io.CW;
+import libraries.cyberlib.io.LogitechPS4;
 import libraries.cyberlib.io.Xbox;
 
 public class JSticks extends Subsystem {
@@ -19,11 +22,13 @@ public class JSticks extends Subsystem {
 
     public enum SystemState {
         READINGBUTTONS,
+        READINGTESTBUTTONS,
         DISABLING,
     }
 
     public enum WantedState {
         READBUTTONS,
+        READTESTBUTTONS,
         DISABLE,
     }
 
@@ -32,12 +37,14 @@ public class JSticks extends Subsystem {
     private boolean mStateChanged;
     private CW mDriver;
     private CW mOperator;
+    // private LogitechPS4 mTest;
     private PeriodicIO mPeriodicIO = new PeriodicIO();
     private final double mDeadBand = 0.15; // for the turnigy (driver) swerve controls
     private Superstructure mSuperstructure;
     private Swerve mSwerve;
     private Shooter mShooter;
     private Indexer mIndexer;
+    private Climber mClimber;
 
     @SuppressWarnings("unused")
     private LatchedBoolean mSystemStateChange = new LatchedBoolean();
@@ -66,6 +73,7 @@ public class JSticks extends Subsystem {
         mShooter = Shooter.getInstance(sClassName);
         mIndexer = Indexer.getInstance(sClassName); // Getting instance to reset ball count: hopefully will be a
                                                     // temporary fix
+        mClimber = Climber.getInstance(sClassName);
         mHeadingController.setPIDFConstants(
                 mSwerve.mSwerveConfiguration.kSwerveHeadingKp,
                 mSwerve.mSwerveConfiguration.kSwerveHeadingKi,
@@ -73,6 +81,7 @@ public class JSticks extends Subsystem {
                 mSwerve.mSwerveConfiguration.kSwerveHeadingKf);
         mDriver = new Xbox();
         mOperator = new Xbox();
+        // mTest = new LogitechPS4();
 
         printUsage(caller);
     }
@@ -92,6 +101,11 @@ public class JSticks extends Subsystem {
                     mSystemState = SystemState.DISABLING;
                     mWantedState = WantedState.DISABLE;
                     break;
+                case TEST:
+                    mSystemState = SystemState.READINGTESTBUTTONS;
+                    mWantedState = WantedState.READTESTBUTTONS;
+                    mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
+                    break;
                 default:
                     mSystemState = SystemState.READINGBUTTONS;
                     mWantedState = WantedState.READBUTTONS;
@@ -110,6 +124,9 @@ public class JSticks extends Subsystem {
                 switch (mSystemState) {
                     case DISABLING:
                         newState = handleDisabling();
+                        break;
+                    case READINGTESTBUTTONS:
+                        newState = handleReadingTestButtons();
                         break;
                     case READINGBUTTONS:
                     default:
@@ -131,7 +148,6 @@ public class JSticks extends Subsystem {
 
     @Override
     public void stop() {
-        System.out.println(sClassName + " stop()");
     }
 
     private SystemState handleDisabling() {
@@ -152,40 +168,37 @@ public class JSticks extends Subsystem {
         Superstructure.WantedState currentState = mSuperstructure.getWantedState();
         Superstructure.WantedState previousState = currentState;
 
-        // disable for the competition
-        // if(mPeriodicIO.dr_AButton_ToggleDriveMode) {
-        //     mSwerve.toggleThroughDriveModes();
-        // }
-
-        // All driver assist to raw inputs should be implemented Swerve#handleManual()
-        double swerveYInput = mPeriodicIO.dr_LeftStickX_Translate;
-        double swerveXInput = mPeriodicIO.dr_LeftStickY_Translate;
-        double swerveRotationInput = mPeriodicIO.dr_RightStickX_Rotate;
-
-        if (mPeriodicIO.dr_LeftTrigger_SlowSpeed) {
-            swerveYInput *= 0.5;
-            swerveXInput *= 0.5;
-            swerveRotationInput *= 0.5;
-        }
-
         // NEW SWERVE
-        boolean maintainHeading = mShouldMaintainHeading.update(swerveRotationInput == 0, 0.2);
-        boolean changeHeadingSetpoint = shouldChangeHeadingSetpoint.update(maintainHeading);
+        if (mSuperstructure.getWantedState() != Superstructure.WantedState.AUTO_SHOOT) {
+        // All driver assist to raw inputs should be implemented Swerve#handleManual()
+            double swerveYInput = mPeriodicIO.dr_LeftStickX_Translate;
+            double swerveXInput = mPeriodicIO.dr_LeftStickY_Translate;
+            double swerveRotationInput = mPeriodicIO.dr_RightStickX_Rotate;
 
-        if (!maintainHeading) {
-            mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.OFF);
-        } else if (changeHeadingSetpoint) {
-            mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.MAINTAIN);
-            mHeadingController.setGoal(mSwerve.getHeading().getDegrees());
-        }
+            if (mPeriodicIO.dr_LeftTrigger_SlowSpeed) {
+                swerveYInput *= 0.5;
+                swerveXInput *= 0.5;
+                swerveRotationInput *= 0.5;
+            }
 
-        var isFieldOriented = !mPeriodicIO.dr_RightBumper_RobotOrient;
-        if (mHeadingController.getHeadingControllerState() != SwerveHeadingController.HeadingControllerState.OFF) {
-            mSwerve.setTeleopInputs(swerveXInput, swerveYInput, mHeadingController.update(),
-                    false/*mPeriodicIO.dr_LeftTrigger_SlowSpeed*/, isFieldOriented, true);
-        } else {
-            mSwerve.setTeleopInputs(swerveXInput, swerveYInput, swerveRotationInput,
-                    false/*mPeriodicIO.dr_LeftTrigger_SlowSpeed*/, isFieldOriented, false);
+            boolean maintainHeading = mShouldMaintainHeading.update(swerveRotationInput == 0, 0.2);
+            boolean changeHeadingSetpoint = shouldChangeHeadingSetpoint.update(maintainHeading);
+
+            if (!maintainHeading) {
+                mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.OFF);
+            } else if (changeHeadingSetpoint) {
+                mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.MAINTAIN);
+                mHeadingController.setGoal(mSwerve.getHeading().getDegrees());
+            }
+
+            var isFieldOriented = !mPeriodicIO.dr_RightBumper_RobotOrient;
+            if (mHeadingController.getHeadingControllerState() != SwerveHeadingController.HeadingControllerState.OFF) {
+                mSwerve.setTeleopInputs(swerveXInput, swerveYInput, mHeadingController.update(),
+                        false, isFieldOriented, true);
+            } else {
+                mSwerve.setTeleopInputs(swerveXInput, swerveYInput, swerveRotationInput,
+                        false, isFieldOriented, false);
+            }
         }
 
         if (mPeriodicIO.dr_YButton_ResetIMU) {
@@ -201,17 +214,17 @@ public class JSticks extends Subsystem {
         // END NEW SWERVE
 
         // CLIMBER CONTROL
-        if(mPeriodicIO.op_AButton_ClimberLockout) {
-            // -1: Do nothing
-            // 0: Extend
-            // 1: Retract
-            int deploySlappyState = -1;
-            if (mPeriodicIO.op_RightBumper_ExtendSlappySticks) {
-                deploySlappyState = 0;
-            } else if (mPeriodicIO.op_LeftBumper_RetractSlappySticks) {
-                deploySlappyState = 1;
-            }
-            mSuperstructure.setOpenLoopClimb(mPeriodicIO.op_LeftStickY_ClimberElevator, deploySlappyState);
+        if(mPeriodicIO.op_LeftBumper_ClimberLockout) {
+            if (mPeriodicIO.op_AButton_PreClimb) {
+                mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_PRE_CLIMB, sClassName);
+            } else if (mPeriodicIO.op_AButton_PreClimb_Stop) {
+                mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
+            } else if (mPeriodicIO.op_XButton_AutoClimb) {
+                mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_CLIMB, sClassName);
+            } // else if (mPeriodicIO.op_XButton_AutoClimb_Stop) {
+                // mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
+            // }
+
         } else {
             if (mPeriodicIO.op_RightTrigger_Collect) {
                 mSuperstructure.setWantedState(Superstructure.WantedState.COLLECT, sClassName);
@@ -221,11 +234,20 @@ public class JSticks extends Subsystem {
                 mSuperstructure.setWantedState(Superstructure.WantedState.BACK, sClassName);
             }
 
-            mSuperstructure.setOpenLoopClimb(0.0, -1);
         }
 
         if (mPeriodicIO.op_BButton_StopShooter) {
             mShooter.stopFlywheel();
+        }
+
+        if (mPeriodicIO.dr_RightTrigger_AutoShoot) {
+            mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.OFF);
+            mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_SHOOT, sClassName);
+        }
+
+        if (mPeriodicIO.dr_RightTrigger_AutoShoot_Stop) {
+            mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
+            mHeadingController.setGoal(mSwerve.getHeading().getDegrees());
         }
 
         if (mPeriodicIO.op_POV0_ManualShot_Fender) {
@@ -234,12 +256,12 @@ public class JSticks extends Subsystem {
         }
 
         if (mPeriodicIO.op_POV90_ManualShot_Ball) {
-            mSuperstructure.setManualShootDistance(36);
+            mSuperstructure.setManualShootDistance(34);
             mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT, sClassName);
         }
 
         if (mPeriodicIO.op_POV180_ManualShot_Robot) {
-            mSuperstructure.setManualShootDistance(60);
+            mSuperstructure.setManualShootDistance(68);
             mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT, sClassName);
         }
 
@@ -261,49 +283,65 @@ public class JSticks extends Subsystem {
             mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
         }
 
-        // // Will add clauses for different shoot distances, aimed/auto shooting, auto
-        // climbing, and others
-        // currentState = activeBtnIsReleased(currentState);
-        // if (currentState == Superstructure.WantedState.HOLD) {
-        // // if (mPeriodicIO.op_POV0_ManualShot_Fender) {
-        // // mSuperstructure.setManualShootDistance(0);
-        // // mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT,
-        // sClassName);
-        // // } else
-
-        // if (mPeriodicIO.op_POV90_ManualShot_Tarmac) {
-        // mSuperstructure.setManualShootDistance(60); //5 feet away: temporary test
-        // value
-        // mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT,
-        // sClassName);
-        // } else if (mPeriodicIO.op_RightTrigger_Collect) {
-        // mSuperstructure.setWantedState(Superstructure.WantedState.COLLECT,
-        // sClassName);
-        // } else if (mPeriodicIO.op_LeftTrigger_Back) {
-        // mSuperstructure.setWantedState(Superstructure.WantedState.BACK, sClassName);
-        // } else if (previousState != currentState) {
-        // // mSuperstructure.setWantedState(Superstructure.WantedState.HOLD,
-        // sClassName);
+        // if (mPeriodicIO.tst_POV90_flyup){
+        //     mShooter.setTempDemands(mShooter.getHoodDemand(), mShooter.getFlyDemand()+100);
         // }
+        // if (mPeriodicIO.tst_POV270_flyDn){
+        //     mShooter.setTempDemands(mShooter.getHoodDemand(), mShooter.getFlyDemand()-50);
+        // }
+        // if (mPeriodicIO.tst_POV0_hoodup){
+        //     mShooter.setTempDemands(mShooter.getHoodDemand()+100, mShooter.getFlyDemand());
+        // }
+        // if (mPeriodicIO.tst_POV180_hooddn){
+        //     mShooter.setTempDemands(mShooter.getHoodDemand()-50, mShooter.getFlyDemand());
         // }
     }
 
-    // private Superstructure.WantedState
-    // activeBtnIsReleased(Superstructure.WantedState currentState) {
-    // switch (currentState) {
-    // // case MANUAL_SHOOT:
-    // // return !mPeriodicIO.op_POV0_ManualShot_Fender ?
-    // Superstructure.WantedState.HOLD : currentState;
-    // case COLLECT:
-    // return !mPeriodicIO.op_RightTrigger_Collect ? Superstructure.WantedState.HOLD
-    // : currentState;
-    // case BACK:
-    // return !mPeriodicIO.op_LeftTrigger_Back ? Superstructure.WantedState.HOLD :
-    // currentState;
-    // default:
-    // return Superstructure.WantedState.HOLD;
-    // }
-    // }
+    private SystemState handleReadingTestButtons() {
+        if (mPeriodicIO.op_AButton_PreClimb){
+            mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_PRE_CLIMB, sClassName);
+        }
+
+        if (mPeriodicIO.op_AButton_PreClimb_Stop){
+            mSuperstructure.setWantedState(Superstructure.WantedState.TEST, sClassName);
+        }
+
+        if (mPeriodicIO.op_BackButton_TestHome){
+            mSuperstructure.setWantedState(Superstructure.WantedState.HOME, sClassName);
+        }
+
+        if (mPeriodicIO.op_BackButton_TestHome_Stop){
+            mSuperstructure.setWantedState(Superstructure.WantedState.TEST, sClassName);
+        }
+
+        // if(mPeriodicIO.op_POV0_ManualShot_Fender){
+        //     mClimber.setClimberTestDemand(0, 10000);
+        // }
+        
+        // if(mPeriodicIO.op_POV90_ManualShot_Ball){
+        //     mClimber.setClimberTestDemand(0, 50000);
+        // }
+
+        // if(mPeriodicIO.op_POV180_ManualShot_Robot){
+        //     mClimber.setClimberTestDemand(0, 100000);
+        // }
+
+        // if(mPeriodicIO.op_POV270_ManualShot_Tarmac){
+        //     mClimber.setClimberTestDemand(0, 130000);
+        // }
+
+        if (mPeriodicIO.op_LeftBumper_TestRelease){
+            mClimber.setSolenoidState(true);
+        }
+
+        if (mPeriodicIO.op_RightBumper_TestLock){
+            mClimber.setSolenoidState(false);
+        }
+
+        // mShooter.setHoodTestDemand(mPeriodicIO.tst_LeftAxis_TestDemand);
+        mClimber.setClimberTestDemand(mPeriodicIO.op_LeftStickY_TestMidArms, mPeriodicIO.op_RightStickY_TestSlappy);
+        return defaultStateTransfer();
+    }
 
     @Override
     public void readPeriodicInputs() {
@@ -317,16 +355,27 @@ public class JSticks extends Subsystem {
         mPeriodicIO.dr_LeftStickY_Translate = -mDriver.getRaw(Xbox.LEFT_STICK_Y, mDeadBand);
         mPeriodicIO.dr_RightStickX_Rotate = -mDriver.getRaw(Xbox.RIGHT_STICK_X, mDeadBand);
         mPeriodicIO.dr_LeftTrigger_SlowSpeed = mDriver.getButton(Xbox.LEFT_TRIGGER, CW.PRESSED_LEVEL);
+        mPeriodicIO.dr_RightTrigger_AutoShoot = mDriver.getButton(Xbox.RIGHT_TRIGGER, CW.PRESSED_EDGE);
+        mPeriodicIO.dr_RightTrigger_AutoShoot_Stop = mDriver.getButton(Xbox.RIGHT_TRIGGER, CW.RELEASED_EDGE);
         mPeriodicIO.dr_RightBumper_RobotOrient = mDriver.getButton(Xbox.RIGHT_BUMPER, CW.PRESSED_LEVEL); // field/robot
         mPeriodicIO.dr_YButton_ResetIMU = mDriver.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
-        mPeriodicIO.dr_AButton_ToggleDriveMode = mDriver.getButton(Xbox.A_BUTTON, CW.PRESSED_EDGE);
+        // mPeriodicIO.dr_AButton_ToggleDriveMode = mDriver.getButton(Xbox.A_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.dr_StartButton_ResetWheels = mDriver.getButton(Xbox.START_BUTTON, CW.PRESSED_EDGE);
 
         //Climbing
-        mPeriodicIO.op_LeftStickY_ClimberElevator = -mOperator.getRaw(Xbox.LEFT_STICK_Y, mDeadBand);
-        mPeriodicIO.op_AButton_ClimberLockout = mOperator.getButton(Xbox.A_BUTTON, CW.PRESSED_LEVEL);
-        mPeriodicIO.op_LeftBumper_RetractSlappySticks = mOperator.getButton(Xbox.LEFT_BUMPER, CW.PRESSED_EDGE);
-        mPeriodicIO.op_RightBumper_ExtendSlappySticks = mOperator.getButton(Xbox.RIGHT_BUMPER, CW.PRESSED_EDGE);
+        mPeriodicIO.op_LeftStickY_TestMidArms = -mOperator.getRaw(Xbox.LEFT_STICK_Y, mDeadBand);
+        mPeriodicIO.op_RightStickY_TestSlappy = -mOperator.getRaw(Xbox.RIGHT_STICK_Y, mDeadBand);
+        mPeriodicIO.op_LeftBumper_ClimberLockout = mOperator.getButton(Xbox.LEFT_BUMPER, CW.PRESSED_LEVEL);
+        mPeriodicIO.op_AButton_PreClimb = mOperator.getButton(Xbox.A_BUTTON, CW.PRESSED_EDGE);
+        mPeriodicIO.op_AButton_PreClimb_Stop = mOperator.getButton(Xbox.A_BUTTON, CW.RELEASED_EDGE);
+        mPeriodicIO.op_XButton_AutoClimb = mOperator.getButton(Xbox.X_BUTTON, CW.PRESSED_EDGE);
+        // mPeriodicIO.op_XButton_AutoClimb_Stop = mOperator.getButton(Xbox.X_BUTTON, CW.RELEASED_EDGE);
+        // mPeriodicIO.op_YButton_ResetClimb = mOperator.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE); // Unused
+
+        mPeriodicIO.op_BackButton_TestHome = mOperator.getButton(Xbox.BACK_BUTTON, CW.PRESSED_EDGE);
+        mPeriodicIO.op_BackButton_TestHome_Stop = mOperator.getButton(Xbox.BACK_BUTTON, CW.RELEASED_EDGE);
+        mPeriodicIO.op_LeftBumper_TestRelease = mOperator.getButton(Xbox.LEFT_BUMPER, CW.PRESSED_EDGE);
+        mPeriodicIO.op_RightBumper_TestLock = mOperator.getButton(Xbox.RIGHT_BUMPER, CW.PRESSED_EDGE);
 
         //Collecting
         mPeriodicIO.op_RightTrigger_Collect = mOperator.getButton(Xbox.RIGHT_TRIGGER, CW.PRESSED_EDGE);
@@ -348,12 +397,30 @@ public class JSticks extends Subsystem {
         mPeriodicIO.op_POV180_ManualShot_Robot_Stop = mOperator.getButton(Xbox.POV0_180, CW.RELEASED_EDGE);
         mPeriodicIO.op_POV270_ManualShot_Tarmac_Stop = mOperator.getButton(Xbox.POV0_270, CW.RELEASED_EDGE);
 
+        // mPeriodicIO.tst_AButton_AutoElev = mTest.getButton(LogitechPS4.A_BUTTON, CW.PRESSED_EDGE);
+        // mPeriodicIO.tst_AButton_AutoElev_Stop = mTest.getButton(LogitechPS4.A_BUTTON, CW.RELEASED_EDGE);
+        // mPeriodicIO.tst_BButton_AutoPre = mTest.getButton(LogitechPS4.B_BUTTON, CW.PRESSED_EDGE);
+        // mPeriodicIO.tst_BButton_AutoPre_Stop = mTest.getButton(LogitechPS4.B_BUTTON, CW.RELEASED_EDGE);
+        // mPeriodicIO.tst_LeftAxis_TestDemand = mTest.getRaw(LogitechPS4.LEFT_STICK_Y,.15);
+        // mPeriodicIO.tst_RightAxis_TestDemand = mTest.getRaw(LogitechPS4.RIGHT_STICK_Y,.15);
+        // mPeriodicIO.tst_LeftBumper_TestSolEngage = mTest.getButton(LogitechPS4.LEFT_BUMPER, CW.PRESSED_EDGE);
+        // mPeriodicIO.tst_RightBumper_TestSolDisengage = mTest.getButton(LogitechPS4.RIGHT_BUMPER, CW.PRESSED_EDGE);
+        // mPeriodicIO.tst_XButton_HOME = mTest.getButton(LogitechPS4.X_BUTTON, CW.PRESSED_EDGE);
+        // mPeriodicIO.tst_XButton_HOME_STOP = mTest.getButton(LogitechPS4.X_BUTTON, CW.RELEASED_EDGE);
+
+        // mPeriodicIO.tst_POV0_hoodup = mTest.getButton(LogitechPS4.POV0_0, CW.PRESSED_EDGE);
+        // mPeriodicIO.tst_POV90_flyup = mTest.getButton(LogitechPS4.POV0_90, CW.PRESSED_EDGE);
+        // mPeriodicIO.tst_POV180_hooddn = mTest.getButton(LogitechPS4.POV0_180, CW.PRESSED_EDGE);
+        // mPeriodicIO.tst_POV270_flyDn = mTest.getButton(LogitechPS4.POV0_270, CW.PRESSED_EDGE);
+
     }
 
     private SystemState defaultStateTransfer() {
         switch (mWantedState) {
             case DISABLE:
                 return SystemState.DISABLING;
+            case READTESTBUTTONS:
+                return SystemState.READINGTESTBUTTONS;
             case READBUTTONS:
             default:
                 return SystemState.READINGBUTTONS;
@@ -362,12 +429,79 @@ public class JSticks extends Subsystem {
 
     @Override
     public String getLogHeaders() {
-        return "Jsticks";
+        return  sClassName+".schedDeltaDesired,"+
+                sClassName+".schedDeltaActual,"+
+                sClassName+".schedDuration,"+
+                sClassName+".dr_LeftStickX_Translate,"+
+                sClassName+".dr_LeftStickY_Translate,"+
+                sClassName+".dr_RightStickX_Rotate,"+
+                sClassName+".dr_RightTrigger_AutoShoot,"+
+                sClassName+".dr_RightTrigger_AutoShoot_Stop,"+
+                sClassName+".dr_LeftTrigger_SlowSpeed,"+
+                sClassName+".dr_RightBumper_RobotOrient,"+
+                sClassName+".dr_YButton_ResetIMU = false,"+
+                sClassName+".dr_AButton_ToggleDriveMode,"+
+                sClassName+".dr_StartButton_ResetWheels,"+
+                sClassName+".op_LeftStickY_TestMidArms,"+
+                sClassName+".op_RightTrigger_Collect,"+
+                sClassName+".op_RightTrigger_Collect_Stop,"+
+                sClassName+".op_LeftTrigger_Back,"+
+                sClassName+".op_LeftTrigger_Back_Stop,"+
+                sClassName+".op_BButton_StopShooter,"+
+                sClassName+".op_AButton_ClimberLockout,"+
+                sClassName+".op_LeftBumper_RetractSlappySticks,"+
+                sClassName+".op_RightBumper_ExtendSlappySticks,"+
+                sClassName+".op_POV0_ManualShot_Fender,"+
+                sClassName+".op_POV90_ManualShot_Ball,"+
+                sClassName+".op_POV180_ManualShot_Robot,"+
+                sClassName+".op_POV270_ManualShot_Tarmac,"+
+                sClassName+".op_ManualShoot,"+
+                sClassName+".op_POV0_ManualShot_Fender_Stop,"+
+                sClassName+".op_POV90_ManualShot_Ball_Stop,"+
+                sClassName+".op_POV180_ManualShot_Robot_Stop,"+
+                sClassName+".op_POV270_ManualShot_Tarmac_Stop";
     }
 
     @Override
     public String getLogValues(boolean telemetry) {
-        return "Jsticks.Values";
+        String start;
+        if (telemetry){
+            start = ",,,";
+        }
+        else{
+            start = mPeriodicIO.schedDeltaDesired+","+
+                    mPeriodicIO.schedDeltaActual+","+
+                    (Timer.getFPGATimestamp()-mPeriodicIO.lastSchedStart)+",";
+        }
+        return  start+        
+        mPeriodicIO.dr_LeftStickX_Translate+","+
+        mPeriodicIO.dr_LeftStickY_Translate+","+
+        mPeriodicIO.dr_RightStickX_Rotate+","+
+        mPeriodicIO.dr_RightTrigger_AutoShoot+","+
+        mPeriodicIO.dr_RightTrigger_AutoShoot_Stop+","+
+        mPeriodicIO.dr_LeftTrigger_SlowSpeed+","+
+        mPeriodicIO.dr_RightBumper_RobotOrient+","+
+        mPeriodicIO.dr_YButton_ResetIMU+","+
+        mPeriodicIO.dr_AButton_ToggleDriveMode+","+
+        mPeriodicIO.dr_StartButton_ResetWheels+","+
+        mPeriodicIO.op_LeftStickY_TestMidArms+","+
+        mPeriodicIO.op_RightTrigger_Collect+","+
+        mPeriodicIO.op_RightTrigger_Collect_Stop+","+
+        mPeriodicIO.op_LeftTrigger_Back+","+
+        mPeriodicIO.op_LeftTrigger_Back_Stop+","+
+        mPeriodicIO.op_BButton_StopShooter+","+
+        mPeriodicIO.op_LeftBumper_ClimberLockout+","+
+        mPeriodicIO.op_XButton_AutoClimb+","+
+        mPeriodicIO.op_AButton_PreClimb+","+
+        mPeriodicIO.op_POV0_ManualShot_Fender+","+
+        mPeriodicIO.op_POV90_ManualShot_Ball+","+
+        mPeriodicIO.op_POV180_ManualShot_Robot+","+
+        mPeriodicIO.op_POV270_ManualShot_Tarmac+","+
+        mPeriodicIO.op_ManualShoot+","+
+        mPeriodicIO.op_POV0_ManualShot_Fender_Stop+","+
+        mPeriodicIO.op_POV90_ManualShot_Ball_Stop+","+
+        mPeriodicIO.op_POV180_ManualShot_Robot_Stop+","+
+        mPeriodicIO.op_POV270_ManualShot_Tarmac_Stop;
     }
 
     @Override
@@ -382,10 +516,9 @@ public class JSticks extends Subsystem {
 
     public static class PeriodicIO {
         // Logging
-        private final int mDefaultSchedDelta = 100; // axis updated every 100 msec
+        private final int mDefaultSchedDelta = 20; // axis updated every 20 msec
         public int schedDeltaDesired;
         public double schedDeltaActual;
-        public double schedDuration;
         private double lastSchedStart;
 
         // Joystick Inputs
@@ -393,21 +526,31 @@ public class JSticks extends Subsystem {
         public double dr_LeftStickY_Translate; // drive
         public double dr_RightStickX_Rotate; // drive
         public boolean dr_RightTrigger_AutoShoot = false;
+        public boolean dr_RightTrigger_AutoShoot_Stop = false;
         public boolean dr_LeftTrigger_SlowSpeed = false;
         public boolean dr_RightBumper_RobotOrient = false; // field/robot oriented
         public boolean dr_YButton_ResetIMU = false; // reset direction
         public boolean dr_AButton_ToggleDriveMode = false;
         public boolean dr_StartButton_ResetWheels = false;
 
-        public double op_LeftStickY_ClimberElevator;
+        public double op_LeftStickY_TestMidArms;
+        public double op_RightStickY_TestSlappy;
+        public boolean op_LeftBumper_TestRelease;
+        public boolean op_RightBumper_TestLock;
+
         public boolean op_RightTrigger_Collect = false;
         public boolean op_RightTrigger_Collect_Stop = false;
         public boolean op_LeftTrigger_Back = false;
         public boolean op_LeftTrigger_Back_Stop = false;
         public boolean op_BButton_StopShooter = false;
-        public boolean op_AButton_ClimberLockout = false;
-        public boolean op_LeftBumper_RetractSlappySticks = false;
-        public boolean op_RightBumper_ExtendSlappySticks = false;
+        public boolean op_LeftBumper_ClimberLockout = false;
+        public boolean op_AButton_PreClimb = false;
+        public boolean op_AButton_PreClimb_Stop = false;
+        public boolean op_XButton_AutoClimb = false;
+        public boolean op_XButton_AutoClimb_Stop = false;
+        public boolean op_YButton_ResetClimb = false;
+        public boolean op_BackButton_TestHome = false;
+        public boolean op_BackButton_TestHome_Stop = false;
 
         public boolean op_POV0_ManualShot_Fender = false;
         public boolean op_POV90_ManualShot_Ball = false;
@@ -420,5 +563,19 @@ public class JSticks extends Subsystem {
         public boolean op_POV180_ManualShot_Robot_Stop = false;
         public boolean op_POV270_ManualShot_Tarmac_Stop = false;
 
+        // public boolean tst_AButton_AutoElev = false;
+        // public boolean tst_AButton_AutoElev_Stop = false;
+        // public boolean tst_BButton_AutoPre = false;
+        // public boolean tst_BButton_AutoPre_Stop = false;
+        // public double  tst_LeftAxis_TestDemand = 0;
+        // public double  tst_RightAxis_TestDemand = 0;
+        // public boolean tst_LeftBumper_TestSolEngage = false;
+        // public boolean tst_RightBumper_TestSolDisengage = false;
+        // public boolean tst_XButton_HOME = false;
+        // public boolean tst_XButton_HOME_STOP = false;
+        // public boolean tst_POV0_hoodup = false;
+        // public boolean tst_POV180_hooddn = false;
+        // public boolean tst_POV90_flyup = false;
+        // public boolean tst_POV270_flyDn = false;
     }
 }

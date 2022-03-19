@@ -27,7 +27,7 @@ public class Indexer extends Subsystem {
 
     // Subsystem Constants
     private final double kBackingSpeed = -.3;
-    private final double kFeedingSpeed = .9;
+    private final double kFeedingSpeed = .2;
     private final double kLoadingSpeed = .3;
 
     private boolean hasBallOnLoadingStart;
@@ -84,7 +84,7 @@ public class Indexer extends Subsystem {
     private Indexer(String caller) {
         sClassName = this.getClass().getSimpleName();
         printUsage(caller);
-        mFXIndexer = TalonFXFactory.createDefaultTalon(Ports.INDEXER);
+        mFXIndexer = TalonFXFactory.createDefaultTalon(Ports.INDEXER, Constants.kCanivoreName);
         mAIEnterBeamBreak = new AnalogInput(Ports.ENTRANCE_BEAM_BREAK);
         mAIExitBeamBreak = new AnalogInput(Ports.EXIT_BEAM_BREAK);
         mSubsystemManager = SubsystemManager.getInstance(sClassName);
@@ -170,6 +170,10 @@ public class Indexer extends Subsystem {
         } else {
             System.out.println(who + " is setting wanted state of " + sClassName + " to " + state + " again!!!");
         }
+    }
+
+    public synchronized WantedState getWantedState() {
+        return mWantedState;
     }
 
     private SystemState handleHolding() {
@@ -289,7 +293,6 @@ public class Indexer extends Subsystem {
 
     @Override
     public void stop() {
-        System.out.println(sClassName + " stop()");
         mFXIndexer.set(ControlMode.PercentOutput, 0);
     }
 
@@ -300,12 +303,37 @@ public class Indexer extends Subsystem {
 
     @Override
     public String getLogHeaders() {
-        return "Indexer";
+        return  sClassName+".schedDeltaDesired,"+
+                sClassName+".schedDeltaActual,"+
+                sClassName+".schedDuration,"+
+                sClassName+".mSystemState,"+
+                sClassName+".mWantedState,"+
+                sClassName+".exitBeamBlocked,"+
+                sClassName+".enterBeamBlocked,"+
+                sClassName+".indexerDemand,"+
+                sClassName+".loadingCompleted,"+
+                sClassName+".feedingCompleted";    
     }
 
     @Override
     public String getLogValues(boolean telemetry) {
-        return "Indexer.Values";
+        String start;
+        if (telemetry){
+            start = ",,,";
+        }
+        else{
+            start = mPeriodicIO.schedDeltaDesired+","+
+                    mPeriodicIO.schedDeltaActual+","+
+                    (Timer.getFPGATimestamp()-mPeriodicIO.lastSchedStart)+",";
+        }
+        return  start+
+                mSystemState+","+
+                mWantedState+","+
+                mPeriodicIO.exitBeamBlocked+","+
+                mPeriodicIO.enterBeamBlocked+","+
+                mPeriodicIO.indexerDemand+","+
+                loadingCompleted+","+
+                feedingCompleted;
     }
 
     @Override
@@ -324,7 +352,6 @@ public class Indexer extends Subsystem {
         public final int mSleepCycle = 0;
         public int schedDeltaDesired;
         public double schedDeltaActual;
-        public double schedDuration;
         public double lastSchedStart;
 
         // Inputs

@@ -5,7 +5,11 @@ import static frc.robot.constants.Constants.kMK2_WheelDiameter;
 
 import edu.wpi.first.math.util.Units;
 import frc.robot.constants.Ports;
+import frc.robot.limelight.LimelightConfiguration;
 import frc.robot.sensors.IMU.ImuType;
+import libraries.cheesylib.geometry.Pose2d;
+import libraries.cheesylib.geometry.Rotation2d;
+import libraries.cheesylib.geometry.Translation2d;
 
 // New Swerve requires SI units
 public class DeadEye implements RobotConfiguration {
@@ -103,5 +107,21 @@ public class DeadEye implements RobotConfiguration {
     @Override
     public ImuType getImuType() {
         return ImuType.PIGEON;
+    }
+
+    @Override
+    public LimelightConfiguration getLimelightConfiguration()
+    {
+        return new LimelightConfiguration(
+                1, // label id
+                LimelightConfiguration.Type.Shooter,
+                "Shooter Limelight #1", // name
+                "limelight", // table name
+                Units.inchesToMeters(22.25), // height
+                new Pose2d(new Translation2d(0, 0.0), Rotation2d.fromDegrees(-0.7)), // shooter to lens
+                Rotation2d.fromDegrees(20.5), // horizontalPlaneToLens,
+                65.0, //64.03840065743408,
+                50.0 //50.34836606499798
+        );
     }
 }
