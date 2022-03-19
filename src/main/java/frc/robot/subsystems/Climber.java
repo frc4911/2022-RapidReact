@@ -909,8 +909,8 @@ public class Climber extends Subsystem {
 
     @Override
     public void outputTelemetry() {
-        SmartDashboard.putNumber("midArmPos", mPeriodicIO.midArmPosition);
-        SmartDashboard.putNumber("slappyPos", mPeriodicIO.slappyPosition);
+        // SmartDashboard.putNumber("midArmPos", mPeriodicIO.midArmPosition);
+        // SmartDashboard.putNumber("slappyPos", mPeriodicIO.slappyPosition);
         // mPeriodicIO.slappyStatorCurrent = mFXSlappy.getStatorCurrent();
         // mPeriodicIO.midArmStatorCurrent = mFXMidArm.getStatorCurrent();
         // SmartDashboard.putNumber("midArmCurrent", mPeriodicIO.midArmStatorCurrent);
