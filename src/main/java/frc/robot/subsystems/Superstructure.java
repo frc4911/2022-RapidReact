@@ -276,6 +276,7 @@ public class Superstructure extends Subsystem {
         return defaultStateTransfer();
     }
 
+    boolean finishedAiming;
     // TODO: Get help with logic and limelight implementation - CURRENTLY UNUSED
     // If time constrains, may not be complete by Week 1
     private SystemState handleAutoShooting(double timestamp) {
@@ -285,13 +286,14 @@ public class Superstructure extends Subsystem {
             }
 
             mShootSetup = true;
+            finishedAiming = false;
             mPeriodicIO.schedDeltaDesired = mFastCycle;
         }
 
         var setPointInRadians = getSwerveSetpointFromVision(timestamp);
        
         // Need do aim robot
-        if (!mOnTarget) {
+        if (!mOnTarget && !finishedAiming) {
             mSwerve.setAimingSetpoint(setPointInRadians, 0.0/*mSwerveFeedforwardFromVision*/, timestamp);
             if (mLatestAimingParameters.isPresent() && mHasTarget){
                 System.out.println("Distance: " + mLatestAimingParameters.get().getRange());
@@ -301,7 +303,9 @@ public class Superstructure extends Subsystem {
             System.out.println("Has Target: " + mHasTarget + " On Target: " + mOnTarget);
         } else {
             // Stop robot from moving in case aiming PID is still moving it
-            mSwerve.setState(Swerve.ControlState.NEUTRAL);
+            
+            
+            finishedAiming = true;
 
             double range = Double.NaN;
             if (mLatestAimingParameters.isPresent()) {
