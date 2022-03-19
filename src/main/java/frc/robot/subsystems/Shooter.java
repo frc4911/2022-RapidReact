@@ -187,11 +187,11 @@ public class Shooter extends Subsystem {
         mFXRightFlyWheel.configClosedloopRamp(kClosedRamp, Constants.kLongCANTimeoutMs);
         mFXRightFlyWheel.configAllowableClosedloopError(0, kClosedError, Constants.kLongCANTimeoutMs);
 
-        mFXHood.config_kP(0, 0.0, Constants.kLongCANTimeoutMs); // May need to tune more? .7,.1,15
-        mFXHood.config_kI(0, 0.0, Constants.kLongCANTimeoutMs);
-        mFXHood.config_kD(0, 0.0, Constants.kLongCANTimeoutMs);
+        mFXHood.config_kP(0, 0.7, Constants.kLongCANTimeoutMs); // May need to tune more? .7,.1,15
+        mFXHood.config_kI(0, 0.04, Constants.kLongCANTimeoutMs);
+        mFXHood.config_kD(0, 10.0, Constants.kLongCANTimeoutMs);
         mFXHood.config_kF(0, 0, Constants.kLongCANTimeoutMs);
-        mFXHood.config_IntegralZone(0, 00, Constants.kLongCANTimeoutMs);
+        mFXHood.config_IntegralZone(0, 200, Constants.kLongCANTimeoutMs);
         mFXHood.configClosedloopRamp(0/* kClosedRamp */, Constants.kLongCANTimeoutMs);
         mFXHood.configAllowableClosedloopError(0, 15 /*kClosedError*/, Constants.kLongCANTimeoutMs);
 
@@ -457,7 +457,7 @@ public class Shooter extends Subsystem {
         //     mPeriodicIO.flywheelVelocityDemand = tempFlyDemand;
         // }
         // else {
-        //     mPeriodicIO.flywheelVelocityDemand = distanceToTicksPer100Ms(mDistance);
+            mPeriodicIO.flywheelVelocityDemand = distanceToTicksPer100Ms(mDistance);
         // }
         mPeriodicIO.reachedDesiredSpeed = Math
                 .abs(mPeriodicIO.flywheelVelocity - mPeriodicIO.flywheelVelocityDemand) <= 300;
@@ -467,7 +467,7 @@ public class Shooter extends Subsystem {
             //     mPeriodicIO.hoodDemand = tempHoodDemand;
             // }
             // else{
-            //     mPeriodicIO.hoodDemand = distanceToHoodPos(mDistance);
+                mPeriodicIO.hoodDemand = distanceToHoodPos(mDistance);
             // }
     
             mPeriodicIO.reachedDesiredHoodPosition = Math.abs(mPeriodicIO.hoodPosition - mPeriodicIO.hoodDemand) <= 100;

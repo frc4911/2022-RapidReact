@@ -332,6 +332,9 @@ public class Swerve extends Subsystem {
             System.out.println(mControlState + " to " + newState);
             switch (newState) {
                 case NEUTRAL:
+                    mPeriodicIO.strafe = 0;
+                    mPeriodicIO.forward = 0;
+                    mPeriodicIO.rotation = 0;
                     stopSwerveDriveModules();
                     mPeriodicIO.forward= 0.0;
                     mPeriodicIO.strafe = 0.0;

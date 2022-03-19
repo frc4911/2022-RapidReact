@@ -281,6 +281,7 @@ public class Superstructure extends Subsystem {
         return measured * 1.7234042553191-72.13829787234;
     }
 
+    boolean finishedAiming;
     // TODO: Get help with logic and limelight implementation - CURRENTLY UNUSED
     // If time constrains, may not be complete by Week 1
     private SystemState handleAutoShooting(double timestamp) {
@@ -290,6 +291,7 @@ public class Superstructure extends Subsystem {
             }
 
             mShootSetup = true;
+            finishedAiming = false;
             mPeriodicIO.schedDeltaDesired = mFastCycle;
         }
 
@@ -336,7 +338,8 @@ public class Superstructure extends Subsystem {
         }
 
         if (mWantedState != WantedState.AUTO_SHOOT) {
-            mSwerve.setState(ControlState.MANUAL);
+            // mSwerve.setState(ControlState.MANUAL);
+            mSwerve.stop();
         }
 
         return defaultStateTransfer();
@@ -551,6 +554,7 @@ public class Superstructure extends Subsystem {
                     .transformBy(mLatestAimingParameters.get().getFieldToGoal()).getTranslation().direction();
 
             double setPointInRadians =  mSwerve.getHeading().getRadians() + error.getRadians();
+            // System.out.println("super.getSwervsetpointfromvision:"+error.toString());
             Twist2d velocity = mRobotState.getMeasuredVelocity();
             // Angular velocity component from tangential robot motion about the goal.
             double tangential_component = mLatestAimingParameters.get().getRobotToGoalRotation().sin() * velocity.dx / mLatestAimingParameters.get().getRange();
@@ -560,8 +564,8 @@ public class Superstructure extends Subsystem {
 
             mHasTarget = true;
 
-            // TODO:  Within 3 degrees?  And make a constant.
-            mOnTarget = Util.epsilonEquals(error.getDegrees(), 0.0,3.0);
+            // TODO:  Within 1.5 degrees?  And make a constant.
+            mOnTarget = Util.epsilonEquals(error.getDegrees(), 0.0, 1.5);
 
             return Angles.normalizeAngle(setPointInRadians);
 

@@ -241,6 +241,7 @@ public class JSticks extends Subsystem {
         }
 
         if (mPeriodicIO.dr_RightTrigger_AutoShoot) {
+            mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.OFF);
             mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_SHOOT, sClassName);
             mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.OFF);
         }
