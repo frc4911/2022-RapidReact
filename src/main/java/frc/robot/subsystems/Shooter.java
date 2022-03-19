@@ -201,7 +201,7 @@ public class Shooter extends Subsystem {
     }
 
     private void buildInterpTree(){
-        shooterHoodMap.put(new InterpolatingDouble(0.0),   new InterpolatingDouble(3000.0));
+        shooterHoodMap.put(new InterpolatingDouble(0.0),   new InterpolatingDouble(8000.0));
         shooterHoodMap.put(new InterpolatingDouble(24.0),  new InterpolatingDouble(12000.0));
         shooterHoodMap.put(new InterpolatingDouble(48.0),  new InterpolatingDouble(16500.0));
         shooterHoodMap.put(new InterpolatingDouble(72.0),  new InterpolatingDouble(22000.0));
@@ -209,7 +209,7 @@ public class Shooter extends Subsystem {
         shooterHoodMap.put(new InterpolatingDouble(120.0), new InterpolatingDouble(28500.0));
         shooterHoodMap.put(new InterpolatingDouble(144.0), new InterpolatingDouble(28500.0));
 
-        shooterSpeedMap.put(new InterpolatingDouble(0.0),   new InterpolatingDouble(11500.0));
+        shooterSpeedMap.put(new InterpolatingDouble(0.0),   new InterpolatingDouble(10900.0));
         shooterSpeedMap.put(new InterpolatingDouble(24.0),  new InterpolatingDouble(11300.0));
         shooterSpeedMap.put(new InterpolatingDouble(48.0),  new InterpolatingDouble(12000.0));
         shooterSpeedMap.put(new InterpolatingDouble(72.0),  new InterpolatingDouble(12300.0));
