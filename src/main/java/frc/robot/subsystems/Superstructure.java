@@ -276,6 +276,11 @@ public class Superstructure extends Subsystem {
         return defaultStateTransfer();
     }
 
+    private double adjustRange(double measured) {
+        // This slope is based on Friday night sampling of two points of 89 and 170 inches.
+        return measured * 1.7234042553191-72.13829787234;
+    }
+
     // TODO: Get help with logic and limelight implementation - CURRENTLY UNUSED
     // If time constrains, may not be complete by Week 1
     private SystemState handleAutoShooting(double timestamp) {
@@ -289,37 +294,43 @@ public class Superstructure extends Subsystem {
         }
 
         var setPointInRadians = getSwerveSetpointFromVision(timestamp);
-       
-        // Need do aim robot
-        if (!mOnTarget) {
+        if (mLatestAimingParameters.isPresent()) {
+            double range =  mLatestAimingParameters.get().getRange();
+            var adjustedRange = adjustRange(range);
+            System.out.format("Measured Distance: %.3f, %.3f ft, %.3f inches\n",
+                    range, Units.meters_to_feet(range), Units.meters_to_inches(range));
+            System.out.format("Adjusted Distance: %.3f, %.3f ft, %.3f inches\n",
+                    adjustedRange, Units.meters_to_feet(adjustedRange), Units.meters_to_inches(adjustedRange));
+
+        }
+//        System.out.println("SetPointInRadians: " + setPointInRadians + " Degrees: " + Math.toDegrees(setPointInRadians));
+//        System.out.println("FeedForwardFromVision: " + mSwerveFeedforwardFromVision);
+//        System.out.println("Has Target: " + mHasTarget + " On Target: " + mOnTarget);
+
+        // aim
+        if (mHasTarget) {
             mSwerve.setAimingSetpoint(setPointInRadians, 0.0/*mSwerveFeedforwardFromVision*/, timestamp);
-            if (mLatestAimingParameters.isPresent() && mHasTarget){
-                System.out.println("Distance: " + mLatestAimingParameters.get().getRange());
-            }
-            System.out.println("SetPointInRadians: " + setPointInRadians + " Degrees: " + Math.toDegrees(setPointInRadians));
-            System.out.println("FeedForwardFromVision: " + mSwerveFeedforwardFromVision);
-            System.out.println("Has Target: " + mHasTarget + " On Target: " + mOnTarget);
-        } else {
-            // Stop robot from moving in case aiming PID is still moving it
-            mSwerve.setState(Swerve.ControlState.NEUTRAL);
 
             double range = Double.NaN;
             if (mLatestAimingParameters.isPresent()) {
                 range = mLatestAimingParameters.get().getRange();
-                // difference between the range (center of shooter to center of hub) 
+                // difference between the range (center of shooter to center of hub)
                 // and shooter distance (fender to front of bumper) is 52.5 inches.
-                range -=  52.5;
+                range -= 52.5;
                 mShooter.setShootDistance(range);
             }
 
-            if (mShooter.readyToShoot() || !mShootSetup) {
-                if(mIndexer.getWantedState() != Indexer.WantedState.FEED){
-                    mIndexer.setWantedState(Indexer.WantedState.FEED, sClassName);
-                }
-                mShootSetup = false;
-            } else {
-                if(mIndexer.getWantedState() != Indexer.WantedState.HOLD){
-                    mIndexer.setWantedState(Indexer.WantedState.HOLD, sClassName);
+            // Shoot while aiming
+            if (mOnTarget) {
+                if (mShooter.readyToShoot() || !mShootSetup) {
+                    if (mIndexer.getWantedState() != Indexer.WantedState.FEED) {
+                        mIndexer.setWantedState(Indexer.WantedState.FEED, sClassName);
+                    }
+                    mShootSetup = false;
+                } else {
+                    if (mIndexer.getWantedState() != Indexer.WantedState.HOLD) {
+                        mIndexer.setWantedState(Indexer.WantedState.HOLD, sClassName);
+                    }
                 }
             }
         }
@@ -327,6 +338,7 @@ public class Superstructure extends Subsystem {
         if (mWantedState != WantedState.AUTO_SHOOT) {
             mSwerve.setState(ControlState.MANUAL);
         }
+
         return defaultStateTransfer();
     }
 
@@ -511,7 +523,6 @@ public class Superstructure extends Subsystem {
         return mOnTarget;
     }
 
-
     /**
      * Get the setpoint to be used when aiming the chassis.
      *
@@ -528,19 +539,18 @@ public class Superstructure extends Subsystem {
             mTrackId = mLatestAimingParameters.get().getTrackId();
 
             // if (Constants.kIsHoodTuning) {
-            SmartDashboard.putNumber("Range To Target", mLatestAimingParameters.get().getRange());
+//            SmartDashboard.putNumber("Range To Target", mLatestAimingParameters.get().getRange());
             // }
 
             // Don't aim if not in min distance
-            if (mEnforceAutoAimMinDistance && mLatestAimingParameters.get().getRange() > mAutoAimMinDistance) {
-                return mSwerve.getHeading().getRadians();
-            }
+//            if (mEnforceAutoAimMinDistance && mLatestAimingParameters.get().getRange() > mAutoAimMinDistance) {
+//                return mSwerve.getHeading().getRadians();
+//            }
 
             Rotation2d error = mRobotState.getFieldToVehicle(timestamp).inverse()
                     .transformBy(mLatestAimingParameters.get().getFieldToGoal()).getTranslation().direction();
 
             double setPointInRadians =  mSwerve.getHeading().getRadians() + error.getRadians();
-            System.out.println("super.getSwervsetpointfromvision:"+error.toString());
             Twist2d velocity = mRobotState.getMeasuredVelocity();
             // Angular velocity component from tangential robot motion about the goal.
             double tangential_component = mLatestAimingParameters.get().getRobotToGoalRotation().sin() * velocity.dx / mLatestAimingParameters.get().getRange();
@@ -549,7 +559,6 @@ public class Superstructure extends Subsystem {
             mSwerveFeedforwardFromVision = -(angular_component + tangential_component);
 
             mHasTarget = true;
-
 
             // TODO:  Within 3 degrees?  And make a constant.
             mOnTarget = Util.epsilonEquals(error.getDegrees(), 0.0,3.0);

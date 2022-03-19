@@ -333,6 +333,10 @@ public class Swerve extends Subsystem {
             switch (newState) {
                 case NEUTRAL:
                     stopSwerveDriveModules();
+                    mPeriodicIO.forward= 0.0;
+                    mPeriodicIO.strafe = 0.0;
+                    mPeriodicIO.rotation = 0.0;
+                    mPeriodicIO.visionSetpointInRadians = getHeading().getRadians();
                     mPeriodicIO.schedDeltaDesired = 10; // this is a fast cycle used while testing
                     break;
                 case MANUAL:
