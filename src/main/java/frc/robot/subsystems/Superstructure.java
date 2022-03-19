@@ -296,11 +296,11 @@ public class Superstructure extends Subsystem {
         if (!mOnTarget && !finishedAiming) {
             mSwerve.setAimingSetpoint(setPointInRadians, 0.0/*mSwerveFeedforwardFromVision*/, timestamp);
             if (mLatestAimingParameters.isPresent() && mHasTarget){
-                System.out.println("Distance: " + mLatestAimingParameters.get().getRange());
+                // System.out.println("Distance: " + mLatestAimingParameters.get().getRange());
             }
-            System.out.println("SetPointInRadians: " + setPointInRadians + " Degrees: " + Math.toDegrees(setPointInRadians));
-            System.out.println("FeedForwardFromVision: " + mSwerveFeedforwardFromVision);
-            System.out.println("Has Target: " + mHasTarget + " On Target: " + mOnTarget);
+            // System.out.println("SetPointInRadians: " + setPointInRadians + " Degrees: " + Math.toDegrees(setPointInRadians));
+            // System.out.println("FeedForwardFromVision: " + mSwerveFeedforwardFromVision);
+            // System.out.println("Has Target: " + mHasTarget + " On Target: " + mOnTarget);
         } else {
             // Stop robot from moving in case aiming PID is still moving it
             
@@ -545,7 +545,7 @@ public class Superstructure extends Subsystem {
                     .transformBy(mLatestAimingParameters.get().getFieldToGoal()).getTranslation().direction();
 
             double setPointInRadians =  mSwerve.getHeading().getRadians() + error.getRadians();
-            System.out.println("super.getSwervsetpointfromvision:"+error.toString());
+            // System.out.println("super.getSwervsetpointfromvision:"+error.toString());
             Twist2d velocity = mRobotState.getMeasuredVelocity();
             // Angular velocity component from tangential robot motion about the goal.
             double tangential_component = mLatestAimingParameters.get().getRobotToGoalRotation().sin() * velocity.dx / mLatestAimingParameters.get().getRange();
@@ -557,7 +557,7 @@ public class Superstructure extends Subsystem {
 
 
             // TODO:  Within 3 degrees?  And make a constant.
-            mOnTarget = Util.epsilonEquals(error.getDegrees(), 0.0,3.0);
+            mOnTarget = Util.epsilonEquals(error.getDegrees(), 0.0,1.5);
 
             return Angles.normalizeAngle(setPointInRadians);
 

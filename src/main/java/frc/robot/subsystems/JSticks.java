@@ -241,12 +241,13 @@ public class JSticks extends Subsystem {
         }
 
         if (mPeriodicIO.dr_RightTrigger_AutoShoot) {
+            mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.OFF);
             mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_SHOOT, sClassName);
         }
 
         if (mPeriodicIO.dr_RightTrigger_AutoShoot_Stop) {
-            mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.OFF);
             mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
+            mHeadingController.setGoal(mSwerve.getHeading().getDegrees());
         }
 
         if (mPeriodicIO.op_POV0_ManualShot_Fender) {
