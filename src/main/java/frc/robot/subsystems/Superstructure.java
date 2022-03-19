@@ -329,7 +329,8 @@ public class Superstructure extends Subsystem {
         }
 
         if (mWantedState != WantedState.AUTO_SHOOT) {
-            mSwerve.setState(ControlState.MANUAL);
+            // mSwerve.setState(ControlState.MANUAL);
+            mSwerve.stop();
         }
         return defaultStateTransfer();
     }
