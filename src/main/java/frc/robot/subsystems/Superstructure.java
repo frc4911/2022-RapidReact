@@ -281,7 +281,6 @@ public class Superstructure extends Subsystem {
         return measured * 1.7234042553191-72.13829787234;
     }
 
-    boolean finishedAiming;
     // TODO: Get help with logic and limelight implementation - CURRENTLY UNUSED
     // If time constrains, may not be complete by Week 1
     private SystemState handleAutoShooting(double timestamp) {
@@ -291,20 +290,10 @@ public class Superstructure extends Subsystem {
             }
 
             mShootSetup = true;
-            finishedAiming = false;
             mPeriodicIO.schedDeltaDesired = mFastCycle;
         }
 
         var setPointInRadians = getSwerveSetpointFromVision(timestamp);
-        if (mLatestAimingParameters.isPresent()) {
-            double range =  mLatestAimingParameters.get().getRange();
-            var adjustedRange = adjustRange(range);
-            System.out.format("Measured Distance: %.3f, %.3f ft, %.3f inches\n",
-                    range, Units.meters_to_feet(range), Units.meters_to_inches(range));
-            System.out.format("Adjusted Distance: %.3f, %.3f ft, %.3f inches\n",
-                    adjustedRange, Units.meters_to_feet(adjustedRange), Units.meters_to_inches(adjustedRange));
-
-        }
 //        System.out.println("SetPointInRadians: " + setPointInRadians + " Degrees: " + Math.toDegrees(setPointInRadians));
 //        System.out.println("FeedForwardFromVision: " + mSwerveFeedforwardFromVision);
 //        System.out.println("Has Target: " + mHasTarget + " On Target: " + mOnTarget);
@@ -316,6 +305,12 @@ public class Superstructure extends Subsystem {
             double range = Double.NaN;
             if (mLatestAimingParameters.isPresent()) {
                 range = mLatestAimingParameters.get().getRange();
+                var adjustedRange = adjustRange(range);
+                System.out.format("Measured Distance: %.3f, %.3f ft, %.3f inches\n",
+                        range, Units.meters_to_feet(range), Units.meters_to_inches(range));
+                System.out.format("Adjusted Distance: %.3f, %.3f ft, %.3f inches\n",
+                        adjustedRange, Units.meters_to_feet(adjustedRange), Units.meters_to_inches(adjustedRange));
+
                 // difference between the range (center of shooter to center of hub)
                 // and shooter distance (fender to front of bumper) is 52.5 inches.
                 range -= 52.5;
