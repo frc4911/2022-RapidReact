@@ -15,10 +15,11 @@ public class DeadEye implements RobotConfiguration {
     private static final double BACK_LEFT_STEER_MOTOR_ENCODER_HOME_OFFSET = 3451.0;
     private static final double BACK_RIGHT_STEER_MOTOR_ENCODER_HOME_OFFSET = -327.0;
 
-    private static final int FRONT_RIGHT_CANCODER_OFFSET_DEGREES = 0;
-    private static final int FRONT_LEFT_CANCODER_OFFSET_DEGREES = 0;
-    private static final int BACK_LEFT_CANCODER_OFFSET_DEGREES = 0;
-    private static final int BACK_RIGHT_CANCODER_OFFSET_DEGREES = 0;
+    //NOT BEING USED ANYWHERE
+    private static final int FRONT_RIGHT_CANCODER_OFFSET_DEGREES = 0;//2;//3;
+    private static final int FRONT_LEFT_CANCODER_OFFSET_DEGREES = 0;//26;//4;//359;
+    private static final int BACK_LEFT_CANCODER_OFFSET_DEGREES = 0;//57;//45;//34;
+    private static final int BACK_RIGHT_CANCODER_OFFSET_DEGREES = 0;//250;//228;
 
     @Override
     public SwerveConfiguration getSwerveConfiguration() {
