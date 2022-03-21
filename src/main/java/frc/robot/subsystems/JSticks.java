@@ -256,12 +256,12 @@ public class JSticks extends Subsystem {
         }
 
         if (mPeriodicIO.op_POV90_ManualShot_Ball) {
-            mSuperstructure.setManualShootDistance(34);
+            mSuperstructure.setManualShootDistance(24);
             mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT, sClassName);
         }
 
         if (mPeriodicIO.op_POV180_ManualShot_Robot) {
-            mSuperstructure.setManualShootDistance(68);
+            mSuperstructure.setManualShootDistance(48);
             mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT, sClassName);
         }
 
