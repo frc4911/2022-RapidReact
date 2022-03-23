@@ -73,8 +73,8 @@ public class SwerveDriveModule extends Subsystem {
 
         System.out.println("SwerveDriveModule " + mModuleName + "," + mConfig.kSteerMotorSlot0Kp);
 
-        mDriveMotor = TalonFXFactory.createDefaultTalon(mConfig.kDriveMotorTalonId);
-        mSteerMotor = TalonFXFactory.createDefaultTalon(mConfig.kSteerMotorTalonId);
+        mDriveMotor = TalonFXFactory.createDefaultTalon(mConfig.kDriveMotorTalonId, Constants.kCanivoreName);
+        mSteerMotor = TalonFXFactory.createDefaultTalon(mConfig.kSteerMotorTalonId, Constants.kCanivoreName);
 
         CANCoderConfiguration config = new CANCoderConfiguration();
         config.initializationStrategy = mConfig.kCANCoderSensorInitializationStrategy;
@@ -82,12 +82,14 @@ public class SwerveDriveModule extends Subsystem {
         config.magnetOffsetDegrees = constants.kCANCoderOffsetDegrees;
         config.sensorDirection = false; // TODO - Make cancoder direction configurable through robot config files
 
-        mCANCoder = new CANCoder(constants.kCANCoderId);
+        mCANCoder = new CANCoder(constants.kCANCoderId, Constants.kCanivoreName);
         mCANCoder.configAllSettings(config, Constants.kLongCANTimeoutMs);
 
         mCANCoder.setStatusFramePeriod(CANCoderStatusFrame.VbatAndFaults,
                 mConfig.kCANCoderStatusFramePeriodVbatAndFaults);
         mCANCoder.setStatusFramePeriod(CANCoderStatusFrame.SensorData, mConfig.kCANCoderStatusFramePeriodSensorData);
+
+        
 
         configureMotors();
     }
@@ -102,13 +104,11 @@ public class SwerveDriveModule extends Subsystem {
         mSteerMotor.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
         mSteerMotor.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
 
-        convertCancoderToFX2();
-        // convertCancoderToFX();
+        convertCancoderToFX2(false);
+        // convertCancoderToFX(false);
 
-        mSteerMotor.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, mConfig.kSteerMotorStatusFrame2UpdateRate,
-                Constants.kLongCANTimeoutMs);
-        mSteerMotor.setStatusFramePeriod(StatusFrame.Status_10_MotionMagic,
-                mConfig.kSteerMotorStatusFrame10UpdateRate, Constants.kLongCANTimeoutMs);
+        mSteerMotor.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, mConfig.kSteerMotorStatusFrame2UpdateRate, Constants.kLongCANTimeoutMs);
+        mSteerMotor.setStatusFramePeriod(StatusFrame.Status_10_MotionMagic, mConfig.kSteerMotorStatusFrame10UpdateRate, Constants.kLongCANTimeoutMs);
         mSteerMotor.setNeutralMode(mConfig.kSteerMotorInitNeutralMode);
         mSteerMotor.configNominalOutputForward(mConfig.kDriveNominalVoltage, Constants.kLongCANTimeoutMs);
         mSteerMotor.configNominalOutputReverse(0.0, Constants.kLongCANTimeoutMs);
@@ -238,6 +238,9 @@ public class SwerveDriveModule extends Subsystem {
     }
 
     protected void convertCancoderToFX2(){
+        convertCancoderToFX2(true);
+    }
+    protected void convertCancoderToFX2(boolean useCancoders){
         int limit = 500;
         // mCANCoder.setStatusFramePeriod(CANCoderStatusFrame.SensorData, 50);
         double lastFrameTimestamp = -1;
@@ -246,31 +249,37 @@ public class SwerveDriveModule extends Subsystem {
         int index = 0;
         double[] cancoderPositions = {-10000,-1000,-100,-1,100}; // just need to be different numbers
         boolean allDone = false;
+        double cancoderDegrees=0;
 
-        do{
-            frameTimestamp = mCANCoder.getLastTimestamp();
-            if (frameTimestamp != lastFrameTimestamp){
-                position = mCANCoder.getAbsolutePosition();
-                cancoderPositions[(++index)%cancoderPositions.length]=position;
-                allDone = true;
-                for (int kk=0; kk<cancoderPositions.length;kk++){
-                    if ( Math.abs(cancoderPositions[kk]-cancoderPositions[(kk+1)%cancoderPositions.length]) >1 ){
-                        allDone=false;
-                        break;
+        if (useCancoders){
+            do{
+                frameTimestamp = mCANCoder.getLastTimestamp();
+                if (frameTimestamp != lastFrameTimestamp){
+                    position = mCANCoder.getAbsolutePosition();
+                    cancoderPositions[(++index)%cancoderPositions.length]=position;
+                    allDone = true;
+                    for (int kk=0; kk<cancoderPositions.length;kk++){
+                        if ( Math.abs(cancoderPositions[kk]-cancoderPositions[(kk+1)%cancoderPositions.length]) >1 ){
+                            allDone=false;
+                            break;
+                        }
                     }
+                    System.out.println(limit+" ("+mModuleName+")"+": CANCoder last frame timestamp = "+ frameTimestamp + 
+                                        " current time = "+Timer.getFPGATimestamp() +" pos="+position);
+                    lastFrameTimestamp = frameTimestamp;
                 }
-                System.out.println(limit+" ("+mModuleName+")"+": CANCoder last frame timestamp = "+ frameTimestamp + 
-                                     " current time = "+Timer.getFPGATimestamp() +" pos="+position);
-                lastFrameTimestamp = frameTimestamp;
-            }
-            Timer.delay(.1);
+                Timer.delay(.1);
 
-        } while (!allDone && (limit-- > 0));
-        
-        System.out.println(mModuleName+": allDone "+Arrays.toString(cancoderPositions));
-
+            } while (!allDone && (limit-- > 0));
+            
+            System.out.println(mModuleName+": allDone "+Arrays.toString(cancoderPositions));
+            cancoderDegrees = cancoderPositions[0];
+        }
+        else{
+            System.out.println(mModuleName+" assuming wheels aligned to 0 degrees, not using CANCoders");
+            cancoderDegrees = 0;
+        }
         double fxTicksBefore = mSteerMotor.getSelectedSensorPosition();
-        double cancoderDegrees = cancoderPositions[0];
         double fxTicksTarget = degreesToEncUnits(cancoderDegrees);
         double fxTicksNow = fxTicksBefore;
         int loops = 0;
@@ -515,7 +524,7 @@ public class SwerveDriveModule extends Subsystem {
         mPeriodicIO.drivePosition = (int) mDriveMotor.getSelectedSensorPosition(0);
         mPeriodicIO.driveVelocity = mDriveMotor.getSelectedSensorVelocity(0);
         mPeriodicIO.steerVelocity = mSteerMotor.getSelectedSensorVelocity(0);
-        mPeriodicIO.steerError = mSteerMotor.getClosedLoopError(0);
+        // mPeriodicIO.steerError = mSteerMotor.getClosedLoopError(0);
     }
 
     @Override
@@ -562,7 +571,7 @@ public class SwerveDriveModule extends Subsystem {
         if (Constants.kDebuggingOutput) {
             SmartDashboard.putNumber(mModuleName + "Pulse Width", mPeriodicIO.steerPosition);
             if (mPeriodicIO.steerControlMode == ControlMode.MotionMagic)
-                SmartDashboard.putNumber(mModuleName + "Error", encUnitsToDegrees(mPeriodicIO.steerError));
+                // SmartDashboard.putNumber(mModuleName + "Error", encUnitsToDegrees(mPeriodicIO.steerError));
             // SmartDashboard.putNumber(mModuleName + "X", position.x());
             // SmartDashboard.putNumber(mModuleName + "Y", position.y());
             SmartDashboard.putNumber(mModuleName + "Steer Speed", mPeriodicIO.steerVelocity);

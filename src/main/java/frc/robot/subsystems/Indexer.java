@@ -29,6 +29,7 @@ public class Indexer extends Subsystem {
     private final double kBackingSpeed = -.3;
     private final double kFeedingSpeed = .2;
     private final double kLoadingSpeed = .3;
+    private final double kFenderShotSpeed = .2;
 
     private boolean hasBallOnLoadingStart;
     private boolean loadingCompleted;
@@ -38,6 +39,8 @@ public class Indexer extends Subsystem {
     private final double kIndexerLengthTicks = 35000;
     private final double kBeamBreakThreshold = 3.0;
     private final double kIndexerCurrentLimit = 50;
+
+    private double mShotDistance = 0;
 
     // Subsystem States
     public enum SystemState {
@@ -84,7 +87,7 @@ public class Indexer extends Subsystem {
     private Indexer(String caller) {
         sClassName = this.getClass().getSimpleName();
         printUsage(caller);
-        mFXIndexer = TalonFXFactory.createDefaultTalon(Ports.INDEXER);
+        mFXIndexer = TalonFXFactory.createDefaultTalon(Ports.INDEXER, Constants.kCanivoreName);
         mAIEnterBeamBreak = new AnalogInput(Ports.ENTRANCE_BEAM_BREAK);
         mAIExitBeamBreak = new AnalogInput(Ports.EXIT_BEAM_BREAK);
         mSubsystemManager = SubsystemManager.getInstance(sClassName);
@@ -228,7 +231,11 @@ public class Indexer extends Subsystem {
 
     private SystemState handleFeeding() {
         if (mStateChanged) {
-            mPeriodicIO.indexerDemand = kFeedingSpeed;
+            if (mShotDistance == 0) {
+                mPeriodicIO.indexerDemand = kFenderShotSpeed;
+            } else {
+                mPeriodicIO.indexerDemand = kFeedingSpeed;
+            }
             mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
             motorPositionTarget = mPeriodicIO.motorPosition + kIndexerLengthTicks;
             feedingCompleted = false;
@@ -272,6 +279,10 @@ public class Indexer extends Subsystem {
             default:
                 return SystemState.HOLDING;
         }
+    }
+
+    public void setShootDistance(double shotDistance) {
+        mShotDistance = shotDistance;
     }
 
     @Override
