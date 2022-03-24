@@ -304,7 +304,7 @@ public class Swerve extends Subsystem {
                     true);
 
             updateModules(driveSignal);
-            System.out.println("Robot Pose " + mPeriodicIO.robotPose);
+            //System.out.println("Robot Pose " + mPeriodicIO.robotPose);
         }
     }
 

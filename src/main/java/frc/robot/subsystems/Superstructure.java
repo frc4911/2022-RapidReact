@@ -315,6 +315,8 @@ public class Superstructure extends Subsystem {
                 // and shooter distance (fender to front of bumper) is 52.5 inches.
                 range -= 52.5;
                 mShooter.setShootDistance(range);
+                mIndexer.setShootDistance(range);
+
             }
 
             // Shoot while aiming
@@ -346,6 +348,8 @@ public class Superstructure extends Subsystem {
                 mLLManager.getLimelight().setLed(Limelight.LedMode.PIPELINE);
             }
             mShooter.setShootDistance(mManualDistance);
+            mIndexer.setShootDistance(mManualDistance);
+
             // shooter must be in shoot state for readyToShoot to return true
             mShooter.setWantedState(Shooter.WantedState.SHOOT, sClassName);
             mPeriodicIO.schedDeltaDesired = mFastCycle; // Set aligned with shooter frequency

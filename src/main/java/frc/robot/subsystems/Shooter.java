@@ -201,17 +201,17 @@ public class Shooter extends Subsystem {
     }
 
     private void buildInterpTree(){
-        shooterHoodMap.put(new InterpolatingDouble(0.0),   new InterpolatingDouble(3000.0));
-        shooterHoodMap.put(new InterpolatingDouble(24.0),  new InterpolatingDouble(12000.0));
-        shooterHoodMap.put(new InterpolatingDouble(48.0),  new InterpolatingDouble(16500.0));
+        shooterHoodMap.put(new InterpolatingDouble(0.0),   new InterpolatingDouble(8000.0));
+        shooterHoodMap.put(new InterpolatingDouble(24.0),  new InterpolatingDouble(6000.0)); // 12000
+        shooterHoodMap.put(new InterpolatingDouble(48.0),  new InterpolatingDouble(4000.0)); // 16500
         shooterHoodMap.put(new InterpolatingDouble(72.0),  new InterpolatingDouble(22000.0));
         shooterHoodMap.put(new InterpolatingDouble(96.0),  new InterpolatingDouble(26000.0));
         shooterHoodMap.put(new InterpolatingDouble(120.0), new InterpolatingDouble(28500.0));
         shooterHoodMap.put(new InterpolatingDouble(144.0), new InterpolatingDouble(28500.0));
 
         shooterSpeedMap.put(new InterpolatingDouble(0.0),   new InterpolatingDouble(10900.0));
-        shooterSpeedMap.put(new InterpolatingDouble(24.0),  new InterpolatingDouble(11300.0));
-        shooterSpeedMap.put(new InterpolatingDouble(48.0),  new InterpolatingDouble(12000.0));
+        shooterSpeedMap.put(new InterpolatingDouble(24.0),  new InterpolatingDouble(10900.0)); // 11300
+        shooterSpeedMap.put(new InterpolatingDouble(48.0),  new InterpolatingDouble(10900.0)); // 112000
         shooterSpeedMap.put(new InterpolatingDouble(72.0),  new InterpolatingDouble(12300.0));
         shooterSpeedMap.put(new InterpolatingDouble(96.0),  new InterpolatingDouble(13000.0));
         shooterSpeedMap.put(new InterpolatingDouble(120.0), new InterpolatingDouble(13500.0));
@@ -614,10 +614,10 @@ public class Shooter extends Subsystem {
 
     @Override
     public void outputTelemetry() {
-        SmartDashboard.putNumber("Hood demand", mPeriodicIO.hoodDemand);
-        SmartDashboard.putNumber("Flywheel demand", mPeriodicIO.flywheelVelocityDemand);
-        SmartDashboard.putNumber("Hood Position", mPeriodicIO.hoodPosition);
-        SmartDashboard.putNumber("Flywheel Speed", mPeriodicIO.flywheelVelocity);
+        // SmartDashboard.putNumber("Hood demand", mPeriodicIO.hoodDemand);
+        // SmartDashboard.putNumber("Flywheel demand", mPeriodicIO.flywheelVelocityDemand);
+        // SmartDashboard.putNumber("Hood Position", mPeriodicIO.hoodPosition);
+        // SmartDashboard.putNumber("Flywheel Speed", mPeriodicIO.flywheelVelocity);
         SmartDashboard.putBoolean("Reached Desired Speed", mPeriodicIO.reachedDesiredSpeed);
         SmartDashboard.putBoolean("Reached Desired Hood", mPeriodicIO.reachedDesiredHoodPosition);
         // SmartDashboard.putBoolean("Ready To Shoot", readyToShoot());
