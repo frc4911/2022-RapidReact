@@ -288,7 +288,6 @@ public class Superstructure extends Subsystem {
             if (!mOverrideLimelightLEDs) {
                 mLLManager.getLimelight().setLed(Limelight.LedMode.PIPELINE);
             }
-
             mShootSetup = true;
             mPeriodicIO.schedDeltaDesired = mFastCycle;
         }
@@ -300,12 +299,14 @@ public class Superstructure extends Subsystem {
 
         // aim
         if (mHasTarget) {
-            mSwerve.setAimingSetpoint(setPointInRadians, 0.0/*mSwerveFeedforwardFromVision*/, timestamp);
+            mSwerve.setAimingSetpoint(setPointInRadians, 0.0 /*mSwerveFeedforwardFromVision*/, timestamp);
 
-            double range = Double.NaN;
             if (mLatestAimingParameters.isPresent()) {
-                range = mLatestAimingParameters.get().getRange();
+                var range = mLatestAimingParameters.get().getRange();
+
+                // TODO - Replace function with an InterpolatingTreeMap.
                 var adjustedRange = adjustRange(range);
+
                 System.out.format("Measured Distance: %.3f, %.3f ft, %.3f inches\n",
                         range, Units.meters_to_feet(range), Units.meters_to_inches(range));
                 System.out.format("Adjusted Distance: %.3f, %.3f ft, %.3f inches\n",
@@ -316,7 +317,6 @@ public class Superstructure extends Subsystem {
                 range -= 52.5;
                 mShooter.setShootDistance(range);
                 mIndexer.setShootDistance(range);
-
             }
 
             // Shoot while aiming
