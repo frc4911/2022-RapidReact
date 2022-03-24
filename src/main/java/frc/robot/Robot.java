@@ -15,15 +15,7 @@ import frc.robot.config.RobotConfiguration;
 import frc.robot.constants.Constants;
 import frc.robot.limelight.LimelightManager;
 import frc.robot.paths.TrajectoryGenerator;
-import frc.robot.subsystems.Climber;
-import frc.robot.subsystems.Collector;
-import frc.robot.subsystems.Indexer;
-import frc.robot.subsystems.JSticks;
-import frc.robot.subsystems.Limelight;
-import frc.robot.subsystems.RobotStateEstimator;
-import frc.robot.subsystems.Shooter;
-import frc.robot.subsystems.Superstructure;
-import frc.robot.subsystems.Swerve;
+import frc.robot.subsystems.*;
 import libraries.cheesylib.autos.AutoModeBase;
 import libraries.cheesylib.autos.AutoModeExecutor;
 import libraries.cheesylib.geometry.Pose2d;
@@ -69,6 +61,7 @@ public class Robot extends TimedRobot {
     private Collector mCollector;
     private RobotStateEstimator mRobotStateEstimator;
     private Limelight mLimelight;
+    private LED mLED;
 
     private AutoModeSelector mAutoModeSelector = new AutoModeSelector();
     private AutoModeExecutor mAutoModeExecutor;
@@ -98,6 +91,7 @@ public class Robot extends TimedRobot {
                 RobotConfiguration.getRobotConfiguration(RobotName.name).getLimelightConfiguration(),
                 Constants.kLowRes1xZoom);
 
+        mLED = LED.getInstance(mClassName);
         // Create subsystem manager and add all subsystems it will manage
         mSubsystemManager = SubsystemManager.getInstance(mClassName);
         mSubsystemManager.initializeSubsystemManager((int) (mLoopPeriod * 1000),
@@ -133,6 +127,8 @@ public class Robot extends TimedRobot {
         }
 
         LimelightManager.getInstance().setLimelight(mLimelight);
+
+        mLED.setWantedAction(LED.WantedAction.DISPLAY_ZEROED, false);
 
         System.out.println("RobotInit() ends");
     }
