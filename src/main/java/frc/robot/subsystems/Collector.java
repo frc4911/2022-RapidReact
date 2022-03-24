@@ -1,6 +1,5 @@
 package frc.robot.subsystems;
 
-import com.ctre.phoenix.motorcontrol.ControlFrame;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.StatorCurrentLimitConfiguration;
@@ -16,12 +15,15 @@ import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.subsystems.SubsystemManager;
 import libraries.cheesylib.util.LatchedBoolean;
+import libraries.cyberlib.control.FramePeriodSwitch;
 
 public class Collector extends Subsystem {
 
     // Hardware
     private final TalonFX mFXMotor;
     private final Solenoid mSolenoid;
+
+    private FramePeriodSwitch mFramePeriods;
 
     // Subsystem Constants
     private final double kCollectSpeed = 0.9;
@@ -34,6 +36,8 @@ public class Collector extends Subsystem {
     private final int kSchedDeltaActive = 20;
     private final int kSchedDeltaDormant = 100;
     private final double kMinAssessmentMovement = 100; // ticks
+    private final int kActiveFramePeriod = 20;
+    private final int kDormantFramePeriod = 100;
 
     // subsystem variables
     private double mAssessingStartPosition;
@@ -117,10 +121,10 @@ public class Collector extends Subsystem {
     }
 
     private void configMotors() {
+        mFramePeriods = new FramePeriodSwitch(mFXMotor, kActiveFramePeriod, kDormantFramePeriod);
+        mFramePeriods.switchToDormant();
         mFXMotor.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
         mFXMotor.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
-
-        mFXMotor.setControlFramePeriod(ControlFrame.Control_3_General, 18);
 
         mFXMotor.setInverted(false);
 
@@ -161,7 +165,6 @@ public class Collector extends Subsystem {
     public void onLoop(double timestamp) {
         synchronized (Collector.this) {
             do {
-                
                 SystemState newState = null;
                 switch (mSystemState) {
                     case ASSESSING:
@@ -212,6 +215,8 @@ public class Collector extends Subsystem {
                 return SystemState.HOLDING;
             case MANUAL_CONTROL:
                 return SystemState.MANUAL_CONTROLLING;
+            // default:
+                // leave commented so compiler will identify missing cases
         }
         return null; // crash if this happens
     }
@@ -241,6 +246,7 @@ public class Collector extends Subsystem {
 
     private SystemState handleAssessing() {
         if (mStateChanged) {
+            mFramePeriods.switchToActive();
             mAssessingStartPosition = mPeriodicIO.motorPosition;
             setSolenoidDemand(SolenoidState.RETRACT);
             setMotorControlModeAndDemand(ControlMode.PercentOutput,kAssessingMotorDemand);
@@ -269,6 +275,7 @@ public class Collector extends Subsystem {
 
     private SystemState handleBacking() {
         if (mStateChanged) {
+            mFramePeriods.switchToActive();
             setSolenoidDemand(SolenoidState.EXTEND);
             setMotorControlModeAndDemand(ControlMode.PercentOutput,kCollectSpeed);
             mPeriodicIO.schedDeltaDesired = kSchedDeltaActive;
@@ -288,6 +295,7 @@ public class Collector extends Subsystem {
 
     private SystemState handleCollecting() {
         if(mStateChanged) {
+            mFramePeriods.switchToActive();
             setSolenoidDemand(SolenoidState.EXTEND);
             setMotorControlModeAndDemand(ControlMode.PercentOutput,kCollectSpeed);
             mPeriodicIO.schedDeltaDesired = kSchedDeltaActive;
@@ -299,6 +307,7 @@ public class Collector extends Subsystem {
 
     private SystemState handleDisabling() {
         if (mStateChanged) {
+            mFramePeriods.switchToDormant();
             setSolenoidDemand(SolenoidState.RETRACT);
             setMotorControlModeAndDemand(ControlMode.PercentOutput,0.0);
             mPeriodicIO.schedDeltaDesired = kSchedDeltaDormant;
@@ -309,6 +318,7 @@ public class Collector extends Subsystem {
 
     private SystemState handleHolding() {
         if (mStateChanged) {
+            mFramePeriods.switchToDormant();
             setSolenoidDemand(SolenoidState.RETRACT);
             setMotorControlModeAndDemand(ControlMode.PercentOutput,0.0);
             mPeriodicIO.schedDeltaDesired = kSchedDeltaDormant;
@@ -319,6 +329,7 @@ public class Collector extends Subsystem {
 
     private SystemState handleManualControlling() {
         if (mStateChanged) {
+            mFramePeriods.switchToActive();
             mTestMotorDemand = 0;
             mTestSolenoidDemand = SolenoidState.RETRACT;
             mPeriodicIO.schedDeltaDesired = kSchedDeltaActive;

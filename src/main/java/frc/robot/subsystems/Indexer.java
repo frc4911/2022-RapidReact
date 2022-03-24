@@ -21,7 +21,7 @@ import libraries.cheesylib.util.LatchedBoolean;
 public class Indexer extends Subsystem {
 
     // Hardware
-    private final TalonFX mFXIndexer;
+    private final TalonFX mFXMotor;
     private final AnalogInput mAIEnterBeamBreak;
     private final AnalogInput mAIExitBeamBreak;
 
@@ -39,32 +39,49 @@ public class Indexer extends Subsystem {
     private final double kIndexerLengthTicks = 35000;
     private final double kBeamBreakThreshold = 3.0;
     private final double kIndexerCurrentLimit = 50;
+    private final double kMinAssessmentMovement = 100;
 
     private double mShotDistance = 0;
 
     // Subsystem States
     public enum SystemState {
+        ASSESSING,
+        BACKING,
+        DISABLING,
+        FEEDING,
         HOLDING,
         LOADING,
-        FEEDING,
-        BACKING
+        MANUAL_CONTROLLING
     }
 
     public enum WantedState {
+        ASSESS,
+        BACK,
+        DISABLE,
+        FEED,
         HOLD,
         LOAD,
-        FEED,
-        BACK
+        MANUAL_CONTROL
     }
 
     private SystemState mSystemState;
     private WantedState mWantedState;
     private boolean mStateChanged;
     private PeriodicIO mPeriodicIO = new PeriodicIO();
-    private LatchedBoolean mSystemStateChange = new LatchedBoolean();
+    private LatchedBoolean mLB_SystemStateChange = new LatchedBoolean();
 
     // Other
     private SubsystemManager mSubsystemManager;
+    private double mAssessingStartPosition;
+    private double kAssessingMotorDemand;
+    private int kSchedDeltaActive;
+    private boolean mAssessmentResult;
+    private boolean mAssessmentHandlerComplete;
+    private LatchedBoolean mLB_handlerLoopCounter;
+    private int kMotorAssessTime;
+    private int kSchedDeltaDormant;
+    private double mTestMotorDemand;
+    private int mHandlerLoopCount;
 
     // Subsystem Creation
     private static String sClassName;
@@ -87,7 +104,7 @@ public class Indexer extends Subsystem {
     private Indexer(String caller) {
         sClassName = this.getClass().getSimpleName();
         printUsage(caller);
-        mFXIndexer = TalonFXFactory.createDefaultTalon(Ports.INDEXER, Constants.kCanivoreName);
+        mFXMotor = TalonFXFactory.createDefaultTalon(Ports.INDEXER, Constants.kCanivoreName);
         mAIEnterBeamBreak = new AnalogInput(Ports.ENTRANCE_BEAM_BREAK);
         mAIExitBeamBreak = new AnalogInput(Ports.EXIT_BEAM_BREAK);
         mSubsystemManager = SubsystemManager.getInstance(sClassName);
@@ -95,20 +112,20 @@ public class Indexer extends Subsystem {
     }
 
     private void configMotors() {
-        mFXIndexer.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor, 0, Constants.kLongCANTimeoutMs);
+        mFXMotor.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor, 0, Constants.kLongCANTimeoutMs);
 
         // TODO verify if this and/or others are needed
-        mFXIndexer.setControlFramePeriod(ControlFrame.Control_3_General, 18);
+        mFXMotor.setControlFramePeriod(ControlFrame.Control_3_General, 18);
 
-        mFXIndexer.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
-        mFXIndexer.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
+        mFXMotor.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
+        mFXMotor.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
 
-        mFXIndexer.setInverted(true);
+        mFXMotor.setInverted(true);
         // mFXIndexer.setSensorPhase(false); TODO: verify this is not needed
 
-        mFXIndexer.setNeutralMode(NeutralMode.Brake);
+        mFXMotor.setNeutralMode(NeutralMode.Brake);
 
-        mFXIndexer.configStatorCurrentLimit(
+        mFXMotor.configStatorCurrentLimit(
                 new StatorCurrentLimitConfiguration(true, kIndexerCurrentLimit, kIndexerCurrentLimit, 0));
 
     }
@@ -116,14 +133,27 @@ public class Indexer extends Subsystem {
     @Override
     public void onStart(Phase phase) {
         synchronized (Indexer.this) {
-            mSystemState = SystemState.HOLDING;
-            mWantedState = WantedState.HOLD;
-            mStateChanged = true;
+            switch (phase){
+                case TELEOP:
+                case AUTONOMOUS:
+                    mSystemState = SystemState.HOLDING;
+                    mWantedState = WantedState.HOLD;
+                    break;
+                case TEST:
+                    mSystemState = SystemState.MANUAL_CONTROLLING;
+                    mWantedState = WantedState.MANUAL_CONTROL;
+                    break;
+                case DISABLED:
+                    mSystemState = SystemState.DISABLING;
+                    mWantedState = WantedState.DISABLE;
+                    break;
+            }
             System.out.println(sClassName + " state " + mSystemState);
             mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
             feedingCompleted = false;
             loadingCompleted = false;
-            stop(); // stop motors just in case they were left running
+            mLB_SystemStateChange.update(false); // reset
+            stop(); // put into a known state
         }
     }
 
@@ -131,23 +161,30 @@ public class Indexer extends Subsystem {
     public void onLoop(double timestamp) {
         synchronized (Indexer.this) {
             do {
-                SystemState newState;
+                SystemState newState = null;
                 switch (mSystemState) {
-                    case LOADING:
-                        newState = handleLoading();
-                        break;
-                    case FEEDING:
-                        newState = handleFeeding();
+                    case ASSESSING:
+                        newState = handleAssessing();
                         break;
                     case BACKING:
                         newState = handleBacking();
                         break;
+                    case DISABLING:
+                        newState = handleDisabling();
+                        break;
+                    case FEEDING:
+                        newState = handleFeeding();
+                        break;
                     case HOLDING:
                         newState = handleHolding();
                         break;
-                    default:
-                        newState = null;
+                    case LOADING:
+                        newState = handleLoading();
                         break;
+                    case MANUAL_CONTROLLING:
+                        newState = handleManualControlling();    
+                        break;
+                        // default:
                 }
 
                 if (newState != mSystemState) {
@@ -158,7 +195,7 @@ public class Indexer extends Subsystem {
                 } else {
                     mStateChanged = false;
                 }
-            } while (mSystemStateChange.update(mStateChanged));
+            } while (mLB_SystemStateChange.update(mStateChanged));
         }
     }
 
@@ -177,6 +214,80 @@ public class Indexer extends Subsystem {
 
     public synchronized WantedState getWantedState() {
         return mWantedState;
+    }
+
+    private SystemState handleAssessing() {
+        if (mStateChanged) {
+            mAssessingStartPosition = mPeriodicIO.motorPosition;
+            setMotorControlModeAndDemand(ControlMode.PercentOutput,kAssessingMotorDemand);
+            mPeriodicIO.schedDeltaDesired = kSchedDeltaActive;
+            mAssessmentResult = false;
+            mAssessmentHandlerComplete = false;
+            mHandlerLoopCount = kMotorAssessTime / mPeriodicIO.schedDeltaDesired; // 250 is .25 sec to run collector forward
+            mLB_handlerLoopCounter.update(false); // reset
+        }
+        // Run collector forward to deploy collector before backing
+        if(mLB_handlerLoopCounter.update(mHandlerLoopCount-- <= 0)) {
+            setMotorControlModeAndDemand(ControlMode.PercentOutput,0);
+            if (mAssessingStartPosition >= mPeriodicIO.motorPosition + kMinAssessmentMovement){
+                mAssessmentResult = true;
+            }
+            mAssessmentHandlerComplete = true;
+        }
+
+        if (mWantedState != WantedState.ASSESS){
+            mAssessmentHandlerComplete = false;
+        }
+
+        return defaultStateTransfer();
+    }
+
+    
+    private SystemState handleBacking() {
+        if (mStateChanged) {
+            mPeriodicIO.indexerDemand = kBackingSpeed;
+            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
+            motorPositionTarget = mPeriodicIO.motorPosition - kIndexerLengthTicks;
+        }
+
+        return defaultStateTransfer();
+    }
+
+    private SystemState handleDisabling() {
+        if (mStateChanged) {
+            setMotorControlModeAndDemand(ControlMode.PercentOutput,0.0);
+            mPeriodicIO.schedDeltaDesired = kSchedDeltaDormant;
+        }
+
+        return defaultStateTransfer();
+    }
+
+    private SystemState handleFeeding() {
+        if (mStateChanged) {
+            if (mShotDistance == 0) {
+                mPeriodicIO.indexerDemand = kFenderShotSpeed;
+            } else {
+                mPeriodicIO.indexerDemand = kFeedingSpeed;
+            }
+            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
+            motorPositionTarget = mPeriodicIO.motorPosition + kIndexerLengthTicks;
+            feedingCompleted = false;
+        }
+
+        if (mPeriodicIO.motorPosition>motorPositionTarget){
+            feedingCompleted = true;
+        }
+
+        if (mWantedState != WantedState.FEED) {
+            feedingCompleted = false;
+        }
+
+        return defaultStateTransfer();
+    }
+
+    // used by automode
+    public boolean feedingComplete(){
+        return feedingCompleted;
     }
 
     private SystemState handleHolding() {
@@ -224,47 +335,20 @@ public class Indexer extends Subsystem {
         return defaultStateTransfer();
     }
 
+    private SystemState handleManualControlling() {
+        if (mStateChanged) {
+            mTestMotorDemand = 0;
+            mPeriodicIO.schedDeltaDesired = kSchedDeltaActive;
+        }
+
+        setMotorControlModeAndDemand(ControlMode.PercentOutput, mTestMotorDemand);
+
+        return defaultStateTransfer();
+    }
+
     // used by automode
     public boolean loadingCompleted(){
         return loadingCompleted;
-    }
-
-    private SystemState handleFeeding() {
-        if (mStateChanged) {
-            if (mShotDistance == 0) {
-                mPeriodicIO.indexerDemand = kFenderShotSpeed;
-            } else {
-                mPeriodicIO.indexerDemand = kFeedingSpeed;
-            }
-            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
-            motorPositionTarget = mPeriodicIO.motorPosition + kIndexerLengthTicks;
-            feedingCompleted = false;
-        }
-
-        if (mPeriodicIO.motorPosition>motorPositionTarget){
-            feedingCompleted = true;
-        }
-
-        if (mWantedState != WantedState.FEED) {
-            feedingCompleted = false;
-        }
-
-        return defaultStateTransfer();
-    }
-
-    // used by automode
-    public boolean feedingComplete(){
-        return feedingCompleted;
-    }
-
-    private SystemState handleBacking() {
-        if (mStateChanged) {
-            mPeriodicIO.indexerDemand = kBackingSpeed;
-            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
-            motorPositionTarget = mPeriodicIO.motorPosition - kIndexerLengthTicks;
-        }
-
-        return defaultStateTransfer();
     }
 
     private SystemState defaultStateTransfer() {
@@ -281,8 +365,21 @@ public class Indexer extends Subsystem {
         }
     }
 
+    private void setMotorControlModeAndDemand(ControlMode controlMode, double demand){
+        // mPeriodicIO.motorControlMode = controlMode;
+        // mPeriodicIO.motorDemand = demand;
+    }
+
     public void setShootDistance(double shotDistance) {
         mShotDistance = shotDistance;
+    }
+
+    public boolean getLastAssessmentResult(){
+        return mAssessmentResult;
+    }
+
+    public void setMotorTestDemand(double newDemand){
+        mTestMotorDemand = newDemand;
     }
 
     @Override
@@ -291,7 +388,7 @@ public class Indexer extends Subsystem {
         mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
         mPeriodicIO.lastSchedStart = now;
 
-        mPeriodicIO.motorPosition = mFXIndexer.getSelectedSensorPosition();
+        mPeriodicIO.motorPosition = mFXMotor.getSelectedSensorPosition();
         // true if beam is blocked
         mPeriodicIO.exitBeamBlocked = mAIExitBeamBreak.getVoltage()<kBeamBreakThreshold;
         mPeriodicIO.enterBeamBlocked = mAIEnterBeamBreak.getVoltage()<kBeamBreakThreshold;
@@ -299,12 +396,12 @@ public class Indexer extends Subsystem {
 
     @Override
     public void writePeriodicOutputs() {
-        mFXIndexer.set(ControlMode.PercentOutput, mPeriodicIO.indexerDemand);
+        mFXMotor.set(ControlMode.PercentOutput, mPeriodicIO.indexerDemand);
     }
 
     @Override
     public void stop() {
-        mFXIndexer.set(ControlMode.PercentOutput, 0);
+        mFXMotor.set(ControlMode.PercentOutput, 0);
     }
 
     @Override
@@ -353,7 +450,7 @@ public class Indexer extends Subsystem {
         SmartDashboard.putBoolean("Indexer Exit Beam Blocked", mPeriodicIO.exitBeamBlocked);
         SmartDashboard.putNumber("Indexer Position", mPeriodicIO.motorPosition);
 
-        SmartDashboard.putNumber("Indexer Current", mFXIndexer.getStatorCurrent());
+        SmartDashboard.putNumber("Indexer Current", mFXMotor.getStatorCurrent());
     }
 
     public static class PeriodicIO {
