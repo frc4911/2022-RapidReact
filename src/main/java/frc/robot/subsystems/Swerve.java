@@ -211,9 +211,9 @@ public class Swerve extends Subsystem {
     /**
      * Handles MANUAL state which corresponds to joy stick inputs.
      *
-     * <p>Using the joy stick values in PeriodicIO, calculate and updates the swerve
-     * states. The joy stick values are as percent [-1.0, 1.0]. They need to be
-     * converted to SI units before creating the ChassisSpeeds.</p>
+     * <p>Using the joy stick values in {@link PeriodicIO PeridicIO}, calculates
+     * and updates the swerve states. The joy stick values are as percent [-1.0, 1.0].
+     * They need to be converted to SI units before creating the ChassisSpeeds.</p>
      */
     private void handleManual() {
         HolonomicDriveSignal driveSignal;
@@ -295,6 +295,12 @@ public class Swerve extends Subsystem {
         if (dt > Util.kEpsilon) {
             mAimingController.setSetpoint(mPeriodicIO.visionSetpointInRadians);
             var rotation = mAimingController.calculate(getHeading().getRadians(), dt);
+
+            // Apply a minimum constant rotation velocity to overcome friction.
+            // TODO:  Create constants for these
+            if ((mPeriodicIO.averageWheelVelocity / mSwerveConfiguration.maxSpeedInMetersPerSecond) < 0.2) {
+                rotation += Math.copySign(0.3 * mSwerveConfiguration.maxSpeedInRadiansPerSecond, rotation);
+            }
 
             // Turn in place implies no translational velocity.
             HolonomicDriveSignal driveSignal = new HolonomicDriveSignal(
@@ -383,6 +389,9 @@ public class Swerve extends Subsystem {
         var backLeft = mBackLeft.getState();
         var backRight = mBackRight.getState();
 
+        mPeriodicIO.averageWheelVelocity = (frontLeft.speedInMetersPerSecond + frontLeft.speedInMetersPerSecond +
+                backLeft.speedInMetersPerSecond + backRight.speedInMetersPerSecond) / 4;
+
         // order is CCW starting with front right.
         mPeriodicIO.chassisSpeeds = mKinematics.toChassisSpeeds(frontRight, frontLeft, backLeft, backRight);
         mPeriodicIO.robotPose = mOdometry.updateWithTime(
@@ -442,8 +451,7 @@ public class Swerve extends Subsystem {
 
     /**
      * Configure modules for open loop control
-     * <p>
-     * 
+     *
      * @param signal The HolonomicDriveSignal to apply
      */
     public synchronized void setOpenLoop(HolonomicDriveSignal signal) {
@@ -456,8 +464,7 @@ public class Swerve extends Subsystem {
 
     /**
      * Configure modules for path following.
-     * <p>
-     * 
+     *
      * @param signal The HolonomicDriveSignal to apply
      */
     public synchronized void setPathFollowingVelocity(HolonomicDriveSignal signal) {
@@ -661,6 +668,7 @@ public class Swerve extends Subsystem {
         // Updated as part of vision aiming
         public double visionSetpointInRadians;
         public double visionFeedForward;
+        public double averageWheelVelocity;
 
         // Inputs
         public Rotation2d gyro_heading = Rotation2d.identity();

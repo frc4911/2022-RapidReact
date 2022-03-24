@@ -100,11 +100,14 @@ public class RobotStateEstimator extends Subsystem {
                 chassisSpeeds.vyInMetersPerSecond,
                 chassisSpeeds.omegaInRadiansPerSecond);
 
+        var delta_dx = chassisSpeeds.vxInMetersPerSecond - mPrevChassisSpeeds.vxInMetersPerSecond;
+        var delta_dy = chassisSpeeds.vyInMetersPerSecond - mPrevChassisSpeeds.vyInMetersPerSecond;
+        var delta_dtheta = chassisSpeeds.omegaInRadiansPerSecond - mPrevChassisSpeeds.omegaInRadiansPerSecond;
+
         final Twist2d predictedVelocity = new Twist2d(
-                chassisSpeeds.vxInMetersPerSecond - mPrevChassisSpeeds.vxInMetersPerSecond,
-                chassisSpeeds.vyInMetersPerSecond - mPrevChassisSpeeds.vyInMetersPerSecond,
-                chassisSpeeds.omegaInRadiansPerSecond - mPrevChassisSpeeds.omegaInRadiansPerSecond
-               ).scaled(1.0 / dt);
+                chassisSpeeds.vxInMetersPerSecond + delta_dx,
+                chassisSpeeds.vyInMetersPerSecond + delta_dy,
+                chassisSpeeds.omegaInRadiansPerSecond + delta_dtheta);
 
         mRobotState.addFieldToVehicleObservation(timestamp, mSwerve.getPose(), measuredVelocity, predictedVelocity);
         mPrevChassisSpeeds = chassisSpeeds;
