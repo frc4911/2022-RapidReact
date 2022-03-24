@@ -61,7 +61,6 @@ public class Robot extends TimedRobot {
     private Collector mCollector;
     private RobotStateEstimator mRobotStateEstimator;
     private Limelight mLimelight;
-    private LED mLED;
 
     private AutoModeSelector mAutoModeSelector = new AutoModeSelector();
     private AutoModeExecutor mAutoModeExecutor;
@@ -91,7 +90,6 @@ public class Robot extends TimedRobot {
                 RobotConfiguration.getRobotConfiguration(RobotName.name).getLimelightConfiguration(),
                 Constants.kLowRes1xZoom);
 
-        mLED = LED.getInstance(mClassName);
         // Create subsystem manager and add all subsystems it will manage
         mSubsystemManager = SubsystemManager.getInstance(mClassName);
         mSubsystemManager.initializeSubsystemManager((int) (mLoopPeriod * 1000),
@@ -127,8 +125,6 @@ public class Robot extends TimedRobot {
         }
 
         LimelightManager.getInstance().setLimelight(mLimelight);
-
-        mLED.setWantedAction(LED.WantedAction.DISPLAY_ZEROED, false);
 
         System.out.println("RobotInit() ends");
     }
