@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class PathTest {
     @Test
     void parameterize_line_1() {
-        var builder = new PathBuilder(new Translation2d(), new Rotation2d(), new Rotation2d())
+        var builder = new PathBuilder(new Translation2d(), new Rotation2d())
                 .lineTo(new Translation2d(1.0, 1.0));
 
         var points = builder.build().parameterize();
@@ -20,7 +20,7 @@ class PathTest {
 
     @Test
     void parameterize_line_2() {
-        var builder = new PathBuilder(new Translation2d(), new Rotation2d(), new Rotation2d())
+        var builder = new PathBuilder(new Translation2d(), new Rotation2d())
                 .lineTo(new Translation2d(1.0, 1.0), Rotation2d.fromDegrees(180));
 
         var points = builder.build().parameterize();
@@ -31,7 +31,7 @@ class PathTest {
 
     @Test
     void parameterize_line_3() {
-        var builder = new PathBuilder(new Translation2d(), new Rotation2d(), new Rotation2d())
+        var builder = new PathBuilder(new Translation2d(), new Rotation2d())
                 .lineTo(new Translation2d(1.0, 1.0),
                         new Translation2d(2.0, 0.0));
 
@@ -43,7 +43,7 @@ class PathTest {
 
     @Test
     void parameterize_arc_1() {
-        var builder = new PathBuilder(new Translation2d(), new Rotation2d(), new Rotation2d())
+        var builder = new PathBuilder(new Translation2d(), new Rotation2d())
                 .arcTo(new Translation2d(1.0, 1.0),
                         new Translation2d(1.0, 0.0));
 
@@ -55,7 +55,7 @@ class PathTest {
 
     @Test
     void parameterize_arc_2() {
-        var builder = new PathBuilder(new Translation2d(), new Rotation2d(), new Rotation2d())
+        var builder = new PathBuilder(new Translation2d(), new Rotation2d())
                 .arcTo(new Translation2d(1.0, 1.0),
                         new Translation2d(1.0, 0.0),
                         Rotation2d.fromDegrees(180));
@@ -68,7 +68,7 @@ class PathTest {
 
     @Test
     void parameterize_arc_and_line() {
-        var builder = new PathBuilder(new Translation2d(), new Rotation2d(), new Rotation2d())
+        var builder = new PathBuilder(new Translation2d(), new Rotation2d())
                 .arcTo(new Translation2d(1.0, 1.0),
                         new Translation2d(1.0, 0.0),
                         Rotation2d.fromDegrees(-90))
@@ -82,7 +82,7 @@ class PathTest {
 
     @Test
     void parameterize_spline() {
-        var builder = new PathBuilder(new Translation2d(), new Rotation2d(), new Rotation2d())
+        var builder = new PathBuilder(new Translation2d(), new Rotation2d())
                 .splineTo(new Translation2d(1.0, 1.0));
 
         var points = builder.build().parameterize();

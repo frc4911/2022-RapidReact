@@ -1,5 +1,7 @@
 package libraries.cyberlib.utils;
 
+import libraries.cheesylib.geometry.Translation2d;
+
 import java.util.List;
 
 public class Angles {
@@ -15,6 +17,13 @@ public class Angles {
         final double angle = Math.atan2(p2.get(1) - p1.get(1), p2.get(0) - p1.get(0));
         return normalizeAnglePositive(angle);
     }
+
+    public static double getLineAngle(final Translation2d p1, final Translation2d p2) {
+        final double angle = Math.atan2(p2.y() - p1.y(), p2.x() - p1.x());
+        return normalizeAnglePositive(angle);
+    }
+
+
 
     /**
      * Normalizes the angle to be 0 to 2*pi.

@@ -2,6 +2,7 @@ package libraries.cyberlib.trajectory.swerve;
 
 import libraries.cheesylib.geometry.Translation2d;
 import libraries.cyberlib.spline.QuinticHermiteSpline3D;
+import libraries.cyberlib.spline.Spline3D;
 import libraries.cyberlib.spline.Spline3DHelper;
 import libraries.cyberlib.trajectory.Trajectory;
 import libraries.cyberlib.trajectory.TrajectoryConfig;
@@ -47,10 +48,10 @@ public class SwerveTrajectoryGenerator {
             TrajectoryConfig config,
             List<QuinticHermiteSpline3D> splines) {
 
-        System.out.println("wayPoints");
-        for (var wayPoint : wayPoints) {
-            System.out.println(wayPoint.toString());
-        }
+//        System.out.println("wayPoints");
+//        for (var wayPoint : wayPoints) {
+//            System.out.println(wayPoint.toString());
+//        }
 
         List<TrajectoryPoint> points = createTrajectoryPoints(wayPoints);
 
@@ -68,16 +69,16 @@ public class SwerveTrajectoryGenerator {
                 0.05,
                 splines);
 
-        System.out.println("Splines");
-        for (QuinticHermiteSpline3D spline : splines) {
-            System.out.println(spline.toString());
-        }
+//        System.out.println("Splines");
+//        for (QuinticHermiteSpline3D spline : splines) {
+//            System.out.println(spline.toString());
+//        }
 
-        System.out.println();
-        System.out.println();
-
-        System.out.println("Trajectory");
-        System.out.println(trajectory.toString());
+//        System.out.println();
+//        System.out.println();
+//
+//        System.out.println("Trajectory");
+//        System.out.println(trajectory.toString());
 
         return trajectory;
     }

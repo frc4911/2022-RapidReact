@@ -1,14 +1,23 @@
 package frc.robot.paths;
 
 import edu.wpi.first.wpilibj.Timer;
+import libraries.cheesylib.geometry.Rotation2d;
+import libraries.cheesylib.geometry.Translation2d;
 import libraries.cheesylib.util.Units;
+import libraries.cyberlib.paths.Path;
 import libraries.cyberlib.paths.PathBuilder;
+import libraries.cyberlib.paths.SplinePath;
+import libraries.cyberlib.paths.SplinePathBuilder;
 import libraries.cyberlib.spline.PoseWithCurvatureAndOrientation;
+import libraries.cyberlib.spline.QuinticHermiteSpline3D;
 import libraries.cyberlib.trajectory.Trajectory;
 import libraries.cyberlib.trajectory.TrajectoryConfig;
 import libraries.cyberlib.trajectory.TrajectoryGenerator;
 
+import java.util.ArrayList;
 import java.util.List;
+
+import static libraries.cyberlib.trajectory.swerve.SwerveTrajectoryGenerator.create_trajectory;
 
 public class SwerveDriveTrajectoryGenerator {
     private static SwerveDriveTrajectoryGenerator mInstance;
@@ -38,11 +47,17 @@ public class SwerveDriveTrajectoryGenerator {
         return mTrajectorySet;
     }
 
-    public static Trajectory generateTrajectory(
-            final List<PoseWithCurvatureAndOrientation> points,
-            TrajectoryConfig config) {
+    public static Trajectory generateTrajectory(final SplinePath path, TrajectoryConfig config) {
+        List<QuinticHermiteSpline3D> splines = new ArrayList<>();
 
-        var trajectory = TrajectoryGenerator.generateTrajectoryFromPoints(points, config);
+        var trajectory = create_trajectory(
+                path.waypoints,
+                path.startHeading.getRadians(),
+                path.endHeading.getRadians(),
+                config,
+                splines
+        );
+
         return trajectory;
     }
 
@@ -59,39 +74,21 @@ public class SwerveDriveTrajectoryGenerator {
         }
 
         private Trajectory getTestTrajectory(TrajectoryConfig config) {
-            var builder = new PathBuilder(
-                    new edu.wpi.first.math.geometry.Translation2d(0.0, 0.0),
-                    new edu.wpi.first.math.geometry.Rotation2d(),
-                    new edu.wpi.first.math.geometry.Rotation2d())
-                    .lineTo(new edu.wpi.first.math.geometry.Translation2d(
-                            Units.inches_to_meters(60), Units.inches_to_meters(-45)))
-                    .lineTo(new edu.wpi.first.math.geometry.Translation2d(
-                            Units.inches_to_meters(100), Units.inches_to_meters(0)))
-                    .lineTo(new edu.wpi.first.math.geometry.Translation2d(
-                            Units.inches_to_meters(60), Units.inches_to_meters(0)))
-                    .lineTo(new edu.wpi.first.math.geometry.Translation2d(
-                            Units.inches_to_meters(0), Units.inches_to_meters(0)));
+            var builder = new SplinePathBuilder(
+                    Translation2d.identity(), Rotation2d.identity(), Rotation2d.fromDegrees(180))
+                    .splineTo(new Translation2d(Units.inches_to_meters(60), Units.inches_to_meters(-45)));
 
             var path = builder.build();
-            return generateTrajectory(path.parameterize(), config);
+            return generateTrajectory(path, config);
         }
 
         private Trajectory getTestTrajectoryBack(TrajectoryConfig config) {
-            var builder = new PathBuilder(
-                    new edu.wpi.first.math.geometry.Translation2d(0.0, 0.0),
-                    new edu.wpi.first.math.geometry.Rotation2d(),
-                    new edu.wpi.first.math.geometry.Rotation2d())
-                    .lineTo(new edu.wpi.first.math.geometry.Translation2d(
-                            Units.inches_to_meters(60), Units.inches_to_meters(45)))
-                    .lineTo(new edu.wpi.first.math.geometry.Translation2d(
-                            Units.inches_to_meters(100), Units.inches_to_meters(0)))
-                    .lineTo(new edu.wpi.first.math.geometry.Translation2d(
-                            Units.inches_to_meters(60), Units.inches_to_meters(-45)))
-                    .lineTo(new edu.wpi.first.math.geometry.Translation2d(
-                            Units.inches_to_meters(0), Units.inches_to_meters(0)));
+            var builder = new SplinePathBuilder(
+                    Translation2d.identity(), Rotation2d.identity(), Rotation2d.fromDegrees(180))
+                    .splineTo(new Translation2d(Units.inches_to_meters(-60), Units.inches_to_meters(45)));
 
             var path = builder.build();
-            return generateTrajectory(path.parameterize(), config);
+            return generateTrajectory(path, config);
        }
     }
 }
