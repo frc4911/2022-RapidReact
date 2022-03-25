@@ -537,11 +537,11 @@ public class Shooter extends Subsystem {
     double lastFlyDemand;
     private void setMotors(double flyDemand, double hoodDemand) {
         if (lastHoodDemand != hoodDemand){
-            System.out.println("new hoodDemand "+hoodDemand);
+            // System.out.println("new hoodDemand "+hoodDemand);
             lastHoodDemand = hoodDemand;
         }
         if (lastFlyDemand != flyDemand){
-            System.out.println("new flyDemand "+flyDemand);
+            // System.out.println("new flyDemand "+flyDemand);
             lastFlyDemand = flyDemand;
         }
         mFXLeftFlyWheel.set(ControlMode.Velocity, flyDemand);

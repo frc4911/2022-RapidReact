@@ -297,12 +297,16 @@ public class Swerve extends Subsystem {
             mAimingController.setSetpoint(mPeriodicIO.visionSetpointInRadians);
             var rotation = mAimingController.calculate(getHeading().getRadians(), dt);
 
+            double origRot = rotation;
             // Apply a minimum constant rotation velocity to overcome friction.
             // TODO:  Create constants for these
-            if ((mPeriodicIO.averageWheelVelocity / mSwerveConfiguration.maxSpeedInMetersPerSecond) < 0.2) {
-                rotation += Math.copySign(0.3 * mSwerveConfiguration.maxSpeedInRadiansPerSecond, rotation);
-            }
-
+            // if ((mPeriodicIO.averageWheelVelocity / mSwerveConfiguration.maxSpeedInMetersPerSecond) < 0.2) {
+            //     rotation += Math.copySign(0.3 * mSwerveConfiguration.maxSpeedInRadiansPerSecond, rotation);
+            // }
+            // if (Math.abs(rotation)<.15){
+            //     rotation = Math.copySign(.15, rotation);
+            // }
+            System.out.println("Swerve.handleAiming() setpoint degrees: "+Math.toDegrees(mPeriodicIO.visionSetpointInRadians)+ " heading: "+getHeading().getDegrees()+" rotation: "+origRot);//+" adj rotation: "+rotation);
             // Turn in place implies no translational velocity.
             HolonomicDriveSignal driveSignal = new HolonomicDriveSignal(
                     Translation2d.identity(),

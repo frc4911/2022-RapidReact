@@ -278,6 +278,8 @@ public class Superstructure extends Subsystem {
         return measured * 1.7234042553191-72.13829787234;
     }
 
+    int loopCounter;
+    double mSetPointInRadians;
     // TODO: Get help with logic and limelight implementation - CURRENTLY UNUSED
     // If time constrains, may not be complete by Week 1
     private SystemState handleAutoShooting(double timestamp) {
@@ -287,15 +289,26 @@ public class Superstructure extends Subsystem {
             }
             mShootSetup = true;
             mPeriodicIO.schedDeltaDesired = mFastCycle;
+            mShooter.setWantedState(Shooter.WantedState.SHOOT, sClassName);
+            mSetPointInRadians = Double.NaN;
+            loopCounter = -1;
         }
-
+        loopCounter++;
         var setPointInRadians = getSwerveSetpointFromVision(timestamp);
+        
+        // SmartDashboard.putNumber("setPointHeading degrees", Math.toDegrees(setPointInRadians));
 //        System.out.println("SetPointInRadians: " + setPointInRadians + " Degrees: " + Math.toDegrees(setPointInRadians));
 //        System.out.println("FeedForwardFromVision: " + mSwerveFeedforwardFromVision);
 //        System.out.println("Has Target: " + mHasTarget + " On Target: " + mOnTarget);
 
         // aim
         if (mHasTarget) {
+            
+            if (Double.isNaN(mSetPointInRadians)){
+                mSetPointInRadians = setPointInRadians;
+                // System.out.println("has target and setting to "+Math.toDegrees(mSetPointInRadians));
+
+            }
             mSwerve.setAimingSetpoint(setPointInRadians, 0.0 /*mSwerveFeedforwardFromVision*/, timestamp);
 
             if (mLatestAimingParameters.isPresent()) {
@@ -304,14 +317,14 @@ public class Superstructure extends Subsystem {
                 // TODO - Replace function with an InterpolatingTreeMap.
                 var adjustedRange = adjustRange(range);
 
-                System.out.format("Measured Distance: %.3f, %.3f ft, %.3f inches\n",
-                        range, Units.meters_to_feet(range), Units.meters_to_inches(range));
-                System.out.format("Adjusted Distance: %.3f, %.3f ft, %.3f inches\n",
-                        adjustedRange, Units.meters_to_feet(adjustedRange), Units.meters_to_inches(adjustedRange));
+                // System.out.format("Measured Distance: %.3f, %.3f ft, %.3f inches\n",
+                //         range, Units.meters_to_feet(range), Units.meters_to_inches(range));
+                // System.out.format("Adjusted Distance: %.3f, %.3f ft, %.3f inches\n",
+                //         adjustedRange, Units.meters_to_feet(adjustedRange), Units.meters_to_inches(adjustedRange));
 
                 // difference between the range (center of shooter to center of hub)
                 // and shooter distance (fender to front of bumper) is 52.5 inches.
-                range -= 52.5;
+                range -= Units.inches_to_meters(52.5);
                 mShooter.setShootDistance(range);
             }
 
@@ -535,19 +548,15 @@ public class Superstructure extends Subsystem {
         if (mLatestAimingParameters.isPresent()) {
             mTrackId = mLatestAimingParameters.get().getTrackId();
 
-            // if (Constants.kIsHoodTuning) {
-//            SmartDashboard.putNumber("Range To Target", mLatestAimingParameters.get().getRange());
-            // }
-
-            // Don't aim if not in min distance
-//            if (mEnforceAutoAimMinDistance && mLatestAimingParameters.get().getRange() > mAutoAimMinDistance) {
-//                return mSwerve.getHeading().getRadians();
-//            }
-
             Rotation2d error = mRobotState.getFieldToVehicle(timestamp).inverse()
                     .transformBy(mLatestAimingParameters.get().getFieldToGoal()).getTranslation().direction();
 
+            double llTX = -mLLManager.getLimelight().getXOffset();
+
+            // double setPointInRadians =  mSwerve.getHeading().getRadians() + Math.toRadians(llTX);
             double setPointInRadians =  mSwerve.getHeading().getRadians() + error.getRadians();
+
+            System.out.println("SuperStructure.getSwerveSetpointFromVision() "+loopCounter+"(time "+Timer.getFPGATimestamp()+") heading degrees:"+mSwerve.getHeading().getDegrees() + " error: "+error.getDegrees()+" llTx:"+llTX);
             // System.out.println("super.getSwervsetpointfromvision:"+error.toString());
             Twist2d velocity = mRobotState.getMeasuredVelocity();
             // Angular velocity component from tangential robot motion about the goal.
@@ -560,6 +569,7 @@ public class Superstructure extends Subsystem {
 
             // TODO:  Within 1.5 degrees?  And make a constant.
             mOnTarget = Util.epsilonEquals(error.getDegrees(), 0.0, 1.5);
+            // mOnTarget = Util.epsilonEquals(llTX, 0.0, 1.5);
 
             return Angles.normalizeAngle(setPointInRadians);
 

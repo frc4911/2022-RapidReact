@@ -149,7 +149,7 @@ public class Constants {
             Units.feetToMeters(2.0), Units.feetToMeters(2.0));
 
     // These worked for DeadEye's PID
-    public static double kAimingKP = 1.35;
+    public static double kAimingKP = 1.0;
     public static double kAimingKI = 0.0;
     public static double kAimingKD = 0.0;
 
