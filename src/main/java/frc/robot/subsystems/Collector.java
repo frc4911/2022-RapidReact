@@ -144,18 +144,18 @@ public class Collector extends Subsystem {
                     mSystemState = SystemState.HOLDING;
                     mWantedState = WantedState.HOLD;
                     break;
-                case TEST:
-                    mSystemState = SystemState.MANUAL_CONTROLLING;
-                    mWantedState = WantedState.MANUAL_CONTROL;
-                    break;
                 case DISABLED:
                     mSystemState = SystemState.DISABLING;
                     mWantedState = WantedState.DISABLE;
                     break;
+                case TEST:
+                    mSystemState = SystemState.MANUAL_CONTROLLING;
+                    mWantedState = WantedState.MANUAL_CONTROL;
+                    break;
             }
             mStateChanged = true;
             System.out.println(sClassName + " state " + mSystemState);
-            mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
+            mPeriodicIO.schedDeltaDesired = kSchedDeltaActive;
             mLB_SystemStateChange.update(false); // reset
             stop(); // put into a known state
         }
@@ -221,7 +221,7 @@ public class Collector extends Subsystem {
         return null; // crash if this happens
     }
 
-    public boolean isCollectorStageDone(WantedState state) {
+    public boolean isHandlerComplete(WantedState state) {
         switch(state) {
             case ASSESS:
                 return mAssessmentHandlerComplete;
@@ -439,8 +439,6 @@ public class Collector extends Subsystem {
 
     public static class PeriodicIO {
         // Logging
-
-        private final int mDefaultSchedDelta = 20; // axis updated every 20 msec
         private int schedDeltaDesired;
         public double schedDeltaActual;
         private double lastSchedStart;

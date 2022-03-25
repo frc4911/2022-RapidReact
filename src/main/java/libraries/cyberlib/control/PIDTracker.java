@@ -4,14 +4,6 @@ import edu.wpi.first.wpilibj.Timer;
 
 public class PIDTracker {
     
-    // must move before stopped
-    // final summary
-    // max velocity
-    // max acc/dec
-    // passed through goal
-    // entered from below/above
-    // exited below/above
-
     private int size;
     private int target;
     private int targetZone;
@@ -73,12 +65,12 @@ public class PIDTracker {
         else{
             position *= directionOfTravel;
         }
-
-        if (Math.abs(position - startPosition)>moveThreshold){
+        int distanceTraveled = Math.abs(position - startPosition);
+        if (distanceTraveled>moveThreshold){
             hasMoved = true;
         }
 
-        percentTraveled = ((double)(position-startPosition))/(double)pathLength;
+        percentTraveled = (double)distanceTraveled/(double)pathLength;
 
         // total points
         positionCount++;
@@ -145,7 +137,7 @@ public class PIDTracker {
             }
 
             previousIndex = index;
-            index = (++index)%positions.size;
+            index = (++index)%positions.length;
         }
     }
 
@@ -168,19 +160,40 @@ public class PIDTracker {
     public double getMaxAverageVelocity(){
         return maxAveVelocity;
     }
+
     public double getMinAverageVelocity(){
         return minAveVelocity;
     }
+
     public double getMaxAverageAcc(){
         return maxAveAcc;
     }
+
     public double getMinAverageAcc(){
         return minAveAcc;
     }
+
     public double getCurrentAverageVelocity(){
         return currentAveVelocity;
     }
+
     public double getCurrentAverageAcc(){
         return currentAveVelocity;
+    }
+
+    public int getTargetZoneNearEdgeCrossedCount(){
+        return targetZoneNearEdgeCrossed;
+    }
+
+    public int getTargetZoneFarEdgeCrossedCount(){
+        return targetZoneFarEdgeCrossed;
+    }
+
+    public double getPercentTraveled(){
+        return percentTraveled;
+    }
+
+    public String toString(){
+        return ""; //System.out.format("currPos: %d, target: %d, percentTraveled: %d, ", positions[previousIndex], target, (int)(percentTraveled*100));
     }
 }
