@@ -56,6 +56,7 @@ public class LimelightTest {
 
 
         var topCorners = getTopCorners(limelight, farCorners);
+//        var topCorners = getBottomCorners(limelight, farCorners);
 
         var targets = limelight.getRawTargetInfos(topCorners,
                 mPipelineConfig, mTargets, mConfig.getHorizontalFOV(), mConfig.getVerticalFOV());
@@ -96,7 +97,7 @@ public class LimelightTest {
             }
         }
 
-        return limelight.extractTopCornersFromBoundingBoxes(xCorners, yCorners);
+        return limelight.extractTopOutermostCornersFromBoundingBoxes(xCorners, yCorners);
     }
 
     private List<double[]> getBottomCorners(Limelight limelight, double[] corners) {
@@ -112,7 +113,7 @@ public class LimelightTest {
             }
         }
 
-        return limelight.extractBottomCornersFromBoundingBoxes(xCorners, yCorners);
+        return limelight.extractBottomOutermostCornersFromBoundingBoxes(xCorners, yCorners);
     }
 
 
