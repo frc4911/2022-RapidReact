@@ -556,6 +556,12 @@ public class Superstructure extends Subsystem {
             // double setPointInRadians =  mSwerve.getHeading().getRadians() + Math.toRadians(llTX);
             double setPointInRadians =  mSwerve.getHeading().getRadians() + error.getRadians();
 
+            // Help troubleshooting
+            SmartDashboard.putNumber("Aim/Setpoint", Math.toDegrees(setPointInRadians));
+            SmartDashboard.putNumber("Aim/Error", error.getDegrees());
+            SmartDashboard.putNumber("Aim/Heading", mSwerve.getHeading().getDegrees());
+            SmartDashboard.putNumber("Aim/Range", mLatestAimingParameters.get().getRange());
+
             System.out.println("SuperStructure.getSwerveSetpointFromVision() "+loopCounter+"(time "+Timer.getFPGATimestamp()+") heading degrees:"+mSwerve.getHeading().getDegrees() + " error: "+error.getDegrees()+" llTx:"+llTX);
             // System.out.println("super.getSwervsetpointfromvision:"+error.toString());
             Twist2d velocity = mRobotState.getMeasuredVelocity();

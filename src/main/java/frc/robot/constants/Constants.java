@@ -119,7 +119,7 @@ public class Constants {
     public static final double kImageCaptureLatency = 11.0 / 1000.0; // seconds
 
     public static final double kMaxTrackerDistance = Units.feetToMeters(16.0);
-    public static final double kMaxGoalTrackAge = 1.75; //2.5;
+    public static final double kMaxGoalTrackAge = 1.0; //2.5;
     public static final double kMaxGoalTrackSmoothingTime = 0.5;
     public static final double kCameraFrameRate = 90.0; // fps
 
@@ -149,7 +149,7 @@ public class Constants {
             Units.feetToMeters(2.0), Units.feetToMeters(2.0));
 
     // These worked for DeadEye's PID
-    public static double kAimingKP = 1.0;
+    public static double kAimingKP = 0.25;
     public static double kAimingKI = 0.0;
     public static double kAimingKD = 0.0;
 

@@ -133,6 +133,8 @@ public class Robot extends TimedRobot {
     @Override
     public void robotPeriodic() {
         mAutoModeSelector.outputToSmartDashboard();
+        // Ensure timely updates when graphing values etc.
+        NetworkTableInstance.getDefault().flush();
     }
 
     @Override
@@ -196,8 +198,6 @@ public class Robot extends TimedRobot {
     @Override
     public void teleopPeriodic() {
         // This will send the Network Table data to DriveStation at a consistent rate.
-        // TODO: Measure any network bandwidth issues because of this.
-        NetworkTableInstance.getDefault().flush();
     }
 
     @Override

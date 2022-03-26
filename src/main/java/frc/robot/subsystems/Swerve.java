@@ -73,9 +73,7 @@ public class Swerve extends Subsystem {
             Constants.kAimingKP, Constants.kAimingKI, Constants.kAimingKD
     );
 
-    private final HeadingController mAimingHeaderController = new HeadingController(
-            Constants.kAimingKP, Constants.kAimingKI, Constants.kAimingKD, 0.0
-    );
+    private static HeadingController mAimingHeaderController;
 
     private double lastAimTimestamp = -1.0;
 
@@ -90,6 +88,9 @@ public class Swerve extends Subsystem {
     public static Swerve getInstance(String caller) {
         if (sInstance == null) {
             sInstance = new Swerve(caller);
+            mAimingHeaderController = new HeadingController(
+                    Constants.kAimingKP, Constants.kAimingKI, Constants.kAimingKD, 0.0
+            );
         } else {
             printUsage(caller);
         }
