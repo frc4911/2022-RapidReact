@@ -24,6 +24,7 @@ import libraries.cheesylib.trajectory.TrajectoryIterator;
 import libraries.cheesylib.trajectory.timing.TimedState;
 import libraries.cheesylib.util.SynchronousPIDF;
 import libraries.cheesylib.util.Util;
+import libraries.cyberlib.control.HeadingController;
 import libraries.cyberlib.kinematics.ChassisSpeeds;
 import libraries.cyberlib.kinematics.SwerveDriveKinematics;
 import libraries.cyberlib.kinematics.SwerveDriveOdometry;
@@ -71,6 +72,11 @@ public class Swerve extends Subsystem {
     private SynchronousPIDF mAimingController = new SynchronousPIDF(
             Constants.kAimingKP, Constants.kAimingKI, Constants.kAimingKD
     );
+
+    private final HeadingController mAimingHeaderController = new HeadingController(
+            Constants.kAimingKP, Constants.kAimingKI, Constants.kAimingKD, 0.0
+    );
+
     private double lastAimTimestamp = -1.0;
 
     // Trajectory following
@@ -294,8 +300,19 @@ public class Swerve extends Subsystem {
         lastAimTimestamp = timestamp;
 
         if (dt > Util.kEpsilon) {
-            mAimingController.setSetpoint(mPeriodicIO.visionSetpointInRadians);
-            var rotation = mAimingController.calculate(getHeading().getRadians(), dt);
+            mAimingHeaderController.setGoal(Math.toDegrees(mPeriodicIO.visionSetpointInRadians));
+            var rotation = mAimingHeaderController.update();
+
+//            mAimingController.setSetpoint(mPeriodicIO.visionSetpointInRadians);
+//            double current_angle = getHeading().getDegrees();
+//            double current_error = Math.toDegrees(mPeriodicIO.visionSetpointInRadians) - current_angle;
+//            if (current_error > 180) {
+//                current_angle += 360;
+//            } else if (current_error < -180) {
+//                current_angle -= 360;
+//            }
+//
+//            var rotation = mAimingController.calculate(Math.toRadians(current_angle), dt);
 
             double origRot = rotation;
             // Apply a minimum constant rotation velocity to overcome friction.
@@ -317,6 +334,16 @@ public class Swerve extends Subsystem {
             //System.out.println("Robot Pose " + mPeriodicIO.robotPose);
         }
     }
+
+    public synchronized void EnableAimingController() {
+        mAimingHeaderController.reset();
+        mAimingHeaderController.setHeadingControllerState(HeadingController.HeadingControllerState.MAINTAIN);
+    }
+
+    public synchronized void DisableAimingController() {
+        mAimingHeaderController.setHeadingControllerState(HeadingController.HeadingControllerState.OFF);
+    }
+
 
     // //Assigns appropriate directions for scrub factors
     // public void setCarpetDirection(boolean standardDirection) {
