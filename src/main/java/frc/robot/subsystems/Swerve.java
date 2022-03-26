@@ -295,7 +295,15 @@ public class Swerve extends Subsystem {
 
         if (dt > Util.kEpsilon) {
             mAimingController.setSetpoint(mPeriodicIO.visionSetpointInRadians);
-            var rotation = mAimingController.calculate(getHeading().getRadians(), dt);
+            double current_angle = getHeading().getDegrees();
+            double current_error = Math.toDegrees(mPeriodicIO.visionSetpointInRadians) - current_angle;
+            if (current_error > 180) {
+                current_angle += 360;
+            } else if (current_error < -180) {
+                current_angle -= 360;
+            }
+            
+            var rotation = mAimingController.calculate(Math.toRadians(current_angle), dt);
 
             double origRot = rotation;
             // Apply a minimum constant rotation velocity to overcome friction.

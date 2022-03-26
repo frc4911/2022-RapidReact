@@ -9,18 +9,68 @@ import edu.wpi.first.wpilibj.Timer;
 
 public class FramePeriodSwitch {
     TalonFX mFXMotor;
-    int mActiveFramePeriod; 
-    int mDormantFramePeriod;
-    boolean mLastRunWasActive;
 
-    final int kTimeout = 0;
-    public FramePeriodSwitch(TalonFX FXMotor, int activeFramePeriod, int dormantFramePeriod){
-        mFXMotor = FXMotor;
-        mActiveFramePeriod = activeFramePeriod;
-        mDormantFramePeriod = dormantFramePeriod;
+    public FramePeriodSwitch(TalonFX FXMotor){
+        this.mFXMotor = FXMotor;
+        setFramePeriods();
+    }
+
+    void setOneStatusFramePeriod(StatusFrameEnhanced statusFrame, int framePeriod){
+        int retries = 5;
         ErrorCode retVal;
-        int retries;
 
+        do {
+            retVal = mFXMotor.setStatusFramePeriod(statusFrame, framePeriod, 100);
+        } while(!retVal.equals(ErrorCode.OK) && retries-- > 0);
+
+        if (!retVal.equals(ErrorCode.OK)){
+            System.out.println("setStatusFramePeriod("+statusFrame.toString()+") failed with status "+retVal.toString());
+        }
+    }
+
+    void setOneControlFramePeriod(ControlFrame controlFrame, int framePeriod){
+        final int totalRetries = 5;
+        int retries = totalRetries;
+        ErrorCode retVal;
+
+        do {
+            if (retries != totalRetries){
+                Timer.delay(.001);
+            }
+
+            retVal = mFXMotor.setControlFramePeriod(controlFrame, framePeriod);
+        } while(!retVal.equals(ErrorCode.OK) && retries-->0);
+
+        if (!retVal.equals(ErrorCode.OK)){
+            System.out.println("setControlFramePeriod("+controlFrame.toString()+") failed with status "+retVal.toString());
+        }
+    }
+
+    // It takes 2 to 30 msec to change each control and status frame period so leaving all at the default value (i.e. not changing) 
+    // unless there is a ctr error on console or we think it is needed for our usage
+    // public void switchToActive(){
+
+    //     if (!mLastRunWasActive){
+    //         // setFramePeriods(mActiveFramePeriod);
+    //     }
+    //     mLastRunWasActive = true;
+    // }
+
+    // public void switchToDormant(){
+    //     if (mLastRunWasActive){
+    //         // setFramePeriods(mDormantFramePeriod);
+    //     }
+    //     mLastRunWasActive = false;
+    // }
+
+    private void setFramePeriods(){
+        double start = Timer.getFPGATimestamp();
+        // complete list
+
+        // General Control frame for motor control
+        // must be kept low (20 msec?) for proper motor function
+        // set above
+        // mFXMotor.setControlFramePeriod(ControlFrame.Control_3_General, Math.min(20,mActiveFramePeriod));
         // Advanced Control frame for motor control
         // no documentation found, will keep low
         // do {
@@ -31,72 +81,10 @@ public class FramePeriodSwitch {
         
         // General Control frame for motor control
         // must be kept low (20 msec?) for proper motor function
-        retries = 5;
-        do {
-            retVal = mFXMotor.setControlFramePeriod(ControlFrame.Control_3_General, Math.min(20,mActiveFramePeriod));
-            
-            if (retVal.equals(ErrorCode.OK)){
-                break;
-            }
-            System.out.println("setControlFramePeriod(ControlFrame.Control_3_General) completed with "+retVal.toString());
-            // Timer.delay(.001);
-        } while (retries-- > 0);
-
-        // General Status - Applied Motor Output, fault Information, Limit Switch Information
-        // can be larger (longer period) for Followers
-        // default is 10 msec
-
-        setOneStatusFramePeriod(StatusFrameEnhanced.Status_1_General, Math.min(10,mActiveFramePeriod), 100);
-
-        // start in a known state
-        mLastRunWasActive = true;
-        setFramePeriods(mActiveFramePeriod);
-        // switchToActive();
-    }
-
-    boolean setOneStatusFramePeriod(StatusFrameEnhanced statusFrame, int framePeriod, int longesttimeout){
-        int timeout = 1;
-        ErrorCode retVal;
-
-        do {
-            retVal = mFXMotor.setStatusFramePeriod(statusFrame, framePeriod, 1);
-            timeout++;
-        } while(!retVal.equals(ErrorCode.OK) && timeout <= longesttimeout);
-
-        // if (timeout>1)
-        {
-            System.out.println("leaving setOneStatusFramePeriod "+statusFrame.toString()+" after setting "+timeout+" times with final status "+retVal.toString());
-        }
-        return retVal.equals(ErrorCode.OK);
-    }
-
-    public void switchToActive(){
-
-        if (!mLastRunWasActive){
-            // setFramePeriods(mActiveFramePeriod);
-        }
-        mLastRunWasActive = true;
-    }
-
-    public void switchToDormant(){
-        if (mLastRunWasActive){
-            // setFramePeriods(mDormantFramePeriod);
-        }
-        mLastRunWasActive = false;
-    }
-
-    private void setFramePeriods(int framePeriod){
-        double start = Timer.getFPGATimestamp();
-        // complete list
-
-        // General Control frame for motor control
-        // must be kept low (20 msec?) for proper motor function
-        // set above
-        // mFXMotor.setControlFramePeriod(ControlFrame.Control_3_General, Math.min(20,mActiveFramePeriod));
+        setOneControlFramePeriod(ControlFrame.Control_3_General, 19);
 
         // Advanced Control frame for motor control
-        // no documentation found, will keep low
-        // set above
+        // no documentation found, appears to be unsupported
         // mFXMotor.setControlFramePeriod(ControlFrame.Control_4_Advanced, Math.min(20,mActiveFramePeriod));
         
         // Control frame for adding trajectory points from Stream object
@@ -107,7 +95,6 @@ public class FramePeriodSwitch {
         // General Status - Applied Motor Output, fault Information, Limit Switch Information
         // can be larger (longer period) for Followers
         // default is 10 msec
-        // set above
         // mFXMotor.setStatusFramePeriod(StatusFrameEnhanced.Status_1_General, 10, kTimeout);
 
         // Feedback for selected sensor on primary PID[0]
@@ -115,8 +102,7 @@ public class FramePeriodSwitch {
         // Brushed Supply Current Measurement, Sticky Fault Information
         // can be larger (longer period) for Followers
         // default is 20
-        setOneStatusFramePeriod(StatusFrameEnhanced.Status_2_Feedback0, 18, 100);
-        // mFXMotor.setStatusFramePeriod(StatusFrameEnhanced.Status_2_Feedback0, 18/*framePeriod*/, kTimeout);
+        setOneStatusFramePeriod(StatusFrameEnhanced.Status_2_Feedback0, 18);
         
         //Quadrature sensor
         // default > 100 msec
@@ -130,13 +116,11 @@ public class FramePeriodSwitch {
 
         // Miscellaneous signals
         // no documentation
-        setOneStatusFramePeriod(StatusFrameEnhanced.Status_6_Misc, framePeriod, 100);
-        // mFXMotor.setStatusFramePeriod(StatusFrameEnhanced.Status_6_Misc, framePeriod, kTimeout);
+        // setOneStatusFramePeriod(StatusFrameEnhanced.Status_6_Misc, framePeriod, 100);
 
         // Communication status
         // no documentation
-        setOneStatusFramePeriod(StatusFrameEnhanced.Status_7_CommStatus, framePeriod, 100);
-        // mFXMotor.setStatusFramePeriod(StatusFrameEnhanced.Status_7_CommStatus, kTimeout);
+        // setOneStatusFramePeriod(StatusFrameEnhanced.Status_7_CommStatus, framePeriod, 100);
 
         // Pulse width sensor
         // default > 100 msec
@@ -149,13 +133,13 @@ public class FramePeriodSwitch {
 
         // Brushless Current Status Includes Stator and Supply Current for Talon FX
         // default 50 msec
-        setOneStatusFramePeriod(StatusFrameEnhanced.Status_Brushless_Current, 18, 100);
-        // mFXMotor.setStatusFramePeriod(StatusFrameEnhanced.Status_Brushless_Current, 18 /*framePeriod*/, kTimeout);
+        // reading in outputTelemetry so anything under 250 should be ok
+        // setOneStatusFramePeriod(StatusFrameEnhanced.Status_Brushless_Current, 18);
         
         // Motion Profiling/Motion Magic Information
         // default > 100 msec
-        setOneStatusFramePeriod(StatusFrameEnhanced.Status_10_Targets, framePeriod, 100);
-        // mFXMotor.setStatusFramePeriod(StatusFrameEnhanced.Status_10_Targets, framePeriod, kTimeout);
+        // setting for all even though not universally used
+        setOneStatusFramePeriod(StatusFrameEnhanced.Status_10_Targets, 20);
 
         // Gadgeteer status
         // mFXMotor.setStatusFramePeriod(StatusFrameEnhanced.Status_11_UartGadgeteer, framePeriod, kTimeout);
@@ -167,8 +151,8 @@ public class FramePeriodSwitch {
         // mFXMotor.setStatusFramePeriod(StatusFrameEnhanced.Status_12_Feedback1, framePeriod, kTimeout);
 
         // Primary PID
-        setOneStatusFramePeriod(StatusFrameEnhanced.Status_13_Base_PIDF0, framePeriod, 100);
-        // mFXMotor.setStatusFramePeriod(StatusFrameEnhanced.Status_13_Base_PIDF0, framePeriod, kTimeout);
+        // setting for all even though not universally used
+        setOneStatusFramePeriod(StatusFrameEnhanced.Status_13_Base_PIDF0, 20);
 
         // Auxiliary PID
         // not used

@@ -9,6 +9,7 @@ import java.util.Optional;
 
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import frc.robot.autos.AutoModeSelector;
 import frc.robot.config.RobotConfiguration;
@@ -72,7 +73,7 @@ public class Robot extends TimedRobot {
     @Override
     public void robotInit() {
         System.out.println("robotInit() begins");
-
+        Timer.delay(.05); // give rest of system 50 msec to come up first
         mClassName = this.getClass().getSimpleName();
         // LiveWindow.disableAllTelemetry();
         // LiveWindow.setEnabled(false);
