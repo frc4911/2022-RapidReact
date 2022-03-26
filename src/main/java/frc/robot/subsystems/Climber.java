@@ -229,8 +229,9 @@ public class Climber extends Subsystem {
     }
 
     private void configMotors() {
-        mMidArmFramePeriods = new FramePeriodSwitch(mFXMidArm, kActiveFramePeriod, kDormantFramePeriod);
-        mSlappyFramePeriods = new FramePeriodSwitch(mFXSlappy, kActiveFramePeriod, kDormantFramePeriod);
+        new FramePeriodSwitch(mFXMidArm); // constructor does the work
+        new FramePeriodSwitch(mFXSlappy); // constructor does the work
+
         // only one encoder is needed
         // mFXMidArm.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, 20, Constants.kLongCANTimeoutMs);
 
@@ -399,8 +400,6 @@ public class Climber extends Subsystem {
 
     private SystemState handleDisabling() {
         if (mStateChanged) {
-            mMidArmFramePeriods.switchToDormant();
-            mSlappyFramePeriods.switchToDormant();
             if (currentStage == 4 || currentStage == 5) {
                 // Activate stator current limits on disable to allow mid arm to slide off the mid bar for a traversal climb
                 masterConfig(0, true, 0, true, 0, false, 0, false, kStatusFramePeriodDormant, kControlFrameDormant, mPeriodicIO.mDefaultSchedDelta);
@@ -422,13 +421,9 @@ public class Climber extends Subsystem {
         if (mStateChanged) {
             if(currentStage >= 1){
                 // If auto climb has started, change to active configs and deltadesires
-                mMidArmFramePeriods.switchToActive();
-                mSlappyFramePeriods.switchToActive();
                     masterConfig(0, true, 0, true, 0, false, 0, false, kStatusFramePeriodActive, kControlFrameActive, mPeriodicIO.mDefaultSchedDelta);
             } else {
                 // If climb has not been started, keep subsystem asleep
-                mMidArmFramePeriods.switchToDormant();
-                mSlappyFramePeriods.switchToDormant();
                     masterConfig(0, true, 0, true, 0, false, 0, false, kStatusFramePeriodDormant, kControlFrameDormant, 0);
             }
             mPeriodicIO.midArmDemand = mPeriodicIO.midArmPosition;
@@ -444,8 +439,6 @@ public class Climber extends Subsystem {
         double now = Timer.getFPGATimestamp();
 
         if(mStateChanged) {
-        mMidArmFramePeriods.switchToActive();
-        mSlappyFramePeriods.switchToActive();
         masterConfig(kMidArmCurrentLimitHigh, true,
                          kSlappyCurrentLimitHigh, true,
                          Double.NaN, false, //TODO: Check what soft limits need to be
@@ -472,8 +465,6 @@ public class Climber extends Subsystem {
 
     private SystemState handleClimbing_1_Lift(){
         if(mStateChanged) {
-            mMidArmFramePeriods.switchToActive();
-            mSlappyFramePeriods.switchToActive();
             masterConfig(kMidArmCurrentLimitHigh, true,
                          kSlappyCurrentLimitHigh, true,
                          Double.NaN, false, //TODO: Check what soft limits need to be
@@ -497,8 +488,6 @@ public class Climber extends Subsystem {
 
     private SystemState handleClimbing_2_RotateUp(){
         if (mStateChanged) {
-            mMidArmFramePeriods.switchToActive();
-            mSlappyFramePeriods.switchToActive();
             masterConfig(kMidArmCurrentLimitHigh, true,
                          kSlappyCurrentLimitHigh, true,
                          Double.NaN, false, //TODO: Check what soft limits need to be
@@ -528,8 +517,6 @@ public class Climber extends Subsystem {
 
     private SystemState handleClimbing_3_LiftMore(){
         if(mStateChanged) {
-            mMidArmFramePeriods.switchToActive();
-            mSlappyFramePeriods.switchToActive();
             masterConfig(kMidArmCurrentLimitHigh, true,
                          kSlappyCurrentLimitHigh, true,
                          Double.NaN, false, //TODO: Check what soft limits need to be
@@ -558,8 +545,6 @@ public class Climber extends Subsystem {
 
     private SystemState handleClimbing_4_EngageTrav(){
         if (mStateChanged) {
-            mMidArmFramePeriods.switchToActive();
-            mSlappyFramePeriods.switchToActive();
             masterConfig(kMidArmCurrentLimitHigh, true,
                          kSlappyCurrentLimitHigh, true,
                          Double.NaN, false, //TODO: Check what soft limits need to be
@@ -593,8 +578,6 @@ public class Climber extends Subsystem {
 
     private SystemState handleClimbing_5_ReleaseMid(){
         if(mStateChanged) {
-            mMidArmFramePeriods.switchToActive();
-            mSlappyFramePeriods.switchToActive();
             masterConfig(0, false,
                          0, false,
                          Double.NaN, false, //TODO: Check what soft limits need to be
@@ -621,8 +604,6 @@ public class Climber extends Subsystem {
 
     private SystemState handleTesting(){
         if(mStateChanged) {
-            mMidArmFramePeriods.switchToActive();
-            mSlappyFramePeriods.switchToActive();
             masterConfig(80, true, kSlappyCurrentLimitHigh, true, 0, false, 0, false, 
                          kControlFrameActive, kStatusFramePeriodActive, mPeriodicIO.mDefaultSchedDelta);
             testMidArmDemand = 0;
@@ -653,8 +634,6 @@ public class Climber extends Subsystem {
 
     private SystemState handleHoming() {
         if (mStateChanged) {
-            mMidArmFramePeriods.switchToActive();
-            mSlappyFramePeriods.switchToActive();
             masterConfig(kMidArmCurrentLimitLow, true,
                          kSlappyCurrentLimitLow, true,
                          Double.NaN, false, //TODO: Check what soft limits need to be
@@ -752,14 +731,27 @@ public class Climber extends Subsystem {
                               double softLimitRev, boolean softLimitRevEnable, 
                               double statusFramePeriod, double controlFramePeriod, double whenRun){
         if (!Double.isNaN(midArmStatorLimit)){
-            ErrorCode retVal = mFXMidArm.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(midArmStatorEnable, midArmStatorLimit, midArmStatorLimit, 0));
+            int retries = 5;
+            ErrorCode retVal;
+            
+            do{
+                retVal = mFXMidArm.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(midArmStatorEnable, midArmStatorLimit, midArmStatorLimit, 0));
+            }while (!retVal.equals(ErrorCode.OK) && retries-->0);
+            
             if (!retVal.equals(ErrorCode.OK)){
                 System.out.println("mFXMidArm.configStatorCurrentLimit return status "+retVal.toString());
             }
         }
 
         if (!Double.isNaN(slappyStatorLimit)){
-            ErrorCode retVal = mFXSlappy.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(slappyStatorEnable, slappyStatorLimit, slappyStatorLimit, 0));
+
+            int retries = 5;
+            ErrorCode retVal;
+            
+            do{
+                retVal = mFXSlappy.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(slappyStatorEnable, slappyStatorLimit, slappyStatorLimit, 0));
+            }while (!retVal.equals(ErrorCode.OK) && retries-->0);
+            
             if (!retVal.equals(ErrorCode.OK)){
                 System.out.println("mFXSlappy.configStatorCurrentLimit return status "+retVal.toString());
             }

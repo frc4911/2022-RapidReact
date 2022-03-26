@@ -15,8 +15,6 @@ import com.ctre.phoenix.sensors.AbsoluteSensorRange;
 import com.ctre.phoenix.sensors.CANCoder;
 import com.ctre.phoenix.sensors.CANCoderConfiguration;
 import com.ctre.phoenix.sensors.CANCoderStatusFrame;
-import com.ctre.phoenix.sensors.SensorInitializationStrategy;
-import com.ctre.phoenix.sensors.SensorVelocityMeasPeriod;
 
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -26,6 +24,7 @@ import libraries.cheesylib.drivers.TalonFXFactory;
 import libraries.cheesylib.geometry.Rotation2d;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.util.Util;
+import libraries.cyberlib.control.FramePeriodSwitch;
 import libraries.cyberlib.kinematics.SwerveModuleState;
 import libraries.cyberlib.utils.Angles;
 
@@ -75,6 +74,8 @@ public class SwerveDriveModule extends Subsystem {
 
         mDriveMotor = TalonFXFactory.createDefaultTalon(mConfig.kDriveMotorTalonId, Constants.kCanivoreName);
         mSteerMotor = TalonFXFactory.createDefaultTalon(mConfig.kSteerMotorTalonId, Constants.kCanivoreName);
+        new FramePeriodSwitch(mDriveMotor);
+        new FramePeriodSwitch(mSteerMotor);
 
         CANCoderConfiguration config = new CANCoderConfiguration();
         config.initializationStrategy = mConfig.kCANCoderSensorInitializationStrategy;
@@ -104,7 +105,8 @@ public class SwerveDriveModule extends Subsystem {
         mSteerMotor.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
         mSteerMotor.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
 
-        convertCancoderToFX2(false);
+        System.out.println("Be sure to reset convertCancoderToFX2() call before DCMP's");
+        convertCancoderToFX2(true);
         // convertCancoderToFX(false);
 
         mSteerMotor.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, mConfig.kSteerMotorStatusFrame2UpdateRate, Constants.kLongCANTimeoutMs);
@@ -208,8 +210,18 @@ public class SwerveDriveModule extends Subsystem {
             mDriveMotor.configGetSupplyCurrentLimit(supplyCurrLimit, Constants.kLongCANTimeoutMs);
         }
 
-        mDriveMotor.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, 90, 90, 0));
+        int retries = 5;
+        ErrorCode retVal;
+        do {
+            retVal = mDriveMotor.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, 90, 90, 0));
+        }while(!retVal.equals(ErrorCode.OK) && retries-->0);
 
+        if (retVal.equals(ErrorCode.OK)){
+            // System.out.println("Successfully set current limit in SwerveDriveModule " + mModuleName);
+        }
+        else{
+            System.out.println("Failed to set current limit in SwerveDriveModule " + mModuleName);
+        }
         // // Slot 0 is reserved for MotionMagic
         // mDriveMotor.selectProfileSlot(0, 0);
         // mDriveMotor.config_kP(0, 2.0, Constants.kLongCANTimeoutMs);

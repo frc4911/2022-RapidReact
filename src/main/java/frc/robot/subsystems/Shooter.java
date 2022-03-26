@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix.ErrorCode;
 import com.ctre.phoenix.motorcontrol.ControlFrame;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
@@ -19,6 +20,7 @@ import libraries.cheesylib.subsystems.SubsystemManager;
 import libraries.cheesylib.util.InterpolatingDouble;
 import libraries.cheesylib.util.InterpolatingTreeMap;
 import libraries.cheesylib.util.LatchedBoolean;
+import libraries.cyberlib.control.FramePeriodSwitch;
 
 public class Shooter extends Subsystem {
 
@@ -133,6 +135,9 @@ public class Shooter extends Subsystem {
     }
 
     private void configMotors() {
+        new FramePeriodSwitch(mFXLeftFlyWheel); // constructor does the work
+        new FramePeriodSwitch(mFXRightFlyWheel); // constructor does the work
+        new FramePeriodSwitch(mFXHood); // constructor does the work
         mFXLeftFlyWheel.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor, 0, Constants.kLongCANTimeoutMs);
         mFXRightFlyWheel.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor, 0, Constants.kLongCANTimeoutMs);
         mFXHood.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor, 0, Constants.kLongCANTimeoutMs);
@@ -164,8 +169,10 @@ public class Shooter extends Subsystem {
 
         // parameters are enable, current limit after triggering, trigger limit, time
         // allowed to exceed trigger limit before triggering
-         mFXLeftFlyWheel.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kFlywheelCurrentLimit, kFlywheelCurrentLimit, 0));
-        mFXRightFlyWheel.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kFlywheelCurrentLimit, kFlywheelCurrentLimit, 0));
+        setCurrentLimit(mFXLeftFlyWheel,kFlywheelCurrentLimit,true);
+        setCurrentLimit(mFXRightFlyWheel, kFlywheelCurrentLimit, true);
+        // mFXLeftFlyWheel.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kFlywheelCurrentLimit, kFlywheelCurrentLimit, 0));
+        // mFXRightFlyWheel.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kFlywheelCurrentLimit, kFlywheelCurrentLimit, 0));
 
         mFXRightFlyWheel.selectProfileSlot(0, 0);
         mFXLeftFlyWheel.selectProfileSlot(0, 0);
@@ -247,10 +254,12 @@ public class Shooter extends Subsystem {
             stop();
             System.out.println(sClassName + " state " + mSystemState);
             if (!hoodHomed){
-                mFXHood.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kHoodCurrentLimitLow, kHoodCurrentLimitLow, 0));    
+                setCurrentLimit(mFXHood, kHoodCurrentLimitLow, true);
+                // mFXHood.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kHoodCurrentLimitLow, kHoodCurrentLimitLow, 0));    
             }
             else{
-                mFXHood.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kHoodCurrentLimitHigh, kHoodCurrentLimitHigh, 0));
+                setCurrentLimit(mFXHood, kHoodCurrentLimitHigh, true);
+                // mFXHood.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kHoodCurrentLimitHigh, kHoodCurrentLimitHigh, 0));
             }
         }
     }
@@ -324,7 +333,8 @@ public class Shooter extends Subsystem {
         double now = Timer.getFPGATimestamp();
         if (mStateChanged) {
             System.out.println("Start homing hood");
-            mFXHood.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kHoodCurrentLimitLow, kHoodCurrentLimitLow, 0));    
+            setCurrentLimit(mFXHood, kHoodCurrentLimitLow, true);
+            // mFXHood.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kHoodCurrentLimitLow, kHoodCurrentLimitLow, 0));    
             hoodHomed = false;
             hoodEncoderOffset = 0;
             hoodNonMovementTimeout = now + hoodNonMovementDuration;
@@ -340,7 +350,8 @@ public class Shooter extends Subsystem {
             // instead of resetting the sensor the code remembers the offset
             hoodEncoderOffset = mPeriodicIO.hoodPosition;
             hoodHomed = true;
-            mFXHood.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kHoodCurrentLimitHigh, kHoodCurrentLimitHigh, 0));
+            setCurrentLimit(mFXHood, kHoodCurrentLimitHigh, true);
+            // mFXHood.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kHoodCurrentLimitHigh, kHoodCurrentLimitHigh, 0));
             mWantedState = wantedStateAfterHoming;
             System.out.println("homing hood is complete");
         }
@@ -369,7 +380,8 @@ public class Shooter extends Subsystem {
             mPeriodicIO.schedDeltaDesired = mPeriodicIO.mDefaultSchedDelta;
             turnOffFlywheel = true; // only testing hood right now
             // test code runs open loop so don't care if it is homed and current limit must be low
-            mFXHood.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kHoodCurrentLimitHigh, kHoodCurrentLimitHigh, 0));
+            setCurrentLimit(mFXHood, kHoodCurrentLimitHigh, true);
+            // mFXHood.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kHoodCurrentLimitHigh, kHoodCurrentLimitHigh, 0));
         }
         mPeriodicIO.hoodDemand = hoodTestDemand;
 
@@ -424,6 +436,19 @@ public class Shooter extends Subsystem {
         if (distance != mDistance) {
             mDistance = Math.max(kMinShootDistance, Math.min(distance, kMaxShootDistance));
             updateShooterStatus();
+        }
+    }
+
+    private void setCurrentLimit(TalonFX motor, double statorLimit, boolean enable){
+        int retries = 5;
+        ErrorCode retVal;
+        
+        do{
+            retVal = motor.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(enable, statorLimit, statorLimit, 0));
+        }while (!retVal.equals(ErrorCode.OK) && retries-->0);
+        
+        if (!retVal.equals(ErrorCode.OK)){
+            System.out.println(sClassName+" configStatorCurrentLimit return status "+retVal.toString());
         }
     }
 

@@ -23,8 +23,6 @@ public class Collector extends Subsystem {
     private final TalonFX mFXMotor;
     private final Solenoid mSolenoid;
 
-    private FramePeriodSwitch mFramePeriods;
-
     // Subsystem Constants
     private final double kCollectSpeed = 0.9;
     // time (msec) to run collector motor forward so collector can deploy
@@ -121,8 +119,8 @@ public class Collector extends Subsystem {
     }
 
     private void configMotors() {
-        mFramePeriods = new FramePeriodSwitch(mFXMotor, kActiveFramePeriod, kDormantFramePeriod);
-        mFramePeriods.switchToDormant();
+        new FramePeriodSwitch(mFXMotor); // constructor does the work
+
         mFXMotor.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
         mFXMotor.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
 
@@ -246,7 +244,6 @@ public class Collector extends Subsystem {
 
     private SystemState handleAssessing() {
         if (mStateChanged) {
-            mFramePeriods.switchToActive();
             mAssessingStartPosition = mPeriodicIO.motorPosition;
             setSolenoidDemand(SolenoidState.RETRACT);
             setMotorControlModeAndDemand(ControlMode.PercentOutput,kAssessingMotorDemand);
@@ -275,7 +272,6 @@ public class Collector extends Subsystem {
 
     private SystemState handleBacking() {
         if (mStateChanged) {
-            mFramePeriods.switchToActive();
             setSolenoidDemand(SolenoidState.EXTEND);
             setMotorControlModeAndDemand(ControlMode.PercentOutput,kCollectSpeed);
             mPeriodicIO.schedDeltaDesired = kSchedDeltaActive;
@@ -295,7 +291,6 @@ public class Collector extends Subsystem {
 
     private SystemState handleCollecting() {
         if(mStateChanged) {
-            mFramePeriods.switchToActive();
             setSolenoidDemand(SolenoidState.EXTEND);
             setMotorControlModeAndDemand(ControlMode.PercentOutput,kCollectSpeed);
             mPeriodicIO.schedDeltaDesired = kSchedDeltaActive;
@@ -307,7 +302,6 @@ public class Collector extends Subsystem {
 
     private SystemState handleDisabling() {
         if (mStateChanged) {
-            mFramePeriods.switchToDormant();
             setSolenoidDemand(SolenoidState.RETRACT);
             setMotorControlModeAndDemand(ControlMode.PercentOutput,0.0);
             mPeriodicIO.schedDeltaDesired = kSchedDeltaDormant;
@@ -318,7 +312,6 @@ public class Collector extends Subsystem {
 
     private SystemState handleHolding() {
         if (mStateChanged) {
-            mFramePeriods.switchToDormant();
             setSolenoidDemand(SolenoidState.RETRACT);
             setMotorControlModeAndDemand(ControlMode.PercentOutput,0.0);
             mPeriodicIO.schedDeltaDesired = kSchedDeltaDormant;
@@ -329,7 +322,6 @@ public class Collector extends Subsystem {
 
     private SystemState handleManualControlling() {
         if (mStateChanged) {
-            mFramePeriods.switchToActive();
             mTestMotorDemand = 0;
             mTestSolenoidDemand = SolenoidState.RETRACT;
             mPeriodicIO.schedDeltaDesired = kSchedDeltaActive;
