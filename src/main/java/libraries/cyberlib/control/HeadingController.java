@@ -13,15 +13,18 @@ public class HeadingController {
         MAINTAIN, // maintaining current heading while driving
     }
 
-    private final Swerve mSwerve;
+    // private final Swerve mSwerve;
     private final SynchronousPIDF mPIDFController;
     private final String sClassName;
     private double mSetpoint = 0.0;
     private HeadingControllerState mHeadingControllerState = HeadingControllerState.OFF;
+    private Swerve mSwerve;
 
     public HeadingController(double kP, double kI, double kD, double kF) {
         sClassName = this.getClass().getSimpleName();
         mPIDFController = new SynchronousPIDF(kP, kI, kD, kF);
+        mPIDFController.setMaxAbsoluteOutput(1);
+        mPIDFController.setInputRange(-180, 180);
         mSwerve = Swerve.getInstance(sClassName);
     }
 

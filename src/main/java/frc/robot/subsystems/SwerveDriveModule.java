@@ -495,11 +495,6 @@ public class SwerveDriveModule extends Subsystem {
         mDriveMotor.setNeutralMode(neutralMode);
     }
 
-    public synchronized void disable() {
-        setDriveOpenLoop(0.0);
-        setSteerOpenLoop(0.0);
-    }
-
     @Override
     public synchronized void stop() {
         if (mControlState != ControlState.NEUTRAL) {
@@ -508,6 +503,10 @@ public class SwerveDriveModule extends Subsystem {
 
         mDriveMotor.set(ControlMode.PercentOutput, 0.0);
         mSteerMotor.set(ControlMode.PercentOutput, 0.0);
+        mPeriodicIO.driveDemand = 0;
+        mPeriodicIO.steerDemand = 0;
+        mPeriodicIO.driveControlMode = ControlMode.PercentOutput;
+        mPeriodicIO.steerControlMode = ControlMode.PercentOutput;
     }
 
     @Override
@@ -553,6 +552,8 @@ public class SwerveDriveModule extends Subsystem {
                 break;
             case NEUTRAL:
             default:
+                mSteerMotor.set(mPeriodicIO.steerControlMode, mPeriodicIO.steerDemand);
+                mDriveMotor.set(mPeriodicIO.driveControlMode, mPeriodicIO.driveDemand);
                 break;
         }
     }

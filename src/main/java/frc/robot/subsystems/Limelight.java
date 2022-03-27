@@ -311,6 +311,10 @@ public class Limelight extends Subsystem {
         return mPeriodicIO.xOffset;
     }
 
+    public synchronized boolean seesTarget() {
+        return mSeesTarget;
+    }
+
     public synchronized List<TargetInfo> getTarget() {
         List<TargetInfo> targets = getRawTargetInfos();
 
