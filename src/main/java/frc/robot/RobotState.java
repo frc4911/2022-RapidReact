@@ -9,10 +9,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.constants.Constants;
 import frc.robot.subsystems.Limelight;
-import libraries.cheesylib.geometry.Pose2d;
-import libraries.cheesylib.geometry.Rotation2d;
-import libraries.cheesylib.geometry.Translation2d;
-import libraries.cheesylib.geometry.Twist2d;
+import libraries.cheesylib.geometry.*;
 import libraries.cheesylib.util.InterpolatingDouble;
 import libraries.cheesylib.util.InterpolatingTreeMap;
 import libraries.cheesylib.util.MovingAverageTwist2d;
@@ -263,9 +260,20 @@ public class RobotState {
             return Optional.empty();
         }
 
-        AimingParameters params = new AimingParameters(getFieldToVehicle(timestamp),
-                report.field_to_target.transformBy(target_to_goal_offset),
-                report.latest_timestamp, report.stability, report.id);
+        // Calculate the distance to the target by adding the target to goal offset radial distance
+        Translation2d radialTargetToGoalDistance = target_to_goal_offset.getTranslation()
+                .rotateBy(report.field_to_target.getRotation());
+
+        var field_to_target =
+                new Pose2d(report.field_to_target.getTranslation().plus(radialTargetToGoalDistance),
+                report.field_to_target.getRotation());
+
+        AimingParameters params = new AimingParameters(
+                getFieldToVehicle(timestamp),
+                report.field_to_target = field_to_target,
+                report.latest_timestamp,
+                report.stability,
+                report.id);
         return Optional.of(params);
     }
 

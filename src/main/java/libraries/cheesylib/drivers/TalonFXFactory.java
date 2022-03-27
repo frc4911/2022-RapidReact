@@ -5,6 +5,8 @@ import com.ctre.phoenix.motorcontrol.*;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.sensors.SensorVelocityMeasPeriod;
 
+import edu.wpi.first.wpilibj.Timer;
+
 /**
  * Creates TalonFX objects and configures all the parameters we care about to factory defaults. Closed-loop and sensor
  * parameters are not set, as these are expected to be set by the application.
@@ -81,8 +83,18 @@ public class TalonFXFactory {
             talon = new LazyTalonFX(id);
         }
         
-        if (talon.getFirmwareVersion() < 0) {
+        int retries = 100;
+        while (talon.getFirmwareVersion() < 0 && retries-- > 0) {
+            Timer.delay(.001);
+            // return talon;
+        }
+
+        if (retries<=0){
+            System.out.println("Failed to get motor firmware version - gave up !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
             return talon;
+        }
+        if (retries<100){
+            System.out.println("motor "+id+" successfully created after "+(100-retries)+" attempt(s)");
         }
 
         talon.configFactoryDefault();

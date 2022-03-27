@@ -25,8 +25,6 @@ public class Indexer extends Subsystem {
     private final AnalogInput mAIEnterBeamBreak;
     private final AnalogInput mAIExitBeamBreak;
 
-    private FramePeriodSwitch mFramePeriods;
-
     // Subsystem Constants
     private final double kBackingSpeed = -.3;
     private final double kFeedingSpeed = .2;
@@ -113,8 +111,7 @@ public class Indexer extends Subsystem {
     }
 
     private void configMotors() {
-        mFramePeriods = new FramePeriodSwitch(mFXMotor, kActiveFramePeriod, kDormantFramePeriod);
-        mFramePeriods.switchToDormant();
+        new FramePeriodSwitch(mFXMotor); // constructor does the work
         
         mFXMotor.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor, 0, Constants.kLongCANTimeoutMs);
 
@@ -262,7 +259,6 @@ public class Indexer extends Subsystem {
 
     private SystemState handleAssessing() {
         if (mStateChanged) {
-            mFramePeriods.switchToActive();
             mPeriodicIO.schedDeltaDesired = kSchedDeltaActive;
             setMotorControlModeAndDemand(ControlMode.PercentOutput,kAssessingMotorDemand);
 
@@ -290,7 +286,6 @@ public class Indexer extends Subsystem {
 
     private SystemState handleBacking() {
         if (mStateChanged) {
-            mFramePeriods.switchToActive();
             mPeriodicIO.schedDeltaDesired = kSchedDeltaActive;
             setMotorControlModeAndDemand(ControlMode.PercentOutput, kBackingSpeed);
         }
@@ -300,7 +295,6 @@ public class Indexer extends Subsystem {
 
     private SystemState handleDisabling() {
         if (mStateChanged) {
-            mFramePeriods.switchToDormant();
             mPeriodicIO.schedDeltaDesired = kSchedDeltaDormant;
             setMotorControlModeAndDemand(ControlMode.PercentOutput,0.0);
         }
@@ -310,7 +304,6 @@ public class Indexer extends Subsystem {
 
     private SystemState handleFeeding() {
         if (mStateChanged) {
-            mFramePeriods.switchToActive();
             mPeriodicIO.schedDeltaDesired = kSchedDeltaActive;
             setMotorControlModeAndDemand(ControlMode.PercentOutput, kFeedingSpeed);
             motorPositionTarget = mPeriodicIO.motorPosition + kIndexerLengthTicks;
@@ -330,7 +323,6 @@ public class Indexer extends Subsystem {
 
     private SystemState handleHolding() {
         if (mStateChanged) {
-            mFramePeriods.switchToDormant();
             mPeriodicIO.schedDeltaDesired = kSchedDeltaDormant;
             setMotorControlModeAndDemand(ControlMode.PercentOutput,0.0);
         }
@@ -342,7 +334,6 @@ public class Indexer extends Subsystem {
     private SystemState handleLoading() {
 
         if (mStateChanged) {
-            mFramePeriods.switchToActive();
             mPeriodicIO.schedDeltaDesired = kSchedDeltaActive;
             if (mPeriodicIO.exitBeamBlocked){
                 mHasBallOnLoadingStart = true;
@@ -377,7 +368,6 @@ public class Indexer extends Subsystem {
 
     private SystemState handleManualControlling() {
         if (mStateChanged) {
-            mFramePeriods.switchToActive();
             mTestMotorDemand = 0;
             mPeriodicIO.schedDeltaDesired = kSchedDeltaActive;
         }

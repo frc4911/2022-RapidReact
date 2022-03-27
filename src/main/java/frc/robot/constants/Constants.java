@@ -118,8 +118,8 @@ public class Constants {
 
     public static final double kImageCaptureLatency = 11.0 / 1000.0; // seconds
 
-    public static final double kMaxTrackerDistance = Units.feetToMeters(20.0);
-    public static final double kMaxGoalTrackAge = 2.5;
+    public static final double kMaxTrackerDistance = Units.feetToMeters(16.0);
+    public static final double kMaxGoalTrackAge = 1.0; //2.5;
     public static final double kMaxGoalTrackSmoothingTime = 0.5;
     public static final double kCameraFrameRate = 90.0; // fps
 
@@ -149,9 +149,9 @@ public class Constants {
             Units.feetToMeters(2.0), Units.feetToMeters(2.0));
 
     // These worked for DeadEye's PID
-    public static double kAimingKP = 1.35;
+    public static double kAimingKP = 0.018;
     public static double kAimingKI = 0.0;
-    public static double kAimingKD = 0.0;
+    public static double kAimingKD = 0.001;
 
 //    // Goal tracker constants
 //    public static final double kDefaultCurveDistance = kRobotHalfLength + 36.0;

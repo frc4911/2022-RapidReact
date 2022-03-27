@@ -24,6 +24,7 @@ import libraries.cheesylib.trajectory.TrajectoryIterator;
 import libraries.cheesylib.trajectory.timing.TimedState;
 import libraries.cheesylib.util.SynchronousPIDF;
 import libraries.cheesylib.util.Util;
+import libraries.cyberlib.control.HeadingController;
 import libraries.cyberlib.kinematics.ChassisSpeeds;
 import libraries.cyberlib.kinematics.SwerveDriveKinematics;
 import libraries.cyberlib.kinematics.SwerveDriveOdometry;
@@ -71,6 +72,9 @@ public class Swerve extends Subsystem {
     private SynchronousPIDF mAimingController = new SynchronousPIDF(
             Constants.kAimingKP, Constants.kAimingKI, Constants.kAimingKD
     );
+
+    private static HeadingController mAimingHeaderController = null;
+
     private double lastAimTimestamp = -1.0;
 
     // Trajectory following
@@ -84,6 +88,9 @@ public class Swerve extends Subsystem {
     public static Swerve getInstance(String caller) {
         if (sInstance == null) {
             sInstance = new Swerve(caller);
+            mAimingHeaderController = new HeadingController(
+                Constants.kAimingKP, Constants.kAimingKI, Constants.kAimingKD, 0.0);
+        
         } else {
             printUsage(caller);
         }
@@ -170,7 +177,8 @@ public class Swerve extends Subsystem {
 
     @Override
     public synchronized void stop() {
-        mControlState = ControlState.NEUTRAL;
+        // mControlState = ControlState.NEUTRAL;
+        setState(ControlState.NEUTRAL);
         stopSwerveDriveModules();
     }
 
@@ -294,15 +302,30 @@ public class Swerve extends Subsystem {
         lastAimTimestamp = timestamp;
 
         if (dt > Util.kEpsilon) {
-            mAimingController.setSetpoint(mPeriodicIO.visionSetpointInRadians);
-            var rotation = mAimingController.calculate(getHeading().getRadians(), dt);
+            mAimingHeaderController.setGoal(Math.toDegrees(mPeriodicIO.visionSetpointInRadians));
+            var rotation = mAimingHeaderController.update();
+            
+//            mAimingController.setSetpoint(mPeriodicIO.visionSetpointInRadians);
+//            double current_angle = getHeading().getDegrees();
+//            double current_error = Math.toDegrees(mPeriodicIO.visionSetpointInRadians) - current_angle;
+//            if (current_error > 180) {
+//                current_angle += 360;
+//            } else if (current_error < -180) {
+//                current_angle -= 360;
+//            }
+//
+//            var rotation = mAimingController.calculate(Math.toRadians(current_angle), dt);
 
             // Apply a minimum constant rotation velocity to overcome friction.
             // TODO:  Create constants for these
-            if ((mPeriodicIO.averageWheelVelocity / mSwerveConfiguration.maxSpeedInMetersPerSecond) < 0.2) {
-                rotation += Math.copySign(0.3 * mSwerveConfiguration.maxSpeedInRadiansPerSecond, rotation);
+            // if ((mPeriodicIO.averageWheelVelocity / mSwerveConfiguration.maxSpeedInMetersPerSecond) < 0.2) {
+            //     rotation += Math.copySign(0.3 * mSwerveConfiguration.maxSpeedInRadiansPerSecond, rotation);
+            // }
+            if (Math.abs(rotation)<.085){
+                rotation = Math.copySign(.085, rotation);
             }
-
+            
+            System.out.println("Swerve.handleAiming() setpoint: "+(((int)(10.0*Math.toDegrees(mPeriodicIO.visionSetpointInRadians)))/10)+ " rotation: "+rotation);
             // Turn in place implies no translational velocity.
             HolonomicDriveSignal driveSignal = new HolonomicDriveSignal(
                     Translation2d.identity(),
@@ -313,6 +336,16 @@ public class Swerve extends Subsystem {
             //System.out.println("Robot Pose " + mPeriodicIO.robotPose);
         }
     }
+
+    public synchronized void EnableAimingController() {
+        mAimingHeaderController.reset();
+        mAimingHeaderController.setHeadingControllerState(HeadingController.HeadingControllerState.MAINTAIN);
+    }
+
+    public synchronized void DisableAimingController() {
+        mAimingHeaderController.setHeadingControllerState(HeadingController.HeadingControllerState.OFF);
+    }
+
 
     // //Assigns appropriate directions for scrub factors
     // public void setCarpetDirection(boolean standardDirection) {
@@ -338,10 +371,10 @@ public class Swerve extends Subsystem {
             System.out.println(mControlState + " to " + newState);
             switch (newState) {
                 case NEUTRAL:
-                    mPeriodicIO.strafe = 0;
-                    mPeriodicIO.forward = 0;
-                    mPeriodicIO.rotation = 0;
-                    stopSwerveDriveModules();
+                    // mPeriodicIO.strafe = 0;
+                    // mPeriodicIO.forward = 0;
+                    // mPeriodicIO.rotation = 0;
+                    // stopSwerveDriveModules();
                     mPeriodicIO.forward= 0.0;
                     mPeriodicIO.strafe = 0.0;
                     mPeriodicIO.rotation = 0.0;
@@ -497,10 +530,10 @@ public class Swerve extends Subsystem {
     }
 
     /** Puts all steer and drive motors into open-loop mode */
-    public synchronized void disable() {
-        mModules.forEach((m) -> m.disable());
-        mControlState = ControlState.DISABLED;
-    }
+    // public synchronized void disable() {
+    //     mModules.forEach((m) -> m.disable());
+    //     mControlState = ControlState.DISABLED;
+    // }
 
     /**
      * Zeroes the drive motors, and sets the robot's internal position and heading
@@ -615,8 +648,10 @@ public class Swerve extends Subsystem {
     public synchronized void writePeriodicOutputs() {
         // Set the module state for each module
         // All modes should use this method of module states.
-        for (int i = 0; i < mModules.size(); i++) {
-            mModules.get(i).setState(mPeriodicIO.swerveModuleStates[i]);
+        if (mControlState != ControlState.NEUTRAL){
+            for (int i = 0; i < mModules.size(); i++) {
+                mModules.get(i).setState(mPeriodicIO.swerveModuleStates[i]);
+            }
         }
 
         mModules.forEach((m) -> m.writePeriodicOutputs());
