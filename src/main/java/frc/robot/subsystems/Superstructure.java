@@ -69,6 +69,7 @@ public class Superstructure extends Subsystem {
 
     private boolean mHasTarget = false;
     private boolean mOnTarget = false;
+    private double mYOffset;
     private int mTrackId = -1;
 
     private Optional<AimingParameters> mLatestAimingParameters = Optional.empty();
@@ -328,7 +329,7 @@ public class Superstructure extends Subsystem {
             //     // difference between the range (center of shooter to center of hub)
             //     // and shooter distance (fender to front of bumper) is 52.5 inches.
             //     range -= Units.inches_to_meters(52.5);
-                mShooter.setShootDistance(96);
+                mShooter.setShootDistanceFromTY(mYOffset);
             // }
 
             // Shoot while aiming
@@ -552,10 +553,12 @@ public class Superstructure extends Subsystem {
             double llTX = -mLLManager.getLimelight().getXOffset();
 
             double setPointInRadians =  mSwerve.getHeading().getRadians() + Math.toRadians(llTX);
+            mYOffset = mLLManager.getLimelight().getYOffset();
+
             mHasTarget = true;
             mOnTarget = Util.epsilonEquals(llTX, 0.0, 1.5);
 
-            System.out.println("SS getSwerveSetpoint tx:"+llTX+" heading:"+Math.toDegrees(mSwerve.getHeading().getRadians()));
+            // System.out.println("SS getSwerveSetpoint tx:"+llTX+" heading:"+Math.toDegrees(mSwerve.getHeading().getRadians()));
             return Angles.normalizeAngle(setPointInRadians);        }
         else {
             mHasTarget = false;

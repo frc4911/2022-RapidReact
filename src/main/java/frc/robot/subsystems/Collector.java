@@ -119,18 +119,14 @@ public class Collector extends Subsystem {
     }
 
     private void configMotors() {
-        new FramePeriodSwitch(mFXMotor); // constructor does the work
+        // must be run on every powerup
+        FramePeriodSwitch.setFramePeriodsVolatile(mFXMotor); // set frame periods
 
-        mFXMotor.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
-        mFXMotor.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
 
-        mFXMotor.setInverted(false);
-
-        mFXMotor.setNeutralMode(NeutralMode.Coast);
-
-        mFXMotor
-                .configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, kCurrentLimit, kCurrentLimit, 0));
-
+        // for new motors do the following
+        // uncomment and deploy, then comment and deploy, power cycle
+        // FramePeriodSwitch.configFactoryDefaultPermanent(mFXMotor);
+        // FramePeriodSwitch.configStatorCurrentLimitPermanent(mFXMotor, new StatorCurrentLimitConfiguration(true, kCurrentLimit, kCurrentLimit, 0));
     }
 
     @Override
@@ -365,7 +361,7 @@ public class Collector extends Subsystem {
         mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
         mPeriodicIO.lastSchedStart = now;
 
-        mPeriodicIO.motorPosition = mFXMotor.getSelectedSensorPosition();
+        mPeriodicIO.motorPosition = FramePeriodSwitch.getSelectedSensorPosition(mFXMotor);
 
     }
 
@@ -426,7 +422,7 @@ public class Collector extends Subsystem {
 
     @Override
     public void outputTelemetry() {
-        mPeriodicIO.motorStator = mFXMotor.getStatorCurrent();
+        mPeriodicIO.motorStator = FramePeriodSwitch.getStatorCurrent(mFXMotor);
     }
 
     public static class PeriodicIO {

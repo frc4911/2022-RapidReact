@@ -2,25 +2,24 @@ package libraries.cyberlib.control;
 
 import com.ctre.phoenix.ErrorCode;
 import com.ctre.phoenix.motorcontrol.ControlFrame;
+import com.ctre.phoenix.motorcontrol.NeutralMode;
+import com.ctre.phoenix.motorcontrol.StatorCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.StatusFrameEnhanced;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 
 import edu.wpi.first.wpilibj.Timer;
 
 public class FramePeriodSwitch {
-    TalonFX mFXMotor;
 
-    public FramePeriodSwitch(TalonFX FXMotor){
-        this.mFXMotor = FXMotor;
-        setFramePeriods();
+    private FramePeriodSwitch(){
     }
 
-    void setOneStatusFramePeriod(StatusFrameEnhanced statusFrame, int framePeriod){
+    private static void setOneStatusFramePeriod(TalonFX FXMotor, StatusFrameEnhanced statusFrame, int framePeriod){
         int retries = 5;
         ErrorCode retVal;
 
         do {
-            retVal = mFXMotor.setStatusFramePeriod(statusFrame, framePeriod, 100);
+            retVal = FXMotor.setStatusFramePeriod(statusFrame, framePeriod, 100);
         } while(!retVal.equals(ErrorCode.OK) && retries-- > 0);
 
         if (!retVal.equals(ErrorCode.OK)){
@@ -28,7 +27,7 @@ public class FramePeriodSwitch {
         }
     }
 
-    void setOneControlFramePeriod(ControlFrame controlFrame, int framePeriod){
+    private static void setOneControlFramePeriod(TalonFX FXMotor, ControlFrame controlFrame, int framePeriod){
         final int totalRetries = 5;
         int retries = totalRetries;
         ErrorCode retVal;
@@ -38,7 +37,7 @@ public class FramePeriodSwitch {
                 Timer.delay(.001);
             }
 
-            retVal = mFXMotor.setControlFramePeriod(controlFrame, framePeriod);
+            retVal = FXMotor.setControlFramePeriod(controlFrame, framePeriod);
         } while(!retVal.equals(ErrorCode.OK) && retries-->0);
 
         if (!retVal.equals(ErrorCode.OK)){
@@ -46,25 +45,81 @@ public class FramePeriodSwitch {
         }
     }
 
-    // It takes 2 to 30 msec to change each control and status frame period so leaving all at the default value (i.e. not changing) 
-    // unless there is a ctr error on console or we think it is needed for our usage
-    // public void switchToActive(){
+    private enum GetRoutine{
+        STATORCURRENT,
+        SENSORPOSITION,
+        FIRMWAREVERSION
+    }
 
-    //     if (!mLastRunWasActive){
-    //         // setFramePeriods(mActiveFramePeriod);
-    //     }
-    //     mLastRunWasActive = true;
-    // }
-
-    // public void switchToDormant(){
-    //     if (mLastRunWasActive){
-    //         // setFramePeriods(mDormantFramePeriod);
-    //     }
-    //     mLastRunWasActive = false;
-    // }
-
-    private void setFramePeriods(){
+    private static double getRoutine(TalonFX FXMotor, GetRoutine getType){
+        final int kRetries =5;
+        double retries = kRetries;
+        ErrorCode error;
+        double retVal = 0;
+        double delay = .001;
         double start = Timer.getFPGATimestamp();
+        do {
+            if (retries != kRetries){
+                Timer.delay(delay);
+            }
+            switch (getType){
+                case STATORCURRENT:
+                    retVal = FXMotor.getStatorCurrent();
+                    break;
+                case SENSORPOSITION:
+                    retVal = FXMotor.getSelectedSensorPosition();
+                    delay = 0;
+                    break;
+                case FIRMWAREVERSION:
+                    retVal = FXMotor.getFirmwareVersion();
+                    break;
+            }
+            error = FXMotor.getLastError();
+        } while (!error.equals(ErrorCode.OK) && ((retries--)>0));
+        
+        if (!error.equals(ErrorCode.OK)){
+            System.out.println("Failed "+getType+"(), time needed "+(Timer.getFPGATimestamp()-start));
+        }
+        return retVal;
+    }
+
+    static StatusFrameEnhanced[] framePeriods = {
+        StatusFrameEnhanced.Status_1_General, // getStatusFramePeriod returns 10 and 240 with getLastError() == ErrorCode.OK
+        StatusFrameEnhanced.Status_2_Feedback0, // getStatusFramePeriod returns 10 with getLastError() == ErrorCode.OK
+        StatusFrameEnhanced.Status_3_Quadrature, // getStatusFramePeriod returns 20 with getLastError() == ErrorCode.OK
+        StatusFrameEnhanced.Status_4_AinTempVbat, // getStatusFramePeriod returns 240 with getLastError() == ErrorCode.OK
+        StatusFrameEnhanced.Status_6_Misc, // getStatusFramePeriod returns 240 with getLastError() == ErrorCode.OK
+        StatusFrameEnhanced.Status_7_CommStatus, // getStatusFramePeriod returns 0 with getLastError() == ErrorCode.OK
+        StatusFrameEnhanced.Status_8_PulseWidth, // getStatusFramePeriod returns 0 with getLastError() == ErrorCode.OK
+        StatusFrameEnhanced.Status_9_MotProfBuffer, // getStatusFramePeriod returns 0 with getLastError() == ErrorCode.OK
+        StatusFrameEnhanced.Status_10_Targets, // getStatusFramePeriod returns 0 and 20 with getLastError() == ErrorCode.OK
+        StatusFrameEnhanced.Status_11_UartGadgeteer, // getStatusFramePeriod returns 0 and 20 with getLastError() == ErrorCode.OK
+        StatusFrameEnhanced.Status_12_Feedback1, // getStatusFramePeriod returns 0 and 240 with getLastError() == ErrorCode.OK
+        StatusFrameEnhanced.Status_13_Base_PIDF0, // getStatusFramePeriod returns 240 with getLastError() == ErrorCode.OK
+        StatusFrameEnhanced.Status_14_Turn_PIDF1, // getStatusFramePeriod returns 240 with getLastError() == ErrorCode.OK
+        StatusFrameEnhanced.Status_15_FirmwareApiStatus, // getStatusFramePeriod returns 240 with getLastError() == ErrorCode.OK
+    };
+    public static void setFramePeriodsVolatile(TalonFX FXMotor){
+        double start = Timer.getFPGATimestamp();
+
+        // System.out.println("last error "+FXMotor.getLastError());
+        // System.out.println("last error "+FXMotor.getLastError());
+        // System.out.println("last error "+FXMotor.getLastError());
+
+        // ErrorCode error;
+        // double period;
+        // int retries;
+        // for (int i=0; i<framePeriods.length; i++){
+        //     retries = 5;
+        //     do{
+        //         period = FXMotor.getStatusFramePeriod(framePeriods[i]);
+        //         error = FXMotor.getLastError();
+        //         System.out.println("statusFramePeriod for "+framePeriods[i].toString()+" is "+period +" with "+error.toString());
+                
+        //         Timer.delay(.050);
+        //     } while(/*!error.equals(ErrorCode.OK)*/ (retries-->0) && period==0);
+        // }
+
         // complete list
 
         // General Control frame for motor control
@@ -81,7 +136,7 @@ public class FramePeriodSwitch {
         
         // General Control frame for motor control
         // must be kept low (20 msec?) for proper motor function
-        setOneControlFramePeriod(ControlFrame.Control_3_General, 19);
+        // setOneControlFramePeriod(FXMotor, ControlFrame.Control_3_General, 19);
 
         // Advanced Control frame for motor control
         // no documentation found, appears to be unsupported
@@ -102,7 +157,7 @@ public class FramePeriodSwitch {
         // Brushed Supply Current Measurement, Sticky Fault Information
         // can be larger (longer period) for Followers
         // default is 20
-        setOneStatusFramePeriod(StatusFrameEnhanced.Status_2_Feedback0, 18);
+        // setOneStatusFramePeriod(FXMotor, StatusFrameEnhanced.Status_2_Feedback0, 18);
         
         //Quadrature sensor
         // default > 100 msec
@@ -139,7 +194,7 @@ public class FramePeriodSwitch {
         // Motion Profiling/Motion Magic Information
         // default > 100 msec
         // setting for all even though not universally used
-        setOneStatusFramePeriod(StatusFrameEnhanced.Status_10_Targets, 20);
+        // setOneStatusFramePeriod(FXMotor, StatusFrameEnhanced.Status_10_Targets, 20);
 
         // Gadgeteer status
         // mFXMotor.setStatusFramePeriod(StatusFrameEnhanced.Status_11_UartGadgeteer, framePeriod, kTimeout);
@@ -152,7 +207,7 @@ public class FramePeriodSwitch {
 
         // Primary PID
         // setting for all even though not universally used
-        setOneStatusFramePeriod(StatusFrameEnhanced.Status_13_Base_PIDF0, 20);
+        // setOneStatusFramePeriod(FXMotor, StatusFrameEnhanced.Status_13_Base_PIDF0, 20);
 
         // Auxiliary PID
         // not used
@@ -165,6 +220,152 @@ public class FramePeriodSwitch {
         // not used
         // mFXMotor.setStatusFramePeriod(StatusFrame.Status_17_Targets1,framePeriod,kTimeout);
 
+        // for (int i=0; i<framePeriods.length; i++){
+        //     do{
+        //         double period = FXMotor.getStatusFramePeriod(framePeriods[i]);
+        //         error = FXMotor.getLastError();
+        //         System.out.println("statusFramePeriod for "+framePeriods[i].toString()+" is "+period +" with "+error.toString());
+                
+        //         Timer.delay(.001);
+        //     } while(!error.equals(ErrorCode.OK));
+
+        // }
+
+
         System.out.println("setFramePeriods took "+(Timer.getFPGATimestamp()-start));
+    }
+
+    public static double getStatorCurrent(TalonFX FXMotor){
+        return getRoutine(FXMotor, GetRoutine.STATORCURRENT);
+    }
+
+    public static double getSelectedSensorPosition(TalonFX FXMotor){
+        return getRoutine(FXMotor, GetRoutine.SENSORPOSITION);
+    }
+
+    public static double getFirmwareVersion(TalonFX motor){
+        return getRoutine(motor, GetRoutine.FIRMWAREVERSION);
+    }
+
+
+    public static void configStatorCurrentLimitPermanent(TalonFX motor, StatorCurrentLimitConfiguration config) {
+        final int kRetries = 5;
+        double retries = kRetries;
+        ErrorCode error = ErrorCode.OK;
+        double start = Timer.getFPGATimestamp();
+        String cmd = "configStatorCurrentLimit";
+        do {
+            if (retries != kRetries){
+                Timer.delay(.005);
+                System.out.println("Failed ("+error.toString()+") to "+cmd+"() will retry");
+            }
+
+            error = motor.configStatorCurrentLimit(config);
+            error = motor.getLastError();
+
+        } while (!error.equals(ErrorCode.OK) && retries-->0);
+        if (error.equals(ErrorCode.OK)){
+            System.out.println("Successfully completed "+cmd+"(), time needed "+(Timer.getFPGATimestamp()-start));
+        }
+        else{
+            System.out.println("Failed to "+cmd+"(), time needed "+(Timer.getFPGATimestamp()-start));
+        }
+    }
+
+    public static void setSelectedSensorPositionVolatile(TalonFX motor, double sensorPosition) {
+        final int kRetries = 5;
+        double retries = kRetries;
+        ErrorCode error = ErrorCode.OK;
+        double start = Timer.getFPGATimestamp();
+        String cmd = "setSelectedSensorPosition";
+        do {
+            if (retries != kRetries){
+                Timer.delay(.005);
+                System.out.println("Failed ("+error.toString()+") to "+cmd+"() will retry");
+            }
+
+            error = motor.setSelectedSensorPosition(sensorPosition);
+            error = motor.getLastError();
+
+        } while (!error.equals(ErrorCode.OK) && retries-->0);
+        if (error.equals(ErrorCode.OK)){
+            System.out.println("Successfully completed "+cmd+"(), time needed "+(Timer.getFPGATimestamp()-start));
+        }
+        else{
+            System.out.println("Failed to "+cmd+"(), time needed "+(Timer.getFPGATimestamp()-start));
+        }
+    }
+
+    public static void setNeutralModePermanent(TalonFX motor, NeutralMode mode) {
+        final int kRetries = 5;
+        double retries = kRetries;
+        ErrorCode error = ErrorCode.OK;
+        double start = Timer.getFPGATimestamp();
+        String cmd = "setNeutralMode";
+        do {
+            if (retries != kRetries){
+                Timer.delay(.010);
+                System.out.println("Failed ("+error.toString()+") to "+cmd+"() will retry");
+            }
+
+            motor.setNeutralMode(mode);
+            error = motor.getLastError();
+
+        } while (!error.equals(ErrorCode.OK) && retries-->0);
+        if (error.equals(ErrorCode.OK)){
+            System.out.println("Successfully completed "+cmd+"(), time needed "+(Timer.getFPGATimestamp()-start));
+        }
+        else{
+            System.out.println("Failed to "+cmd+"(), time needed "+(Timer.getFPGATimestamp()-start));
+        }
+    }
+
+    public static void setInvertedPermanent(TalonFX motor) {
+        final int kRetries = 5;
+        double retries = kRetries;
+        ErrorCode error = ErrorCode.OK;
+        double start = Timer.getFPGATimestamp();
+        String cmd = "setInverted";
+        do {
+            if (retries != kRetries){
+                Timer.delay(.010);
+                System.out.println("Failed ("+error.toString()+") to "+cmd+"() will retry");
+            }
+
+            motor.setInverted(true); // coast is default so only brake is needed
+            error = motor.getLastError();
+
+        } while (!error.equals(ErrorCode.OK) && retries-->0);
+        if (error.equals(ErrorCode.OK)){
+            System.out.println("Successfully completed "+cmd+"(), time needed "+(Timer.getFPGATimestamp()-start));
+        }
+        else{
+            System.out.println("Failed to "+cmd+"(), time needed "+(Timer.getFPGATimestamp()-start));
+        }
+    }
+
+    public static void configFactoryDefaultPermanent(TalonFX motor) {
+
+        final int kRetries = 5;
+        double retries = kRetries;
+        ErrorCode error = ErrorCode.OK;
+        double start = Timer.getFPGATimestamp();
+        String cmd = "configFactoryDefault";
+        do {
+            if (retries != kRetries){
+                Timer.delay(.010);
+                System.out.println("Failed ("+error.toString()+") to "+cmd+"() will retry");
+            }
+
+            motor.configFactoryDefault();
+            error = motor.getLastError();
+
+        } while (!error.equals(ErrorCode.OK) && retries-->0);
+        if (error.equals(ErrorCode.OK)){
+            System.out.println("Successfully completed "+cmd+"(), time needed "+(Timer.getFPGATimestamp()-start));
+        }
+        else{
+            System.out.println("Failed to "+cmd+"(), time needed "+(Timer.getFPGATimestamp()-start));
+        }
     }
 }

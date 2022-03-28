@@ -104,13 +104,13 @@ public class DriveMotionPlanner implements CSVWritable {
         // ff2 = 0;
         // }
 
-        System.out.println("transKP = " + transKP);
-        System.out.println("transKD = " + transKD);
-        System.out.println("rotKP = " + rotKP);
-        System.out.println("rotKD = " + rotKD);
-        System.out.println("ff0 = " + ff0);
-        System.out.println("ff1 = " + ff1);
-        System.out.println("ff2 = " + ff2);
+        // System.out.println("transKP = " + transKP);
+        // System.out.println("transKD = " + transKD);
+        // System.out.println("rotKP = " + rotKP);
+        // System.out.println("rotKD = " + rotKD);
+        // System.out.println("ff0 = " + ff0);
+        // System.out.println("ff1 = " + ff1);
+        // System.out.println("ff2 = " + ff2);
 
         // TODO: Make these constants
         // follower = new HolonomicTrajectoryFollower(
@@ -121,7 +121,7 @@ public class DriveMotionPlanner implements CSVWritable {
         // 0.0032181,
         // 0.30764
         // )));
-        System.out.println("applied----------------------------------------");
+        // System.out.println("applied----------------------------------------");
         follower = new HolonomicTrajectoryFollower(
                 new PidGains(transKP, 0.0, transKD),
                 new PidGains(rotKP, 0.0, rotKD),

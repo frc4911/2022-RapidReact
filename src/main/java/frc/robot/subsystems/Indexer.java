@@ -111,19 +111,16 @@ public class Indexer extends Subsystem {
     }
 
     private void configMotors() {
-        new FramePeriodSwitch(mFXMotor); // constructor does the work
-        
-        mFXMotor.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor, 0, Constants.kLongCANTimeoutMs);
+        // must be run on powerup
+        FramePeriodSwitch.setFramePeriodsVolatile(mFXMotor); // set frame periods
 
-        mFXMotor.configForwardSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
-        mFXMotor.configReverseSoftLimitEnable(false, Constants.kLongCANTimeoutMs);
-
-        mFXMotor.setInverted(true);
-
-        mFXMotor.setNeutralMode(NeutralMode.Brake);
-
-        mFXMotor.configStatorCurrentLimit(
-                new StatorCurrentLimitConfiguration(true, kIndexerCurrentLimit, kIndexerCurrentLimit, 0));
+        // for new motors do the following
+        // uncomment and deploy, then comment and deploy, power cycle
+        // FramePeriodSwitch.configFactoryDefaultPermanent(mFXMotor);
+        FramePeriodSwitch.setInvertedPermanent(mFXMotor);
+        FramePeriodSwitch.setNeutralModePermanent(mFXMotor, NeutralMode.Brake);
+        // FramePeriodSwitch.configStatorCurrentLimitPermanent(mFXMotor,
+        //         new StatorCurrentLimitConfiguration(true, kIndexerCurrentLimit, kIndexerCurrentLimit, 0));
 
     }
 
@@ -395,7 +392,7 @@ public class Indexer extends Subsystem {
         mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
         mPeriodicIO.lastSchedStart = now;
 
-        mPeriodicIO.motorPosition = mFXMotor.getSelectedSensorPosition();
+        mPeriodicIO.motorPosition = FramePeriodSwitch.getSelectedSensorPosition(mFXMotor);
         // true if beam is blocked
         mPeriodicIO.exitBeamBlocked = mAIExitBeamBreak.getVoltage()<kBeamBreakThreshold;
         mPeriodicIO.enterBeamBlocked = mAIEnterBeamBreak.getVoltage()<kBeamBreakThreshold;
@@ -462,7 +459,7 @@ public class Indexer extends Subsystem {
         SmartDashboard.putBoolean("IndexerEnterBeamBlocked", mPeriodicIO.enterBeamBlocked);
         SmartDashboard.putBoolean("IndexerExitBeamBlocked", mPeriodicIO.exitBeamBlocked);
         SmartDashboard.putNumber("IndexerPosition", mPeriodicIO.motorPosition);
-        mPeriodicIO.motorStator = mFXMotor.getStatorCurrent();
+        mPeriodicIO.motorStator = FramePeriodSwitch.getStatorCurrent(mFXMotor);
         SmartDashboard.putNumber("IndexerStator", mPeriodicIO.motorStator);
     }
 
