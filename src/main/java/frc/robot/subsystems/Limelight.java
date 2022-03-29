@@ -3,7 +3,6 @@ package frc.robot.subsystems;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.RobotState;
 import frc.robot.limelight.LimelightConfiguration;
 import frc.robot.limelight.PipelineConfiguration;
@@ -34,7 +33,7 @@ public class Limelight extends Subsystem {
     private final NetworkTable mNetworkTable;
     private final RobotState mRobotState;
     private final PeriodicIO mPeriodicIO = new PeriodicIO();
-    private final double[] mZeroArray = new double[]{0, 0, 0, 0, 0, 0, 0, 0};
+    private final double[] mZeroArray = new double[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     private final List<TargetInfo> mTargets = new ArrayList<>();
     private final boolean mLoggingEnabled = true;
     private LimelightConfiguration mConfig;
@@ -96,6 +95,55 @@ public class Limelight extends Subsystem {
 
         return targets;
     }
+
+    /**
+     * Returns raw outermost top-left and top-right corners
+     *
+     * @return list of corners: index 0 - top left, index 1 - top right
+     */
+    public static List<double[]> extractTopOutermostCornersFromBoundingBoxes(double[] xCorners, double[] yCorners) {
+        List<Translation2d> corners = new ArrayList<>();
+        for (int i = 0; i < xCorners.length; i++) {
+            corners.add(new Translation2d(xCorners[i], yCorners[i]));
+        }
+
+        corners.sort(xSort);
+        List<Translation2d> left = corners.subList(0, 2);
+        List<Translation2d> right = corners.subList(corners.size() - 2, corners.size());
+
+        left.sort(ySort);
+        right.sort(ySort);
+
+        // Get the top left and right corners
+        Translation2d leftCorner = left.get(left.size() - 1);
+        Translation2d rightCorner = right.get(right.size() - 1);
+        return Arrays.asList(new double[]{leftCorner.x(), leftCorner.y()}, new double[]{rightCorner.x(), rightCorner.y()});
+    }
+
+    /**
+     * Returns raw outermost bottom-left and bottom-right corners
+     *
+     * @return list of corners: index 0 - top left, index 1 - top right
+     */
+    public static List<double[]> extractBottomOutermostCornersFromBoundingBoxes(double[] xCorners, double[] yCorners) {
+        List<Translation2d> corners = new ArrayList<>();
+        for (int i = 0; i < xCorners.length; i++) {
+            corners.add(new Translation2d(xCorners[i], yCorners[i]));
+        }
+
+        corners.sort(xSort);
+        List<Translation2d> left = corners.subList(0, 2);
+        List<Translation2d> right = corners.subList(corners.size() - 2, corners.size());
+
+        left.sort(ySort);
+        right.sort(ySort);
+
+        // Get the top left and right corners
+        Translation2d leftCorner = left.get(0);
+        Translation2d rightCorner = right.get(0);
+        return Arrays.asList(new double[]{leftCorner.x(), leftCorner.y()}, new double[]{rightCorner.x(), rightCorner.y()});
+    }
+
 
     /**
      * Returns raw top-left and top-right corners
@@ -259,6 +307,18 @@ public class Limelight extends Subsystem {
         return mPeriodicIO.pipeline;
     }
 
+    public synchronized double getXOffset() {
+        return mPeriodicIO.xOffset;
+    }
+
+    public synchronized double getYOffset() {
+        return mPeriodicIO.yOffset;
+    }
+
+    public synchronized boolean seesTarget() {
+        return mSeesTarget;
+    }
+
     public synchronized List<TargetInfo> getTarget() {
         List<TargetInfo> targets = getRawTargetInfos();
 
@@ -287,7 +347,7 @@ public class Limelight extends Subsystem {
         // System.out.println("tcornxy: " + Arrays.toString(corners));
 
         // something went wrong
-        if (!mSeesTarget || corners.length < 8 || corners == mZeroArray || corners.length % 2 != 0) {
+        if (!mSeesTarget || corners.length < 12 || corners == mZeroArray || corners.length % 4 != 0) {
             return null;
         }
 
@@ -302,7 +362,8 @@ public class Limelight extends Subsystem {
             }
         }
 
-        return extractTopCornersFromBoundingBoxes(xCorners, yCorners);
+        return extractTopOutermostCornersFromBoundingBoxes(xCorners, yCorners);
+//        return extractTopCornersFromBoundingBoxes(xCorners, yCorners);
     }
 
     private List<double[]> getBottomCorners() {
@@ -310,7 +371,7 @@ public class Limelight extends Subsystem {
         mSeesTarget = mNetworkTable.getEntry("tv").getDouble(0) == 1.0;
 
         // something went wrong
-        if (!mSeesTarget || corners.length < 8 || corners == mZeroArray || corners.length % 2 != 0) {
+        if (!mSeesTarget || corners.length < 12 || corners == mZeroArray || corners.length % 4 != 0) {
             return null;
         }
 
@@ -325,7 +386,8 @@ public class Limelight extends Subsystem {
             }
         }
 
-        return extractBottomCornersFromBoundingBoxes(xCorners, yCorners);
+        return extractBottomOutermostCornersFromBoundingBoxes(xCorners, yCorners);
+//        return extractBottomCornersFromBoundingBoxes(xCorners, yCorners);
     }
 
     public double getLatency() {

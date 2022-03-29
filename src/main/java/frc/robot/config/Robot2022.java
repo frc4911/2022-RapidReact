@@ -147,7 +147,7 @@ public class Robot2022 implements RobotConfiguration {
                 "limelight-shoot", // table name
                 Units.inchesToMeters(40), // height
                 // Distance between center of shooter and limelight's camera lens
-                new Pose2d(0.0, Units.inchesToMeters(/*-9.373 - (-1.85)*/-7), Rotation2d.identity()), // shooter to lens
+                new Pose2d(0.0, Units.inchesToMeters(-7.0), Rotation2d.identity()), // shooter to lens
                 Rotation2d.fromDegrees(50.00), // horizontalPlaneToLens,
                 65.0, //64.03840065743408,
                 50.0 //50.34836606499798

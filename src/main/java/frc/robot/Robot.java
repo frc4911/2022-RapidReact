@@ -9,21 +9,14 @@ import java.util.Optional;
 
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import frc.robot.autos.AutoModeSelector;
 import frc.robot.config.RobotConfiguration;
 import frc.robot.constants.Constants;
 import frc.robot.limelight.LimelightManager;
 import frc.robot.paths.TrajectoryGenerator;
-import frc.robot.subsystems.Climber;
-import frc.robot.subsystems.Collector;
-import frc.robot.subsystems.Indexer;
-import frc.robot.subsystems.JSticks;
-import frc.robot.subsystems.Limelight;
-import frc.robot.subsystems.RobotStateEstimator;
-import frc.robot.subsystems.Shooter;
-import frc.robot.subsystems.Superstructure;
-import frc.robot.subsystems.Swerve;
+import frc.robot.subsystems.*;
 import libraries.cheesylib.autos.AutoModeBase;
 import libraries.cheesylib.autos.AutoModeExecutor;
 import libraries.cheesylib.geometry.Pose2d;
@@ -80,7 +73,7 @@ public class Robot extends TimedRobot {
     @Override
     public void robotInit() {
         System.out.println("robotInit() begins");
-
+        Timer.delay(.05); // give rest of system 50 msec to come up first
         mClassName = this.getClass().getSimpleName();
         // LiveWindow.disableAllTelemetry();
         // LiveWindow.setEnabled(false);
@@ -140,6 +133,8 @@ public class Robot extends TimedRobot {
     @Override
     public void robotPeriodic() {
         mAutoModeSelector.outputToSmartDashboard();
+        // Ensure timely updates when graphing values etc.
+        NetworkTableInstance.getDefault().flush();
     }
 
     @Override
@@ -203,8 +198,6 @@ public class Robot extends TimedRobot {
     @Override
     public void teleopPeriodic() {
         // This will send the Network Table data to DriveStation at a consistent rate.
-        // TODO: Measure any network bandwidth issues because of this.
-        NetworkTableInstance.getDefault().flush();
     }
 
     @Override

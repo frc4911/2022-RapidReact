@@ -35,19 +35,19 @@ public class JSticks extends Subsystem {
     private SystemState mSystemState = SystemState.READINGBUTTONS;
     private WantedState mWantedState = WantedState.READBUTTONS;
     private boolean mStateChanged;
-    private CW mDriver;
-    private CW mOperator;
+    private final CW mDriver;
+    private final CW mOperator;
     // private LogitechPS4 mTest;
-    private PeriodicIO mPeriodicIO = new PeriodicIO();
+    private final PeriodicIO mPeriodicIO = new PeriodicIO();
     private final double mDeadBand = 0.15; // for the turnigy (driver) swerve controls
-    private Superstructure mSuperstructure;
-    private Swerve mSwerve;
-    private Shooter mShooter;
-    private Indexer mIndexer;
-    private Climber mClimber;
+    private final Superstructure mSuperstructure;
+    private final Swerve mSwerve;
+    private final Shooter mShooter;
+    private final Indexer mIndexer;
+    private final Climber mClimber;
 
     @SuppressWarnings("unused")
-    private LatchedBoolean mSystemStateChange = new LatchedBoolean();
+    private final LatchedBoolean mSystemStateChange = new LatchedBoolean();
 
     private static String sClassName;
     private static int sInstanceCount;
@@ -243,9 +243,11 @@ public class JSticks extends Subsystem {
         if (mPeriodicIO.dr_RightTrigger_AutoShoot) {
             mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.OFF);
             mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_SHOOT, sClassName);
+            mSwerve.EnableAimingController();
         }
 
         if (mPeriodicIO.dr_RightTrigger_AutoShoot_Stop) {
+            mSwerve.DisableAimingController();
             mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
             mHeadingController.setGoal(mSwerve.getHeading().getDegrees());
         }
