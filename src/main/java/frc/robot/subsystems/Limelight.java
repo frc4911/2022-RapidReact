@@ -311,6 +311,10 @@ public class Limelight extends Subsystem {
         return mPeriodicIO.xOffset;
     }
 
+    public synchronized double getYOffset() {
+        return mPeriodicIO.yOffset;
+    }
+
     public synchronized boolean seesTarget() {
         return mSeesTarget;
     }
