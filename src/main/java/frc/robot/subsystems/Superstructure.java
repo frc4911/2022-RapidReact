@@ -293,7 +293,7 @@ public class Superstructure extends Subsystem {
             mShooter.setWantedState(Shooter.WantedState.SHOOT, sClassName);
             mSetPointInRadians = Double.NaN;
         }
-         var setPointInRadians = getSwerveSetpointFromVision(timestamp);
+        var setPointInRadians = getSwerveSetpointFromVision(timestamp);
         
         // SmartDashboard.putNumber("setPointHeading degrees", Math.toDegrees(setPointInRadians));
 //        System.out.println("SetPointInRadians: " + setPointInRadians + " Degrees: " + Math.toDegrees(setPointInRadians));
@@ -556,7 +556,7 @@ public class Superstructure extends Subsystem {
             mYOffset = mLLManager.getLimelight().getYOffset();
 
             mHasTarget = true;
-            mOnTarget = Util.epsilonEquals(llTX, 0.0, 1.5);
+            mOnTarget = Util.epsilonEquals(llTX, 0.0, 3);
 
             // System.out.println("SS getSwerveSetpoint tx:"+llTX+" heading:"+Math.toDegrees(mSwerve.getHeading().getRadians()));
             return Angles.normalizeAngle(setPointInRadians);        }

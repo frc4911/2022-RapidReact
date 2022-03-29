@@ -168,6 +168,10 @@ public class JSticks extends Subsystem {
         Superstructure.WantedState currentState = mSuperstructure.getWantedState();
         Superstructure.WantedState previousState = currentState;
 
+        // if(mPeriodicIO.dr_AButton_ToggleDriveMode) {
+        //     mSwerve.toggleThroughDriveModes();
+        // }
+
         // NEW SWERVE
         if (mSuperstructure.getWantedState() != Superstructure.WantedState.AUTO_SHOOT) {
         // All driver assist to raw inputs should be implemented Swerve#handleManual()
@@ -176,8 +180,8 @@ public class JSticks extends Subsystem {
             double swerveRotationInput = mPeriodicIO.dr_RightStickX_Rotate;
 
             if (mPeriodicIO.dr_LeftTrigger_SlowSpeed) {
-                swerveYInput *= 0.5;
-                swerveXInput *= 0.5;
+                swerveYInput *= 0.25;
+                swerveXInput *= 0.25;
                 swerveRotationInput *= 0.5;
             }
 
@@ -361,7 +365,7 @@ public class JSticks extends Subsystem {
         mPeriodicIO.dr_RightTrigger_AutoShoot_Stop = mDriver.getButton(Xbox.RIGHT_TRIGGER, CW.RELEASED_EDGE);
         mPeriodicIO.dr_RightBumper_RobotOrient = mDriver.getButton(Xbox.RIGHT_BUMPER, CW.PRESSED_LEVEL); // field/robot
         mPeriodicIO.dr_YButton_ResetIMU = mDriver.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
-        // mPeriodicIO.dr_AButton_ToggleDriveMode = mDriver.getButton(Xbox.A_BUTTON, CW.PRESSED_EDGE);
+        mPeriodicIO.dr_AButton_ToggleDriveMode = mDriver.getButton(Xbox.A_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.dr_StartButton_ResetWheels = mDriver.getButton(Xbox.START_BUTTON, CW.PRESSED_EDGE);
 
         //Climbing
