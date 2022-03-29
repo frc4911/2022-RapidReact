@@ -36,6 +36,6 @@ public class ThreeBallMode extends AutoModeBase{
         runAction(new CollectAction(false));
         runAction(new DriveTrajectoryAction(TrajectoryGenerator.getInstance().getTrajectorySet().threeBallAuto2Trajectory.left, false));
         runAction(new ManualShootAction(15, 5));
-        runAction(new SetPoseAction(new Pose2d(0,0,new Rotation2d(119.0)), true));
+        runAction(new SetPoseAction(startPose, true));
     }
 }
