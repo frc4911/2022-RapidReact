@@ -1,21 +1,20 @@
 package frc.robot.actions;
 
-//import edu.wpi.first.math.geometry.Pose2d;
 import frc.robot.subsystems.Swerve;
 import libraries.cheesylib.autos.actions.Action;
 import libraries.cheesylib.geometry.Pose2d;
 
 public class SetPoseAction implements Action {
 
-	private String sClassName;
-	private Swerve mSwerve;
-	private Pose2d pose;
+	private final Swerve mSwerve;
+	private final Pose2d pose;
+	private final boolean useHeading;
 
-
-	public SetPoseAction(Pose2d pose) {
-		sClassName = this.getClass().getSimpleName();
+	public SetPoseAction(Pose2d pose, boolean useHeading) {
+		String sClassName = this.getClass().getSimpleName();
 		mSwerve = Swerve.getInstance(sClassName);
 		this.pose = pose;
+		this.useHeading = useHeading;
 	}
 
 	@Override
@@ -25,7 +24,13 @@ public class SetPoseAction implements Action {
 
 	@Override
 	public void start() {
-		mSwerve.setRobotPosition(pose);
+		if (useHeading) {
+			mSwerve.setRobotPosition(new Pose2d(
+					mSwerve.getPose().getTranslation().plus(pose.getTranslation()),
+					mSwerve.getPose().getRotation().rotateBy(pose.getRotation())));
+		} else {
+			mSwerve.setRobotPosition(pose);
+		}
 	}
 
 	@Override
@@ -37,5 +42,4 @@ public class SetPoseAction implements Action {
 	public void done() {
 
 	}
-
 }
