@@ -68,11 +68,7 @@ public class Swerve extends Subsystem {
     private final SwerveDriveOdometry mOdometry;
     private final SwerveDriveKinematics mKinematics;
 
-    // Aiming Controller to turn in place when using vision system to aim
-    private SynchronousPIDF mAimingController = new SynchronousPIDF(
-            Constants.kAimingKP, Constants.kAimingKI, Constants.kAimingKD
-    );
-
+    // Heading Controller to turn in place when using vision system to aim
     private static HeadingController mAimingHeaderController = null;
 
     private double lastAimTimestamp = -1.0;
@@ -90,7 +86,7 @@ public class Swerve extends Subsystem {
             sInstance = new Swerve(caller);
             mAimingHeaderController = new HeadingController(
                 Constants.kAimingKP, Constants.kAimingKI, Constants.kAimingKD, 0.0);
-
+        
         } else {
             printUsage(caller);
         }
@@ -304,17 +300,7 @@ public class Swerve extends Subsystem {
         if (dt > Util.kEpsilon) {
             mAimingHeaderController.setGoal(Math.toDegrees(mPeriodicIO.visionSetpointInRadians));
             var rotation = mAimingHeaderController.update();
-
-//            mAimingController.setSetpoint(mPeriodicIO.visionSetpointInRadians);
-//            double current_angle = getHeading().getDegrees();
-//            double current_error = Math.toDegrees(mPeriodicIO.visionSetpointInRadians) - current_angle;
-//            if (current_error > 180) {
-//                current_angle += 360;
-//            } else if (current_error < -180) {
-//                current_angle -= 360;
-//            }
-//
-//            var rotation = mAimingController.calculate(Math.toRadians(current_angle), dt);
+            
 
             // Apply a minimum constant rotation velocity to overcome friction.
             // TODO:  Create constants for these
@@ -324,7 +310,7 @@ public class Swerve extends Subsystem {
             if (Math.abs(rotation)<.085){
                 rotation = Math.copySign(.085, rotation);
             }
-
+             
             // System.out.println("Swerve.handleAiming() setpoint: "+(((int)(10.0*Math.toDegrees(mPeriodicIO.visionSetpointInRadians)))/10)+ " rotation: "+rotation);
             // Turn in place implies no translational velocity.
             HolonomicDriveSignal driveSignal = new HolonomicDriveSignal(
@@ -336,6 +322,16 @@ public class Swerve extends Subsystem {
             //System.out.println("Robot Pose " + mPeriodicIO.robotPose);
         }
     }
+
+    public synchronized void EnableAimingController() {
+        mAimingHeaderController.reset();
+        mAimingHeaderController.setHeadingControllerState(HeadingController.HeadingControllerState.MAINTAIN);
+    }
+
+    public synchronized void DisableAimingController() {
+        mAimingHeaderController.setHeadingControllerState(HeadingController.HeadingControllerState.OFF);
+    }
+
 
     // //Assigns appropriate directions for scrub factors
     // public void setCarpetDirection(boolean standardDirection) {
@@ -361,10 +357,10 @@ public class Swerve extends Subsystem {
             System.out.println(mControlState + " to " + newState);
             switch (newState) {
                 case NEUTRAL:
-                    mPeriodicIO.strafe = 0;
-                    mPeriodicIO.forward = 0;
-                    mPeriodicIO.rotation = 0;
-                    stopSwerveDriveModules();
+                   mPeriodicIO.forward= 0.0;
+                    mPeriodicIO.strafe = 0.0;
+                    mPeriodicIO.rotation = 0.0;
+                    mPeriodicIO.visionSetpointInRadians = getHeading().getRadians();
                     mPeriodicIO.schedDeltaDesired = 10; // this is a fast cycle used while testing
                     break;
                 case MANUAL:
@@ -521,10 +517,12 @@ public class Swerve extends Subsystem {
 
     /**
      * Zeroes the drive motors, and sets the robot's internal position and heading
-     * to match that of the fed pose
+     * to match that of the field pose
      *
      * DO NOT use this to reset the IMU mid match. Use
      * {@link #setRobotPosition(Pose2d)} for that purpose.
+     *
+     * @param  startingPose The starting pose.
      */
     public synchronized void zeroSensors(Pose2d startingPose) {
         setRobotPosition(startingPose);
@@ -545,7 +543,6 @@ public class Swerve extends Subsystem {
             mControlState = ControlState.VISION_AIM;
             // seed the last timestamp
             lastAimTimestamp = timestamp;
-            mAimingController.reset();
         }
         mPeriodicIO.visionSetpointInRadians = setPointInRadians;
         mPeriodicIO.visionFeedForward = feedforward;
@@ -553,14 +550,10 @@ public class Swerve extends Subsystem {
 
     /**
      * Sets inputs from driver in teleop mode.
-     * <p>
-     * 
-     * @param forward                percent to drive forwards/backwards (as double
-     *                               [-1.0,1.0]).
-     * @param strafe                 percent to drive sideways left/right (as double
-     *                               [-1.0,1.0]).
-     * @param rotation               percent to rotate chassis (as double
-     *                               [-1.0,1.0]).
+     *
+     * @param forward                percent to drive forwards/backwards (as double [-1.0,1.0]).
+     * @param strafe                 percent to drive sideways left/right (as double [-1.0,1.0]).
+     * @param rotation               percent to rotate chassis (as double [-1.0,1.0]).
      * @param low_power              whether to use low or high power.
      * @param field_relative         whether operation is robot centric or field
      *                               relative.
