@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
@@ -56,7 +57,7 @@ public class Swerve extends Subsystem {
 
     double lastUpdateTimestamp = 0;
     double rotationPow = 2;
-    int driveMode = 2;
+    int driveMode = 3;
 
     // Swerve kinematics & odometry
     private final IMU mIMU;
@@ -213,6 +214,10 @@ public class Swerve extends Subsystem {
         }
     }
 
+    SlewRateLimiter forwardLimiter = new SlewRateLimiter(1.5, 0);
+    SlewRateLimiter strafeLimiter = new SlewRateLimiter(1.5, 0);
+    SlewRateLimiter rotationLimiter = new SlewRateLimiter(2, 0);
+
     /**
      * Handles MANUAL state which corresponds to joy stick inputs.
      *
@@ -254,11 +259,14 @@ public class Swerve extends Subsystem {
                         mPeriodicIO.field_relative);
                 break;
             case 3:
-                // Raw inputs
+                // Slew Rate Limiter
                 driveSignal = new HolonomicDriveSignal(
-                         new Translation2d(mPeriodicIO.forward,mPeriodicIO.strafe),
-                         mPeriodicIO.rotation,
-                         mPeriodicIO.field_relative);
+                        new Translation2d(
+                        forwardLimiter.calculate(mPeriodicIO.forward),
+                        strafeLimiter.calculate(mPeriodicIO.strafe)),
+                        // rotationLimiter.calculate(mPeriodicIO.rotation),
+                        Math.copySign(Math.pow(mPeriodicIO.rotation, 2), mPeriodicIO.rotation),
+                        mPeriodicIO.field_relative);
                 break;
             default:
                 driveSignal = null;
@@ -477,7 +485,7 @@ public class Swerve extends Subsystem {
      */
     public synchronized void setOpenLoop(HolonomicDriveSignal signal) {
         if (mControlState != ControlState.MANUAL) {
-            setBrakeMode(true); // TODO: Consider driving in coast mode
+            setBrakeMode(true);
             mControlState = ControlState.MANUAL;
         }
         updateModules(signal);

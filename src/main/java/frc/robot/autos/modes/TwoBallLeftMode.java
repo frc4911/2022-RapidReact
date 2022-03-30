@@ -22,7 +22,7 @@ public class TwoBallLeftMode extends AutoModeBase{
         runAction(new CollectAction(false));
         runAction(new WaitAction(.5));
         runAction(new ManualShootAction(0, 3));
-        runAction(new SetPoseAction(new Pose2d(0,0,new Rotation2d(209.0))));
+        runAction(new SetPoseAction(new Pose2d(0,0,new Rotation2d(209.0)), false));
 
     }
     
