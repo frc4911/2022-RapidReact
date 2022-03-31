@@ -88,7 +88,7 @@ public class Superstructure extends Subsystem {
     private int mSlowCycle = 100;
 
     private double mManualDistance;
-    private boolean mShootSetup;
+    private boolean mStartedShooting;
 
     private static String sClassName;
     private static int sInstanceCount;
@@ -288,7 +288,7 @@ public class Superstructure extends Subsystem {
             if (!mOverrideLimelightLEDs) {
                 mLLManager.getLimelight().setLed(Limelight.LedMode.PIPELINE);
             }
-            mShootSetup = true;
+            mStartedShooting = false;
             mPeriodicIO.schedDeltaDesired = mFastCycle;
             mShooter.setWantedState(Shooter.WantedState.SHOOT, sClassName);
             mSetPointInRadians = Double.NaN;
@@ -333,13 +333,13 @@ public class Superstructure extends Subsystem {
             // }
 
             // Shoot while aiming
-            if (mOnTarget) {
+            if (mOnTarget || mStartedShooting) {
                 // mSwerve.stop();
-                if (mShooter.readyToShoot() || !mShootSetup) {
+                if (mShooter.readyToShoot() || mStartedShooting) {
                     if (mIndexer.getWantedState() != Indexer.WantedState.FEED) {
                         mIndexer.setWantedState(Indexer.WantedState.FEED, sClassName);
                     }
-                    mShootSetup = false;
+                    mStartedShooting = true;
                 } else {
                     if (mIndexer.getWantedState() != Indexer.WantedState.HOLD) {
                         mIndexer.setWantedState(Indexer.WantedState.HOLD, sClassName);

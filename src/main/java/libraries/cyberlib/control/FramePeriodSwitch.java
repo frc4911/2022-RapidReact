@@ -296,7 +296,7 @@ public class FramePeriodSwitch {
         }
     }
 
-    public static void setNeutralModePermanent(TalonFX motor, NeutralMode mode) {
+    public static void setNeutralModeVolatile(TalonFX motor, NeutralMode mode) {
         final int kRetries = 5;
         double retries = kRetries;
         ErrorCode error = ErrorCode.OK;
@@ -320,7 +320,7 @@ public class FramePeriodSwitch {
         }
     }
 
-    public static void setInvertedPermanent(TalonFX motor) {
+    public static void setInvertedVolatile(TalonFX motor) {
         final int kRetries = 5;
         double retries = kRetries;
         ErrorCode error = ErrorCode.OK;
