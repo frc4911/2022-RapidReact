@@ -123,10 +123,18 @@ public class Collector extends Subsystem {
         FramePeriodSwitch.setFramePeriodsVolatile(mFXMotor); // set frame periods
 
 
-        // for new motors do the following
-        // uncomment and deploy, then comment and deploy, power cycle
-        // FramePeriodSwitch.configFactoryDefaultPermanent(mFXMotor);
-        // FramePeriodSwitch.configStatorCurrentLimitPermanent(mFXMotor, new StatorCurrentLimitConfiguration(true, kCurrentLimit, kCurrentLimit, 0));
+        // The following commands are stored in nonVolatile ram in the motor
+        // They are repeated on boot incase a motor needs to replaced quickly
+        FramePeriodSwitch.configFactoryDefaultPermanent(mFXMotor);
+        FramePeriodSwitch.configStatorCurrentLimitPermanent(mFXMotor, new StatorCurrentLimitConfiguration(true, kCurrentLimit, kCurrentLimit, 0));
+    
+        // the following commands are stored in nonVolatile ram but they are
+        // no longer deemed necessary. Keeping around for a while in case they
+        // need to be brought back
+        // talon.configNeutralDeadband(config.NEUTRAL_DEADBAND, kTimeoutMs);
+        // talon.configForwardLimitSwitchSource(LimitSwitchSource.FeedbackConnector, LimitSwitchNormal.Disabled, kTimeoutMs);
+        // talon.configReverseLimitSwitchSource(LimitSwitchSource.FeedbackConnector, LimitSwitchNormal.Disabled, kTimeoutMs);    
+    
     }
 
     @Override
