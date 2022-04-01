@@ -315,8 +315,8 @@ public class Swerve extends Subsystem {
             // if ((mPeriodicIO.averageWheelVelocity / mSwerveConfiguration.maxSpeedInMetersPerSecond) < 0.2) {
             //     rotation += Math.copySign(0.3 * mSwerveConfiguration.maxSpeedInRadiansPerSecond, rotation);
             // }
-            if (Math.abs(rotation)<.085){
-                rotation = Math.copySign(.085, rotation);
+            if (Math.abs(rotation)<.15){
+                rotation = Math.copySign(.15, rotation);
             }
              
             // System.out.println("Swerve.handleAiming() setpoint: "+(((int)(10.0*Math.toDegrees(mPeriodicIO.visionSetpointInRadians)))/10)+ " rotation: "+rotation);

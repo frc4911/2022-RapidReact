@@ -2,6 +2,7 @@ package frc.robot.subsystems;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
+import com.ctre.phoenix.motorcontrol.StatorCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.sensors.AbsoluteSensorRange;
 import com.ctre.phoenix.sensors.CANCoder;
@@ -75,137 +76,49 @@ public class SwerveDriveModule extends Subsystem {
      * Configure motors based on current SwerveModuleConstants.
      */
     private void configureMotors() {
-        // mSteerMotor.setSensorPhase(mConfig.kInvertSteerMotorSensorPhase);
-        mSteerMotor.setInverted(mConfig.kInvertSteerMotor);
+        commonMotorConfig(mDriveMotor, "Drive");
+        commonMotorConfig(mSteerMotor, "Steer");
 
         System.out.println("Be sure to reset convertCancoderToFX2() call before DCMP's");
         convertCancoderToFX2(true);
-        // convertCancoderToFX(false);
-
-        // mSteerMotor.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, mConfig.kSteerMotorStatusFrame2UpdateRate, Constants.kLongCANTimeoutMs);
-        // mSteerMotor.setStatusFramePeriod(StatusFrame.Status_10_MotionMagic, mConfig.kSteerMotorStatusFrame10UpdateRate, Constants.kLongCANTimeoutMs);
-        // mSteerMotor.setNeutralMode(mConfig.kSteerMotorInitNeutralMode);
-        // mSteerMotor.configAllowableClosedloopError(0, mConfig.kSteerMotorClosedLoopAllowableError, Constants.kLongCANTimeoutMs);
-
-        // if (mConfig.kSteerMotorEnableCurrentLimit) {
-        //     var supplyCurrLimit = new SupplyCurrentLimitConfiguration();
-        //     supplyCurrLimit.currentLimit = mConfig.kSteerMotorContinuousCurrentLimit;
-        //     supplyCurrLimit.triggerThresholdCurrent = mConfig.kSteerMotorPeakCurrentLimit;
-        //     supplyCurrLimit.triggerThresholdTime = mConfig.kSteerMotorPeakCurrentDuration;
-        //     supplyCurrLimit.enable = true;
-
-        //     mSteerMotor.configGetSupplyCurrentLimit(supplyCurrLimit, Constants.kLongCANTimeoutMs);
-        // }
-        // mSteerMotor.configStatorCurrentLimit(new
-        // StatorCurrentLimitConfiguration(true, 30, 30, 0));
-
-        // TODO: Set these correctly
-        // mSteerMotor.configMotionAcceleration(0.9 * mConfig.kSteerTicksPerUnitVelocity * 0.25,
-        //         Constants.kLongCANTimeoutMs);
-        // mSteerMotor.configMotionCruiseVelocity(0.9 * mConfig.kSteerTicksPerUnitVelocity,
-        //         Constants.kLongCANTimeoutMs);
-        // mSteerMotor.configVelocityMeasurementPeriod(mConfig.kSteerMotorVelocityMeasurementPeriod,
-        //         Constants.kLongCANTimeoutMs);
-        // mSteerMotor.configVelocityMeasurementWindow(mConfig.kSteerMotorVelocityMeasurementWindow,
-        //         Constants.kLongCANTimeoutMs);
-
+        mSteerMotor.setInverted(mConfig.kInvertSteerMotor);
+        mSteerMotor.configMotionAcceleration(0.9 * mConfig.kSteerTicksPerUnitVelocity * 0.25, Constants.kLongCANTimeoutMs);
+        mSteerMotor.configMotionCruiseVelocity(0.9 * mConfig.kSteerTicksPerUnitVelocity,Constants.kLongCANTimeoutMs);
+        mSteerMotor.configVelocityMeasurementPeriod(mConfig.kSteerMotorVelocityMeasurementPeriod, Constants.kLongCANTimeoutMs);
+        mSteerMotor.configVelocityMeasurementWindow(mConfig.kSteerMotorVelocityMeasurementWindow, Constants.kLongCANTimeoutMs);
+        mSteerMotor.selectProfileSlot(0, 0);
 
         // Slot 0 is for normal use (tuned for fx integrated encoder)
-        // mSteerMotor.config_kP(0, mConfig.kSteerMotorSlot0Kp, Constants.kLongCANTimeoutMs);
-        // mSteerMotor.config_kI(0, mConfig.kSteerMotorSlot0Ki, Constants.kLongCANTimeoutMs);
-        // mSteerMotor.config_kD(0, mConfig.kSteerMotorSlot0Kd, Constants.kLongCANTimeoutMs);
-        // mSteerMotor.config_kF(0, mConfig.kSteerMotorSlot0Kf, Constants.kLongCANTimeoutMs);
-        // mSteerMotor.config_IntegralZone(0, mConfig.kSteerMotorSlot0IZone, Constants.kLongCANTimeoutMs);
+        mSteerMotor.config_kP(0, mConfig.kSteerMotorSlot0Kp, Constants.kLongCANTimeoutMs);
+        mSteerMotor.config_kI(0, mConfig.kSteerMotorSlot0Ki, Constants.kLongCANTimeoutMs);
+        mSteerMotor.config_kD(0, mConfig.kSteerMotorSlot0Kd, Constants.kLongCANTimeoutMs);
+        mSteerMotor.config_kF(0, mConfig.kSteerMotorSlot0Kf, Constants.kLongCANTimeoutMs);
+        mSteerMotor.config_IntegralZone(0, mConfig.kSteerMotorSlot0IZone, Constants.kLongCANTimeoutMs);
 
-        // TODO: Pass in and tune these Motion Magic settings.
-        // mSteerMotor.configMotionCruiseVelocity(Constants.kSwerveDriveMaxSpeed*0.9,
-        // Constants.kLongCANTimeoutMs);
-        // mSteerMotor.configMotionAcceleration(Constants.kSwerveDriveMaxSpeed,
-        // Constants.kLongCANTimeoutMs);
-
-        // Slot 2 is reserved for the beginning of auto (tuned for cancoders needs
-        // retune)
-        // mSteerMotor.config_kP(1, 0.07, 10);
-        // mSteerMotor.config_kI(1, 0.0, 10);
-        // mSteerMotor.config_kD(1, 0.84, 10);
-        // mSteerMotor.config_kF(1, 0.05, 10);
-        // mSteerMotor.config_kP(1, mConstants.kSteerMotorSlot1Kp,
-        // Constants.kLongCANTimeoutMs); // TODO: test this
-        // mSteerMotor.config_kI(1, mConstants.kSteerMotorSlot1Ki,
-        // Constants.kLongCANTimeoutMs);
-        // mSteerMotor.config_kD(1, mConstants.kSteerMotorSlot1Kd,
-        // Constants.kLongCANTimeoutMs);
-        // mSteerMotor.config_kF(1, mConstants.kSteerMotorSlot1Kf,
-        // Constants.kLongCANTimeoutMs);
-        // mSteerMotor.config_IntegralZone(1, mConstants.kSteerMotorSlot1IZone,
-        // Constants.kLongCANTimeoutMs);
-
-        // TODO: Do we want to do command motor to "move" here (even though it should be
-        // stationary)?
-        // mSteerMotor.set(ControlMode.MotionMagic,
-        // mSteerMotor.getSelectedSensorPosition(0));
-
-        // Configure Drive motor
-        // mDriveMotor.configVelocityMeasurementPeriod(mConfig.kDriveMotorVelocityMeasurementPeriod,
-        //         Constants.kLongCANTimeoutMs);
-        // mDriveMotor.configVelocityMeasurementWindow(mConfig.kDriveVelocityMeasurementWindow,
-        //         Constants.kLongCANTimeoutMs);
         mDriveMotor.setInverted(mConfig.kInvertDrive);
-        mDriveMotor.setNeutralMode(mConfig.kDriveInitNeutralMode);
-        // mDriveMotor.setSensorPhase(mConfig.kInvertDriveSensorPhase);
-        // mDriveMotor.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, mConfig.kDriveStatusFrame2UpdateRate,
-        //         Constants.kLongCANTimeoutMs);
-        // mDriveMotor.configOpenloopRamp(0.3, Constants.kLongCANTimeoutMs); // Increase if swerve acceleration is too fast
-        // mDriveMotor.configClosedloopRamp(0.0);
-        // mDriveMotor.configAllowableClosedloopError(0, 0, Constants.kLongCANTimeoutMs);
+        mDriveMotor.configOpenloopRamp(0.3, Constants.kLongCANTimeoutMs); // Increase if swerve acceleration is too fast
 
-        // if (mConfig.kDriveEnableCurrentLimit) {
-        //     var supplyCurrLimit = new SupplyCurrentLimitConfiguration();
-        //     supplyCurrLimit.currentLimit = mConfig.kDriveContinuousCurrentLimit;
-        //     supplyCurrLimit.triggerThresholdCurrent = mConfig.kDrivePeakCurrentLimit;
-        //     supplyCurrLimit.triggerThresholdTime = mConfig.kDrivePeakCurrentDuration;
-        //     supplyCurrLimit.enable = true;
+        FramePeriodSwitch.configStatorCurrentLimitPermanent(mDriveMotor, new StatorCurrentLimitConfiguration(true, 90, 90, 0));
+    }
 
-        //     mDriveMotor.configGetSupplyCurrentLimit(supplyCurrLimit, Constants.kLongCANTimeoutMs);
-        // }
+    private void commonMotorConfig(TalonFX motor, String motorName){
+        System.out.println("configuring "+motorName+" motor");
 
-        // int retries = 5;
-        // ErrorCode retVal;
-        // do {
-        //     retVal = mDriveMotor.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, 90, 90, 0));
-        // }while(!retVal.equals(ErrorCode.OK) && retries-->0);
+        // The following commands are stored in nonVolatile ram in the motor
+        // They are repeated on boot incase a motor needs to replaced quickly
+        FramePeriodSwitch.configFactoryDefaultPermanent(motor);
 
-        // if (retVal.equals(ErrorCode.OK)){
-        //     // System.out.println("Successfully set current limit in SwerveDriveModule " + mModuleName);
-        // }
-        // else{
-        //     System.out.println("Failed to set current limit in SwerveDriveModule " + mModuleName);
-        // }
-        // // Slot 0 is reserved for MotionMagic
-        // mDriveMotor.selectProfileSlot(0, 0);
-        // mDriveMotor.config_kP(0, 2.0, Constants.kLongCANTimeoutMs);
-        // mDriveMotor.config_kI(0, 0.0, Constants.kLongCANTimeoutMs);
-        // mDriveMotor.config_kD(0, 24.0, Constants.kLongCANTimeoutMs);
-        // mDriveMotor.config_kF(0, 1023.0/Constants.kSwerveDriveMaxSpeed,
-        // Constants.kLongCANTimeoutMs);
-        //
-        // // TODO: Set these correctly
-        // mDriveMotor.configMotionCruiseVelocity(Constants.kSwerveDriveMaxSpeed*0.9,
-        // Constants.kLongCANTimeoutMs);
-        // mDriveMotor.configMotionAcceleration(Constants.kSwerveDriveMaxSpeed,
-        // Constants.kLongCANTimeoutMs);
-        //
-        // // Slot 1 corresponds to velocity mode (USED FOR AUTO)
-        // mDriveMotor.config_kP(1, 0.03, Constants.kLongCANTimeoutMs);
-        // mDriveMotor.config_kI(1, 0.0, Constants.kLongCANTimeoutMs);
-        // mDriveMotor.config_kD(1, 0.0, Constants.kLongCANTimeoutMs);
-        // mDriveMotor.config_kF(1, 0.05, Constants.kLongCANTimeoutMs);//0.3
+        // the following commands are stored in nonVolatile ram but they are
+        // no longer deemed necessary. Keeping around for a while in case they
+        // need to be brought back
+        // motor.configNeutralDeadband(.04, 100);
+        // motor.configForwardLimitSwitchSource(LimitSwitchSource.FeedbackConnector, LimitSwitchNormal.Disabled, 100);
+        // motor.configReverseLimitSwitchSource(LimitSwitchSource.FeedbackConnector, LimitSwitchNormal.Disabled, 100);
 
-        // if (!isDriveSensorConnected()) {
-        // DriverStation.reportError(mConstants.kName + "drive encoder not detected!",
-        // false);
-        // hasEmergency = true;
-        // }
+        // the following are volatile settings and must be run every power cycle
+        FramePeriodSwitch.setFramePeriodsVolatile(motor); // set frame periods
+
+        FramePeriodSwitch.setNeutralModeVolatile(motor, NeutralMode.Brake);
     }
 
     protected void convertCancoderToFX2() {

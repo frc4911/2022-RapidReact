@@ -105,6 +105,11 @@ public class TalonFXFactory {
         // talon.configReverseLimitSwitchSource(LimitSwitchSource.FeedbackConnector,
         //         LimitSwitchNormal.Disabled, kTimeoutMs);
         // talon.overrideLimitSwitchesEnable(config.ENABLE_LIMIT_SWITCH);
+        // talon.configForwardLimitSwitchSource(LimitSwitchSource.FeedbackConnector,
+        //         LimitSwitchNormal.Disabled, kTimeoutMs);
+        // talon.configReverseLimitSwitchSource(LimitSwitchSource.FeedbackConnector,
+        //         LimitSwitchNormal.Disabled, kTimeoutMs);
+
 
         // Turn off re-zeroing by default.
         // talon.configSetParameter(

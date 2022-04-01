@@ -138,46 +138,64 @@ public class Shooter extends Subsystem {
     }
 
     private void configMotors() {
-        FramePeriodSwitch.setFramePeriodsVolatile(mFXFlyLeft); // set frame periods
-        FramePeriodSwitch.setFramePeriodsVolatile(mFXFlyRight); // set frame periods
-        FramePeriodSwitch.setFramePeriodsVolatile(mFXHood); // set frame periods
+        commonMotorConfig(mFXFlyRight, "Fly Right");
+        commonMotorConfig(mFXFlyLeft, "Fly Left");
+        commonMotorConfig(mFXHood, "Hood");
 
-        
-        // for new motors do the following
-        // uncomment and deploy, then comment and deploy, power cycle
-        // FramePeriodSwitch.configFactoryDefaultPermanent(mFXMotor);
-        FramePeriodSwitch.setInvertedPermanent(mFXFlyLeft);
-        FramePeriodSwitch.setInvertedPermanent(mFXHood);
+        FramePeriodSwitch.setInvertedVolatile(mFXFlyLeft);
+        FramePeriodSwitch.setInvertedVolatile(mFXHood);
 
-        // FramePeriodSwitch.configStatorCurrentLimitPermanent(mFXFlyLeft, new StatorCurrentLimitConfiguration(true, kFlywheelCurrentLimit, kFlywheelCurrentLimit, 0));
+        FramePeriodSwitch.configStatorCurrentLimitPermanent(mFXFlyLeft, new StatorCurrentLimitConfiguration(true, kFlywheelCurrentLimit, kFlywheelCurrentLimit, 0));
+        FramePeriodSwitch.configStatorCurrentLimitPermanent(mFXFlyRight, new StatorCurrentLimitConfiguration(true, kFlywheelCurrentLimit, kFlywheelCurrentLimit, 0));
+        FramePeriodSwitch.configStatorCurrentLimitPermanent(mFXHood, new StatorCurrentLimitConfiguration(true, kHoodCurrentLimitHigh, kHoodCurrentLimitHigh, 0));
 
-        // mFXFlyLeft.config_kP(0, kFlywheelKp, Constants.kLongCANTimeoutMs);
-        // mFXFlyLeft.config_kI(0, kFlywheelKi, Constants.kLongCANTimeoutMs);
-        // mFXFlyLeft.config_kD(0, kFlywheelKd, Constants.kLongCANTimeoutMs);
-        // mFXFlyLeft.config_kF(0, kFlywheelKf, Constants.kLongCANTimeoutMs);
-        // mFXFlyLeft.config_IntegralZone(0, kFlyIntegralZone, Constants.kLongCANTimeoutMs);
-        // mFXFlyLeft.configClosedloopRamp(kClosedRamp, Constants.kLongCANTimeoutMs);
-        // mFXFlyLeft.configAllowableClosedloopError(0, kClosedError, Constants.kLongCANTimeoutMs);
+        // PID setting  are permanent but rerunning in case of motor change
+        mFXFlyLeft.config_kP(0, kFlywheelKp, Constants.kLongCANTimeoutMs);
+        mFXFlyLeft.config_kI(0, kFlywheelKi, Constants.kLongCANTimeoutMs);
+        mFXFlyLeft.config_kD(0, kFlywheelKd, Constants.kLongCANTimeoutMs);
+        mFXFlyLeft.config_kF(0, kFlywheelKf, Constants.kLongCANTimeoutMs);
+        mFXFlyLeft.config_IntegralZone(0, kFlyIntegralZone, Constants.kLongCANTimeoutMs);
+        mFXFlyLeft.configClosedloopRamp(kClosedRamp, Constants.kLongCANTimeoutMs);
+        mFXFlyLeft.configAllowableClosedloopError(0, kClosedError, Constants.kLongCANTimeoutMs);
 
-        // mFXFlyRight.config_kP(0, kFlywheelKp, Constants.kLongCANTimeoutMs);
-        // mFXFlyRight.config_kI(0, kFlywheelKi, Constants.kLongCANTimeoutMs);
-        // mFXFlyRight.config_kD(0, kFlywheelKd, Constants.kLongCANTimeoutMs);
-        // mFXFlyRight.config_kF(0, kFlywheelKf, Constants.kLongCANTimeoutMs);
-        // mFXFlyRight.config_IntegralZone(0, kFlyIntegralZone, Constants.kLongCANTimeoutMs);
-        // mFXFlyRight.configClosedloopRamp(kClosedRamp, Constants.kLongCANTimeoutMs);
-        // mFXFlyRight.configAllowableClosedloopError(0, kClosedError, Constants.kLongCANTimeoutMs);
+        mFXFlyRight.config_kP(0, kFlywheelKp, Constants.kLongCANTimeoutMs);
+        mFXFlyRight.config_kI(0, kFlywheelKi, Constants.kLongCANTimeoutMs);
+        mFXFlyRight.config_kD(0, kFlywheelKd, Constants.kLongCANTimeoutMs);
+        mFXFlyRight.config_kF(0, kFlywheelKf, Constants.kLongCANTimeoutMs);
+        mFXFlyRight.config_IntegralZone(0, kFlyIntegralZone, Constants.kLongCANTimeoutMs);
+        mFXFlyRight.configClosedloopRamp(kClosedRamp, Constants.kLongCANTimeoutMs);
+        mFXFlyRight.configAllowableClosedloopError(0, kClosedError, Constants.kLongCANTimeoutMs);
 
-        // mFXHood.config_kP(0, 0.7, Constants.kLongCANTimeoutMs); // May need to tune more? .7,.1,15
-        // mFXHood.config_kI(0, 0.04, Constants.kLongCANTimeoutMs);
-        // mFXHood.config_kD(0, 10.0, Constants.kLongCANTimeoutMs);
-        // mFXHood.config_kF(0, 0, Constants.kLongCANTimeoutMs);
-        // mFXHood.config_IntegralZone(0, 200, Constants.kLongCANTimeoutMs);
-        // mFXHood.configClosedloopRamp(0/* kClosedRamp */, Constants.kLongCANTimeoutMs);
-        // mFXHood.configAllowableClosedloopError(0, 15 /*kClosedError*/, Constants.kLongCANTimeoutMs);
+        mFXHood.config_kP(0, 0.7, Constants.kLongCANTimeoutMs); // May need to tune more? .7,.1,15
+        mFXHood.config_kI(0, 0.04, Constants.kLongCANTimeoutMs);
+        mFXHood.config_kD(0, 10.0, Constants.kLongCANTimeoutMs);
+        mFXHood.config_kF(0, 0, Constants.kLongCANTimeoutMs);
+        mFXHood.config_IntegralZone(0, 200, Constants.kLongCANTimeoutMs);
+        mFXHood.configClosedloopRamp(0/* kClosedRamp */, Constants.kLongCANTimeoutMs);
+        mFXHood.configAllowableClosedloopError(0, 15 /*kClosedError*/, Constants.kLongCANTimeoutMs);
 
-        // mFXHood.configMotionCruiseVelocity(10000); // ticks/100ms // measured 8800 ave ticks/second while traveling full path
-        // mFXHood.configMotionAcceleration(5400); // ticks/100mse/sec // 2500 ticks/(sec^2)
-        // mFXHood.configMotionSCurveStrength(0); // trapezoidal curve
+        mFXHood.configMotionCruiseVelocity(10000); // ticks/100ms // measured 8800 ave ticks/second while traveling full path
+        mFXHood.configMotionAcceleration(5400); // ticks/100mse/sec // 2500 ticks/(sec^2)
+        mFXHood.configMotionSCurveStrength(0); // trapezoidal curve
+    }
+
+    private void commonMotorConfig(TalonFX motor, String motorName){
+        System.out.println("configuring "+motorName+" motor");
+
+        // The following commands are stored in nonVolatile ram in the motor
+        // They are repeated on boot incase a motor needs to replaced quickly
+        FramePeriodSwitch.configFactoryDefaultPermanent(motor);
+
+        // the following commands are stored in nonVolatile ram but they are
+        // no longer deemed necessary. Keeping around for a while in case they
+        // need to be brought back
+        // motor.configNeutralDeadband(.04, 100);
+        // motor.configForwardLimitSwitchSource(LimitSwitchSource.FeedbackConnector, LimitSwitchNormal.Disabled, 100);
+        // motor.configReverseLimitSwitchSource(LimitSwitchSource.FeedbackConnector, LimitSwitchNormal.Disabled, 100);
+
+        // the following are volatile settings and must be run every power cycle
+        FramePeriodSwitch.setFramePeriodsVolatile(motor); // set frame periods
+
     }
 
     private void buildInterpTree(){

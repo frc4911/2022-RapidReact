@@ -222,41 +222,53 @@ public class Climber extends Subsystem {
     }
 
     private void configMotors() {
-        FramePeriodSwitch.setFramePeriodsVolatile(mFXMidArm); // set frame periods
-        FramePeriodSwitch.setFramePeriodsVolatile(mFXSlappy); // set frame periods
+        commonMotorConfig(mFXMidArm, "Mid Arm");
+        commonMotorConfig(mFXSlappy, "Slappy");
 
-        // for new motors do the following
-        // uncomment and deploy, then comment and deploy, power cycle
-        // FramePeriodSwitch.configFactoryDefaultPermanent(mFXMotor);
-        // FramePeriodSwitch.configFactoryDefaultPermanent(mFXMidArm);
-        // FramePeriodSwitch.configFactoryDefaultPermanent(mFXSlappy);
-        // FramePeriodSwitch.setNeutralModePermanent(mFXMidArm, NeutralMode.Brake);
-        // FramePeriodSwitch.setNeutralModePermanent(mFXSlappy, NeutralMode.Brake);
+        mFXMidArm.config_kP(0, kConfig_arm_kP, Constants.kLongCANTimeoutMs);
+        mFXMidArm.config_kI(0, kConfig_arm_kI, Constants.kLongCANTimeoutMs);
+        mFXMidArm.config_kD(0, kConfig_arm_kD, Constants.kLongCANTimeoutMs);
+        mFXMidArm.config_kF(0, kConfig_arm_kF, Constants.kLongCANTimeoutMs);
+        mFXMidArm.config_IntegralZone(0, kArmIntegralZone, Constants.kLongCANTimeoutMs);
+        mFXMidArm.configClosedloopRamp(kClosedRamp, Constants.kLongCANTimeoutMs);
+        mFXMidArm.configAllowableClosedloopError(0, kClosedError, Constants.kLongCANTimeoutMs);
 
-        // mFXMidArm.config_kP(0, kConfig_arm_kP, Constants.kLongCANTimeoutMs);
-        // mFXMidArm.config_kI(0, kConfig_arm_kI, Constants.kLongCANTimeoutMs);
-        // mFXMidArm.config_kD(0, kConfig_arm_kD, Constants.kLongCANTimeoutMs);
-        // mFXMidArm.config_kF(0, kConfig_arm_kF, Constants.kLongCANTimeoutMs);
-        // mFXMidArm.config_IntegralZone(0, kArmIntegralZone, Constants.kLongCANTimeoutMs);
-        // mFXMidArm.configClosedloopRamp(kClosedRamp, Constants.kLongCANTimeoutMs);
-        // mFXMidArm.configAllowableClosedloopError(0, kClosedError, Constants.kLongCANTimeoutMs);
-
-        // mFXMidArm.configMotionCruiseVelocity(kArmCruiseVelocity); // 10000 ticks/second
-        // mFXMidArm.configMotionAcceleration(kArmAcceleration); // 2500 ticks/(sec^2)
-        // mFXMidArm.configMotionSCurveStrength(kArmCurveStrength); // trapizoidal curve
+        mFXMidArm.configMotionCruiseVelocity(kArmCruiseVelocity); // 10000 ticks/second
+        mFXMidArm.configMotionAcceleration(kArmAcceleration); // 2500 ticks/(sec^2)
+        mFXMidArm.configMotionSCurveStrength(kArmCurveStrength); // trapizoidal curve
         
-        // mFXSlappy.config_kP(0, kConfig_slappy_kP, Constants.kLongCANTimeoutMs);
-        // mFXSlappy.config_kI(0, kConfig_slappy_kI, Constants.kLongCANTimeoutMs);
-        // mFXSlappy.config_kD(0, kConfig_slappy_kD, Constants.kLongCANTimeoutMs);
-        // mFXSlappy.config_kF(0, kConfig_slappy_kF, Constants.kLongCANTimeoutMs);
-        // mFXSlappy.config_IntegralZone(0, kSlappyIntegralZone, Constants.kLongCANTimeoutMs);
-        // mFXSlappy.configClosedloopRamp(kClosedRamp, Constants.kLongCANTimeoutMs);
-        // mFXSlappy.configAllowableClosedloopError(0, kClosedError, Constants.kLongCANTimeoutMs);
+        mFXSlappy.config_kP(0, kConfig_slappy_kP, Constants.kLongCANTimeoutMs);
+        mFXSlappy.config_kI(0, kConfig_slappy_kI, Constants.kLongCANTimeoutMs);
+        mFXSlappy.config_kD(0, kConfig_slappy_kD, Constants.kLongCANTimeoutMs);
+        mFXSlappy.config_kF(0, kConfig_slappy_kF, Constants.kLongCANTimeoutMs);
+        mFXSlappy.config_IntegralZone(0, kSlappyIntegralZone, Constants.kLongCANTimeoutMs);
+        mFXSlappy.configClosedloopRamp(kClosedRamp, Constants.kLongCANTimeoutMs);
+        mFXSlappy.configAllowableClosedloopError(0, kClosedError, Constants.kLongCANTimeoutMs);
 
-        // mFXSlappy.configMotionCruiseVelocity(kSlappyCruiseVelocity); // 10000 ticks/second
-        // mFXSlappy.configMotionAcceleration(kSlappyAcceleration); // 2500 ticks/(sec^2)
-        // mFXSlappy.configMotionSCurveStrength(kSlappyCurveStrength); // trapizoidal curve
+        mFXSlappy.configMotionCruiseVelocity(kSlappyCruiseVelocity); // 10000 ticks/second
+        mFXSlappy.configMotionAcceleration(kSlappyAcceleration); // 2500 ticks/(sec^2)
+        mFXSlappy.configMotionSCurveStrength(kSlappyCurveStrength); // trapizoidal curve
         
+    }
+
+    private void commonMotorConfig(TalonFX motor, String motorName){
+        System.out.println("configuring "+motorName+" motor");
+
+        // The following commands are stored in nonVolatile ram in the motor
+        // They are repeated on boot incase a motor needs to replaced quickly
+        FramePeriodSwitch.configFactoryDefaultPermanent(motor);
+
+        // the following commands are stored in nonVolatile ram but they are
+        // no longer deemed necessary. Keeping around for a while in case they
+        // need to be brought back
+        // motor.configNeutralDeadband(.04, 100);
+        // motor.configForwardLimitSwitchSource(LimitSwitchSource.FeedbackConnector, LimitSwitchNormal.Disabled, 100);
+        // motor.configReverseLimitSwitchSource(LimitSwitchSource.FeedbackConnector, LimitSwitchNormal.Disabled, 100);
+
+        // the following are volatile settings and must be run every power cycle
+        FramePeriodSwitch.setFramePeriodsVolatile(motor); // set frame periods
+
+        FramePeriodSwitch.setNeutralModeVolatile(motor, NeutralMode.Brake);
     }
 
     @Override
