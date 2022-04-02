@@ -610,7 +610,10 @@ public class Swerve extends Subsystem {
         headers =   sClassName + ".schedDeltaDesired," +
                     sClassName + ".schedDeltaActual," +
                     sClassName + ".schedDuration," +
-                    sClassName + ".gyro_heading,";
+                    sClassName + ".gyro_heading," +
+                    sClassName + ".robotPoseX," +
+                    sClassName + ".robotPoseY," +
+                    sClassName + ".robotPoseHeading,";
 
                     headers += mModules.get(0).getLogHeaders()+",";
                     headers += mModules.get(1).getLogHeaders()+",";
@@ -632,6 +635,9 @@ public class Swerve extends Subsystem {
         }
 
         values += mPeriodicIO.gyro_heading.getDegrees()+",";
+        values += mPeriodicIO.robotPose.getTranslation().x()+",";
+        values += mPeriodicIO.robotPose.getTranslation().y()+",";
+        values += mPeriodicIO.robotPose.getRotation().getDegrees()+",";
         values += mModules.get(0).getLogValues(telemetry)+",";
         values += mModules.get(1).getLogValues(telemetry)+",";
         values += mModules.get(2).getLogValues(telemetry)+",";

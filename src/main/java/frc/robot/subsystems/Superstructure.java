@@ -75,6 +75,7 @@ public class Superstructure extends Subsystem {
 
     private double mManualDistance;
     private boolean mStartedShooting;
+    private String mShotCounterKey = "ShotCounter";
 
     private static String sClassName;
     private static int sInstanceCount;
@@ -105,6 +106,17 @@ public class Superstructure extends Subsystem {
         mShooter = Shooter.getInstance(sClassName);
         mClimber = Climber.getInstance(sClassName);
         mAIPressureSensor = new AnalogInput(Ports.PRESSURE_SENSOR);
+        initializeShotCounter();
+    }
+
+    private void initializeShotCounter(){
+        int temp = (int) SmartDashboard.getNumber(mShotCounterKey,-1);
+        if (temp == -1){
+            SmartDashboard.putNumber(mShotCounterKey, mPeriodicIO.shotCounter);
+        }
+        else{
+            mPeriodicIO.shotCounter = temp;
+        }
     }
 
     @Override
@@ -301,6 +313,7 @@ public class Superstructure extends Subsystem {
                 if (mShooter.readyToShoot() || mStartedShooting) {
                     if (mIndexer.getWantedState() != Indexer.WantedState.FEED) {
                         mIndexer.setWantedState(Indexer.WantedState.FEED, sClassName);
+                        mPeriodicIO.shotCounter++;
                     }
                     mStartedShooting = true;
                 } else {
@@ -364,6 +377,7 @@ public class Superstructure extends Subsystem {
         if (mShooter.readyToShoot() && 
             !mIndexer.getWantedState().equals(Indexer.WantedState.FEED)) {
             mIndexer.setWantedState(Indexer.WantedState.FEED, sClassName);
+            mPeriodicIO.shotCounter++;
         }
 
         // everything is put into hold when the state changes
@@ -553,6 +567,7 @@ public class Superstructure extends Subsystem {
                 sClassName+".mYOffset,"+
                 sClassName+".mManualDistance,"+
                 sClassName+".mStartedShooting,"+
+                sClassName+".ShotCounter,"+
                 sClassName+".pressure";
     }
 
@@ -575,6 +590,7 @@ public class Superstructure extends Subsystem {
         mYOffset+","+
         mManualDistance+","+
         mStartedShooting+","+
+        mPeriodicIO.shotCounter+","+
         mPeriodicIO.pressure;
     }
 
@@ -588,6 +604,8 @@ public class Superstructure extends Subsystem {
         private int schedDeltaDesired;
         public double schedDeltaActual;
         private double lastSchedStart;
+
+        private int shotCounter;
 
         // Inputs
         private double pressure;
