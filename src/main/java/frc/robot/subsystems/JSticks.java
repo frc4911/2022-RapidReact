@@ -168,9 +168,9 @@ public class JSticks extends Subsystem {
         Superstructure.WantedState currentState = mSuperstructure.getWantedState();
         Superstructure.WantedState previousState = currentState;
 
-        // if(mPeriodicIO.dr_AButton_ToggleDriveMode) {
-        //     mSwerve.toggleThroughDriveModes();
-        // }
+        if(mPeriodicIO.dr_AButton_ToggleDriveMode) {
+            mSwerve.toggleThroughDriveModes();
+        }
 
         // NEW SWERVE
         if (mSuperstructure.getWantedState() != Superstructure.WantedState.AUTO_SHOOT) {
