@@ -74,36 +74,37 @@ public class SwerveDriveModule extends Subsystem {
 
         mDriveMotor = TalonFXFactory.createDefaultTalon(mConfig.kDriveMotorTalonId, Constants.kCanivoreName);
         mSteerMotor = TalonFXFactory.createDefaultTalon(mConfig.kSteerMotorTalonId, Constants.kCanivoreName);
-        FramePeriodSwitch.setFramePeriodsVolatile(mDriveMotor); // set frame periods
-        FramePeriodSwitch.setFramePeriodsVolatile(mSteerMotor); // set frame periods
-
-        CANCoderConfiguration config = new CANCoderConfiguration();
-        config.initializationStrategy = mConfig.kCANCoderSensorInitializationStrategy;
-        config.absoluteSensorRange = AbsoluteSensorRange.Unsigned_0_to_360;
-        config.magnetOffsetDegrees = constants.kCANCoderOffsetDegrees;
-        config.sensorDirection = false; // TODO - Make cancoder direction configurable through robot config files
-
         mCANCoder = new CANCoder(constants.kCANCoderId, Constants.kCanivoreName);
-        mCANCoder.configAllSettings(config, Constants.kLongCANTimeoutMs);
-
-        mCANCoder.setStatusFramePeriod(CANCoderStatusFrame.VbatAndFaults,
-                mConfig.kCANCoderStatusFramePeriodVbatAndFaults);
-        mCANCoder.setStatusFramePeriod(CANCoderStatusFrame.SensorData, mConfig.kCANCoderStatusFramePeriodSensorData);
-
-        
-
+        configCancoder();
         configureMotors();
     }
 
+    private void configCancoder(){
+        CANCoderConfiguration config = new CANCoderConfiguration();
+        config.initializationStrategy = mConfig.kCANCoderSensorInitializationStrategy;
+        config.absoluteSensorRange = AbsoluteSensorRange.Unsigned_0_to_360;
+        config.magnetOffsetDegrees = mConfig.kCANCoderOffsetDegrees;
+        config.sensorDirection = false; // TODO - Make cancoder direction configurable through robot config files
+
+        mCANCoder.configAllSettings(config, Constants.kLongCANTimeoutMs);
+
+        // mCANCoder.setStatusFramePeriod(CANCoderStatusFrame.VbatAndFaults,
+        //         mConfig.kCANCoderStatusFramePeriodVbatAndFaults);
+        // mCANCoder.setStatusFramePeriod(CANCoderStatusFrame.SensorData, mConfig.kCANCoderStatusFramePeriodSensorData);
+    }
     /**
      * Configure motors based on current SwerveModuleConstants.
      */
     private void configureMotors() {
+
+        mCANCoder.configMagnetOffset(mConfig.kCANCoderOffsetDegrees, 200);
+
         commonMotorConfig(mDriveMotor, "Drive");
         commonMotorConfig(mSteerMotor, "Steer");
 
         System.out.println("Be sure to reset convertCancoderToFX2() call before DCMP's");
         convertCancoderToFX2(true);
+        
         mSteerMotor.setInverted(mConfig.kInvertSteerMotor);
         mSteerMotor.configMotionAcceleration(0.9 * mConfig.kSteerTicksPerUnitVelocity * 0.25, Constants.kLongCANTimeoutMs);
         mSteerMotor.configMotionCruiseVelocity(0.9 * mConfig.kSteerTicksPerUnitVelocity,Constants.kLongCANTimeoutMs);

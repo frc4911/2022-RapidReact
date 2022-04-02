@@ -1,7 +1,6 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
-import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.StatorCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 
@@ -34,8 +33,6 @@ public class Collector extends Subsystem {
     private final int kSchedDeltaActive = 20;
     private final int kSchedDeltaDormant = 100;
     private final double kMinAssessmentMovement = 100; // ticks
-    private final int kActiveFramePeriod = 20;
-    private final int kDormantFramePeriod = 100;
 
     // subsystem variables
     private double mAssessingStartPosition;
@@ -246,6 +243,10 @@ public class Collector extends Subsystem {
         }
     }
 
+    public synchronized WantedState getWantedState() {
+        return mWantedState;
+    }
+
     private SystemState handleAssessing() {
         if (mStateChanged) {
             mAssessingStartPosition = mPeriodicIO.motorPosition;
@@ -263,6 +264,10 @@ public class Collector extends Subsystem {
             setMotorControlModeAndDemand(ControlMode.PercentOutput,0);
             if (mAssessingStartPosition >= mPeriodicIO.motorPosition + kMinAssessmentMovement){
                 mAssessmentResult = true;
+                System.out.println("ASSESSING: Collector motor functioning");
+            }
+            else{
+                System.out.println("ASSESSING: Collector motor DID NOT DETECT MOVEMENT");
             }
             mAssessmentHandlerComplete = true;
         }
@@ -341,7 +346,7 @@ public class Collector extends Subsystem {
         return mAssessmentResult;
     }
 
-    public void setMotorDemand(double newDemand){
+    public void setMotorTestDemand(double newDemand){
         mTestMotorDemand = newDemand;
     }
 

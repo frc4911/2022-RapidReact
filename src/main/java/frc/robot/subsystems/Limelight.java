@@ -404,58 +404,41 @@ public class Limelight extends Subsystem {
 
     @Override
     public String getLogHeaders() {
-        return "";
-        // if (mLoggingEnabled) {
-        //     return mConfig.getName() + ".systemState," +
-        //             mConfig.getName() + ".latency," +
-        //             mConfig.getName() + ".givenLedMode," +
-        //             mConfig.getName() + ".ledMode," +
-        //             mConfig.getName() + ".givenPipeline," +
-        //             mConfig.getName() + ".pipeline," +
-        //             mConfig.getName() + ".xOffset," +
-        //             mConfig.getName() + ".yOffset," +
-        //             mConfig.getName() + ".area," +
-        //             mConfig.getName() + ".tv," +
-        //             mConfig.getName() + ".rawCorners," +
-        //             mConfig.getName() + ".rawContours," +
-        //             mConfig.getName() + ".schedDeltaDesired," +
-        //             mConfig.getName() + ".schedDeltaActual," +
-        //             mConfig.getName() + ".schedDuration";
-        // }
-        // return null;
+        return  mConfig.getName()+".schedDeltaDesired,"+
+                mConfig.getName()+".schedDeltaActual,"+
+                mConfig.getName()+".schedDuration,"+
+                mConfig.getName() + ".latency," +
+                mConfig.getName() + ".givenLedMode," +
+                mConfig.getName() + ".ledMode," +
+                mConfig.getName() + ".givenPipeline," +
+                mConfig.getName() + ".pipeline," +
+                mConfig.getName() + ".xOffset," +
+                mConfig.getName() + ".yOffset," +
+                mConfig.getName() + ".area," +
+                mConfig.getName() + ".mSeesTarget";
     }
 
     @Override
     public String getLogValues(boolean telemetry) {
-        // String values;
-        // if (telemetry) {
-        //     values = mPeriodicIO.latency + "," +
-        //             mPeriodicIO.givenLedMode + "," +
-        //             mPeriodicIO.ledMode + "," +
-        //             mPeriodicIO.givenPipeline + "," +
-        //             mPeriodicIO.pipeline + "," +
-        //             mPeriodicIO.xOffset + "," +
-        //             mPeriodicIO.yOffset + "," +
-        //             mPeriodicIO.area + ",";
-        // } else {
-        //     mPeriodicIO.schedDuration = Timer.getFPGATimestamp() - mPeriodicIO.lastSchedStart;
-
-        //     values = mPeriodicIO.latency + "," +
-        //             mPeriodicIO.givenLedMode + "," +
-        //             mPeriodicIO.ledMode + "," +
-        //             mPeriodicIO.givenPipeline + "," +
-        //             mPeriodicIO.pipeline + "," +
-        //             mPeriodicIO.xOffset + "," +
-        //             mPeriodicIO.yOffset + "," +
-        //             mPeriodicIO.area + "," +
-        //             /* mPeriodicIO.rawCorners+ */"\",\"" +
-        //             /* mPeriodicIO.rawContours+ */"\"," +
-        //             mPeriodicIO.schedDeltaDesired + "," +
-        //             mPeriodicIO.schedDeltaActual + "," +
-        //             mPeriodicIO.schedDuration;
-        // }
-        // return values;
-        return "";
+        String start;
+        if (telemetry){
+            start = ",,,";
+        }
+        else{
+            start = mPeriodicIO.schedDeltaDesired+","+
+                    mPeriodicIO.schedDeltaActual+","+
+                    (Timer.getFPGATimestamp()-mPeriodicIO.lastSchedStart)+",";
+        }
+        return  start+
+                mPeriodicIO.latency + "," +
+                mPeriodicIO.givenLedMode + "," +
+                mPeriodicIO.ledMode + "," +
+                mPeriodicIO.givenPipeline + "," +
+                mPeriodicIO.pipeline + "," +
+                mPeriodicIO.xOffset + "," +
+                mPeriodicIO.yOffset + "," +
+                mPeriodicIO.area + "," +
+                mSeesTarget;
     }
 
     public enum LedMode {

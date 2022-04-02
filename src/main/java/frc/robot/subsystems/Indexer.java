@@ -277,7 +277,12 @@ public class Indexer extends Subsystem {
             setMotorControlModeAndDemand(ControlMode.PercentOutput,0);
             if (mAssessingStartPosition >= mPeriodicIO.motorPosition + kMinAssessmentMovement){
                 mAssessmentResult = true;
+                System.out.println("ASSESSING: Indexer motor functioning");
             }
+            else{
+                System.out.println("ASSESSING: Indexer motor DID NOT DETECT MOVEMENT");
+            }
+
             mAssessmentHandlerComplete = true;
         }
 
@@ -432,7 +437,7 @@ public class Indexer extends Subsystem {
                 sClassName+".motorDemand,"+
                 sClassName+".motorPosition,"+
                 sClassName+".motorStator,"+
-                // sClassName+".motorControlMode,"+
+                sClassName+".motorControlMode,"+
                 sClassName+".loadingCompleted,"+
                 sClassName+".feedingCompleted";    
     }
@@ -450,13 +455,12 @@ public class Indexer extends Subsystem {
         }
         return  start+
                 mSystemState+","+
-                mWantedState+","+
                 mPeriodicIO.exitBeamBlocked+","+
                 mPeriodicIO.enterBeamBlocked+","+
                 mPeriodicIO.motorDemand+","+
                 mPeriodicIO.motorPosition+","+
                 mPeriodicIO.motorStator+","+
-                // mPeriodicIO.motorControlMode+","+
+                mPeriodicIO.motorControlMode+","+
                 mLoadingCompleted+","+
                 mFeedingCompleted;
     }
