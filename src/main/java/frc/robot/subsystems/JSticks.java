@@ -214,6 +214,14 @@ public class JSticks extends Subsystem {
         if (mPeriodicIO.dr_StartButton_ResetWheels){
             mSwerve.convertCancoderToFX();
         }
+
+        if (mPeriodicIO.dr_XButton_HomeHood){
+            mShooter.setWantedState(Shooter.WantedState.HOMEHOOD, sClassName);
+        }
+        
+        if (mPeriodicIO.dr_XButton_HomeHood_Stop){
+            mShooter.setWantedState(Shooter.WantedState.HOLD, sClassName);
+        }
         
         // END NEW SWERVE
 
@@ -262,17 +270,17 @@ public class JSticks extends Subsystem {
         }
 
         if (mPeriodicIO.op_POV90_ManualShot_Ball) {
-            mSuperstructure.setManualShootDistance(24);
-            mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT, sClassName);
-        }
-
-        if (mPeriodicIO.op_POV180_ManualShot_Robot) {
             mSuperstructure.setManualShootDistance(48);
             mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT, sClassName);
         }
 
+        if (mPeriodicIO.op_POV180_ManualShot_Robot) {
+            mSuperstructure.setManualShootDistance(96);
+            mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT, sClassName);
+        }
+
         if (mPeriodicIO.op_POV270_ManualShot_Tarmac) {
-            mSuperstructure.setManualShootDistance(102);
+            mSuperstructure.setManualShootDistance(120);
             mSuperstructure.setWantedState(Superstructure.WantedState.MANUAL_SHOOT, sClassName);
         }
 
@@ -304,21 +312,23 @@ public class JSticks extends Subsystem {
     }
 
     private SystemState handleReadingTestButtons() {
-        if (mPeriodicIO.op_AButton_PreClimb){
-            mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_PRE_CLIMB, sClassName);
-        }
+        // if (mPeriodicIO.op_AButton_PreClimb){
+        //     mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_PRE_CLIMB, sClassName);
+        // }
 
-        if (mPeriodicIO.op_AButton_PreClimb_Stop){
-            mSuperstructure.setWantedState(Superstructure.WantedState.TEST, sClassName);
-        }
+        // if (mPeriodicIO.op_AButton_PreClimb_Stop){
+        //     mSuperstructure.setWantedState(Superstructure.WantedState.TEST, sClassName);
+        // }
 
-        if (mPeriodicIO.op_BackButton_TestHome){
-            mSuperstructure.setWantedState(Superstructure.WantedState.HOME, sClassName);
-        }
+        // if (mPeriodicIO.op_BackButton_TestHome){
+        //     mSuperstructure.setWantedState(Superstructure.WantedState.HOME, sClassName);
+        // }
 
-        if (mPeriodicIO.op_BackButton_TestHome_Stop){
-            mSuperstructure.setWantedState(Superstructure.WantedState.TEST, sClassName);
-        }
+        // if (mPeriodicIO.op_BackButton_TestHome_Stop){
+        //     mSuperstructure.setWantedState(Superstructure.WantedState.TEST, sClassName);
+        // }
+
+        mShooter.setMotorTestDemand(-mOperator.getRaw(Xbox.LEFT_STICK_Y), -mOperator.getRaw(Xbox.RIGHT_STICK_Y));
 
         // if(mPeriodicIO.op_POV0_ManualShot_Fender){
         //     mClimber.setClimberTestDemand(0, 10000);
@@ -336,16 +346,37 @@ public class JSticks extends Subsystem {
         //     mClimber.setClimberTestDemand(0, 130000);
         // }
 
-        if (mPeriodicIO.op_LeftBumper_TestRelease){
-            mClimber.setSolenoidState(true);
+        // if (mPeriodicIO.op_LeftBumper_TestRelease){
+        //     mClimber.setSolenoidTestState(true);
+        // }
+
+        // if (mPeriodicIO.op_RightBumper_TestLock){
+        //     mClimber.setSolenoidTestState(false);
+        // }
+
+        if (mPeriodicIO.op_RightTrigger_Collect) {
+            mSuperstructure.setWantedState(Superstructure.WantedState.COLLECT, sClassName);
+        }
+        if (mPeriodicIO.op_RightTrigger_Collect_Stop) {
+            mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
         }
 
-        if (mPeriodicIO.op_RightBumper_TestLock){
-            mClimber.setSolenoidState(false);
+        if (mPeriodicIO.op_LeftTrigger_Back) {
+            mSuperstructure.setWantedState(Superstructure.WantedState.BACK, sClassName);
+        }
+        if (mPeriodicIO.op_LeftTrigger_Back_Stop) {
+            mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
+        }
+
+        if (mPeriodicIO.op_AButton_PreClimb){
+            mIndexer.setWantedState(Indexer.WantedState.FEED, sClassName);;
+        }
+
+        if (mPeriodicIO.op_AButton_PreClimb_Stop){
+            mIndexer.setWantedState(Indexer.WantedState.HOLD, sClassName);;
         }
 
         // mShooter.setHoodTestDemand(mPeriodicIO.tst_LeftAxis_TestDemand);
-        mClimber.setClimberTestDemand(mPeriodicIO.op_LeftStickY_TestMidArms, mPeriodicIO.op_RightStickY_TestSlappy);
         return defaultStateTransfer();
     }
 
@@ -367,6 +398,8 @@ public class JSticks extends Subsystem {
         mPeriodicIO.dr_YButton_ResetIMU = mDriver.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.dr_AButton_ToggleDriveMode = mDriver.getButton(Xbox.A_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.dr_StartButton_ResetWheels = mDriver.getButton(Xbox.START_BUTTON, CW.PRESSED_EDGE);
+        mPeriodicIO.dr_XButton_HomeHood = mDriver.getButton(Xbox.X_BUTTON, CW.PRESSED_EDGE);
+        mPeriodicIO.dr_XButton_HomeHood_Stop = mDriver.getButton(Xbox.X_BUTTON, CW.RELEASED_EDGE);
 
         //Climbing
         mPeriodicIO.op_LeftStickY_TestMidArms = -mOperator.getRaw(Xbox.LEFT_STICK_Y, mDeadBand);
@@ -448,6 +481,8 @@ public class JSticks extends Subsystem {
                 sClassName+".dr_YButton_ResetIMU = false,"+
                 sClassName+".dr_AButton_ToggleDriveMode,"+
                 sClassName+".dr_StartButton_ResetWheels,"+
+                sClassName+".dr_XButton_HomeHood,"+
+                sClassName+".dr_XButton_HomeHood_Stop,"+
                 sClassName+".op_LeftStickY_TestMidArms,"+
                 sClassName+".op_RightTrigger_Collect,"+
                 sClassName+".op_RightTrigger_Collect_Stop,"+
@@ -490,6 +525,8 @@ public class JSticks extends Subsystem {
         mPeriodicIO.dr_YButton_ResetIMU+","+
         mPeriodicIO.dr_AButton_ToggleDriveMode+","+
         mPeriodicIO.dr_StartButton_ResetWheels+","+
+        mPeriodicIO.dr_XButton_HomeHood+","+
+        mPeriodicIO.dr_XButton_HomeHood_Stop+","+
         mPeriodicIO.op_LeftStickY_TestMidArms+","+
         mPeriodicIO.op_RightTrigger_Collect+","+
         mPeriodicIO.op_RightTrigger_Collect_Stop+","+
@@ -538,6 +575,8 @@ public class JSticks extends Subsystem {
         public boolean dr_YButton_ResetIMU = false; // reset direction
         public boolean dr_AButton_ToggleDriveMode = false;
         public boolean dr_StartButton_ResetWheels = false;
+        public boolean dr_XButton_HomeHood = false;
+        public boolean dr_XButton_HomeHood_Stop = false;
 
         public double op_LeftStickY_TestMidArms;
         public double op_RightStickY_TestSlappy;

@@ -1,21 +1,12 @@
 package frc.robot.subsystems;
 
-import java.util.Arrays;
-
-import com.ctre.phoenix.ErrorCode;
-import com.ctre.phoenix.motorcontrol.ControlFrame;
 import com.ctre.phoenix.motorcontrol.ControlMode;
-import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.StatorCurrentLimitConfiguration;
-import com.ctre.phoenix.motorcontrol.StatusFrame;
-import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.sensors.AbsoluteSensorRange;
 import com.ctre.phoenix.sensors.CANCoder;
 import com.ctre.phoenix.sensors.CANCoderConfiguration;
-import com.ctre.phoenix.sensors.CANCoderStatusFrame;
-
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.config.SwerveModuleConfiguration;
@@ -27,6 +18,8 @@ import libraries.cheesylib.util.Util;
 import libraries.cyberlib.control.FramePeriodSwitch;
 import libraries.cyberlib.kinematics.SwerveModuleState;
 import libraries.cyberlib.utils.Angles;
+
+import java.util.Arrays;
 
 /**
  * Represents a swerve module consisting of a drive motor that controls the
