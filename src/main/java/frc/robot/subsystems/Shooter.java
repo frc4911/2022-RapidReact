@@ -197,20 +197,20 @@ public class Shooter extends Subsystem {
 
     private void buildInterpTree(){
         shooterHoodMap.put(new InterpolatingDouble(0.0),   new InterpolatingDouble(kHoodPositionAtFender));//8000.0
-        shooterHoodMap.put(new InterpolatingDouble(24.0),  new InterpolatingDouble(12000.0)); // 6000 for modified fender shot
-        shooterHoodMap.put(new InterpolatingDouble(48.0),  new InterpolatingDouble(16500.0)); // 4000 for modified fender shot
-        shooterHoodMap.put(new InterpolatingDouble(72.0),  new InterpolatingDouble(22000.0));
-        shooterHoodMap.put(new InterpolatingDouble(96.0),  new InterpolatingDouble(28500.0));
+        shooterHoodMap.put(new InterpolatingDouble(24.0),  new InterpolatingDouble(12000.0 - 1000.0));
+        shooterHoodMap.put(new InterpolatingDouble(48.0),  new InterpolatingDouble(16500.0 - 1000.0));
+        shooterHoodMap.put(new InterpolatingDouble(72.0),  new InterpolatingDouble(22000.0 - 1000.0));
+        shooterHoodMap.put(new InterpolatingDouble(96.0),  new InterpolatingDouble(28500.0 - 1000.0));
         shooterHoodMap.put(new InterpolatingDouble(120.0), new InterpolatingDouble(28500.0));
         shooterHoodMap.put(new InterpolatingDouble(144.0), new InterpolatingDouble(28500.0));
 
         shooterSpeedMap.put(new InterpolatingDouble(0.0),   new InterpolatingDouble(10900.0));
         shooterSpeedMap.put(new InterpolatingDouble(24.0),  new InterpolatingDouble(11300.0)); // 10900 for modified fender shot
         shooterSpeedMap.put(new InterpolatingDouble(48.0),  new InterpolatingDouble(11700.0)); // 10900 for modified fender shot 11200
-        shooterSpeedMap.put(new InterpolatingDouble(72.0),  new InterpolatingDouble(12300.0));
-        shooterSpeedMap.put(new InterpolatingDouble(96.0),  new InterpolatingDouble(12750.0));
-        shooterSpeedMap.put(new InterpolatingDouble(120.0), new InterpolatingDouble(13000.0));
-        shooterSpeedMap.put(new InterpolatingDouble(144.0), new InterpolatingDouble(14750.0));
+        shooterSpeedMap.put(new InterpolatingDouble(72.0),  new InterpolatingDouble(12100.0)); //12300
+        shooterSpeedMap.put(new InterpolatingDouble(96.0),  new InterpolatingDouble(12350.0)); //12750
+        shooterSpeedMap.put(new InterpolatingDouble(120.0), new InterpolatingDouble(12800.0)); //13000
+        shooterSpeedMap.put(new InterpolatingDouble(144.0), new InterpolatingDouble(13750.0)); //14750
 
         shooterLLTYDist.put(new InterpolatingDouble(2.7), new InterpolatingDouble(24.0));
         shooterLLTYDist.put(new InterpolatingDouble(-6.6), new InterpolatingDouble(48.0));
