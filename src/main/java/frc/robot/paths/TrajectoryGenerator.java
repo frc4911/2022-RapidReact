@@ -125,6 +125,8 @@ public class TrajectoryGenerator {
         public final MirroredTrajectory threeBallAuto0Trajectory;
         public final MirroredTrajectory threeBallAuto1Trajectory;
         public final MirroredTrajectory threeBallAuto2Trajectory;
+        public final MirroredTrajectory fiveBallAuto3Trajectory;
+        public final MirroredTrajectory fiveeBallAuto4Trajectory;
 
 
         private TrajectorySet(TrajectoryConfig config) {
@@ -148,6 +150,10 @@ public class TrajectoryGenerator {
                     getThreeBallAutoPhase1Trajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
             threeBallAuto2Trajectory = new MirroredTrajectory(
                     getThreeBallAutoPhase2Trajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
+            fiveBallAuto3Trajectory = new MirroredTrajectory(
+                    getFiveBallAutoPhase3Trajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
+            fiveeBallAuto4Trajectory = new MirroredTrajectory(
+                    getFiveBallAutoPhase4Trajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
             }
 
         private Trajectory<TimedState<Pose2dWithCurvature>> getForwardTrajectory(TrajectoryConfig config) {
@@ -199,6 +205,17 @@ public class TrajectoryGenerator {
             List<Pose2d> waypoints = new ArrayList<>();
             waypoints.add(new Pose2d(Units.inches_to_meters(-70), Units.inches_to_meters(82), Rotation2d.fromDegrees(-40)));//Original: -70,90 || Change1: no change
             waypoints.add(new Pose2d(Units.inches_to_meters(-10), Units.inches_to_meters(0), Rotation2d.fromDegrees(0)));
+            return generateTrajectory(waypoints, config);
+        }
+
+        //New Five Ball Code
+        private Trajectory<TimedState<Pose2dWithCurvature>> getFiveBallAutoPhase3Trajectory(TrajectoryConfig config) {
+            List<Pose2d> waypoints = new ArrayList<>();
+            return generateTrajectory(waypoints, config);
+        }
+
+        private Trajectory<TimedState<Pose2dWithCurvature>> getFiveBallAutoPhase4Trajectory(TrajectoryConfig config) {
+            List<Pose2d> waypoints = new ArrayList<>();
             return generateTrajectory(waypoints, config);
         }
 
