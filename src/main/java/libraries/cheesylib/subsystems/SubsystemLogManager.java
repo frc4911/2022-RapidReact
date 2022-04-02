@@ -171,37 +171,37 @@ public class SubsystemLogManager {
     }
 
     private void moveCompletedLogsToUSB(String path){
-        String[] pathnames;
-        File dir = new File(path);
+        // String[] pathnames;
+        // File dir = new File(path);
 
-        if (dir.exists()){
-            pathnames = dir.list();
+        // if (dir.exists()){
+        //     pathnames = dir.list();
 
-            if (pathnames != null){
-                for (String filename: pathnames){
-                    File file = new File(dir.toString()+"/"+filename);
-                    File dest = new File("/U/"+filename);
-                    long fileSize = file.length();
-                    try {
-                        Files.copy(file.toPath(), dest.toPath());
-                    } catch (IOException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
-                    System.out.println("moved "+file.toString() +" to "+ dest.toString());
+        //     if (pathnames != null){
+        //         for (String filename: pathnames){
+        //             File file = new File(dir.toString()+"/"+filename);
+        //             File dest = new File("/U/"+filename);
+        //             long fileSize = file.length();
+        //             try {
+        //                 Files.copy(file.toPath(), dest.toPath());
+        //             } catch (IOException e) {
+        //                 // TODO Auto-generated catch block
+        //                 e.printStackTrace();
+        //             }
+        //             System.out.println("moved "+file.toString() +" to "+ dest.toString());
 
-                    if (dest.exists() && dest.length()==fileSize) {
-                        file.delete();
-                    }
-                }
-            }
-            else{
-                System.out.println("no log files to move");
-            }
-        }
-        else{
-            System.out.println("did not find usb drive");
-        }
+        //             if (dest.exists() && dest.length()==fileSize) {
+        //                 file.delete();
+        //             }
+        //         }
+        //     }
+        //     else{
+        //         System.out.println("no log files to move");
+        //     }
+        // }
+        // else{
+        //     System.out.println("did not find usb drive");
+        // }
     }
 
     // append data from one subsystem to StringBuilder

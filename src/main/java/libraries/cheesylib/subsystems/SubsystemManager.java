@@ -172,14 +172,14 @@ public class SubsystemManager implements ILooper {
                 // advance to next schedule slot
                 lTicToc++;
 
-                // every 250 msec handle telemetry, call logging and telemetry
+                // every 250 msec handle telemetry, but no longer log
                 if (lTicToc%250 == 0){
-                    mSSLogMngr.addToLine(""+lLineNum++ +",,"+lTicToc+","+Timer.getFPGATimestamp()+",-1");
+                    // mSSLogMngr.addToLine(""+lLineNum++ +",,"+lTicToc+","+Timer.getFPGATimestamp()+",-1");
                     for (Subsystem s : mAllSubsystems) {
-                        mSSLogMngr.addToLine(s.getLogValues(true));
+                        // mSSLogMngr.addToLine(s.getLogValues(true));
                         s.outputTelemetry();
                     }
-                    mSSLogMngr.endLine();
+                    // mSSLogMngr.endLine();
                 }
 
                 // these lines are only needed if mLoopPeriod is greater than the actual period
