@@ -1,13 +1,21 @@
 package frc.robot.subsystems;
 
+import java.util.Arrays;
+
+import com.ctre.phoenix.ErrorCode;
+import com.ctre.phoenix.motorcontrol.ControlFrame;
 import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.StatorCurrentLimitConfiguration;
+import com.ctre.phoenix.motorcontrol.StatusFrame;
+import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.sensors.AbsoluteSensorRange;
 import com.ctre.phoenix.sensors.CANCoder;
 import com.ctre.phoenix.sensors.CANCoderConfiguration;
 import com.ctre.phoenix.sensors.CANCoderStatusFrame;
+
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.config.SwerveModuleConfiguration;
@@ -20,8 +28,6 @@ import libraries.cyberlib.control.FramePeriodSwitch;
 import libraries.cyberlib.kinematics.SwerveModuleState;
 import libraries.cyberlib.utils.Angles;
 
-import java.util.Arrays;
-
 /**
  * Represents a swerve module consisting of a drive motor that controls the
  * speed of the wheel and
@@ -29,17 +35,33 @@ import java.util.Arrays;
  * to the chassis frame.
  */
 public class SwerveDriveModule extends Subsystem {
-    public final SwerveModuleConfiguration mConfig;
-    private final boolean mLoggingEnabled = true; // used to disable logging for this subsystem only
-    private final PeriodicIO mPeriodicIO = new PeriodicIO();
     // Hardware
     TalonFX mSteerMotor, mDriveMotor;
     CANCoder mCANCoder;
 
+    public enum ControlState {
+        /**
+         * No motor outputs. This state is used robot is powered up and stopped by
+         * Driver Station.
+         */
+        NEUTRAL,
+        /**
+         * Runs motors in response to inputs.
+         */
+        OPEN_LOOP
+    }
+
+    String mModuleName;
+
+    private final boolean mLoggingEnabled = true; // used to disable logging for this subsystem only
+
     // boolean tenVoltSteerMode = false;
     // private boolean standardCarpetDirection = true;
-    String mModuleName;
+
+    private final PeriodicIO mPeriodicIO = new PeriodicIO();
     private ControlState mControlState = ControlState.NEUTRAL;
+    public final SwerveModuleConfiguration mConfig;
+
     private double mMaxSpeedInMetersPerSecond = 1.0;
 
     public SwerveDriveModule(SwerveModuleConfiguration constants, double maxSpeedInMetersPerSecond) {
@@ -52,35 +74,37 @@ public class SwerveDriveModule extends Subsystem {
 
         mDriveMotor = TalonFXFactory.createDefaultTalon(mConfig.kDriveMotorTalonId, Constants.kCanivoreName);
         mSteerMotor = TalonFXFactory.createDefaultTalon(mConfig.kSteerMotorTalonId, Constants.kCanivoreName);
-        FramePeriodSwitch.setFramePeriodsVolatile(mDriveMotor); // set frame periods
-        FramePeriodSwitch.setFramePeriodsVolatile(mSteerMotor); // set frame periods
-
-        CANCoderConfiguration config = new CANCoderConfiguration();
-        config.initializationStrategy = mConfig.kCANCoderSensorInitializationStrategy;
-        config.absoluteSensorRange = AbsoluteSensorRange.Unsigned_0_to_360;
-        config.magnetOffsetDegrees = constants.kCANCoderOffsetDegrees;
-        config.sensorDirection = false; // TODO - Make cancoder direction configurable through robot config files
-
         mCANCoder = new CANCoder(constants.kCANCoderId, Constants.kCanivoreName);
-        mCANCoder.configAllSettings(config, Constants.kLongCANTimeoutMs);
-
-        mCANCoder.setStatusFramePeriod(CANCoderStatusFrame.VbatAndFaults,
-                mConfig.kCANCoderStatusFramePeriodVbatAndFaults);
-        mCANCoder.setStatusFramePeriod(CANCoderStatusFrame.SensorData, mConfig.kCANCoderStatusFramePeriodSensorData);
-
-
+        configCancoder();
         configureMotors();
     }
 
+    private void configCancoder(){
+        CANCoderConfiguration config = new CANCoderConfiguration();
+        config.initializationStrategy = mConfig.kCANCoderSensorInitializationStrategy;
+        config.absoluteSensorRange = AbsoluteSensorRange.Unsigned_0_to_360;
+        config.magnetOffsetDegrees = mConfig.kCANCoderOffsetDegrees;
+        config.sensorDirection = false; // TODO - Make cancoder direction configurable through robot config files
+
+        mCANCoder.configAllSettings(config, Constants.kLongCANTimeoutMs);
+
+        // mCANCoder.setStatusFramePeriod(CANCoderStatusFrame.VbatAndFaults,
+        //         mConfig.kCANCoderStatusFramePeriodVbatAndFaults);
+        // mCANCoder.setStatusFramePeriod(CANCoderStatusFrame.SensorData, mConfig.kCANCoderStatusFramePeriodSensorData);
+    }
     /**
      * Configure motors based on current SwerveModuleConstants.
      */
     private void configureMotors() {
+
+        mCANCoder.configMagnetOffset(mConfig.kCANCoderOffsetDegrees, 200);
+
         commonMotorConfig(mDriveMotor, "Drive");
         commonMotorConfig(mSteerMotor, "Steer");
 
         System.out.println("Be sure to reset convertCancoderToFX2() call before DCMP's");
         convertCancoderToFX2(true);
+        
         mSteerMotor.setInverted(mConfig.kInvertSteerMotor);
         mSteerMotor.configMotionAcceleration(0.9 * mConfig.kSteerTicksPerUnitVelocity * 0.25, Constants.kLongCANTimeoutMs);
         mSteerMotor.configMotionCruiseVelocity(0.9 * mConfig.kSteerTicksPerUnitVelocity,Constants.kLongCANTimeoutMs);
@@ -121,46 +145,46 @@ public class SwerveDriveModule extends Subsystem {
         FramePeriodSwitch.setNeutralModeVolatile(motor, NeutralMode.Brake);
     }
 
-    protected void convertCancoderToFX2() {
+    protected void convertCancoderToFX2(){
         convertCancoderToFX2(true);
     }
-
-    protected void convertCancoderToFX2(boolean useCancoders) {
+    protected void convertCancoderToFX2(boolean useCancoders){
         int limit = 500;
         // mCANCoder.setStatusFramePeriod(CANCoderStatusFrame.SensorData, 50);
         double lastFrameTimestamp = -1;
         double frameTimestamp;
         double position;
         int index = 0;
-        double[] cancoderPositions = {-10000, -1000, -100, -1, 100}; // just need to be different numbers
+        double[] cancoderPositions = {-10000,-1000,-100,-1,100}; // just need to be different numbers
         boolean allDone = false;
-        double cancoderDegrees = 0;
+        double cancoderDegrees=0;
 
-        if (useCancoders) {
-            do {
+        if (useCancoders){
+            do{
                 frameTimestamp = mCANCoder.getLastTimestamp();
-                if (frameTimestamp != lastFrameTimestamp) {
+                if (frameTimestamp != lastFrameTimestamp){
                     position = mCANCoder.getAbsolutePosition();
-                    cancoderPositions[(++index) % cancoderPositions.length] = position;
+                    cancoderPositions[(++index)%cancoderPositions.length]=position;
                     allDone = true;
-                    for (int kk = 0; kk < cancoderPositions.length; kk++) {
-                        if (Math.abs(cancoderPositions[kk] - cancoderPositions[(kk + 1) % cancoderPositions.length]) > 1) {
-                            allDone = false;
+                    for (int kk=0; kk<cancoderPositions.length;kk++){
+                        if ( Math.abs(cancoderPositions[kk]-cancoderPositions[(kk+1)%cancoderPositions.length]) >1 ){
+                            allDone=false;
                             break;
                         }
                     }
-                    System.out.println(limit + " (" + mModuleName + ")" + ": CANCoder last frame timestamp = " + frameTimestamp +
-                            " current time = " + Timer.getFPGATimestamp() + " pos=" + position);
+                    System.out.println(limit+" ("+mModuleName+")"+": CANCoder last frame timestamp = "+ frameTimestamp + 
+                                        " current time = "+Timer.getFPGATimestamp() +" pos="+position);
                     lastFrameTimestamp = frameTimestamp;
                 }
                 Timer.delay(.1);
 
             } while (!allDone && (limit-- > 0));
-
-            System.out.println(mModuleName + ": allDone " + Arrays.toString(cancoderPositions));
+            
+            System.out.println(mModuleName+": allDone "+Arrays.toString(cancoderPositions));
             cancoderDegrees = cancoderPositions[0];
-        } else {
-            System.out.println(mModuleName + " assuming wheels aligned to 0 degrees, not using CANCoders");
+        }
+        else{
+            System.out.println(mModuleName+" assuming wheels aligned to 0 degrees, not using CANCoders");
             cancoderDegrees = 0;
         }
         double fxTicksBefore = mSteerMotor.getSelectedSensorPosition();
@@ -181,25 +205,11 @@ public class SwerveDriveModule extends Subsystem {
                 + fxTicksNow + ") loops:" + loops);
     }
 
-    /**
-     * Gets the current state of the module.
-     *
-     * @return The current state of the module.
-     */
-    public synchronized SwerveModuleState getState() {
-        // Note that Falcon is contiguous, so it can be larger than 2pi. Convert to
-        // encoder readings
-        // to SI units and let Rotation2d normalizes the angle between 0 and 2pi.
-        Rotation2d currentAngle = Rotation2d.fromRadians(encoderUnitsToRadians(mPeriodicIO.steerPosition));
-
-        return new SwerveModuleState(encVelocityToMetersPerSecond(mPeriodicIO.driveVelocity), currentAngle);
-    }
-
     // protected void convertCancoderToFX(){
     //     // multiple (usually 2) sets were needed to set new encoder value
     //     double fxTicksBefore = mSteerMotor.getSelectedSensorPosition();
     //     double cancoderDegrees = mCANCoder.getAbsolutePosition();
-
+        
     //     int limit = 5;
     //     do{
     //         if (mCANCoder.getLastError() != ErrorCode.OK) {
@@ -231,8 +241,24 @@ public class SwerveDriveModule extends Subsystem {
     // }
 
     /**
+     * Gets the current state of the module.
+     * <p>
+     * 
+     * @return The current state of the module.
+     */
+    public synchronized SwerveModuleState getState() {
+        // Note that Falcon is contiguous, so it can be larger than 2pi. Convert to
+        // encoder readings
+        // to SI units and let Rotation2d normalizes the angle between 0 and 2pi.
+        Rotation2d currentAngle = Rotation2d.fromRadians(encoderUnitsToRadians(mPeriodicIO.steerPosition));
+
+        return new SwerveModuleState(encVelocityToMetersPerSecond(mPeriodicIO.driveVelocity), currentAngle);
+    }
+
+    /**
      * Sets the state for the module.
-     *
+     * <p>
+     * 
      * @param desiredState Desired state for the module.
      */
     public synchronized void setState(SwerveModuleState desiredState) {
@@ -258,7 +284,8 @@ public class SwerveDriveModule extends Subsystem {
 
     /**
      * Sets the reference angle for the steer motor
-     *
+     * <p>
+     * 
      * @param referenceAngleRadians goal angle in radians
      */
     private void setReferenceAngle(double referenceAngleRadians) {
@@ -283,7 +310,8 @@ public class SwerveDriveModule extends Subsystem {
 
     /**
      * Sets the motor controller settings and values for the steer motor.
-     *
+     * <p>
+     * 
      * @param angularVelocityInRadiansPerSecond Normalized value
      */
     private void setSteerOpenLoop(double angularVelocityInRadiansPerSecond) {
@@ -293,7 +321,8 @@ public class SwerveDriveModule extends Subsystem {
 
     /**
      * Sets the motor controller settings and values for the Drive motor.
-     *
+     * <p>
+     * 
      * @param velocity Normalized value
      */
     private void setDriveOpenLoop(double velocity) {
@@ -335,10 +364,6 @@ public class SwerveDriveModule extends Subsystem {
         return distanceInMeters / mConfig.kDriveTicksPerUnitDistance;
     }
 
-    private double metersPerSecondToEncVelocity(double metersPerSecond) {
-        return metersPerSecond / mConfig.kDriveTicksPerUnitVelocity;
-    }
-
     // private double encUnitsToInches(double encUnits) {
     // return Units.metersToInches(encoderUnitsToDistance(encUnits));
     // }
@@ -347,13 +372,18 @@ public class SwerveDriveModule extends Subsystem {
     // return distanceToEncoderUnits(Units.inchesToMeters(inches));
     // }
 
+    private double metersPerSecondToEncVelocity(double metersPerSecond) {
+        return metersPerSecond / mConfig.kDriveTicksPerUnitVelocity;
+    }
+
     private double encVelocityToMetersPerSecond(double encUnitsPer100ms) {
         return encUnitsPer100ms * mConfig.kDriveTicksPerUnitVelocity;
     }
 
     /**
      * Sets the mode of operation during neutral throttle output.
-     *
+     * <p>
+     * 
      * @param neutralMode The desired mode of operation when the Talon FX
      *                    Controller output throttle is neutral (ie brake/coast)
      **/
@@ -377,17 +407,17 @@ public class SwerveDriveModule extends Subsystem {
 
     @Override
     public String getLogHeaders() {
-        return mModuleName + ".driveDemand," +
+        return  mModuleName + ".driveDemand," +
                 mModuleName + ".drivePosition," +
                 mModuleName + ".steerDemand," +
                 mModuleName + ".steerPosition," +
-                mModuleName + ".driveCurrent," +
+                mModuleName + ".driveCurrent,"+
                 mModuleName + ".steerCurrent";
     }
 
     @Override
     public String getLogValues(boolean telemetry) {
-        return mPeriodicIO.driveDemand + "," +
+        return  mPeriodicIO.driveDemand + "," +
                 mPeriodicIO.drivePosition + "," +
                 mPeriodicIO.steerDemand + "," +
                 mPeriodicIO.steerPosition + "," +
@@ -451,22 +481,10 @@ public class SwerveDriveModule extends Subsystem {
             SmartDashboard.putNumber(mModuleName + "Pulse Width", mPeriodicIO.steerPosition);
             if (mPeriodicIO.steerControlMode == ControlMode.MotionMagic)
                 // SmartDashboard.putNumber(mModuleName + "Error", encUnitsToDegrees(mPeriodicIO.steerError));
-                // SmartDashboard.putNumber(mModuleName + "X", position.x());
-                // SmartDashboard.putNumber(mModuleName + "Y", position.y());
-                SmartDashboard.putNumber(mModuleName + "Steer Speed", mPeriodicIO.steerVelocity);
+            // SmartDashboard.putNumber(mModuleName + "X", position.x());
+            // SmartDashboard.putNumber(mModuleName + "Y", position.y());
+            SmartDashboard.putNumber(mModuleName + "Steer Speed", mPeriodicIO.steerVelocity);
         }
-    }
-
-    public enum ControlState {
-        /**
-         * No motor outputs. This state is used robot is powered up and stopped by
-         * Driver Station.
-         */
-        NEUTRAL,
-        /**
-         * Runs motors in response to inputs.
-         */
-        OPEN_LOOP
     }
 
     public static class PeriodicIO {
