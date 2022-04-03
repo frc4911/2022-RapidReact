@@ -20,7 +20,7 @@ public class SwerveTwistAction implements Action {
 
 	@Override
 	public boolean isFinished() {
-		if (error <= 1.5){
+		if (Math.abs(error) <= 1.5){
 			return true;
 		}
 		return false;
@@ -29,7 +29,7 @@ public class SwerveTwistAction implements Action {
 	@Override
 	public void start() {
 		error = heading - mSwerve.getHeading().getDegrees();
-		speed = Math.copySign(0.5, error);
+		speed = Math.copySign(0.7, error);
 	}
 
 	@Override
