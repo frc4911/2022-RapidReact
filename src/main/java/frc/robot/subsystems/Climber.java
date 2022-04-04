@@ -815,7 +815,7 @@ public class Climber extends Subsystem {
 
     }
 
-    public boolean isClimbingStageDone(WantedState state) {
+    public boolean isHandlerComplete(WantedState state) {
         switch(state) {
             case ASSESS:
                 return assessingComplete;
