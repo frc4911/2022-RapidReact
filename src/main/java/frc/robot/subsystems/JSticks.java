@@ -313,21 +313,21 @@ public class JSticks extends Subsystem {
     }
 
     private SystemState handleReadingTestButtons() {
-        // if (mPeriodicIO.op_AButton_PreClimb){
-        //     mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_PRE_CLIMB, sClassName);
-        // }
+        if (mPeriodicIO.op_AButton_PreClimb){
+            mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_PRE_CLIMB, sClassName);
+        }
 
-        // if (mPeriodicIO.op_AButton_PreClimb_Stop){
-        //     mSuperstructure.setWantedState(Superstructure.WantedState.TEST, sClassName);
-        // }
+        if (mPeriodicIO.op_AButton_PreClimb_Stop){
+            mSuperstructure.setWantedState(Superstructure.WantedState.TEST, sClassName);
+        }
 
-        // if (mPeriodicIO.op_BackButton_TestHome){
-        //     mSuperstructure.setWantedState(Superstructure.WantedState.HOME, sClassName);
-        // }
+        if (mPeriodicIO.op_BackButton_TestHome){
+            mSuperstructure.setWantedState(Superstructure.WantedState.HOME, sClassName);
+        }
 
-        // if (mPeriodicIO.op_BackButton_TestHome_Stop){
-        //     mSuperstructure.setWantedState(Superstructure.WantedState.TEST, sClassName);
-        // }
+        if (mPeriodicIO.op_BackButton_TestHome_Stop){
+            mSuperstructure.setWantedState(Superstructure.WantedState.TEST, sClassName);
+        }
 
         mShooter.setMotorTestDemand(-mOperator.getRaw(Xbox.LEFT_STICK_Y), -mOperator.getRaw(Xbox.RIGHT_STICK_Y));
 

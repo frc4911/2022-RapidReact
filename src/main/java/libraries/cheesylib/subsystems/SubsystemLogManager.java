@@ -208,17 +208,17 @@ public class SubsystemLogManager {
                         File file = new File(dir.toString()+"/"+filename);
                         File dest = new File("/U/"+filename);
                         long fileSize = file.length();
-                        // try {
-                        //     Files.copy(file.toPath(), dest.toPath());
-                        // } catch (IOException e) {
-                        //     // TODO Auto-generated catch block
-                        //     e.printStackTrace();
-                        // }
-                        System.out.println("THOUGHT ABOUT moving "+file.toString() +" to "+ dest.toString());
-
-                        // if (dest.exists() && dest.length()==fileSize) {
-                        //     file.delete();
-                        // }
+                        try {
+                            System.out.println("copy "+file.toPath().toString() +" to "+ dest.toPath().toString());
+                            Files.copy(file.toPath(), dest.toPath());
+                        } catch (IOException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+                        
+                        if (dest.exists() && dest.length()==fileSize) {
+                            file.delete();
+                        }
                     }
                 }
                 else{
