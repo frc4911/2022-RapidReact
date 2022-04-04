@@ -410,7 +410,7 @@ public class Superstructure extends Subsystem {
 
             // Shoot while aiming
             if (mOnTarget || mStartedShooting) {
-                // mSwerve.stop();
+                mSwerve.stop();
                 if (mShooter.readyToShoot() || mStartedShooting) {
                     if (mIndexer.getWantedState() != Indexer.WantedState.FEED) {
                         mIndexer.setWantedState(Indexer.WantedState.FEED, sClassName);

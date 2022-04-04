@@ -209,6 +209,7 @@ public class JSticks extends Subsystem {
             // Seems safest to disable heading controller if were resetting IMU.
             mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.OFF);
             mSwerve.setRobotPosition(Constants.kRobotStartingPose);
+            // mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.MAINTAIN); // Reenable heading controller?
         }
 
         if (mPeriodicIO.dr_StartButton_ResetWheels){
