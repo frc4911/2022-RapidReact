@@ -215,8 +215,7 @@ public class SubsystemLogManager {
                             // TODO Auto-generated catch block
                             e.printStackTrace();
                         }
-                        System.out.println("THOUGHT ABOUT moving "+file.toString() +" to "+ dest.toString());
-
+                        
                         if (dest.exists() && dest.length()==fileSize) {
                             file.delete();
                         }
