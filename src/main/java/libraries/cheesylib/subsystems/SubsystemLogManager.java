@@ -42,7 +42,13 @@ public class SubsystemLogManager {
     public void startLogging(boolean loggingDisabled) {
         backupLogs();
         mLoggingDisabledExternally = loggingDisabled;
-        checkAvailableLogSpace();
+
+        // delete logs until space is available
+        while (checkAvailableLogSpace()){
+            if (!deleteOldestFile(mBasePath+mCompletedLogs)){
+                break;
+            }
+        }
         
         if (loggingEnabled()) {
             System.out.println("start subsystem logging");
@@ -170,38 +176,62 @@ public class SubsystemLogManager {
         return fileSizes;
     }
 
+    private boolean deleteOldestFile(String path){
+        String[] pathnames;
+        File dir = new File(path);
+        boolean deletedAFile = false;
+
+        if (dir.exists()){
+            pathnames = dir.list();
+
+            if (pathnames != null){
+                File file = new File(dir.toString()+"/"+pathnames[0]);
+                file.delete();
+                deletedAFile = true;
+            }
+        }
+        return deletedAFile;
+    }
+
     private void moveCompletedLogsToUSB(String path){
-        // String[] pathnames;
-        // File dir = new File(path);
+        String[] pathnames;
+        File dir = new File(path);
+        File usbDir = new File("/U");
+        
+        if (usbDir.exists()){
 
-        // if (dir.exists()){
-        //     pathnames = dir.list();
+            if (dir.exists()){
+                pathnames = dir.list();
 
-        //     if (pathnames != null){
-        //         for (String filename: pathnames){
-        //             File file = new File(dir.toString()+"/"+filename);
-        //             File dest = new File("/U/"+filename);
-        //             long fileSize = file.length();
-        //             try {
-        //                 Files.copy(file.toPath(), dest.toPath());
-        //             } catch (IOException e) {
-        //                 // TODO Auto-generated catch block
-        //                 e.printStackTrace();
-        //             }
-        //             System.out.println("moved "+file.toString() +" to "+ dest.toString());
+                if (pathnames != null){
+                    for (String filename: pathnames){
+                        File file = new File(dir.toString()+"/"+filename);
+                        File dest = new File("/U/"+filename);
+                        long fileSize = file.length();
+                        // try {
+                        //     Files.copy(file.toPath(), dest.toPath());
+                        // } catch (IOException e) {
+                        //     // TODO Auto-generated catch block
+                        //     e.printStackTrace();
+                        // }
+                        System.out.println("THOUGHT ABOUT moving "+file.toString() +" to "+ dest.toString());
 
-        //             if (dest.exists() && dest.length()==fileSize) {
-        //                 file.delete();
-        //             }
-        //         }
-        //     }
-        //     else{
-        //         System.out.println("no log files to move");
-        //     }
-        // }
-        // else{
-        //     System.out.println("did not find usb drive");
-        // }
+                        // if (dest.exists() && dest.length()==fileSize) {
+                        //     file.delete();
+                        // }
+                    }
+                }
+                else{
+                    System.out.println("no log files to move");
+                }
+            }
+            else{
+                System.out.println("did not find log file completed directory");
+            }
+        }
+        else{
+            System.out.println("did not find usb drive");
+        }
     }
 
     // append data from one subsystem to StringBuilder

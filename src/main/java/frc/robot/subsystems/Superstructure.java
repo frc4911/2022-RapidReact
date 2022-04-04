@@ -3,7 +3,6 @@ package frc.robot.subsystems;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.robot.RobotState;
 import frc.robot.constants.Ports;
 import frc.robot.limelight.LimelightManager;
 import libraries.cheesylib.loops.Loop.Phase;
@@ -28,6 +27,7 @@ public class Superstructure extends Subsystem {
 
     // Superstructure States
     public enum SystemState {
+        ASSESSING,
         DISABLING,
         HOLDING,
         TESTING,
@@ -41,6 +41,7 @@ public class Superstructure extends Subsystem {
     }
 
     public enum WantedState {
+        ASSESS,
         DISABLE,
         HOLD,
         TEST,
@@ -51,6 +52,14 @@ public class Superstructure extends Subsystem {
         AUTO_PRE_CLIMB,
         AUTO_CLIMB,
         HOME
+    }
+
+    public enum AssessingState {
+        COLLECTOR,
+        INDEXER,
+        SHOOTER,
+        CLIMBER,
+        SWERVE
     }
 
     private SystemState mSystemState;
@@ -64,10 +73,9 @@ public class Superstructure extends Subsystem {
     private double mXOffset;
 
     private double mSwerveFeedforwardFromVision = 0.0;
-
+    double mSetPointInRadians;
 
     private boolean mOverrideLimelightLEDs = false;
-
 
     private final PeriodicIO mPeriodicIO = new PeriodicIO();
     private int mFastCycle = 20;
@@ -147,6 +155,8 @@ public class Superstructure extends Subsystem {
             do {
                 SystemState newState = null;
                 switch (mSystemState) {
+                    case ASSESSING:
+                        newState = handleAssessing();
                     case COLLECTING:
                         newState = handleCollecting();
                         break;
@@ -191,7 +201,99 @@ public class Superstructure extends Subsystem {
         }
     }
 
+    AssessingState currentAssessingState = null;
+    boolean assessingStateChange = false;
+    double assessingStopTime;
+    double assessingSwervePhase1Timeout;
+    double assessingSwervePhase2Timeout;
+
     // Handling methods
+    private SystemState handleAssessing(){
+        double now = Timer.getFPGATimestamp();
+
+        if (mStateChanged) {
+            if (!mOverrideLimelightLEDs) {
+                mLLManager.getLimelight().setLed(Limelight.LedMode.PIPELINE);
+            }
+            currentAssessingState = AssessingState.COLLECTOR;
+            assessingStateChange = true;
+            mPeriodicIO.schedDeltaDesired = mFastCycle;
+        }
+
+        switch (currentAssessingState){
+            case COLLECTOR:
+                if (assessingStateChange){
+                    assessingStateChange = false;
+                    mCollector.setWantedState(Collector.WantedState.ASSESS, sClassName);
+                }
+
+                if(mCollector.isHandlerComplete(Collector.WantedState.ASSESS)){
+                    mCollector.setWantedState(Collector.WantedState.DISABLE, sClassName);
+                    assessingStateChange = true;
+                    currentAssessingState = AssessingState.INDEXER;
+                }
+                break;
+            case INDEXER:
+                if (assessingStateChange){
+                    assessingStateChange = false;
+                    mIndexer.setWantedState(Indexer.WantedState.ASSESS, sClassName);
+                }
+
+                if(mIndexer.isHandlerComplete(Indexer.WantedState.ASSESS)){
+                    mIndexer.setWantedState(Indexer.WantedState.DISABLE, sClassName);
+                    assessingStateChange = true;
+                    currentAssessingState = AssessingState.SHOOTER;
+                }
+                break;
+            case SHOOTER:
+                if (assessingStateChange){
+                    assessingStateChange = false;
+                    mShooter.setWantedState(Shooter.WantedState.ASSESS, sClassName);
+                }
+
+                if(mShooter.isHandlerComplete(Shooter.WantedState.ASSESS)){
+                    mShooter.setWantedState(Shooter.WantedState.DISABLE, sClassName);
+                    assessingStateChange = true;
+                    currentAssessingState = AssessingState.CLIMBER;
+                }
+                break;
+            case CLIMBER:
+                if (assessingStateChange){
+                    assessingStateChange = false;
+                    mClimber.setWantedState(Climber.WantedState.ASSESS, sClassName);
+                }
+
+                if(mClimber.isHandlerComplete(Climber.WantedState.ASSESS)){
+                    mClimber.setWantedState(Climber.WantedState.DISABLE, sClassName);
+                    assessingStateChange = true;
+                    currentAssessingState = AssessingState.SWERVE;
+                }
+                break;
+            case SWERVE:
+                if (assessingStateChange){
+                    assessingStateChange = false;
+                    assessingSwervePhase1Timeout = now+.25;
+                    assessingSwervePhase2Timeout = now + 20000; // set to far in the future
+                    mSwerve.setTeleopInputs(.1, 0, .1, false, false, false);
+                    // mSwerve.savePosition();
+                }
+
+                if(now > assessingSwervePhase1Timeout){
+                    assessingSwervePhase2Timeout = now+.25;
+                    mSwerve.setTeleopInputs(.2, 0, .2, false, false, false);
+                }
+
+                if (now>assessingSwervePhase2Timeout){
+                    assessingSwervePhase2Timeout += 20000; // far in the future
+                    // mSwerve.savePosition; Add prints for all 8 motors
+                }
+                break;
+
+        }
+
+        return defaultStateTransfer();
+    }
+
     private SystemState handleDisabling() {
         if (mStateChanged) {
             if (!mOverrideLimelightLEDs) {
@@ -282,7 +384,6 @@ public class Superstructure extends Subsystem {
         return defaultStateTransfer();
     }
 
-     double mSetPointInRadians;
     private SystemState handleAutoShooting(double timestamp) {
         if (mStateChanged) {
             
@@ -405,22 +506,22 @@ public class Superstructure extends Subsystem {
 
         switch(mClimber.getWantedState()) {
             case CLIMB_1_LIFT:
-                if (mClimber.isClimbingStageDone(Climber.WantedState.CLIMB_1_LIFT)) {
+                if (mClimber.isHandlerComplete(Climber.WantedState.CLIMB_1_LIFT)) {
                     mClimber.setWantedState(Climber.WantedState.CLIMB_2_ROTATE_UP, sClassName);
                 }
                 break;
             case CLIMB_2_ROTATE_UP:
-                if (mClimber.isClimbingStageDone(Climber.WantedState.CLIMB_2_ROTATE_UP)) {
+                if (mClimber.isHandlerComplete(Climber.WantedState.CLIMB_2_ROTATE_UP)) {
                     mClimber.setWantedState(Climber.WantedState.CLIMB_3_LIFT_MORE, sClassName);
                 }
                 break;
             case CLIMB_3_LIFT_MORE:
-                if (mClimber.isClimbingStageDone(Climber.WantedState.CLIMB_3_LIFT_MORE)) {
+                if (mClimber.isHandlerComplete(Climber.WantedState.CLIMB_3_LIFT_MORE)) {
                     mClimber.setWantedState(Climber.WantedState.CLIMB_4_ENGAGE_TRAV, sClassName);
                 }
                 break;
             case CLIMB_4_ENGAGE_TRAV:
-                if (mClimber.isClimbingStageDone(Climber.WantedState.CLIMB_4_ENGAGE_TRAV)) {
+                if (mClimber.isHandlerComplete(Climber.WantedState.CLIMB_4_ENGAGE_TRAV)) {
                     mClimber.setWantedState(Climber.WantedState.CLIMB_5_RELEASE_MID, sClassName);
                 }
                 break;
@@ -436,6 +537,8 @@ public class Superstructure extends Subsystem {
 
     private SystemState defaultStateTransfer() {
         switch (mWantedState) {
+            case ASSESS:
+                return SystemState.ASSESSING;
             case DISABLE:
                 return SystemState.DISABLING;
             case TEST:

@@ -80,16 +80,17 @@ public class Shooter extends Subsystem {
     private final double hoodHomingDemand = -2 * kMaxHoodPosition; // a number negative enough to drive past 0
                                                                    // regardless of where started
     private double hoodNonMovementTimeout; // timestamp of when low readings are sufficient
-    private WantedState wantedStateAfterHoming = WantedState.HOLD; // state to transition to after homed
     private double hoodEncoderOffset = 0; // used after homing to avoid resetting encoder position
     private final double kHoodHomingDemand = -.2;
+    private AssessingState assessingState;
+    private boolean assessingStateChange;
+    private double assessingFlyLeftStartPosition;
+    private double assessingFlyRightStartPosition;
 
     private boolean assessingComplete;
-    private double assessingFlyStartPosition;
     private double assessingHoodStartPosition;
     private double assessingStopTime;
     private final double kAssessingTimeout = 250;
-    private boolean assessingReturn;
     
     InterpolatingTreeMap<InterpolatingDouble, InterpolatingDouble> shooterSpeedMap= new InterpolatingTreeMap<>();
     InterpolatingTreeMap<InterpolatingDouble, InterpolatingDouble> shooterHoodMap= new InterpolatingTreeMap<>();
@@ -290,6 +291,15 @@ public class Shooter extends Subsystem {
         }
     }
 
+    public boolean isHandlerComplete(WantedState wantedState){
+        switch (wantedState){
+            case ASSESS:
+                return assessingComplete;
+            default:
+        }
+
+        return false;
+    }
     // this method should only be used by external subsystems.
     // if you want to change your own wantedState then simply set
     // it directly
@@ -306,58 +316,68 @@ public class Shooter extends Subsystem {
     public synchronized WantedState getWantedState() {
         return mWantedState;
     }
-  
+
+    public enum AssessingState {
+        FLYLEFT,
+        HOOD,
+        FLYRIGHT
+    }
 
     private SystemState handleAssessing() {
-        // double now = Timer.getFPGATimestamp();
-        // if (mStateChanged) {
-        //     mPeriodicIO.schedDeltaDesired = mSchedActive;
-        //     mPeriodicIO.flyDemand = .1;
-        //     mPeriodicIO.flyControlMode = ControlMode.PercentOutput;
-        //     mPeriodicIO.hoodDemand = .1;
-        //     mPeriodicIO.hoodControlMode = ControlMode.PercentOutput;
-        //     assessingFlyStartPosition = mFXFlyLeft.getSelectedSensorPosition();
-        //     assessingHoodStartPosition = mPeriodicIO.hoodPosition;
-        //     assessingStopTime = now+kAssessingTimeout;
-        //     assessingComplete = false;
-        //     assessingReturn = false;
-        // }
+        double now = Timer.getFPGATimestamp();
+        if (mStateChanged) {
+            mPeriodicIO.schedDeltaDesired = mSchedActive;
+            assessingComplete = false;
+            assessingState = AssessingState.FLYLEFT;
+            assessingStateChange = true;
+        }
 
-        // if (!assessingComplete){
-        //     // move in one direction for .25 seconds and look for encoder changes
-        //     if (!assessingReturn){
-        //         if (now >= assessingStopTime){
-        //             if (mFXFlyLeft.getSelectedSensorPosition() != assessingFlyStartPosition){
-        //                 System.out.println("ASSESSING: Shooter Fly Left motor functioning");
-        //             }
-        //             else{
-        //                 System.out.println("ASSESSING: Shooter Hood motor DID NOT DETECT MOVEMENT");
-        //             }
-        //             // if (mPeriodicIO.slappyPosition != assessingHoodStartPosition){
-        //             //     System.out.println("ASSESSING: climber Slappy motor functioning");
-        //             // }
-        //             // else{
-        //             //     System.out.println("ASSESSING: climber Slappy motor DID NOT DETECT MOVEMENT");
-        //             // }
-        //             // mPeriodicIO.midArmDemand = -mPeriodicIO.midArmDemand;
-        //             // mPeriodicIO.slappyDemand = -mPeriodicIO.slappyDemand;
-        //             // assessingStopTime = now+kAssessingTimeout;
-        //             // assessingReturn = true;
-        //         }    
-        //     }
-        //     else{
-        //         // move back for .25 seconds then stop
-        //         // if (now >= assessingStopTime){
-        //         //     mPeriodicIO.midArmDemand = 0;
-        //         //     mPeriodicIO.slappyDemand = 0;
-        //         //     assessingComplete = true;
-        //         }
-        //     }
-        // }
+        switch (assessingState){
+            case FLYLEFT:
+            case FLYRIGHT:
+            case HOOD:
+                if (assessingStateChange){
+                    assessingStopTime = now+kAssessingTimeout;
+                    mPeriodicIO.flyControlMode = ControlMode.PercentOutput;
+                    mPeriodicIO.flyDemand = .1;
+                    mPeriodicIO.hoodControlMode = ControlMode.PercentOutput;
+                    mPeriodicIO.hoodDemand = .1;
+                    assessingFlyLeftStartPosition = mFXFlyLeft.getSelectedSensorPosition();
+                    assessingFlyRightStartPosition = mFXFlyRight.getSelectedSensorPosition();
+                    assessingHoodStartPosition = mPeriodicIO.hoodPosition;
+                    assessingStateChange = false;
+                }
 
-        // // if (mWantedState != WantedState.ASSESS){
-        // //     assessingComplete = false;
-        // // }
+                if (now>assessingStopTime){
+                    mPeriodicIO.flyDemand = 0;
+                    mPeriodicIO.hoodDemand = 0;
+                    assessingStopTime += 20000; // increase so code does not enter here any more
+                    assessingComplete = true;
+
+                    if (mFXFlyLeft.getSelectedSensorPosition() > assessingFlyLeftStartPosition){
+                        System.out.println("ASSESSING: Shooter Fly Left motor functioning");
+                    }
+                    else{
+                        System.out.println("ASSESSING: Shooter Fly Left motor DID NOT DETECT MOVEMENT");
+                    }
+                    if (mFXFlyRight.getSelectedSensorPosition() > assessingFlyRightStartPosition){
+                        System.out.println("ASSESSING: Shooter Fly Right motor functioning");
+                    }
+                    else{
+                        System.out.println("ASSESSING: Shooter Fly Right motor DID NOT DETECT MOVEMENT");
+                    }
+                    if (mPeriodicIO.hoodPosition > assessingHoodStartPosition){
+                        System.out.println("ASSESSING: Shooter Hood motor functioning");
+                    }
+                    else{
+                        System.out.println("ASSESSING: Shooter Hood motor DID NOT DETECT MOVEMENT");
+                    }
+                }
+        }
+
+        if (mWantedState != WantedState.ASSESS){
+            assessingComplete = false;
+        }
 
         return defaultStateTransfer();
     }
