@@ -64,6 +64,7 @@ public class SubsystemManager implements ILooper {
             int columns = header.length() - header.replace(",", "").length();
             // create string of just commas
             mSSEmptyLog[i++] = ",".repeat(columns);
+            System.out.println("empty log string length "+mSSEmptyLog[i-1].length()+" columns:"+columns);
             mSSLogMngr.addToLine(header);
         }
 

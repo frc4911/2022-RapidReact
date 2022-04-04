@@ -104,7 +104,7 @@ public class Climber extends Subsystem {
     }
 
     public enum MidArmPosition {
-        MIDBAR(345000),
+        MIDBAR(369000), //345000
         MIDDLE(92500),
         DOWN(-14900),
         HOME(-400),
