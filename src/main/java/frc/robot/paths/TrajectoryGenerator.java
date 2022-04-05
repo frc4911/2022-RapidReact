@@ -131,7 +131,6 @@ public class TrajectoryGenerator {
         public final MirroredTrajectory citrusTwoBallAuto0Trajectory;
         public final MirroredTrajectory citrusTwoBallAuto1Trajectory;
         public final MirroredTrajectory citrusTwoBallAuto2Trajectory;
-        public final MirroredTrajectory citrusTwoBallAuto3Trajectory;
 
         public final MirroredTrajectory fiveBallAuto0Trajectory;
         public final MirroredTrajectory fiveBallAuto1Trajectory;
@@ -169,9 +168,7 @@ public class TrajectoryGenerator {
                     getCitrusTwoBallAutoPhase1Trajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
             citrusTwoBallAuto2Trajectory = new MirroredTrajectory(
                     getCitrusTwoBallAutoPhase2Trajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
-            citrusTwoBallAuto3Trajectory = new MirroredTrajectory(
-                    getCitrusTwoBallAutoPhase3Trajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
-
+            
 
             fiveBallAuto0Trajectory = new MirroredTrajectory(
                     getFiveBallAutoPhase0Trajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
@@ -240,30 +237,24 @@ public class TrajectoryGenerator {
         private Trajectory<TimedState<Pose2dWithCurvature>> getCitrusTwoBallAutoPhase0Trajectory(TrajectoryConfig config) {
             List<Pose2d> waypoints = new ArrayList<>();
             waypoints.add(new Pose2d(Translation2d.identity(), Rotation2d.fromDegrees(180)));
-            waypoints.add(new Pose2d(Units.inches_to_meters(-30), Units.inches_to_meters(0), Rotation2d.fromDegrees(180)));
+            waypoints.add(new Pose2d(Units.inches_to_meters(-40), Units.inches_to_meters(0), Rotation2d.fromDegrees(180)));
             return generateTrajectory(waypoints, config);
         }
 
         private Trajectory<TimedState<Pose2dWithCurvature>> getCitrusTwoBallAutoPhase1Trajectory(TrajectoryConfig config) {
             List<Pose2d> waypoints = new ArrayList<>();
-            waypoints.add(new Pose2d(Units.inches_to_meters(-30), Units.inches_to_meters(0), Rotation2d.fromDegrees(-90)));
-            waypoints.add(new Pose2d(Units.inches_to_meters(-30), Units.inches_to_meters(-30), Rotation2d.fromDegrees(-90)));
+            waypoints.add(new Pose2d(Units.inches_to_meters(-40), Units.inches_to_meters(0), Rotation2d.fromDegrees(-90)));
+            waypoints.add(new Pose2d(Units.inches_to_meters(0), Units.inches_to_meters(-95 + 20), Rotation2d.fromDegrees(-90)));
             return generateTrajectory(waypoints, config);
         }
 
         private Trajectory<TimedState<Pose2dWithCurvature>> getCitrusTwoBallAutoPhase2Trajectory(TrajectoryConfig config) {
             List<Pose2d> waypoints = new ArrayList<>();
-            waypoints.add(new Pose2d(Units.inches_to_meters(-30), Units.inches_to_meters(-30), Rotation2d.fromDegrees(90)));
-            waypoints.add(new Pose2d(Units.inches_to_meters(-30), Units.inches_to_meters(30), Rotation2d.fromDegrees(90)));
+            waypoints.add(new Pose2d(Units.inches_to_meters(0), Units.inches_to_meters(-95 + 20), Rotation2d.fromDegrees(90)));
+            waypoints.add(new Pose2d(Units.inches_to_meters(-60), Units.inches_to_meters(75), Rotation2d.fromDegrees(90)));
             return generateTrajectory(waypoints, config);
         }
 
-        private Trajectory<TimedState<Pose2dWithCurvature>> getCitrusTwoBallAutoPhase3Trajectory(TrajectoryConfig config) {
-            List<Pose2d> waypoints = new ArrayList<>();
-            waypoints.add(new Pose2d(Units.inches_to_meters(-30), Units.inches_to_meters(30), Rotation2d.fromDegrees(-90)));
-            waypoints.add(new Pose2d(Units.inches_to_meters(-30), Units.inches_to_meters(0), Rotation2d.fromDegrees(-90)));
-            return generateTrajectory(waypoints, config);
-        }
 
         //New Five Ball Code
 

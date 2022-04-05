@@ -29,10 +29,12 @@ public class CitrusTwoBallMode extends AutoModeBase{
         runAction(new SwerveTwistAction(90, false));
         runAction(new CollectAction(true));
         runAction(new DriveTrajectoryAction(generator.getTrajectorySet().citrusTwoBallAuto1Trajectory.left, false));
+        runAction(new CollectAction(false));
         runAction(new SwerveTwistAction(180, true));
+        runAction(new CollectAction(true));
         runAction(new DriveTrajectoryAction(generator.getTrajectorySet().citrusTwoBallAuto2Trajectory.left, false));
         runAction(new CollectAction(false));
-        runAction(new DriveTrajectoryAction(generator.getTrajectorySet().citrusTwoBallAuto3Trajectory.left, false));
+        runAction(new SwerveTwistAction(120, false));
         runAction(new BackAction(true));
         runAction(new WaitAction(2));
         runAction(new BackAction(false));
