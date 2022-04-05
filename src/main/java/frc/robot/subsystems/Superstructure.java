@@ -586,15 +586,6 @@ public class Superstructure extends Subsystem {
         mManualDistance = distance;
     }
 
-    public void setOpenLoopClimb(double climbSpeed, int deploySlappyState) {
-        // mClimber.setClimbSpeed(climbSpeed);
-        // if (deploySlappyState == 0) {
-        //     mClimber.setSlappyStickState(true);
-        // } else if (deploySlappyState == 1) {
-        //     mClimber.setSlappyStickState(false);
-        // }
-    }
-
     // used in auto
     public boolean autoShootingComplete() {
         return mIndexer.isHandlerComplete(Indexer.WantedState.FEED);
