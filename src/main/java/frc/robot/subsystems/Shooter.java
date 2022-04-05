@@ -404,21 +404,24 @@ public class Shooter extends Subsystem {
             mPeriodicIO.hoodDemand = kHoodHomingDemand;
         }
 
-        double distance = Math.abs(mPeriodicIO.hoodPosition - mPeriodicIO.lastHoodPosition);
-        if (distance > hoodNonMovementThreshhold) {
-            hoodNonMovementTimeout = now + hoodNonMovementDuration;
-        }
+        if(!hoodHomed){
+            double distance = Math.abs(mPeriodicIO.hoodPosition - mPeriodicIO.lastHoodPosition);
+            if (distance > hoodNonMovementThreshhold) {
+                hoodNonMovementTimeout = now + hoodNonMovementDuration;
+            }
 
-        if (now > hoodNonMovementTimeout) {
-            // instead of resetting the sensor the code remembers the offset
-            // hoodEncoderOffset = mPeriodicIO.hoodPosition+kHoodPositionAtFender-100; // -100 is so the PID can be off a little
-            mFXHood.setSelectedSensorPosition(8000);
-            hoodEncoderOffset=0;
-            hoodHomed = true;
-            FramePeriodSwitch.configStatorCurrentLimitPermanent(mFXHood,new StatorCurrentLimitConfiguration(true, kHoodCurrentLimitHigh, kHoodCurrentLimitHigh, 0));    
+            if (now > hoodNonMovementTimeout) {
+                // instead of resetting the sensor the code remembers the offset
+                // hoodEncoderOffset = mPeriodicIO.hoodPosition+kHoodPositionAtFender-100; // -100 is so the PID can be off a little
+                mFXHood.setSelectedSensorPosition(8000);
+                hoodEncoderOffset=0;
+                hoodHomed = true;
+                FramePeriodSwitch.configStatorCurrentLimitPermanent(mFXHood,new StatorCurrentLimitConfiguration(true, kHoodCurrentLimitHigh, kHoodCurrentLimitHigh, 0));    
 
-            mPeriodicIO.hoodDemand = 0;
-            System.out.println("homing hood is complete offset="+hoodEncoderOffset);
+                mPeriodicIO.hoodDemand = 0;
+                setShootDistance(0);
+                System.out.println("homing hood is complete offset="+hoodEncoderOffset);
+            }
         }
 
         // System.out.println("hood pos="+mPeriodicIO.hoodPosition+ " demand "+mPeriodicIO.hoodDemand + " control="+mPeriodicIO.hoodControlMode);
