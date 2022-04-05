@@ -29,7 +29,7 @@ public class Indexer extends Subsystem {
     private final double kBackingSpeed = -.3;
     private final double kFeedingSpeed = .40;
     private final double kLoadingSpeed = .3;
-
+    private double mTempFeedSpeed;
     private boolean mHasBallOnLoadingStart;
     private boolean mLoadingCompleted;
     private boolean mFeedingCompleted;    
@@ -158,6 +158,7 @@ public class Indexer extends Subsystem {
             mAssessmentHandlerComplete = false;
             mLB_SystemStateChange.update(false); // reset
             stop(); // put into a known state
+            mTempFeedSpeed = Double.NaN;
         }
     }
 
@@ -314,7 +315,12 @@ public class Indexer extends Subsystem {
     private SystemState handleFeeding() {
         if (mStateChanged) {
             mPeriodicIO.schedDeltaDesired = kSchedDeltaActive;
-            setMotorControlModeAndDemand(ControlMode.PercentOutput, kFeedingSpeed);
+            if (Double.isNaN(mTempFeedSpeed)){
+                setMotorControlModeAndDemand(ControlMode.PercentOutput, kFeedingSpeed);
+            }
+            else{
+                setMotorControlModeAndDemand(ControlMode.PercentOutput, mTempFeedSpeed);
+            }
             motorPositionTarget = mPeriodicIO.motorPosition + kIndexerLengthTicks;
             mFeedingCompleted = false;
         }
@@ -325,6 +331,7 @@ public class Indexer extends Subsystem {
 
         if (mWantedState != WantedState.FEED) {
             mFeedingCompleted = false;
+            mTempFeedSpeed = Double.NaN;
         }
 
         return defaultStateTransfer();
@@ -398,6 +405,9 @@ public class Indexer extends Subsystem {
         mTestMotorDemand = newTestDemand;
     }
 
+    public void setTempFeedSpeed(double newSpeed){
+        mTempFeedSpeed = newSpeed;
+    }
     @Override
     public void readPeriodicInputs() {
         double now = Timer.getFPGATimestamp();

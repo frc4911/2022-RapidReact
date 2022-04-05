@@ -218,8 +218,8 @@ public class Swerve extends Subsystem {
         }
     }
 
-    SlewRateLimiter forwardLimiter = new SlewRateLimiter(1.0, 0); // 1.5
-    SlewRateLimiter strafeLimiter = new SlewRateLimiter(1.0, 0); // 1.5
+    SlewRateLimiter forwardLimiter = new SlewRateLimiter(2.0, 0); // 1.5
+    SlewRateLimiter strafeLimiter = new SlewRateLimiter(2.0, 0); // 1.5
     SlewRateLimiter rotationLimiter = new SlewRateLimiter(2, 0);
 
     /**
@@ -678,7 +678,7 @@ public class Swerve extends Subsystem {
 
     @Override
     public void outputTelemetry() {
-        // mModules.forEach((m) -> m.outputTelemetry());
+        mModules.forEach((m) -> m.outputTelemetry());
         // SmartDashboard.putString("Swerve/Swerve State", mControlState.toString());
         // SmartDashboard.putString("Swerve/Pose", mPeriodicIO.robotPose.toString());
         // SmartDashboard.putString("Swerve/Chassis Speeds", mPeriodicIO.chassisSpeeds.toString());
