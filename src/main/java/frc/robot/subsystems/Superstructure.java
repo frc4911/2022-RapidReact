@@ -506,6 +506,11 @@ public class Superstructure extends Subsystem {
         return defaultStateTransfer();
     }
 
+    Climber.WantedState mClimbStopState = Climber.WantedState.CLIMB_5_RELEASE_MID;
+
+    public void setLastClimbState(Climber.WantedState climbState){
+        mClimbStopState = climbState;
+    }
     // Unused: Lower priority in reference to other states
     private SystemState handleAutoClimbing() {
         if (mStateChanged) {
@@ -529,7 +534,13 @@ public class Superstructure extends Subsystem {
             //     break;
             case CLIMB_3_LIFT_MORE:
                 if (mClimber.isHandlerComplete(Climber.WantedState.CLIMB_3_LIFT_MORE)) {
-                    mClimber.setWantedState(Climber.WantedState.CLIMB_4_ENGAGE_TRAV, sClassName);
+                    if (mClimbStopState == Climber.WantedState.CLIMB_3_LIFT_MORE){
+                        mClimbStopState = Climber.WantedState.CLIMB_5_RELEASE_MID;
+                        mClimber.setWantedState(Climber.WantedState.HOLD, sClassName);
+                    }
+                    else{
+                        mClimber.setWantedState(Climber.WantedState.CLIMB_4_ENGAGE_TRAV, sClassName);
+                    }
                 }
                 break;
             case CLIMB_4_ENGAGE_TRAV:
