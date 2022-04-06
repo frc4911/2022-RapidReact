@@ -78,8 +78,8 @@ public class SwerveDriveModule extends Subsystem {
         configCancoder();
         configureMotors();
 
-        System.out.println("Be sure to reset convertCancoderToFX2() call before DCMP's");
-        convertCancoderToFX2(true);
+        // System.out.println("Be sure to reset convertCancoderToFX2() call before DCMP's");
+        convertCancoderToFX2(false); // ready for event
     }
 
     private void configCancoder(){
