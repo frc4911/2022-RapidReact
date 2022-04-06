@@ -55,9 +55,9 @@ public class Swerve extends Subsystem {
     private final SwerveDriveModule mBackLeft;
     private final SwerveDriveModule mBackRight;
 
-    double lastUpdateTimestamp = 0;
-    double rotationPow = 2;
-    int driveMode = 3;
+    private double lastUpdateTimestamp = 0;
+    private int driveMode = 3;
+    private boolean inAimingDeadzone;
 
     // Swerve kinematics & odometry
     private final IMU mIMU;
@@ -218,8 +218,8 @@ public class Swerve extends Subsystem {
         }
     }
 
-    SlewRateLimiter forwardLimiter = new SlewRateLimiter(1.0, 0); // 1.5
-    SlewRateLimiter strafeLimiter = new SlewRateLimiter(1.0, 0); // 1.5
+    SlewRateLimiter forwardLimiter = new SlewRateLimiter(2.0, 0); // 1.5
+    SlewRateLimiter strafeLimiter = new SlewRateLimiter(2.0, 0); // 1.5
     SlewRateLimiter rotationLimiter = new SlewRateLimiter(2, 0);
 
     /**
@@ -329,8 +329,15 @@ public class Swerve extends Subsystem {
             // if ((mPeriodicIO.averageWheelVelocity / mSwerveConfiguration.maxSpeedInMetersPerSecond) < 0.2) {
             //     rotation += Math.copySign(0.3 * mSwerveConfiguration.maxSpeedInRadiansPerSecond, rotation);
             // }
+<<<<<<< HEAD
             if (Math.abs(rotation)<.13){
                 rotation = Math.copySign(.13, rotation);
+=======
+            if (Math.abs(rotation)<.1){
+                inAimingDeadzone = true;
+            } else {
+                inAimingDeadzone = false;
+>>>>>>> main
             }
             // System.out.println("rot:"+rotation);
             // System.out.println("Swerve.handleAiming() setpoint: "+(((int)(10.0*Math.toDegrees(mPeriodicIO.visionSetpointInRadians)))/10)+ " rotation: "+rotation);
@@ -354,6 +361,9 @@ public class Swerve extends Subsystem {
         mAimingHeaderController.setHeadingControllerState(HeadingController.HeadingControllerState.OFF);
     }
 
+    public boolean isInAimingDeadzone() {
+        return inAimingDeadzone;
+    }
 
     // //Assigns appropriate directions for scrub factors
     // public void setCarpetDirection(boolean standardDirection) {
@@ -678,7 +688,7 @@ public class Swerve extends Subsystem {
 
     @Override
     public void outputTelemetry() {
-        // mModules.forEach((m) -> m.outputTelemetry());
+        mModules.forEach((m) -> m.outputTelemetry());
         // SmartDashboard.putString("Swerve/Swerve State", mControlState.toString());
         // SmartDashboard.putString("Swerve/Pose", mPeriodicIO.robotPose.toString());
         // SmartDashboard.putString("Swerve/Chassis Speeds", mPeriodicIO.chassisSpeeds.toString());

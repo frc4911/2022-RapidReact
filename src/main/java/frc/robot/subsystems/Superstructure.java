@@ -5,6 +5,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.constants.Ports;
 import frc.robot.limelight.LimelightManager;
+import frc.robot.subsystems.Collector.WantedState;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.subsystems.SubsystemManager;
@@ -24,6 +25,7 @@ public class Superstructure extends Subsystem {
     private final Climber mClimber;
     private final LimelightManager mLLManager = LimelightManager.getInstance();
     private final AnalogInput mAIPressureSensor;
+    private final LEDCanifier mLEDCanifier;
 
     // Superstructure States
     public enum SystemState {
@@ -73,7 +75,7 @@ public class Superstructure extends Subsystem {
     private double mXOffset;
 
     private double mSwerveFeedforwardFromVision = 0.0;
-    double mSetPointInRadians;
+    private double mSetPointInRadians;
 
     private boolean mOverrideLimelightLEDs = false;
 
@@ -84,6 +86,7 @@ public class Superstructure extends Subsystem {
     private double mManualDistance;
     private boolean mStartedShooting;
     private String mShotCounterKey = "ShotCounter";
+    private final double kFenderShotIndexSpeed = 0.42;
 
     private static String sClassName;
     private static int sInstanceCount;
@@ -113,6 +116,7 @@ public class Superstructure extends Subsystem {
         mCollector = Collector.getInstance(sClassName);
         mShooter = Shooter.getInstance(sClassName);
         mClimber = Climber.getInstance(sClassName);
+        mLEDCanifier = LEDCanifier.getInstance(sClassName);
         mAIPressureSensor = new AnalogInput(Ports.PRESSURE_SENSOR);
         initializeShotCounter();
     }
@@ -394,12 +398,13 @@ public class Superstructure extends Subsystem {
             mPeriodicIO.schedDeltaDesired = mFastCycle;
             mShooter.setWantedState(Shooter.WantedState.SHOOT, sClassName);
             mSetPointInRadians = Double.NaN;
+            mLEDCanifier.setLEDColor(0, .9, 0);
         }
         var setPointInRadians = getSwerveSetpointFromVision(timestamp);
         
         if (mHasTarget) {
             
-            if (Double.isNaN(mSetPointInRadians)){
+            if (Double.isNaN(mSetPointInRadians) || mSwerve.isInAimingDeadzone()){
                 mSetPointInRadians = setPointInRadians;
             }
 
@@ -423,6 +428,10 @@ public class Superstructure extends Subsystem {
                     }
                 }
             }
+        }
+
+        if (!mWantedState.equals(WantedState.AUTO_SHOOT)){
+            mLEDCanifier.setLEDColor(0, 0, 0);
         }
 
         return defaultStateTransfer();
@@ -452,7 +461,7 @@ public class Superstructure extends Subsystem {
         else {
             mHasTarget = false;
             mOnTarget = false;
-            System.out.println("Superstruct no aimingParameters");
+            // System.out.println("Superstruct no aimingParameters");
 
             return mSwerve.getHeading().getRadians();
         }
@@ -477,6 +486,9 @@ public class Superstructure extends Subsystem {
         // now only do something if shooter is ready and we have not already started shooting
         if (mShooter.readyToShoot() && 
             !mIndexer.getWantedState().equals(Indexer.WantedState.FEED)) {
+            if (mManualDistance == 0){
+                mIndexer.setTempFeedSpeed(kFenderShotIndexSpeed);
+            }
             mIndexer.setWantedState(Indexer.WantedState.FEED, sClassName);
             mPeriodicIO.shotCounter++;
         }
@@ -501,20 +513,20 @@ public class Superstructure extends Subsystem {
                 mLLManager.getLimelight().setLed(Limelight.LedMode.OFF);
             }
             mPeriodicIO.schedDeltaDesired = mFastCycle;
-            mClimber.setWantedState(Climber.WantedState.CLIMB_1_LIFT, sClassName);
+            mClimber.setWantedState(Climber.WantedState.CLIMB_3_LIFT_MORE, sClassName);
         }
 
         switch(mClimber.getWantedState()) {
-            case CLIMB_1_LIFT:
-                if (mClimber.isHandlerComplete(Climber.WantedState.CLIMB_1_LIFT)) {
-                    mClimber.setWantedState(Climber.WantedState.CLIMB_2_ROTATE_UP, sClassName);
-                }
-                break;
-            case CLIMB_2_ROTATE_UP:
-                if (mClimber.isHandlerComplete(Climber.WantedState.CLIMB_2_ROTATE_UP)) {
-                    mClimber.setWantedState(Climber.WantedState.CLIMB_3_LIFT_MORE, sClassName);
-                }
-                break;
+            // case CLIMB_1_LIFT:
+            //     if (mClimber.isHandlerComplete(Climber.WantedState.CLIMB_1_LIFT)) {
+            //         mClimber.setWantedState(Climber.WantedState.CLIMB_2_ROTATE_UP, sClassName);
+            //     }
+            //     break;
+            // case CLIMB_2_ROTATE_UP:
+            //     if (mClimber.isHandlerComplete(Climber.WantedState.CLIMB_2_ROTATE_UP)) {
+            //         mClimber.setWantedState(Climber.WantedState.CLIMB_3_LIFT_MORE, sClassName);
+            //     }
+            //     break;
             case CLIMB_3_LIFT_MORE:
                 if (mClimber.isHandlerComplete(Climber.WantedState.CLIMB_3_LIFT_MORE)) {
                     mClimber.setWantedState(Climber.WantedState.CLIMB_4_ENGAGE_TRAV, sClassName);
@@ -526,9 +538,12 @@ public class Superstructure extends Subsystem {
                 }
                 break;
             case CLIMB_5_RELEASE_MID: // Done with climb
+                if (mClimber.isHandlerComplete(Climber.WantedState.CLIMB_5_RELEASE_MID)) {
+                    mClimber.setWantedState(Climber.WantedState.HOLD, sClassName);
+                }                
                 break;
             default:
-                System.out.println("Climber Exiting Auto Sequence!!!");
+                // System.out.println("Climber Exiting Auto Sequence!!!");
                 break;
         }
 
@@ -582,7 +597,7 @@ public class Superstructure extends Subsystem {
     }
 
     public void setManualShootDistance(double distance) {
-        System.out.println("setManualShootDistance "+distance);
+        // System.out.println("setManualShootDistance "+distance);
         mManualDistance = distance;
     }
 
