@@ -2,6 +2,7 @@ package frc.robot.autos;
 
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.autos.modes.BackOfTarmacTwoBallMode;
 import frc.robot.autos.modes.CitrusTwoBallMode;
 import frc.robot.autos.modes.DoNothingMode;
 import frc.robot.autos.modes.DriveBackwardMode;
@@ -25,8 +26,8 @@ public class AutoModeSelector {
         TWO_BALL_MODE,
         THREE_BALL_MODE,
         CITRUS_TWO_BALL_MODE,
-        FIVE_BALL_MODE,
-        BACK_OF_TARMAC_TWO_BALL_MODE
+        BACK_OF_TARMAC_TWO_BALL_MODE,
+        FIVE_BALL_MODE
     }
 
     private SendableChooser<DesiredMode> mModeChooser;
@@ -45,9 +46,8 @@ public class AutoModeSelector {
         mModeChooser.addOption("Two Ball Auto Mode", DesiredMode.TWO_BALL_MODE);
         mModeChooser.addOption("Three Ball Auto Mode", DesiredMode.THREE_BALL_MODE);
         mModeChooser.addOption("Citrus Two Ball Auto Mode", DesiredMode.CITRUS_TWO_BALL_MODE);
+        mModeChooser.addOption("Back of Tarmac 2 Ball Auto Mode", DesiredMode.BACK_OF_TARMAC_TWO_BALL_MODE);
         mModeChooser.addOption("Five Ball Auto Mode", DesiredMode.FIVE_BALL_MODE);
-        mModeChooser.addOption("Back of Tarmac Two Ball Auto Mode", DesiredMode.CITRUS_TWO_BALL_MODE);
-
 
         SmartDashboard.putData("Auto Mode", mModeChooser);
     }
@@ -84,6 +84,8 @@ public class AutoModeSelector {
                 return Optional.of(new ThreeBallMode());
             case CITRUS_TWO_BALL_MODE:
                 return Optional.of(new CitrusTwoBallMode());
+            case BACK_OF_TARMAC_TWO_BALL_MODE:
+                return Optional.of(new BackOfTarmacTwoBallMode());
             case FIVE_BALL_MODE:
                 return Optional.of(new FiveBallMode());
             default:
