@@ -27,8 +27,8 @@ public class PathBuilder {
         lastState = new PoseWithCurvatureAndOrientation(
                 new Pose2d(initialPosition, initialHeading),
                 0.0,
-                0.0,
                 initialHeading.getRadians(),
+                0.0,
                 0.0);
     }
 
