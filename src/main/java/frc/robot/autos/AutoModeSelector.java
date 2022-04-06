@@ -25,7 +25,8 @@ public class AutoModeSelector {
         TWO_BALL_MODE,
         THREE_BALL_MODE,
         CITRUS_TWO_BALL_MODE,
-        FIVE_BALL_MODE
+        FIVE_BALL_MODE,
+        BACK_OF_TARMAC_TWO_BALL_MODE
     }
 
     private SendableChooser<DesiredMode> mModeChooser;
@@ -43,8 +44,10 @@ public class AutoModeSelector {
         mModeChooser.addOption("Shoot One and Drive Backward", DesiredMode.SHOOT_ONE_AND_DRIVE_BACKWARD_MODE);
         mModeChooser.addOption("Two Ball Auto Mode", DesiredMode.TWO_BALL_MODE);
         mModeChooser.addOption("Three Ball Auto Mode", DesiredMode.THREE_BALL_MODE);
-        mModeChooser.addOption("Citrus TwoBall Auto Mode", DesiredMode.CITRUS_TWO_BALL_MODE);
+        mModeChooser.addOption("Citrus Two Ball Auto Mode", DesiredMode.CITRUS_TWO_BALL_MODE);
         mModeChooser.addOption("Five Ball Auto Mode", DesiredMode.FIVE_BALL_MODE);
+        mModeChooser.addOption("Back of Tarmac Two Ball Auto Mode", DesiredMode.CITRUS_TWO_BALL_MODE);
+
 
         SmartDashboard.putData("Auto Mode", mModeChooser);
     }

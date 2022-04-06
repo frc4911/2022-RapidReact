@@ -86,7 +86,7 @@ public class Superstructure extends Subsystem {
     private double mManualDistance;
     private boolean mStartedShooting;
     private String mShotCounterKey = "ShotCounter";
-    private final double kFenderShotIndexSpeed = 0.42;
+    private final double kFenderShotIndexSpeed = 0.4;
 
     private static String sClassName;
     private static int sInstanceCount;
