@@ -265,7 +265,7 @@ public class FramePeriodSwitch {
 
         } while (!error.equals(ErrorCode.OK) && retries-->0);
         if (error.equals(ErrorCode.OK)){
-            System.out.println("Successfully completed "+cmd+"(), time needed "+(Timer.getFPGATimestamp()-start));
+            // System.out.println("Successfully completed "+cmd+"(), time needed "+(Timer.getFPGATimestamp()-start));
         }
         else{
             System.out.println("Failed to "+cmd+"(), time needed "+(Timer.getFPGATimestamp()-start));
@@ -289,7 +289,7 @@ public class FramePeriodSwitch {
 
         } while (!error.equals(ErrorCode.OK) && retries-->0);
         if (error.equals(ErrorCode.OK)){
-            System.out.println("Successfully completed "+cmd+"(), time needed "+(Timer.getFPGATimestamp()-start));
+            // System.out.println("Successfully completed "+cmd+"(), time needed "+(Timer.getFPGATimestamp()-start));
         }
         else{
             System.out.println("Failed to "+cmd+"(), time needed "+(Timer.getFPGATimestamp()-start));
@@ -313,7 +313,7 @@ public class FramePeriodSwitch {
 
         } while (!error.equals(ErrorCode.OK) && retries-->0);
         if (error.equals(ErrorCode.OK)){
-            System.out.println("Successfully completed "+cmd+"(), time needed "+(Timer.getFPGATimestamp()-start));
+            // System.out.println("Successfully completed "+cmd+"(), time needed "+(Timer.getFPGATimestamp()-start));
         }
         else{
             System.out.println("Failed to "+cmd+"(), time needed "+(Timer.getFPGATimestamp()-start));
@@ -337,7 +337,7 @@ public class FramePeriodSwitch {
 
         } while (!error.equals(ErrorCode.OK) && retries-->0);
         if (error.equals(ErrorCode.OK)){
-            System.out.println("Successfully completed "+cmd+"(), time needed "+(Timer.getFPGATimestamp()-start));
+            // System.out.println("Successfully completed "+cmd+"(), time needed "+(Timer.getFPGATimestamp()-start));
         }
         else{
             System.out.println("Failed to "+cmd+"(), time needed "+(Timer.getFPGATimestamp()-start));
@@ -362,7 +362,7 @@ public class FramePeriodSwitch {
 
         } while (!error.equals(ErrorCode.OK) && retries-->0);
         if (error.equals(ErrorCode.OK)){
-            System.out.println("Successfully completed "+cmd+"(), time needed "+(Timer.getFPGATimestamp()-start));
+            // System.out.println("Successfully completed "+cmd+"(), time needed "+(Timer.getFPGATimestamp()-start));
         }
         else{
             System.out.println("Failed to "+cmd+"(), time needed "+(Timer.getFPGATimestamp()-start));

@@ -75,7 +75,7 @@ public class Superstructure extends Subsystem {
     private double mXOffset;
 
     private double mSwerveFeedforwardFromVision = 0.0;
-    double mSetPointInRadians;
+    private double mSetPointInRadians;
 
     private boolean mOverrideLimelightLEDs = false;
 
@@ -86,6 +86,7 @@ public class Superstructure extends Subsystem {
     private double mManualDistance;
     private boolean mStartedShooting;
     private String mShotCounterKey = "ShotCounter";
+    private final double kFenderShotIndexSpeed = 0.42;
 
     private static String sClassName;
     private static int sInstanceCount;
@@ -403,7 +404,7 @@ public class Superstructure extends Subsystem {
         
         if (mHasTarget) {
             
-            if (Double.isNaN(mSetPointInRadians)){
+            if (Double.isNaN(mSetPointInRadians) || mSwerve.isInAimingDeadzone()){
                 mSetPointInRadians = setPointInRadians;
             }
 
@@ -486,7 +487,7 @@ public class Superstructure extends Subsystem {
         if (mShooter.readyToShoot() && 
             !mIndexer.getWantedState().equals(Indexer.WantedState.FEED)) {
             if (mManualDistance == 0){
-                mIndexer.setTempFeedSpeed(.2);
+                mIndexer.setTempFeedSpeed(kFenderShotIndexSpeed);
             }
             mIndexer.setWantedState(Indexer.WantedState.FEED, sClassName);
             mPeriodicIO.shotCounter++;
