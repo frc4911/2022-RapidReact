@@ -62,6 +62,7 @@ public class Robot extends TimedRobot {
     private Collector mCollector;
     private RobotStateEstimator mRobotStateEstimator;
     private Limelight mLimelight;
+    private LEDCanifier mLEDCanifier;
 
     private AutoModeSelector mAutoModeSelector = new AutoModeSelector();
     private AutoModeExecutor mAutoModeExecutor;
@@ -87,6 +88,7 @@ public class Robot extends TimedRobot {
         mClimber = Climber.getInstance(mClassName);
         mCollector = Collector.getInstance(mClassName);
         mRobotStateEstimator = RobotStateEstimator.getInstance(mClassName);
+        mLEDCanifier = LEDCanifier.getInstance(mClassName);
         mLimelight = new Limelight(
                 RobotConfiguration.getRobotConfiguration(RobotName.name).getLimelightConfiguration(),
                 Constants.kLowRes1xZoom);
@@ -104,6 +106,7 @@ public class Robot extends TimedRobot {
                         mClimber,
                         mCollector,
                         mLimelight,
+                        mLEDCanifier,
                         mRobotStateEstimator));
 
         // ask each subsystem to register itself

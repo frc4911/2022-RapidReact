@@ -586,10 +586,10 @@ public class Shooter extends Subsystem {
         mFXHood.set(mPeriodicIO.hoodControlMode, mPeriodicIO.hoodDemand);
         mFXFlyLeft.set(mPeriodicIO.flyControlMode, mPeriodicIO.flyDemand);
         mFXFlyRight.set(mPeriodicIO.flyControlMode, mPeriodicIO.flyDemand);
-        if (mPhase != Phase.DISABLED){
-            System.out.println("writePer hood CDP ("+mPeriodicIO.hoodControlMode+","+mPeriodicIO.hoodDemand+","+mPeriodicIO.hoodPosition+") "+mSystemState.toString());
-            System.out.println("writePer fly  CDV ("+mPeriodicIO.flyControlMode+ ","+mPeriodicIO.flyDemand+ ","+mPeriodicIO.flyVelocity+ ") "+mSystemState.toString());
-        }
+        // if (mPhase != Phase.DISABLED){
+        //     System.out.println("writePer hood CDP ("+mPeriodicIO.hoodControlMode+","+mPeriodicIO.hoodDemand+","+mPeriodicIO.hoodPosition+") "+mSystemState.toString());
+        //     System.out.println("writePer fly  CDV ("+mPeriodicIO.flyControlMode+ ","+mPeriodicIO.flyDemand+ ","+mPeriodicIO.flyVelocity+ ") "+mSystemState.toString());
+        // }
     }
 
     @Override

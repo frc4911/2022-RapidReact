@@ -5,6 +5,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.constants.Ports;
 import frc.robot.limelight.LimelightManager;
+import frc.robot.subsystems.Collector.WantedState;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.subsystems.SubsystemManager;
@@ -24,6 +25,7 @@ public class Superstructure extends Subsystem {
     private final Climber mClimber;
     private final LimelightManager mLLManager = LimelightManager.getInstance();
     private final AnalogInput mAIPressureSensor;
+    private final LEDCanifier mLEDCanifier;
 
     // Superstructure States
     public enum SystemState {
@@ -113,6 +115,7 @@ public class Superstructure extends Subsystem {
         mCollector = Collector.getInstance(sClassName);
         mShooter = Shooter.getInstance(sClassName);
         mClimber = Climber.getInstance(sClassName);
+        mLEDCanifier = LEDCanifier.getInstance(sClassName);
         mAIPressureSensor = new AnalogInput(Ports.PRESSURE_SENSOR);
         initializeShotCounter();
     }
@@ -394,6 +397,7 @@ public class Superstructure extends Subsystem {
             mPeriodicIO.schedDeltaDesired = mFastCycle;
             mShooter.setWantedState(Shooter.WantedState.SHOOT, sClassName);
             mSetPointInRadians = Double.NaN;
+            mLEDCanifier.setLEDColor(0, .9, 0);
         }
         var setPointInRadians = getSwerveSetpointFromVision(timestamp);
         
@@ -423,6 +427,10 @@ public class Superstructure extends Subsystem {
                     }
                 }
             }
+        }
+
+        if (!mWantedState.equals(WantedState.AUTO_SHOOT)){
+            mLEDCanifier.setLEDColor(0, 0, 0);
         }
 
         return defaultStateTransfer();
