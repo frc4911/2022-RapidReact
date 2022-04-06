@@ -163,7 +163,7 @@ public class SubsystemManager implements ILooper {
                 }
                 // handle completely empty line and end of partial line 
                 for (int j=subsystemIndex; j<mSSCount; j++){
-                    mSSLogMngr.addToLine(mSSEmptyLog[subsystemIndex]);
+                    mSSLogMngr.addToLine(mSSEmptyLog[j]);
                 }
                 mSSLogMngr.endLine();
 

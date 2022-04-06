@@ -209,6 +209,7 @@ public class JSticks extends Subsystem {
             // Seems safest to disable heading controller if were resetting IMU.
             mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.OFF);
             mSwerve.setRobotPosition(Constants.kRobotStartingPose);
+            // mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.MAINTAIN); // Reenable heading controller?
         }
 
         if (mPeriodicIO.dr_StartButton_ResetWheels){
@@ -233,9 +234,10 @@ public class JSticks extends Subsystem {
                 mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
             } else if (mPeriodicIO.op_XButton_AutoClimb) {
                 mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_CLIMB, sClassName);
-            } // else if (mPeriodicIO.op_XButton_AutoClimb_Stop) {
-                // mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
-            // }
+            } 
+            else if (mPeriodicIO.op_XButton_AutoClimb_Stop) {
+                mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
+            }
 
         } else {
             if (mPeriodicIO.op_RightTrigger_Collect) {
@@ -312,21 +314,21 @@ public class JSticks extends Subsystem {
     }
 
     private SystemState handleReadingTestButtons() {
-        // if (mPeriodicIO.op_AButton_PreClimb){
-        //     mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_PRE_CLIMB, sClassName);
-        // }
+        if (mPeriodicIO.op_AButton_PreClimb){
+            mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_PRE_CLIMB, sClassName);
+        }
 
-        // if (mPeriodicIO.op_AButton_PreClimb_Stop){
-        //     mSuperstructure.setWantedState(Superstructure.WantedState.TEST, sClassName);
-        // }
+        if (mPeriodicIO.op_AButton_PreClimb_Stop){
+            mSuperstructure.setWantedState(Superstructure.WantedState.TEST, sClassName);
+        }
 
-        // if (mPeriodicIO.op_BackButton_TestHome){
-        //     mSuperstructure.setWantedState(Superstructure.WantedState.HOME, sClassName);
-        // }
+        if (mPeriodicIO.op_BackButton_TestHome){
+            mSuperstructure.setWantedState(Superstructure.WantedState.HOME, sClassName);
+        }
 
-        // if (mPeriodicIO.op_BackButton_TestHome_Stop){
-        //     mSuperstructure.setWantedState(Superstructure.WantedState.TEST, sClassName);
-        // }
+        if (mPeriodicIO.op_BackButton_TestHome_Stop){
+            mSuperstructure.setWantedState(Superstructure.WantedState.TEST, sClassName);
+        }
 
         mShooter.setMotorTestDemand(-mOperator.getRaw(Xbox.LEFT_STICK_Y), -mOperator.getRaw(Xbox.RIGHT_STICK_Y));
 
@@ -408,7 +410,7 @@ public class JSticks extends Subsystem {
         mPeriodicIO.op_AButton_PreClimb = mOperator.getButton(Xbox.A_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.op_AButton_PreClimb_Stop = mOperator.getButton(Xbox.A_BUTTON, CW.RELEASED_EDGE);
         mPeriodicIO.op_XButton_AutoClimb = mOperator.getButton(Xbox.X_BUTTON, CW.PRESSED_EDGE);
-        // mPeriodicIO.op_XButton_AutoClimb_Stop = mOperator.getButton(Xbox.X_BUTTON, CW.RELEASED_EDGE);
+        mPeriodicIO.op_XButton_AutoClimb_Stop = mOperator.getButton(Xbox.X_BUTTON, CW.RELEASED_EDGE);
         // mPeriodicIO.op_YButton_ResetClimb = mOperator.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE); // Unused
 
         mPeriodicIO.op_BackButton_TestHome = mOperator.getButton(Xbox.BACK_BUTTON, CW.PRESSED_EDGE);

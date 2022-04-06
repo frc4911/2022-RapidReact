@@ -214,8 +214,8 @@ public class Swerve extends Subsystem {
         }
     }
 
-    SlewRateLimiter forwardLimiter = new SlewRateLimiter(1.5, 0);
-    SlewRateLimiter strafeLimiter = new SlewRateLimiter(1.5, 0);
+    SlewRateLimiter forwardLimiter = new SlewRateLimiter(2.0, 0); // 1.5
+    SlewRateLimiter strafeLimiter = new SlewRateLimiter(2.0, 0); // 1.5
     SlewRateLimiter rotationLimiter = new SlewRateLimiter(2, 0);
 
     /**
@@ -308,7 +308,7 @@ public class Swerve extends Subsystem {
         if (dt > Util.kEpsilon) {
             mAimingHeaderController.setGoal(Math.toDegrees(mPeriodicIO.visionSetpointInRadians));
             var rotation = mAimingHeaderController.update();
-            
+
 
             // Apply a minimum constant rotation velocity to overcome friction.
             // TODO:  Create constants for these
@@ -318,12 +318,16 @@ public class Swerve extends Subsystem {
             if (Math.abs(rotation)<.15){
                 rotation = Math.copySign(.15, rotation);
             }
-             
+
+            // if (Math.abs(rotation)<.15){
+            //     rotation = Math.copySign(.15, rotation);
+            // }
+            // System.out.println("rot:"+rotation);
             // System.out.println("Swerve.handleAiming() setpoint: "+(((int)(10.0*Math.toDegrees(mPeriodicIO.visionSetpointInRadians)))/10)+ " rotation: "+rotation);
             // Turn in place implies no translational velocity.
             HolonomicDriveSignal driveSignal = new HolonomicDriveSignal(
                     Translation2d.identity(),
-                    rotation,
+                    rotation * 2.5,
                     true);
 
             updateModules(driveSignal);
@@ -365,7 +369,11 @@ public class Swerve extends Subsystem {
             System.out.println(mControlState + " to " + newState);
             switch (newState) {
                 case NEUTRAL:
-                   mPeriodicIO.forward= 0.0;
+                    // mPeriodicIO.strafe = 0;
+                    // mPeriodicIO.forward = 0;
+                    // mPeriodicIO.rotation = 0;
+                    // stopSwerveDriveModules();
+                    mPeriodicIO.forward= 0.0;
                     mPeriodicIO.strafe = 0.0;
                     mPeriodicIO.rotation = 0.0;
                     mPeriodicIO.visionSetpointInRadians = getHeading().getRadians();
@@ -480,7 +488,8 @@ public class Swerve extends Subsystem {
 
     /**
      * Configure modules for open loop control
-     *
+     * <p>
+     * 
      * @param signal The HolonomicDriveSignal to apply
      */
     public synchronized void setOpenLoop(HolonomicDriveSignal signal) {
@@ -493,7 +502,8 @@ public class Swerve extends Subsystem {
 
     /**
      * Configure modules for path following.
-     *
+     * <p>
+     * 
      * @param signal The HolonomicDriveSignal to apply
      */
     public synchronized void setPathFollowingVelocity(HolonomicDriveSignal signal) {
@@ -525,12 +535,10 @@ public class Swerve extends Subsystem {
 
     /**
      * Zeroes the drive motors, and sets the robot's internal position and heading
-     * to match that of the field pose
+     * to match that of the fed pose
      *
      * DO NOT use this to reset the IMU mid match. Use
      * {@link #setRobotPosition(Pose2d)} for that purpose.
-     *
-     * @param  startingPose The starting pose.
      */
     public synchronized void zeroSensors(Pose2d startingPose) {
         setRobotPosition(startingPose);
@@ -558,10 +566,14 @@ public class Swerve extends Subsystem {
 
     /**
      * Sets inputs from driver in teleop mode.
-     *
-     * @param forward                percent to drive forwards/backwards (as double [-1.0,1.0]).
-     * @param strafe                 percent to drive sideways left/right (as double [-1.0,1.0]).
-     * @param rotation               percent to rotate chassis (as double [-1.0,1.0]).
+     * <p>
+     * 
+     * @param forward                percent to drive forwards/backwards (as double
+     *                               [-1.0,1.0]).
+     * @param strafe                 percent to drive sideways left/right (as double
+     *                               [-1.0,1.0]).
+     * @param rotation               percent to rotate chassis (as double
+     *                               [-1.0,1.0]).
      * @param low_power              whether to use low or high power.
      * @param field_relative         whether operation is robot centric or field
      *                               relative.
@@ -587,7 +599,10 @@ public class Swerve extends Subsystem {
         headers =   sClassName + ".schedDeltaDesired," +
                     sClassName + ".schedDeltaActual," +
                     sClassName + ".schedDuration," +
-                    sClassName + ".gyro_heading,";
+                    sClassName + ".gyro_heading," +
+                    sClassName + ".robotPoseX," +
+                    sClassName + ".robotPoseY," +
+                    sClassName + ".robotPoseHeading,";
 
                     headers += mModules.get(0).getLogHeaders()+",";
                     headers += mModules.get(1).getLogHeaders()+",";
@@ -609,6 +624,9 @@ public class Swerve extends Subsystem {
         }
 
         values += mPeriodicIO.gyro_heading.getDegrees()+",";
+        values += mPeriodicIO.robotPose.getTranslation().x()+",";
+        values += mPeriodicIO.robotPose.getTranslation().y()+",";
+        values += mPeriodicIO.robotPose.getRotation().getDegrees()+",";
         values += mModules.get(0).getLogValues(telemetry)+",";
         values += mModules.get(1).getLogValues(telemetry)+",";
         values += mModules.get(2).getLogValues(telemetry)+",";
@@ -649,7 +667,7 @@ public class Swerve extends Subsystem {
 
     @Override
     public void outputTelemetry() {
-        // mModules.forEach((m) -> m.outputTelemetry());
+        mModules.forEach((m) -> m.outputTelemetry());
         // SmartDashboard.putString("Swerve/Swerve State", mControlState.toString());
         // SmartDashboard.putString("Swerve/Pose", mPeriodicIO.robotPose.toString());
         // SmartDashboard.putString("Swerve/Chassis Speeds", mPeriodicIO.chassisSpeeds.toString());

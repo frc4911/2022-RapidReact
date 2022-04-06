@@ -70,6 +70,9 @@ public class SwerveDriveModule extends Subsystem {
         mCANCoder = new CANCoder(constants.kCANCoderId, Constants.kCanivoreName);
         configCancoder();
         configureMotors();
+
+        System.out.println("Be sure to reset convertCancoderToFX2() call before DCMP's");
+        convertCancoderToFX2(true);
     }
 
     private void configCancoder(){
@@ -95,9 +98,6 @@ public class SwerveDriveModule extends Subsystem {
         commonMotorConfig(mDriveMotor, "Drive");
         commonMotorConfig(mSteerMotor, "Steer");
 
-        System.out.println("Be sure to reset convertCancoderToFX2() call before DCMP's");
-        convertCancoderToFX2(true);
-        
         mSteerMotor.setInverted(mConfig.kInvertSteerMotor);
         mSteerMotor.configMotionAcceleration(0.9 * mConfig.kSteerTicksPerUnitVelocity * 0.25, Constants.kLongCANTimeoutMs);
         mSteerMotor.configMotionCruiseVelocity(0.9 * mConfig.kSteerTicksPerUnitVelocity,Constants.kLongCANTimeoutMs);
@@ -165,15 +165,15 @@ public class SwerveDriveModule extends Subsystem {
                             break;
                         }
                     }
-                    System.out.println(limit+" ("+mModuleName+")"+": CANCoder last frame timestamp = "+ frameTimestamp + 
-                                        " current time = "+Timer.getFPGATimestamp() +" pos="+position);
+                    // System.out.println(limit+" ("+mModuleName+")"+": CANCoder last frame timestamp = "+ frameTimestamp + 
+                    //                     " current time = "+Timer.getFPGATimestamp() +" pos="+position);
                     lastFrameTimestamp = frameTimestamp;
                 }
                 Timer.delay(.1);
 
             } while (!allDone && (limit-- > 0));
             
-            System.out.println(mModuleName+": allDone "+Arrays.toString(cancoderPositions));
+            // System.out.println(mModuleName+": allDone "+Arrays.toString(cancoderPositions));
             cancoderDegrees = cancoderPositions[0];
         }
         else{
@@ -420,10 +420,10 @@ public class SwerveDriveModule extends Subsystem {
 
     @Override
     public synchronized void readPeriodicInputs() {
-        mPeriodicIO.steerPosition = (int) mSteerMotor.getSelectedSensorPosition(0);
-        mPeriodicIO.drivePosition = (int) mDriveMotor.getSelectedSensorPosition(0);
-        mPeriodicIO.driveVelocity = mDriveMotor.getSelectedSensorVelocity(0);
-        mPeriodicIO.steerVelocity = mSteerMotor.getSelectedSensorVelocity(0);
+        mPeriodicIO.steerPosition = (int) mSteerMotor.getSelectedSensorPosition();
+        mPeriodicIO.drivePosition = (int) mDriveMotor.getSelectedSensorPosition();
+        mPeriodicIO.driveVelocity = mDriveMotor.getSelectedSensorVelocity();
+        mPeriodicIO.steerVelocity = mSteerMotor.getSelectedSensorVelocity();
         // mPeriodicIO.steerError = mSteerMotor.getClosedLoopError(0);
     }
 
@@ -453,14 +453,13 @@ public class SwerveDriveModule extends Subsystem {
         mPeriodicIO.driveCurrent = FramePeriodSwitch.getStatorCurrent(mDriveMotor);
         // SmartDashboard.putNumber(mModuleName + "Steer velocity",
         // mSteerMotor.getSelectedSensorVelocity(0));
-        // SmartDashboard.putNumber(mModuleName + "Steer (cancoder)",
-        // enc.getAbsolutePosition()-cancoderOffsetDegrees);
-        // SmartDashboard.putNumber(mModuleName + " cancoder",
-        // mCANCoder.getAbsolutePosition());
+        // SmartDashboard.putNumber(mModuleName + "Steer (cancoder)",enc.getAbsolutePosition()-cancoderOffsetDegrees);
+        SmartDashboard.putNumber(mModuleName + " cancoder abs",mCANCoder.getAbsolutePosition());
+        SmartDashboard.putNumber(mModuleName + " cancoder reg",mCANCoder.getPosition());
         // SmartDashboard.putNumber(mModuleName + " steerDemand",
         // mPeriodicIO.steerDemand);
-        // SmartDashboard.putNumber(mModuleName + " steerPosition",
-        // mPeriodicIO.steerPosition);
+        SmartDashboard.putNumber(mModuleName + " steerPosition", mPeriodicIO.steerPosition);
+        SmartDashboard.putNumber(mModuleName + " drivePosition", mPeriodicIO.drivePosition);
         // SmartDashboard.putNumber(mModuleName + " driveDemand",
         // mPeriodicIO.driveDemand);
         // SmartDashboard.putNumber(mModuleName + "Steer", periodicIO.drivePosition);

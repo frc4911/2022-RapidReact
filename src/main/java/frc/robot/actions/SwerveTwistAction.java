@@ -8,20 +8,19 @@ public class SwerveTwistAction implements Action {
 
 	private String sClassName;
 	private Swerve mSwerve;
-    private double timeout;
-	private double duration;
+	private double heading;
+	private double error;
 	private double speed;
 
-	public SwerveTwistAction(double speed, double duration) {
+	public SwerveTwistAction(double heading) {
 		sClassName = this.getClass().getSimpleName();
 		mSwerve = Swerve.getInstance(sClassName);
-		this.speed = speed;
-		this.duration = duration;
+		this.heading = heading;
 	}
 
 	@Override
 	public boolean isFinished() {
-		if (Timer.getFPGATimestamp() > timeout){
+		if (Math.abs(error) <= 1.5){
 			return true;
 		}
 		return false;
@@ -29,11 +28,13 @@ public class SwerveTwistAction implements Action {
 
 	@Override
 	public void start() {
-		timeout = Timer.getFPGATimestamp()+duration;
+		error = heading - mSwerve.getHeading().getDegrees();
+		speed = Math.copySign(0.7, error);
 	}
 
 	@Override
 	public void update() {
+		error = heading - mSwerve.getHeading().getDegrees();
         mSwerve.setTeleopInputs(0, 0, speed, false, false, false);
 	}
 

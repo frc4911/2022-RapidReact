@@ -3,9 +3,9 @@ package frc.robot.subsystems;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.robot.RobotState;
 import frc.robot.constants.Ports;
 import frc.robot.limelight.LimelightManager;
+import frc.robot.subsystems.Collector.WantedState;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.subsystems.SubsystemManager;
@@ -25,9 +25,11 @@ public class Superstructure extends Subsystem {
     private final Climber mClimber;
     private final LimelightManager mLLManager = LimelightManager.getInstance();
     private final AnalogInput mAIPressureSensor;
+    private final LEDCanifier mLEDCanifier;
 
     // Superstructure States
     public enum SystemState {
+        ASSESSING,
         DISABLING,
         HOLDING,
         TESTING,
@@ -41,6 +43,7 @@ public class Superstructure extends Subsystem {
     }
 
     public enum WantedState {
+        ASSESS,
         DISABLE,
         HOLD,
         TEST,
@@ -51,6 +54,14 @@ public class Superstructure extends Subsystem {
         AUTO_PRE_CLIMB,
         AUTO_CLIMB,
         HOME
+    }
+
+    public enum AssessingState {
+        COLLECTOR,
+        INDEXER,
+        SHOOTER,
+        CLIMBER,
+        SWERVE
     }
 
     private SystemState mSystemState;
@@ -64,10 +75,9 @@ public class Superstructure extends Subsystem {
     private double mXOffset;
 
     private double mSwerveFeedforwardFromVision = 0.0;
-
+    double mSetPointInRadians;
 
     private boolean mOverrideLimelightLEDs = false;
-
 
     private final PeriodicIO mPeriodicIO = new PeriodicIO();
     private int mFastCycle = 20;
@@ -75,6 +85,7 @@ public class Superstructure extends Subsystem {
 
     private double mManualDistance;
     private boolean mStartedShooting;
+    private String mShotCounterKey = "ShotCounter";
 
     private static String sClassName;
     private static int sInstanceCount;
@@ -104,7 +115,19 @@ public class Superstructure extends Subsystem {
         mCollector = Collector.getInstance(sClassName);
         mShooter = Shooter.getInstance(sClassName);
         mClimber = Climber.getInstance(sClassName);
+        mLEDCanifier = LEDCanifier.getInstance(sClassName);
         mAIPressureSensor = new AnalogInput(Ports.PRESSURE_SENSOR);
+        initializeShotCounter();
+    }
+
+    private void initializeShotCounter(){
+        int temp = (int) SmartDashboard.getNumber(mShotCounterKey,-1);
+        if (temp == -1){
+            SmartDashboard.putNumber(mShotCounterKey, mPeriodicIO.shotCounter);
+        }
+        else{
+            mPeriodicIO.shotCounter = temp;
+        }
     }
 
     @Override
@@ -135,6 +158,8 @@ public class Superstructure extends Subsystem {
             do {
                 SystemState newState = null;
                 switch (mSystemState) {
+                    case ASSESSING:
+                        newState = handleAssessing();
                     case COLLECTING:
                         newState = handleCollecting();
                         break;
@@ -179,7 +204,99 @@ public class Superstructure extends Subsystem {
         }
     }
 
+    AssessingState currentAssessingState = null;
+    boolean assessingStateChange = false;
+    double assessingStopTime;
+    double assessingSwervePhase1Timeout;
+    double assessingSwervePhase2Timeout;
+
     // Handling methods
+    private SystemState handleAssessing(){
+        double now = Timer.getFPGATimestamp();
+
+        if (mStateChanged) {
+            if (!mOverrideLimelightLEDs) {
+                mLLManager.getLimelight().setLed(Limelight.LedMode.PIPELINE);
+            }
+            currentAssessingState = AssessingState.COLLECTOR;
+            assessingStateChange = true;
+            mPeriodicIO.schedDeltaDesired = mFastCycle;
+        }
+
+        switch (currentAssessingState){
+            case COLLECTOR:
+                if (assessingStateChange){
+                    assessingStateChange = false;
+                    mCollector.setWantedState(Collector.WantedState.ASSESS, sClassName);
+                }
+
+                if(mCollector.isHandlerComplete(Collector.WantedState.ASSESS)){
+                    mCollector.setWantedState(Collector.WantedState.DISABLE, sClassName);
+                    assessingStateChange = true;
+                    currentAssessingState = AssessingState.INDEXER;
+                }
+                break;
+            case INDEXER:
+                if (assessingStateChange){
+                    assessingStateChange = false;
+                    mIndexer.setWantedState(Indexer.WantedState.ASSESS, sClassName);
+                }
+
+                if(mIndexer.isHandlerComplete(Indexer.WantedState.ASSESS)){
+                    mIndexer.setWantedState(Indexer.WantedState.DISABLE, sClassName);
+                    assessingStateChange = true;
+                    currentAssessingState = AssessingState.SHOOTER;
+                }
+                break;
+            case SHOOTER:
+                if (assessingStateChange){
+                    assessingStateChange = false;
+                    mShooter.setWantedState(Shooter.WantedState.ASSESS, sClassName);
+                }
+
+                if(mShooter.isHandlerComplete(Shooter.WantedState.ASSESS)){
+                    mShooter.setWantedState(Shooter.WantedState.DISABLE, sClassName);
+                    assessingStateChange = true;
+                    currentAssessingState = AssessingState.CLIMBER;
+                }
+                break;
+            case CLIMBER:
+                if (assessingStateChange){
+                    assessingStateChange = false;
+                    mClimber.setWantedState(Climber.WantedState.ASSESS, sClassName);
+                }
+
+                if(mClimber.isHandlerComplete(Climber.WantedState.ASSESS)){
+                    mClimber.setWantedState(Climber.WantedState.DISABLE, sClassName);
+                    assessingStateChange = true;
+                    currentAssessingState = AssessingState.SWERVE;
+                }
+                break;
+            case SWERVE:
+                if (assessingStateChange){
+                    assessingStateChange = false;
+                    assessingSwervePhase1Timeout = now+.25;
+                    assessingSwervePhase2Timeout = now + 20000; // set to far in the future
+                    mSwerve.setTeleopInputs(.1, 0, .1, false, false, false);
+                    // mSwerve.savePosition();
+                }
+
+                if(now > assessingSwervePhase1Timeout){
+                    assessingSwervePhase2Timeout = now+.25;
+                    mSwerve.setTeleopInputs(.2, 0, .2, false, false, false);
+                }
+
+                if (now>assessingSwervePhase2Timeout){
+                    assessingSwervePhase2Timeout += 20000; // far in the future
+                    // mSwerve.savePosition; Add prints for all 8 motors
+                }
+                break;
+
+        }
+
+        return defaultStateTransfer();
+    }
+
     private SystemState handleDisabling() {
         if (mStateChanged) {
             if (!mOverrideLimelightLEDs) {
@@ -270,7 +387,6 @@ public class Superstructure extends Subsystem {
         return defaultStateTransfer();
     }
 
-     double mSetPointInRadians;
     private SystemState handleAutoShooting(double timestamp) {
         if (mStateChanged) {
             
@@ -281,6 +397,7 @@ public class Superstructure extends Subsystem {
             mPeriodicIO.schedDeltaDesired = mFastCycle;
             mShooter.setWantedState(Shooter.WantedState.SHOOT, sClassName);
             mSetPointInRadians = Double.NaN;
+            mLEDCanifier.setLEDColor(0, .9, 0);
         }
         var setPointInRadians = getSwerveSetpointFromVision(timestamp);
         
@@ -297,10 +414,11 @@ public class Superstructure extends Subsystem {
 
             // Shoot while aiming
             if (mOnTarget || mStartedShooting) {
-                // mSwerve.stop();
+                mSwerve.stop();
                 if (mShooter.readyToShoot() || mStartedShooting) {
                     if (mIndexer.getWantedState() != Indexer.WantedState.FEED) {
                         mIndexer.setWantedState(Indexer.WantedState.FEED, sClassName);
+                        mPeriodicIO.shotCounter++;
                     }
                     mStartedShooting = true;
                 } else {
@@ -309,6 +427,10 @@ public class Superstructure extends Subsystem {
                     }
                 }
             }
+        }
+
+        if (!mWantedState.equals(WantedState.AUTO_SHOOT)){
+            mLEDCanifier.setLEDColor(0, 0, 0);
         }
 
         return defaultStateTransfer();
@@ -338,7 +460,7 @@ public class Superstructure extends Subsystem {
         else {
             mHasTarget = false;
             mOnTarget = false;
-            System.out.println("Superstruct no aimingParameters");
+            // System.out.println("Superstruct no aimingParameters");
 
             return mSwerve.getHeading().getRadians();
         }
@@ -363,7 +485,11 @@ public class Superstructure extends Subsystem {
         // now only do something if shooter is ready and we have not already started shooting
         if (mShooter.readyToShoot() && 
             !mIndexer.getWantedState().equals(Indexer.WantedState.FEED)) {
+            if (mManualDistance == 0){
+                mIndexer.setTempFeedSpeed(.2);
+            }
             mIndexer.setWantedState(Indexer.WantedState.FEED, sClassName);
+            mPeriodicIO.shotCounter++;
         }
 
         // everything is put into hold when the state changes
@@ -386,34 +512,37 @@ public class Superstructure extends Subsystem {
                 mLLManager.getLimelight().setLed(Limelight.LedMode.OFF);
             }
             mPeriodicIO.schedDeltaDesired = mFastCycle;
-            mClimber.setWantedState(Climber.WantedState.CLIMB_1_LIFT, sClassName);
+            mClimber.setWantedState(Climber.WantedState.CLIMB_3_LIFT_MORE, sClassName);
         }
 
         switch(mClimber.getWantedState()) {
-            case CLIMB_1_LIFT:
-                if (mClimber.isClimbingStageDone(Climber.WantedState.CLIMB_1_LIFT)) {
-                    mClimber.setWantedState(Climber.WantedState.CLIMB_2_ROTATE_UP, sClassName);
-                }
-                break;
-            case CLIMB_2_ROTATE_UP:
-                if (mClimber.isClimbingStageDone(Climber.WantedState.CLIMB_2_ROTATE_UP)) {
-                    mClimber.setWantedState(Climber.WantedState.CLIMB_3_LIFT_MORE, sClassName);
-                }
-                break;
+            // case CLIMB_1_LIFT:
+            //     if (mClimber.isHandlerComplete(Climber.WantedState.CLIMB_1_LIFT)) {
+            //         mClimber.setWantedState(Climber.WantedState.CLIMB_2_ROTATE_UP, sClassName);
+            //     }
+            //     break;
+            // case CLIMB_2_ROTATE_UP:
+            //     if (mClimber.isHandlerComplete(Climber.WantedState.CLIMB_2_ROTATE_UP)) {
+            //         mClimber.setWantedState(Climber.WantedState.CLIMB_3_LIFT_MORE, sClassName);
+            //     }
+            //     break;
             case CLIMB_3_LIFT_MORE:
-                if (mClimber.isClimbingStageDone(Climber.WantedState.CLIMB_3_LIFT_MORE)) {
+                if (mClimber.isHandlerComplete(Climber.WantedState.CLIMB_3_LIFT_MORE)) {
                     mClimber.setWantedState(Climber.WantedState.CLIMB_4_ENGAGE_TRAV, sClassName);
                 }
                 break;
             case CLIMB_4_ENGAGE_TRAV:
-                if (mClimber.isClimbingStageDone(Climber.WantedState.CLIMB_4_ENGAGE_TRAV)) {
+                if (mClimber.isHandlerComplete(Climber.WantedState.CLIMB_4_ENGAGE_TRAV)) {
                     mClimber.setWantedState(Climber.WantedState.CLIMB_5_RELEASE_MID, sClassName);
                 }
                 break;
             case CLIMB_5_RELEASE_MID: // Done with climb
+                if (mClimber.isHandlerComplete(Climber.WantedState.CLIMB_5_RELEASE_MID)) {
+                    mClimber.setWantedState(Climber.WantedState.HOLD, sClassName);
+                }                
                 break;
             default:
-                System.out.println("Climber Exiting Auto Sequence!!!");
+                // System.out.println("Climber Exiting Auto Sequence!!!");
                 break;
         }
 
@@ -422,6 +551,8 @@ public class Superstructure extends Subsystem {
 
     private SystemState defaultStateTransfer() {
         switch (mWantedState) {
+            case ASSESS:
+                return SystemState.ASSESSING;
             case DISABLE:
                 return SystemState.DISABLING;
             case TEST:
@@ -465,7 +596,7 @@ public class Superstructure extends Subsystem {
     }
 
     public void setManualShootDistance(double distance) {
-        System.out.println("setManualShootDistance "+distance);
+        // System.out.println("setManualShootDistance "+distance);
         mManualDistance = distance;
     }
 
@@ -553,6 +684,7 @@ public class Superstructure extends Subsystem {
                 sClassName+".mYOffset,"+
                 sClassName+".mManualDistance,"+
                 sClassName+".mStartedShooting,"+
+                sClassName+".ShotCounter,"+
                 sClassName+".pressure";
     }
 
@@ -575,6 +707,7 @@ public class Superstructure extends Subsystem {
         mYOffset+","+
         mManualDistance+","+
         mStartedShooting+","+
+        mPeriodicIO.shotCounter+","+
         mPeriodicIO.pressure;
     }
 
@@ -588,6 +721,8 @@ public class Superstructure extends Subsystem {
         private int schedDeltaDesired;
         public double schedDeltaActual;
         private double lastSchedStart;
+
+        private int shotCounter;
 
         // Inputs
         private double pressure;
