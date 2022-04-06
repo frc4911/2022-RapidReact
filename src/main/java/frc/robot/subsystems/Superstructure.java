@@ -86,7 +86,7 @@ public class Superstructure extends Subsystem {
     private double mManualDistance;
     private boolean mStartedShooting;
     private String mShotCounterKey = "ShotCounter";
-    private final double kFenderShotIndexSpeed = 0.42;
+    private final double kFenderShotIndexSpeed = 0.4;
 
     private static String sClassName;
     private static int sInstanceCount;
@@ -599,15 +599,6 @@ public class Superstructure extends Subsystem {
     public void setManualShootDistance(double distance) {
         // System.out.println("setManualShootDistance "+distance);
         mManualDistance = distance;
-    }
-
-    public void setOpenLoopClimb(double climbSpeed, int deploySlappyState) {
-        // mClimber.setClimbSpeed(climbSpeed);
-        // if (deploySlappyState == 0) {
-        //     mClimber.setSlappyStickState(true);
-        // } else if (deploySlappyState == 1) {
-        //     mClimber.setSlappyStickState(false);
-        // }
     }
 
     // used in auto

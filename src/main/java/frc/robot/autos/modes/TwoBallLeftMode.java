@@ -15,6 +15,7 @@ public class TwoBallLeftMode extends AutoModeBase{
 
     @Override
     protected void routine() throws AutoModeEndedException {
+        
         runAction(new ManualShootAction(0, 3));
         runAction(new CollectAction(true));
         runAction(new DriveTrajectoryAction(TrajectoryGenerator.getInstance().getTrajectorySet().twoBallAuto_toBallTrajectory.left));

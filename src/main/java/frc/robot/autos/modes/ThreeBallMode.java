@@ -14,6 +14,7 @@ import libraries.cheesylib.geometry.Translation2d;
 import libraries.cheesylib.util.Units;
 
 public class ThreeBallMode extends AutoModeBase{
+
     @Override
     protected void routine() throws AutoModeEndedException {
         // start
@@ -38,4 +39,5 @@ public class ThreeBallMode extends AutoModeBase{
         runAction(new ManualShootAction(15, 5));
         runAction(new SetPoseAction(startPose, true));
     }
+    
 }

@@ -15,10 +15,8 @@ public class TestTrajectoryFollowingMode extends AutoModeBase {
     @Override
     protected void routine() throws AutoModeEndedException {
         
-        ArrayList<Action> list1 = new ArrayList<Action>();
-        list1.add(new SwerveTwistAction(90));
-        list1.add(new DriveTrajectoryAction(TrajectoryGenerator.getInstance().getTrajectorySet().testTrajectory.left, false));
-        runAction(new SwerveTwistAction(90));
-        runAction(new DriveTrajectoryAction(TrajectoryGenerator.getInstance().getTrajectorySet().testTrajectory.left, false));
+        runAction(new SwerveTwistAction(90, true));
+        runAction(new SwerveTwistAction(90, false));
+
     }
 }
