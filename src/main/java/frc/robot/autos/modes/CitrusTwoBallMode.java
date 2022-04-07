@@ -5,7 +5,7 @@ import frc.robot.actions.BackAction;
 import frc.robot.actions.CollectAction;
 import frc.robot.actions.DriveTrajectoryAction;
 import frc.robot.actions.SetPoseAction;
-import frc.robot.actions.SwerveTwistAction;
+import frc.robot.actions.TwistAction;
 import frc.robot.paths.TrajectoryGenerator;
 import libraries.cheesylib.autos.AutoModeBase;
 import libraries.cheesylib.autos.AutoModeEndedException;
@@ -20,21 +20,21 @@ public class CitrusTwoBallMode extends AutoModeBase{
     protected void routine() throws AutoModeEndedException {
                 
         TrajectoryGenerator generator = TrajectoryGenerator.getInstance();
-        Pose2d startPose = new Pose2d(new Translation2d(0, 0), Rotation2d.fromDegrees(0));
+        Pose2d startPose = new Pose2d(new Translation2d(0, 0), Rotation2d.fromDegrees(-43.5)); // 316.5?
 
         runAction(new CollectAction(true));
         runAction(new DriveTrajectoryAction(generator.getTrajectorySet().citrusTwoBallAuto0Trajectory.left, false));
         runAction(new CollectAction(false));
         runAction(new AutoShootAction(5));
-        runAction(new SwerveTwistAction(90, false));
+        runAction(new TwistAction(90, true));
         runAction(new CollectAction(true));
         runAction(new DriveTrajectoryAction(generator.getTrajectorySet().citrusTwoBallAuto1Trajectory.left, false));
         runAction(new CollectAction(false));
-        runAction(new SwerveTwistAction(180, true));
+        runAction(new TwistAction(-90, false));
         runAction(new CollectAction(true));
         runAction(new DriveTrajectoryAction(generator.getTrajectorySet().citrusTwoBallAuto2Trajectory.left, false));
         runAction(new CollectAction(false));
-        runAction(new SwerveTwistAction(120, false));
+        runAction(new TwistAction(43.5, true));
         runAction(new BackAction(true));
         runAction(new WaitAction(2));
         runAction(new BackAction(false));
