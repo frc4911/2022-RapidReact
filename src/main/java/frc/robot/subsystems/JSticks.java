@@ -235,9 +235,10 @@ public class JSticks extends Subsystem {
             } else if (mPeriodicIO.op_XButton_AutoClimb) {
                 mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_CLIMB, sClassName);
             } 
-            else if (mPeriodicIO.op_XButton_AutoClimb_Stop) {
-                mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
-            }
+            // else if (mPeriodicIO.op_YButton_MidBarClimb) {
+            //     mSuperstructure.setLastClimbState(Climber.WantedState.CLIMB_3_LIFT_MORE);
+            //     mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_CLIMB, sClassName);
+            // }
 
         } else {
             if (mPeriodicIO.op_RightTrigger_Collect) {
@@ -410,8 +411,8 @@ public class JSticks extends Subsystem {
         mPeriodicIO.op_AButton_PreClimb = mOperator.getButton(Xbox.A_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.op_AButton_PreClimb_Stop = mOperator.getButton(Xbox.A_BUTTON, CW.RELEASED_EDGE);
         mPeriodicIO.op_XButton_AutoClimb = mOperator.getButton(Xbox.X_BUTTON, CW.PRESSED_EDGE);
-        mPeriodicIO.op_XButton_AutoClimb_Stop = mOperator.getButton(Xbox.X_BUTTON, CW.RELEASED_EDGE);
-        // mPeriodicIO.op_YButton_ResetClimb = mOperator.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE); // Unused
+        // mPeriodicIO.op_XButton_AutoClimb_Stop = mOperator.getButton(Xbox.X_BUTTON, CW.RELEASED_EDGE);
+        mPeriodicIO.op_YButton_MidBarClimb = mOperator.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
 
         mPeriodicIO.op_BackButton_TestHome = mOperator.getButton(Xbox.BACK_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.op_BackButton_TestHome_Stop = mOperator.getButton(Xbox.BACK_BUTTON, CW.RELEASED_EDGE);
@@ -485,15 +486,16 @@ public class JSticks extends Subsystem {
                 sClassName+".dr_StartButton_ResetWheels,"+
                 sClassName+".dr_XButton_HomeHood,"+
                 sClassName+".dr_XButton_HomeHood_Stop,"+
-                sClassName+".op_LeftStickY_TestMidArms,"+
                 sClassName+".op_RightTrigger_Collect,"+
                 sClassName+".op_RightTrigger_Collect_Stop,"+
                 sClassName+".op_LeftTrigger_Back,"+
                 sClassName+".op_LeftTrigger_Back_Stop,"+
                 sClassName+".op_BButton_StopShooter,"+
-                sClassName+".op_AButton_ClimberLockout,"+
-                sClassName+".op_LeftBumper_RetractSlappySticks,"+
-                sClassName+".op_RightBumper_ExtendSlappySticks,"+
+
+                sClassName+".op_LeftBumper_ClimberLockout,"+
+                sClassName+".op_XButton_AutoClimb,"+
+                sClassName+".op_YButton_MidBarClimb,"+
+                sClassName+".op_AButton_PreClimb,"+
                 sClassName+".op_POV0_ManualShot_Fender,"+
                 sClassName+".op_POV90_ManualShot_Ball,"+
                 sClassName+".op_POV180_ManualShot_Robot,"+
@@ -529,7 +531,6 @@ public class JSticks extends Subsystem {
         mPeriodicIO.dr_StartButton_ResetWheels+","+
         mPeriodicIO.dr_XButton_HomeHood+","+
         mPeriodicIO.dr_XButton_HomeHood_Stop+","+
-        mPeriodicIO.op_LeftStickY_TestMidArms+","+
         mPeriodicIO.op_RightTrigger_Collect+","+
         mPeriodicIO.op_RightTrigger_Collect_Stop+","+
         mPeriodicIO.op_LeftTrigger_Back+","+
@@ -537,6 +538,7 @@ public class JSticks extends Subsystem {
         mPeriodicIO.op_BButton_StopShooter+","+
         mPeriodicIO.op_LeftBumper_ClimberLockout+","+
         mPeriodicIO.op_XButton_AutoClimb+","+
+        mPeriodicIO.op_YButton_MidBarClimb+","+
         mPeriodicIO.op_AButton_PreClimb+","+
         mPeriodicIO.op_POV0_ManualShot_Fender+","+
         mPeriodicIO.op_POV90_ManualShot_Ball+","+
@@ -595,7 +597,7 @@ public class JSticks extends Subsystem {
         public boolean op_AButton_PreClimb_Stop = false;
         public boolean op_XButton_AutoClimb = false;
         public boolean op_XButton_AutoClimb_Stop = false;
-        public boolean op_YButton_ResetClimb = false;
+        public boolean op_YButton_MidBarClimb = false;
         public boolean op_BackButton_TestHome = false;
         public boolean op_BackButton_TestHome_Stop = false;
 
