@@ -87,6 +87,8 @@ public class Superstructure extends Subsystem {
     private boolean mStartedShooting;
     private String mShotCounterKey = "ShotCounter";
     private final double kFenderShotIndexSpeed = 0.4;
+    private int mLEDCounter;
+    private int mLEDFlipCount;
 
     private static String sClassName;
     private static int sInstanceCount;
@@ -388,6 +390,7 @@ public class Superstructure extends Subsystem {
         return defaultStateTransfer();
     }
 
+    int mCyclesPer;
     private SystemState handleAutoShooting(double timestamp) {
         if (mStateChanged) {
             
@@ -396,9 +399,10 @@ public class Superstructure extends Subsystem {
             }
             mStartedShooting = false;
             mPeriodicIO.schedDeltaDesired = mFastCycle;
+            // cycles (calls to this handler) per quarter second
+            mCyclesPer = (int)(1000.0/(double)mPeriodicIO.schedDeltaDesired/4.0);
             mShooter.setWantedState(Shooter.WantedState.SHOOT, sClassName);
             mSetPointInRadians = Double.NaN;
-            mLEDCanifier.setLEDColor(0, .9, 0);
         }
         var setPointInRadians = getSwerveSetpointFromVision(timestamp);
         
@@ -430,6 +434,47 @@ public class Superstructure extends Subsystem {
             }
         }
 
+        // This code sends the following signals using LEDs
+
+        // if hood or fly is not ready and aim is off:
+        //      1/4 sec blue followed by 1/4 sec red <repeat>
+
+        // if hood or fly is not ready and aim is on:
+        //      solid blue
+
+        // if hood or fly is ready and aim is off:
+        //      solid red
+
+        // if hood or fly is ready and aim is on:
+        //      solid green
+        
+        
+        
+        mLEDCounter++;
+        int cycle = (mLEDCounter/mCyclesPer)%4;
+        if (cycle == 0 || cycle==2){
+            if (!mShooter.readyToShoot()){
+                mLEDCanifier.setLEDColor(0, 0, 1.0); // blue if fly or hood not ready
+            }
+            else if (!mOnTarget){
+                mLEDCanifier.setLEDColor(1.0, 0, 0); // red if not on target
+            }
+            else{
+                mLEDCanifier.setLEDColor(0, 1.0, 0); // ready to shoot
+            }
+        }
+        else{
+            if (!mOnTarget){
+                mLEDCanifier.setLEDColor(1.0, 0, 0); // red if not on target
+            }
+            else if (!mShooter.readyToShoot()){
+                mLEDCanifier.setLEDColor(0, 0, 1.0); // blue if fly or hood not ready
+            }
+            else{
+                mLEDCanifier.setLEDColor(0, 1.0, 0); // ready to shoot
+            }
+        }
+        
         if (!mWantedState.equals(WantedState.AUTO_SHOOT)){
             mLEDCanifier.setLEDColor(0, 0, 0);
         }
