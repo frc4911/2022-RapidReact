@@ -446,7 +446,7 @@ public class Superstructure extends Subsystem {
         //      solid red
 
         // if hood or fly is ready and aim is on:
-        //      solid green
+        //      solid yellow
         
         
         
@@ -460,7 +460,7 @@ public class Superstructure extends Subsystem {
                 mLEDCanifier.setLEDColor(1.0, 0, 0); // red if not on target
             }
             else{
-                mLEDCanifier.setLEDColor(0, 1.0, 0); // ready to shoot
+                mLEDCanifier.setLEDColor(1.0, 1.0, 0); // ready to shoot
             }
         }
         else{
@@ -471,7 +471,7 @@ public class Superstructure extends Subsystem {
                 mLEDCanifier.setLEDColor(0, 0, 1.0); // blue if fly or hood not ready
             }
             else{
-                mLEDCanifier.setLEDColor(0, 1.0, 0); // ready to shoot
+                mLEDCanifier.setLEDColor(1.0, 1.0, 0); // ready to shoot
             }
         }
         
