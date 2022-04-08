@@ -423,6 +423,7 @@ public class Superstructure extends Subsystem {
                 if (mShooter.readyToShoot() || mStartedShooting) {
                     if (mIndexer.getWantedState() != Indexer.WantedState.FEED) {
                         mIndexer.setWantedState(Indexer.WantedState.FEED, sClassName);
+                        mCollector.setWantedState(Collector.WantedState.FEED, sClassName);
                         mPeriodicIO.shotCounter++;
                     }
                     mStartedShooting = true;
@@ -535,6 +536,7 @@ public class Superstructure extends Subsystem {
                 mIndexer.setTempFeedSpeed(kFenderShotIndexSpeed);
             }
             mIndexer.setWantedState(Indexer.WantedState.FEED, sClassName);
+            mCollector.setWantedState(Collector.WantedState.FEED, sClassName);
             mPeriodicIO.shotCounter++;
         }
 

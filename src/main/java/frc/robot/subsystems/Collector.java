@@ -24,6 +24,7 @@ public class Collector extends Subsystem {
 
     // Subsystem Constants
     private final double kCollectSpeed = 0.9;
+    private final double kFeedSpeed = 0;
     // time (msec) to run collector motor forward so collector can deploy
     // when backing
     private final double kBackingEjectDuration = 100; 
@@ -67,7 +68,8 @@ public class Collector extends Subsystem {
         COLLECTING,
         DISABLING,
         HOLDING,
-        MANUAL_CONTROLLING
+        MANUAL_CONTROLLING,
+        FEEDING
     }
 
     public enum WantedState {
@@ -76,7 +78,8 @@ public class Collector extends Subsystem {
         COLLECT,
         DISABLE,
         HOLD,
-        MANUAL_CONTROL
+        MANUAL_CONTROL,
+        FEED
     }
 
     private SystemState mSystemState;
@@ -175,6 +178,9 @@ public class Collector extends Subsystem {
                     case COLLECTING:
                         newState = handleCollecting();
                         break;
+                    case FEEDING:
+                        newState = handleFeeding();
+                        break;
                     case DISABLING:
                         newState = handleDisabling();
                         break;
@@ -214,6 +220,8 @@ public class Collector extends Subsystem {
                 return SystemState.HOLDING;
             case MANUAL_CONTROL:
                 return SystemState.MANUAL_CONTROLLING;
+            case FEED:
+                return SystemState.FEEDING;
             // default:
                 // leave commented so compiler will identify missing cases
         }
@@ -302,6 +310,15 @@ public class Collector extends Subsystem {
         if(mStateChanged) {
             setSolenoidDemand(SolenoidState.EXTEND);
             setMotorControlModeAndDemand(ControlMode.PercentOutput,kCollectSpeed);
+            mPeriodicIO.schedDeltaDesired = kSchedDeltaActive;
+        }
+        
+        return defaultStateTransfer();
+    }
+
+    private SystemState handleFeeding() {
+        if(mStateChanged) {
+            setMotorControlModeAndDemand(ControlMode.PercentOutput,kFeedSpeed);
             mPeriodicIO.schedDeltaDesired = kSchedDeltaActive;
         }
         
