@@ -235,10 +235,10 @@ public class JSticks extends Subsystem {
             } else if (mPeriodicIO.op_XButton_AutoClimb) {
                 mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_CLIMB, sClassName);
             } 
-            else if (mPeriodicIO.op_YButton_MidBarClimb) {
-                mSuperstructure.setLastClimbState(Climber.WantedState.CLIMB_3_LIFT_MORE);
-                mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_CLIMB, sClassName);
-            }
+            // else if (mPeriodicIO.op_YButton_MidBarClimb) {
+            //     mSuperstructure.setLastClimbState(Climber.WantedState.CLIMB_3_LIFT_MORE);
+            //     mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_CLIMB, sClassName);
+            // }
 
         } else {
             if (mPeriodicIO.op_RightTrigger_Collect) {
