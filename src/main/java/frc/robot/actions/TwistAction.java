@@ -10,14 +10,6 @@ public class TwistAction implements Action {
 	private double targetHeading; // Assume the start heading is 0 - var is the desired heading 0-360
 	private boolean relative; // CCW is true, CW is false
 	private double speed;
-
-	/**
-	 *  Independent twist action for swerve during auto. Allows the robot to rotate (in place)
-	 *  until a certain heading is achieved. Can rotate either clockwise or counterclockwise.
-	 *  Normalizes angles to 0-360, where positive 90 is counterclockwise, directly to the left
-	 *  @param heading The desired heading to twist to
-	 *  @param relative The direction of the twist (true/counterclockwise, false/clockwise)
-	 */
 		
 	public TwistAction(double heading, boolean relative) { 
 		this(heading, relative, .7);

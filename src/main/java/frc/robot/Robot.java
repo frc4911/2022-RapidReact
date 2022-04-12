@@ -10,7 +10,6 @@ import java.util.Optional;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import frc.robot.autos.AutoModeSelector;
 import frc.robot.config.RobotConfiguration;
 import frc.robot.constants.Constants;

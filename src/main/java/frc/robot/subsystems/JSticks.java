@@ -331,31 +331,7 @@ public class JSticks extends Subsystem {
             mSuperstructure.setWantedState(Superstructure.WantedState.TEST, sClassName);
         }
 
-        mShooter.setMotorTestDemand(-mOperator.getRaw(Xbox.LEFT_STICK_Y), -mOperator.getRaw(Xbox.RIGHT_STICK_Y));
-
-        // if(mPeriodicIO.op_POV0_ManualShot_Fender){
-        //     mClimber.setClimberTestDemand(0, 10000);
-        // }
-        
-        // if(mPeriodicIO.op_POV90_ManualShot_Ball){
-        //     mClimber.setClimberTestDemand(0, 50000);
-        // }
-
-        // if(mPeriodicIO.op_POV180_ManualShot_Robot){
-        //     mClimber.setClimberTestDemand(0, 100000);
-        // }
-
-        // if(mPeriodicIO.op_POV270_ManualShot_Tarmac){
-        //     mClimber.setClimberTestDemand(0, 130000);
-        // }
-
-        // if (mPeriodicIO.op_LeftBumper_TestRelease){
-        //     mClimber.setSolenoidTestState(true);
-        // }
-
-        // if (mPeriodicIO.op_RightBumper_TestLock){
-        //     mClimber.setSolenoidTestState(false);
-        // }
+        // mShooter.setMotorTestDemand(-mOperator.getRaw(Xbox.LEFT_STICK_Y), -mOperator.getRaw(Xbox.RIGHT_STICK_Y));
 
         if (mPeriodicIO.op_RightTrigger_Collect) {
             mSuperstructure.setWantedState(Superstructure.WantedState.COLLECT, sClassName);
@@ -367,16 +343,9 @@ public class JSticks extends Subsystem {
         if (mPeriodicIO.op_LeftTrigger_Back) {
             mSuperstructure.setWantedState(Superstructure.WantedState.BACK, sClassName);
         }
+        
         if (mPeriodicIO.op_LeftTrigger_Back_Stop) {
             mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
-        }
-
-        if (mPeriodicIO.op_AButton_PreClimb){
-            mIndexer.setWantedState(Indexer.WantedState.FEED, sClassName);;
-        }
-
-        if (mPeriodicIO.op_AButton_PreClimb_Stop){
-            mIndexer.setWantedState(Indexer.WantedState.HOLD, sClassName);;
         }
 
         // mShooter.setHoodTestDemand(mPeriodicIO.tst_LeftAxis_TestDemand);

@@ -10,6 +10,7 @@ import frc.robot.actions.ManualShootAction;
 import frc.robot.actions.SetEndOfAutoModePoseAction;
 import frc.robot.actions.SetPoseAction;
 import frc.robot.actions.SetShootDistanceAction;
+import frc.robot.actions.SetStartPoseAction;
 import frc.robot.actions.TwistAction;
 import frc.robot.paths.TrajectoryGenerator;
 import libraries.cheesylib.autos.AutoModeBase;
@@ -40,8 +41,10 @@ public class FiveBallMode extends AutoModeBase {
         // shoot
         // done
 
-        // Pose2d startPose = new Pose2d(new Translation2d(Units.inches_to_meters(0), Units.inches_to_meters(0)), // -18.5, -48.2
-        //         Rotation2d.fromDegrees(91.5));
+        Pose2d startPose = new Pose2d(new Translation2d(Units.inches_to_meters(-6), Units.inches_to_meters(5)), // -18.5, -48.2
+                Rotation2d.fromDegrees(10));
+        
+        runAction(new SetStartPoseAction(startPose));
         // phase 0
         //    inform shooter of coming shot
         runAction(new AutoShotScalerAction(3.5));
@@ -76,8 +79,8 @@ public class FiveBallMode extends AutoModeBase {
         runAction(new DriveTrajectoryAction(TrajectoryGenerator.getInstance().getTrajectorySet().fiveBallAuto3Trajectory.left, false)); //Go to human player station
         runAction(new TwistAction(-30, false));
         runAction(new AutoShootAction(30.0));
-        runAction(new SetEndOfAutoModePoseAction(90.0, 0.0));
         runAction(new AutoShotScalerAction(Double.NaN));  // NaN returns the scaler to default
+        runAction(new SetEndOfAutoModePoseAction(91.5, 0.0));
         // runAction(new DriveTrajectoryAction(TrajectoryGenerator.getInstance().getTrajectorySet().fiveBallAuto4Trajectory.left, false));
 
     }

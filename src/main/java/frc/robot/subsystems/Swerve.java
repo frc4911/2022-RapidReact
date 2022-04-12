@@ -313,7 +313,7 @@ public class Swerve extends Subsystem {
             mAimingScaler = scaler;
         }
     }
-    private final double kDefaultScaler = 2.5;
+    private final double kDefaultScaler = 2.5; // May need to be increased in Houston
     private double mAimingScaler = kDefaultScaler;
     
     private void handleAiming(double timestamp) {
