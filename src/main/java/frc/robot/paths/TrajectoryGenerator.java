@@ -145,26 +145,28 @@ public class TrajectoryGenerator {
         private TrajectorySet(TrajectoryConfig config) {
             // TODO: Implement deep clone so a trajectory generator function can freely modify the configuration.
             // NOTE: Constraints are not deep copied for now.
+            TrajectoryConfig slowConfig = TrajectoryConfig.fromTrajectoryConfig(config).setMaxVelocity(Units.feet_to_meters(5));
+
             testTrajectory = new MirroredTrajectory(
-                    getTestTrajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
+                    getTestTrajectory(TrajectoryConfig.fromTrajectoryConfig(slowConfig)));
             testTrajectoryBack = new MirroredTrajectory(
-                    getTestTrajectoryBack(TrajectoryConfig.fromTrajectoryConfig(config)));
+                    getTestTrajectoryBack(TrajectoryConfig.fromTrajectoryConfig(slowConfig)));
             forwardTrajectory = new MirroredTrajectory(
-                    getForwardTrajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
+                    getForwardTrajectory(TrajectoryConfig.fromTrajectoryConfig(slowConfig)));
             backwardTrajectory = new MirroredTrajectory(
-                    getBackwardTrajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
+                    getBackwardTrajectory(TrajectoryConfig.fromTrajectoryConfig(slowConfig)));
 
             twoBallAuto_toBallTrajectory = new MirroredTrajectory(
-                    gettwoBallAuto_toBallTrajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
+                    gettwoBallAuto_toBallTrajectory(TrajectoryConfig.fromTrajectoryConfig(slowConfig)));
             twoBallAuto_toFenderTrajectory = new MirroredTrajectory(
-                    gettwoBallAuto_toFenderTrajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
+                    gettwoBallAuto_toFenderTrajectory(TrajectoryConfig.fromTrajectoryConfig(slowConfig)));
 
             threeBallAuto0Trajectory = new MirroredTrajectory(
-                    getThreeBallAutoPhase0Trajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
+                    getThreeBallAutoPhase0Trajectory(TrajectoryConfig.fromTrajectoryConfig(slowConfig)));
             threeBallAuto1Trajectory = new MirroredTrajectory(
-                    getThreeBallAutoPhase1Trajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
+                    getThreeBallAutoPhase1Trajectory(TrajectoryConfig.fromTrajectoryConfig(slowConfig)));
             threeBallAuto2Trajectory = new MirroredTrajectory(
-                    getThreeBallAutoPhase2Trajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
+                    getThreeBallAutoPhase2Trajectory(TrajectoryConfig.fromTrajectoryConfig(slowConfig)));
 
             headingTestTrajectory  = new MirroredTrajectory(
                 getHeadingTestTrajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
@@ -172,11 +174,11 @@ public class TrajectoryGenerator {
                 getHeadingTest2Trajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
                     
             citrusTwoBallAuto0Trajectory = new MirroredTrajectory(
-                    getCitrusTwoBallAutoPhase0Trajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
+                    getCitrusTwoBallAutoPhase0Trajectory(TrajectoryConfig.fromTrajectoryConfig(slowConfig)));
             citrusTwoBallAuto1Trajectory = new MirroredTrajectory(
-                    getCitrusTwoBallAutoPhase1Trajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
+                    getCitrusTwoBallAutoPhase1Trajectory(TrajectoryConfig.fromTrajectoryConfig(slowConfig)));
             citrusTwoBallAuto2Trajectory = new MirroredTrajectory(
-                    getCitrusTwoBallAutoPhase2Trajectory(TrajectoryConfig.fromTrajectoryConfig(config)));
+                    getCitrusTwoBallAutoPhase2Trajectory(TrajectoryConfig.fromTrajectoryConfig(slowConfig)));
             
 
             fiveBallAuto0Trajectory = new MirroredTrajectory(
