@@ -195,6 +195,10 @@ public class Robot extends TimedRobot {
             CrashTracker.logThrowableCrash(t);
             throw t;
         }
+
+        // NaN will return to default scaler in 
+        // case automode was not able to finish
+        mSwerve.setAimingTwistScaler(Double.NaN); 
         System.out.println("TeleopInit() ends");
     }
 

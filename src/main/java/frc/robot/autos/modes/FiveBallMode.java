@@ -3,6 +3,7 @@ package frc.robot.autos.modes;
 import java.util.ArrayList;
 
 import frc.robot.actions.AutoShootAction;
+import frc.robot.actions.AutoShotScalerAction;
 import frc.robot.actions.CollectAction;
 import frc.robot.actions.DriveTrajectoryAction;
 import frc.robot.actions.ManualShootAction;
@@ -43,6 +44,7 @@ public class FiveBallMode extends AutoModeBase {
         //         Rotation2d.fromDegrees(91.5));
         // phase 0
         //    inform shooter of coming shot
+        runAction(new AutoShotScalerAction(3.5));
         runAction(new SetShootDistanceAction(72.0));
         // deploy collector
         runAction(new CollectAction(true));
@@ -75,6 +77,7 @@ public class FiveBallMode extends AutoModeBase {
         runAction(new TwistAction(-30, false));
         runAction(new AutoShootAction(30.0));
         runAction(new SetEndOfAutoModePoseAction(90.0, 0.0));
+        runAction(new AutoShotScalerAction(Double.NaN));  // NaN returns the scaler to default
         // runAction(new DriveTrajectoryAction(TrajectoryGenerator.getInstance().getTrajectorySet().fiveBallAuto4Trajectory.left, false));
 
     }

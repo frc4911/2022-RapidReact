@@ -305,6 +305,17 @@ public class Swerve extends Subsystem {
                 mPeriodicIO.swerveModuleStates, mSwerveConfiguration.maxSpeedInMetersPerSecond);
     }
 
+    public void setAimingTwistScaler(double scaler){
+        if (Double.isNaN(scaler)){
+            mAimingScaler = kDefaultScaler;
+        }
+        else {
+            mAimingScaler = scaler;
+        }
+    }
+    private final double kDefaultScaler = 2.5;
+    private double mAimingScaler = kDefaultScaler;
+    
     private void handleAiming(double timestamp) {
         var dt = timestamp - lastAimTimestamp;
         lastAimTimestamp = timestamp;
@@ -339,7 +350,7 @@ public class Swerve extends Subsystem {
             // Turn in place implies no translational velocity.
             HolonomicDriveSignal driveSignal = new HolonomicDriveSignal(
                     Translation2d.identity(),
-                    rotation * 2.5,
+                    rotation * mAimingScaler, //2.5,
                     true);
 
             updateModules(driveSignal);
