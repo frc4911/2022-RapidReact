@@ -23,6 +23,7 @@ import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.loops.Looper;
 import libraries.cheesylib.subsystems.SubsystemManager;
 import libraries.cheesylib.util.CrashTracker;
+import libraries.cyberlib.control.SwerveHeadingController;
 import libraries.cyberlib.utils.RobotName;
 
 /**
@@ -70,6 +71,9 @@ public class Robot extends TimedRobot {
 
     private final double mLoopPeriod = .005;
     private Looper mSubsystemLooper = new Looper(mLoopPeriod, Thread.NORM_PRIORITY + 1);
+
+    private final SwerveHeadingController mHeadingController = SwerveHeadingController.getInstance();
+
 
     @Override
     public void robotInit() {
@@ -159,8 +163,11 @@ public class Robot extends TimedRobot {
 
     public void autoConfig() {
         if (mSwerve != null) {
-            mSwerve.zeroSensors();
-            mSwerve.zeroSensors(new Pose2d());
+            mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.OFF);
+            mSwerve.setRobotPosition(Constants.kRobotStartingPose);
+
+            // mSwerve.zeroSensors();
+            // mSwerve.zeroSensors(new Pose2d());
             // mSwerve.setNominalDriveOutput(0.0);
             // mSwerve.requireModuleConfiguration();
             // mSwerve.set10VoltRotationMode(true);

@@ -5,7 +5,6 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.constants.Ports;
 import frc.robot.limelight.LimelightManager;
-import frc.robot.subsystems.Collector.WantedState;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.subsystems.SubsystemManager;
@@ -89,6 +88,8 @@ public class Superstructure extends Subsystem {
     private final double kFenderShotIndexSpeed = 0.4;
     private int mLEDCounter;
     private int mLEDFlipCount;
+    private boolean mManualShootComplete;
+    private boolean mAutoShootComplete;
 
     private static String sClassName;
     private static int sInstanceCount;
@@ -149,6 +150,8 @@ public class Superstructure extends Subsystem {
                     mOverrideLimelightLEDs = false;
                     break;
             }
+            mManualShootComplete = false;
+            mAutoShootComplete = false;
             mStateChanged = true;
             mPeriodicIO.schedDeltaDesired = mFastCycle;
             System.out.println(sClassName + " state " + mSystemState);
@@ -163,6 +166,7 @@ public class Superstructure extends Subsystem {
                 switch (mSystemState) {
                     case ASSESSING:
                         newState = handleAssessing();
+                        break;
                     case COLLECTING:
                         newState = handleCollecting();
                         break;
@@ -333,7 +337,7 @@ public class Superstructure extends Subsystem {
             
             mPeriodicIO.schedDeltaDesired = mSlowCycle;
         }
-
+    
         return defaultStateTransfer();
     }
 
@@ -403,6 +407,7 @@ public class Superstructure extends Subsystem {
             mCyclesPer = (int)(1000.0/(double)mPeriodicIO.schedDeltaDesired/4.0);
             mShooter.setWantedState(Shooter.WantedState.SHOOT, sClassName);
             mSetPointInRadians = Double.NaN;
+            mAutoShootComplete = false;
         }
         var setPointInRadians = getSwerveSetpointFromVision(timestamp);
         
@@ -475,9 +480,14 @@ public class Superstructure extends Subsystem {
                 mLEDCanifier.setLEDColor(1.0, 1.0, 0); // ready to shoot
             }
         }
+
+        if (mIndexer.isHandlerComplete(Indexer.WantedState.FEED)){
+            mAutoShootComplete = true;
+        }
         
         if (!mWantedState.equals(WantedState.AUTO_SHOOT)){
             mLEDCanifier.setLEDColor(0, 0, 0);
+            mAutoShootComplete = false;
         }
 
         return defaultStateTransfer();
@@ -515,6 +525,7 @@ public class Superstructure extends Subsystem {
 
     private SystemState handleManualShooting(double timestamp) {
         if (mStateChanged) {
+            mManualShootComplete = false;
             if (!mOverrideLimelightLEDs) {
                 mLLManager.getLimelight().setLed(Limelight.LedMode.PIPELINE);
             }
@@ -540,6 +551,13 @@ public class Superstructure extends Subsystem {
             mPeriodicIO.shotCounter++;
         }
 
+        if (mIndexer.isHandlerComplete(Indexer.WantedState.FEED)){
+            mManualShootComplete = true;
+        }
+
+        if (mWantedState != WantedState.MANUAL_SHOOT){
+            mManualShootComplete = false;
+        }
         // everything is put into hold when the state changes
         return defaultStateTransfer();
     }
@@ -654,9 +672,28 @@ public class Superstructure extends Subsystem {
         return mWantedState;
     }
 
+    public boolean isHandlerComplete(WantedState state) {
+        switch(state) {
+            case MANUAL_SHOOT:
+                return mManualShootComplete;
+            case AUTO_SHOOT:
+                return mAutoShootComplete;
+            default:
+                break;
+        }
+        return false;
+    }
+
+
+
     public void setManualShootDistance(double distance) {
         // System.out.println("setManualShootDistance "+distance);
         mManualDistance = distance;
+    }
+
+    // used by automodeActions to prep shooter
+    public void setShootDistance(double distance){
+        mShooter.setShootDistance(distance);
     }
 
     // used in auto
@@ -764,6 +801,9 @@ public class Superstructure extends Subsystem {
     @Override
     public void outputTelemetry() {
         SmartDashboard.putNumber("Pressure Sensor", CyberMath.cTrunc(mPeriodicIO.pressure, 10));
+        SmartDashboard.putBoolean("LL has target", mHasTarget);
+        SmartDashboard.putBoolean("LL on target", mOnTarget);
+        SmartDashboard.putNumber("LL tx", mXOffset);
     }
 
     public static class PeriodicIO {

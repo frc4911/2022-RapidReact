@@ -31,7 +31,7 @@ public class Shooter extends Subsystem {
     private final double kMaxShootDistance = 144; // inches
 
     // Configuration Constants
-    private final double kFlywheelKp = 0.13;
+    private final double kFlywheelKp = 0.15;
     private final double kFlywheelKi = 0.0;//001;
     private final double kFlywheelKd = 2.0;
     private final double kFlywheelKf = 0.05;
@@ -414,7 +414,7 @@ public class Shooter extends Subsystem {
 
             // check if stopped moving for enough time
             if (now > hoodNonMovementTimeout) {
-                mFXHood.setSelectedSensorPosition(kHoodPositionAtFender-50); // -50 makes going to fender shot position is easier
+                mFXHood.setSelectedSensorPosition(kHoodPositionAtFender-50); // -50 makes going to fender shot position easier
 
                 hoodHomed = true;
                 FramePeriodSwitch.configStatorCurrentLimitPermanent(mFXHood,new StatorCurrentLimitConfiguration(true, kHoodCurrentLimitHigh, kHoodCurrentLimitHigh, 0));    

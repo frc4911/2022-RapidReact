@@ -8,6 +8,7 @@ public class CollectAction implements Action {
 	private String sClassName;
 	private Superstructure mSuperstructure;
 	private boolean mTurnOn;
+	private int counter = 10;
 
 	public CollectAction(boolean turnOn) {
 		sClassName = this.getClass().getSimpleName();
@@ -17,7 +18,7 @@ public class CollectAction implements Action {
 
 	@Override
 	public boolean isFinished() {
-		return true;
+		return counter--<=0 ? true : false;
 	}
 
 	@Override
@@ -27,6 +28,7 @@ public class CollectAction implements Action {
 		} else {
 			mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
 		}
+		counter = 10;
 	}
 
 	@Override

@@ -11,6 +11,7 @@ import frc.robot.autos.modes.ShootOneAndDriveBackwardMode;
 import frc.robot.autos.modes.TestTrajectoryFollowingMode;
 import frc.robot.autos.modes.ThreeBallMode;
 import frc.robot.autos.modes.FiveBallMode;
+import frc.robot.autos.modes.HeadingTestMode;
 import frc.robot.autos.modes.TwoBallLeftMode;
 import libraries.cheesylib.autos.AutoModeBase;
 
@@ -27,7 +28,8 @@ public class AutoModeSelector {
         THREE_BALL_MODE,
         CITRUS_TWO_BALL_MODE,
         BACK_OF_TARMAC_TWO_BALL_MODE,
-        FIVE_BALL_MODE
+        FIVE_BALL_MODE,
+        HEADING_TEST
     }
 
     private SendableChooser<DesiredMode> mModeChooser;
@@ -48,6 +50,7 @@ public class AutoModeSelector {
         mModeChooser.addOption("Citrus Two Ball Auto Mode", DesiredMode.CITRUS_TWO_BALL_MODE);
         mModeChooser.addOption("Back of Tarmac 2 Ball Auto Mode", DesiredMode.BACK_OF_TARMAC_TWO_BALL_MODE);
         mModeChooser.addOption("Five Ball Auto Mode", DesiredMode.FIVE_BALL_MODE);
+        mModeChooser.addOption("Heading Test Auto Mode", DesiredMode.HEADING_TEST);
 
         SmartDashboard.putData("Auto Mode", mModeChooser);
     }
@@ -88,6 +91,8 @@ public class AutoModeSelector {
                 return Optional.of(new BackOfTarmacTwoBallMode());
             case FIVE_BALL_MODE:
                 return Optional.of(new FiveBallMode());
+            case HEADING_TEST:
+                return Optional.of(new HeadingTestMode());
             default:
                 break;
         }
