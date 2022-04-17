@@ -17,6 +17,6 @@ public class TwoBallMode extends AutoModeBase {
         runAction(new CollectAction(false));
         runAction(new DriveTrajectoryAction(TrajectoryGenerator.getInstance().getTrajectorySet().twoBallAuto_toFenderTrajectory.left));
         runAction(new ManualShootAction(0,3));
-        runAction(new SetEndOfAutoModePoseAction(21, 0.0));
+        runAction(new SetEndOfAutoModePoseAction(-21, 0.0));
     }
 }
