@@ -16,7 +16,7 @@ import java.util.List;
  * values (0, 0, {}, false). These values can be changed via the setXXX methods.
 // */
 public class TrajectoryConfig {
-    public double mMaxVelocity;
+    private double mMaxVelocity;
     private final double mMaxAcceleration;
     private final double mMaxAngularVelocity;
     private final double mMaxAngularAcceleration;

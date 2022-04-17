@@ -58,6 +58,8 @@ public class Swerve extends Subsystem {
     private double lastUpdateTimestamp = 0;
     private int driveMode = 3;
     private boolean inAimingDeadzone;
+    private final double kDefaultScaler = 2.5; // May need to be increased in Houston
+    private double mAimingScaler = kDefaultScaler;
 
     // Swerve kinematics & odometry
     private final IMU mIMU;
@@ -313,8 +315,6 @@ public class Swerve extends Subsystem {
             mAimingScaler = scaler;
         }
     }
-    private final double kDefaultScaler = 2.5; // May need to be increased in Houston
-    private double mAimingScaler = kDefaultScaler;
     
     private void handleAiming(double timestamp) {
         var dt = timestamp - lastAimTimestamp;
