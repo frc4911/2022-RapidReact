@@ -41,7 +41,7 @@ public class CitrusTwoBallMode extends AutoModeBase{
         runAction(new BackAction(false));
 
         // runAction(new SetPoseAction(startPose, true));
-        runAction(new SetEndOfAutoModePoseAction(43.5, 0.0));
+        runAction(new SetEndOfAutoModePoseAction(-43.5, 0.0));
     }
     
 }
