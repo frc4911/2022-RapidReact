@@ -3,6 +3,7 @@ package frc.robot.autos.modes;
 import frc.robot.actions.AutoShootAction;
 import frc.robot.actions.CollectAction;
 import frc.robot.actions.DriveTrajectoryAction;
+import frc.robot.actions.SetEndOfAutoModePoseAction;
 import frc.robot.actions.SetPoseAction;
 import frc.robot.paths.TrajectoryGenerator;
 import libraries.cheesylib.autos.AutoModeBase;
@@ -24,7 +25,9 @@ public class BackOfTarmacTwoBallMode extends AutoModeBase{
         runAction(new CollectAction(false));
         runAction(new AutoShootAction(5));
 
-        runAction(new SetPoseAction(startPose, true));
+        // runAction(new SetPoseAction(startPose, true));
+        runAction(new SetEndOfAutoModePoseAction(-43.5, 0.0));
+
     }
     
 }
