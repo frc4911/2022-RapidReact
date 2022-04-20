@@ -429,7 +429,6 @@ public class Superstructure extends Subsystem {
                     if (mIndexer.getWantedState() != Indexer.WantedState.FEED) {
                         mIndexer.setWantedState(Indexer.WantedState.FEED, sClassName);
                         mCollector.setWantedState(Collector.WantedState.FEED, sClassName);
-                        mPeriodicIO.shotCounter++;
                     }
                     mStartedShooting = true;
                 } else {
@@ -488,6 +487,9 @@ public class Superstructure extends Subsystem {
         if (!mWantedState.equals(WantedState.AUTO_SHOOT)){
             mLEDCanifier.setLEDColor(0, 0, 0);
             mAutoShootComplete = false;
+            if (mStartedShooting){
+                mPeriodicIO.shotCounter++;
+            }
         }
 
         return defaultStateTransfer();
