@@ -8,7 +8,7 @@ import libraries.cheesylib.subsystems.Subsystem;
  * Provides an LED controller using a CTR Canifier.
  */
 public class LEDCanifier extends Subsystem {
-    // private CANifier mCanifier;
+    private CANifier mCanifier;
     private PeriodicOutputs mPeriodicOutputs;
     private boolean mOutputsChanged = true;
 
@@ -32,8 +32,8 @@ public class LEDCanifier extends Subsystem {
     private LEDCanifier(String caller) {
         sClassName        = this.getClass().getSimpleName();
         printUsage(caller);
-        // mCanifier = new CANifier(0);
-        // mCanifier.configFactoryDefault(100);
+        mCanifier = new CANifier(0);
+        mCanifier.configFactoryDefault(100);
  
         mPeriodicOutputs = new PeriodicOutputs();
 
@@ -77,9 +77,9 @@ public class LEDCanifier extends Subsystem {
         // B: Green
         // C: Red
         if (mOutputsChanged) {
-            // mCanifier.setLEDOutput(mPeriodicOutputs.green, CANifier.LEDChannel.LEDChannelA);
-            // mCanifier.setLEDOutput(mPeriodicOutputs.red, CANifier.LEDChannel.LEDChannelB);
-            // mCanifier.setLEDOutput(mPeriodicOutputs.blue, CANifier.LEDChannel.LEDChannelC);
+            mCanifier.setLEDOutput(mPeriodicOutputs.green, CANifier.LEDChannel.LEDChannelA);
+            mCanifier.setLEDOutput(mPeriodicOutputs.red, CANifier.LEDChannel.LEDChannelB);
+            mCanifier.setLEDOutput(mPeriodicOutputs.blue, CANifier.LEDChannel.LEDChannelC);
             mOutputsChanged = false;
         }
     }

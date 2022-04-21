@@ -58,6 +58,8 @@ public class Swerve extends Subsystem {
     private double lastUpdateTimestamp = 0;
     private int driveMode = 3;
     private boolean inAimingDeadzone;
+    private final double kDefaultScaler = 4.0;//2.5; // May need to be increased in Houston
+    private double mAimingScaler = kDefaultScaler;
 
     // Swerve kinematics & odometry
     private final IMU mIMU;
@@ -305,6 +307,16 @@ public class Swerve extends Subsystem {
                 mPeriodicIO.swerveModuleStates, mSwerveConfiguration.maxSpeedInMetersPerSecond);
     }
 
+    public void setAimingTwistScaler(double scaler){
+        // if (Double.isNaN(scaler)){
+        //     mAimingScaler = kDefaultScaler;
+        // }
+        // else {
+        //     mAimingScaler = scaler;
+        // }
+        mAimingScaler = kDefaultScaler; // this no longer does anything
+    }
+    
     private void handleAiming(double timestamp) {
         var dt = timestamp - lastAimTimestamp;
         lastAimTimestamp = timestamp;
@@ -339,7 +351,7 @@ public class Swerve extends Subsystem {
             // Turn in place implies no translational velocity.
             HolonomicDriveSignal driveSignal = new HolonomicDriveSignal(
                     Translation2d.identity(),
-                    rotation * 2.5,
+                    rotation * mAimingScaler, //2.5,
                     true);
 
             updateModules(driveSignal);

@@ -19,7 +19,7 @@ public class ManualShootAction implements Action {
 
 	@Override
 	public boolean isFinished() {
-		return mSuperstructure.autoShootingComplete() || Timer.getFPGATimestamp() >= target;
+		return mSuperstructure.isHandlerComplete(Superstructure.WantedState.MANUAL_SHOOT) || Timer.getFPGATimestamp() >= target;
 	}
 
 	@Override

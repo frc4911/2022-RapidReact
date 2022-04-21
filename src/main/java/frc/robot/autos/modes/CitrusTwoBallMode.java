@@ -4,6 +4,7 @@ import frc.robot.actions.AutoShootAction;
 import frc.robot.actions.BackAction;
 import frc.robot.actions.CollectAction;
 import frc.robot.actions.DriveTrajectoryAction;
+import frc.robot.actions.SetEndOfAutoModePoseAction;
 import frc.robot.actions.SetPoseAction;
 import frc.robot.actions.TwistAction;
 import frc.robot.paths.TrajectoryGenerator;
@@ -39,7 +40,8 @@ public class CitrusTwoBallMode extends AutoModeBase{
         runAction(new WaitAction(2));
         runAction(new BackAction(false));
 
-        runAction(new SetPoseAction(startPose, true));
+        // runAction(new SetPoseAction(startPose, true));
+        runAction(new SetEndOfAutoModePoseAction(-43.5, 0.0));
     }
     
 }

@@ -3,6 +3,7 @@ package frc.robot.autos.modes;
 import frc.robot.actions.CollectAction;
 import frc.robot.actions.DriveTrajectoryAction;
 import frc.robot.actions.ManualShootAction;
+import frc.robot.actions.SetEndOfAutoModePoseAction;
 import frc.robot.actions.SetPoseAction;
 import frc.robot.paths.TrajectoryGenerator;
 import libraries.cheesylib.autos.AutoModeBase;
@@ -37,7 +38,8 @@ public class ThreeBallMode extends AutoModeBase{
         runAction(new CollectAction(false));
         runAction(new DriveTrajectoryAction(TrajectoryGenerator.getInstance().getTrajectorySet().threeBallAuto2Trajectory.left, false));
         runAction(new ManualShootAction(15, 5));
-        runAction(new SetPoseAction(startPose, true));
+        // runAction(new SetPoseAction(startPose, true));
+        runAction(new SetEndOfAutoModePoseAction(69.0, 0.0));
     }
     
 }

@@ -10,7 +10,6 @@ import java.util.Optional;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import frc.robot.autos.AutoModeSelector;
 import frc.robot.config.RobotConfiguration;
 import frc.robot.constants.Constants;
@@ -23,6 +22,7 @@ import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.loops.Looper;
 import libraries.cheesylib.subsystems.SubsystemManager;
 import libraries.cheesylib.util.CrashTracker;
+import libraries.cyberlib.control.SwerveHeadingController;
 import libraries.cyberlib.utils.RobotName;
 
 /**
@@ -70,6 +70,9 @@ public class Robot extends TimedRobot {
 
     private final double mLoopPeriod = .005;
     private Looper mSubsystemLooper = new Looper(mLoopPeriod, Thread.NORM_PRIORITY + 1);
+
+    private final SwerveHeadingController mHeadingController = SwerveHeadingController.getInstance();
+
 
     @Override
     public void robotInit() {
@@ -159,8 +162,11 @@ public class Robot extends TimedRobot {
 
     public void autoConfig() {
         if (mSwerve != null) {
-            mSwerve.zeroSensors();
-            mSwerve.zeroSensors(new Pose2d());
+            mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.OFF);
+            mSwerve.setRobotPosition(Constants.kRobotStartingPose);
+
+            // mSwerve.zeroSensors();
+            // mSwerve.zeroSensors(new Pose2d());
             // mSwerve.setNominalDriveOutput(0.0);
             // mSwerve.requireModuleConfiguration();
             // mSwerve.set10VoltRotationMode(true);
@@ -188,6 +194,10 @@ public class Robot extends TimedRobot {
             CrashTracker.logThrowableCrash(t);
             throw t;
         }
+
+        // NaN will return to default scaler in 
+        // case automode was not able to finish
+        mSwerve.setAimingTwistScaler(Double.NaN); 
         System.out.println("TeleopInit() ends");
     }
 
