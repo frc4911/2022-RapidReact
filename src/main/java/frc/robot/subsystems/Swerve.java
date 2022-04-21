@@ -58,7 +58,7 @@ public class Swerve extends Subsystem {
     private double lastUpdateTimestamp = 0;
     private int driveMode = 3;
     private boolean inAimingDeadzone;
-    private final double kDefaultScaler = 2.5; // May need to be increased in Houston
+    private final double kDefaultScaler = 4.0;//2.5; // May need to be increased in Houston
     private double mAimingScaler = kDefaultScaler;
 
     // Swerve kinematics & odometry
@@ -308,12 +308,13 @@ public class Swerve extends Subsystem {
     }
 
     public void setAimingTwistScaler(double scaler){
-        if (Double.isNaN(scaler)){
-            mAimingScaler = kDefaultScaler;
-        }
-        else {
-            mAimingScaler = scaler;
-        }
+        // if (Double.isNaN(scaler)){
+        //     mAimingScaler = kDefaultScaler;
+        // }
+        // else {
+        //     mAimingScaler = scaler;
+        // }
+        mAimingScaler = kDefaultScaler; // this no longer does anything
     }
     
     private void handleAiming(double timestamp) {

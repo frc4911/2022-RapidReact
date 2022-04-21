@@ -80,7 +80,7 @@ public class FiveBallMode extends AutoModeBase {
         runAction(new TwistAction(-30, false));
         runAction(new AutoShootAction(30.0));
         runAction(new AutoShotScalerAction(Double.NaN));  // NaN returns the scaler to default
-        runAction(new SetEndOfAutoModePoseAction(91.5, 0.0));
+        runAction(new SetEndOfAutoModePoseAction(91.5, 10.0));
         // runAction(new DriveTrajectoryAction(TrajectoryGenerator.getInstance().getTrajectorySet().fiveBallAuto4Trajectory.left, false));
 
     }

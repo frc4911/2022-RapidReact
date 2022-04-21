@@ -31,7 +31,7 @@ public class Shooter extends Subsystem {
     private final double kMaxShootDistance = 144; // inches
 
     // Configuration Constants
-    private final double kFlywheelKp = 0.15;
+    private final double kFlywheelKp = 0.175;
     private final double kFlywheelKi = 0.0;//001;
     private final double kFlywheelKd = 2.0;
     private final double kFlywheelKf = 0.05;
@@ -207,9 +207,9 @@ public class Shooter extends Subsystem {
         shooterSpeedMap.put(new InterpolatingDouble(24.0),  new InterpolatingDouble(11300.0)); // 10900 for modified fender shot
         shooterSpeedMap.put(new InterpolatingDouble(48.0),  new InterpolatingDouble(11700.0)); // 10900 for modified fender shot 11200
         shooterSpeedMap.put(new InterpolatingDouble(72.0),  new InterpolatingDouble(12100.0)); //12300
-        shooterSpeedMap.put(new InterpolatingDouble(96.0),  new InterpolatingDouble(12450.0)); //12750
-        shooterSpeedMap.put(new InterpolatingDouble(120.0), new InterpolatingDouble(13800.0)); //13000
-        shooterSpeedMap.put(new InterpolatingDouble(144.0), new InterpolatingDouble(15300.0)); //14750
+        shooterSpeedMap.put(new InterpolatingDouble(96.0),  new InterpolatingDouble(12200.0)); //12450 12750
+        shooterSpeedMap.put(new InterpolatingDouble(120.0), new InterpolatingDouble(12800.0)); //13125 3800 13000
+        shooterSpeedMap.put(new InterpolatingDouble(144.0), new InterpolatingDouble(13800.0)); //15300 14750
 
         shooterLLTYDist.put(new InterpolatingDouble(2.7), new InterpolatingDouble(24.0));
         shooterLLTYDist.put(new InterpolatingDouble(-6.6), new InterpolatingDouble(48.0));
@@ -663,6 +663,7 @@ public class Shooter extends Subsystem {
         mPeriodicIO.hoodStator = FramePeriodSwitch.getStatorCurrent(mFXHood);
 
         SmartDashboard.putNumber("Hood demand", mPeriodicIO.hoodDemand);
+        SmartDashboard.putNumber("shot dist", mDistance);
         SmartDashboard.putNumber("Flywheel demand", mPeriodicIO.flyDemand);
         SmartDashboard.putNumber("Hood Position", mPeriodicIO.hoodPosition);
         SmartDashboard.putNumber("Flywheel Speed", mPeriodicIO.flyVelocity);
