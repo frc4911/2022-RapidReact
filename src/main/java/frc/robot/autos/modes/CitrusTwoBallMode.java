@@ -27,15 +27,15 @@ public class CitrusTwoBallMode extends AutoModeBase{
         runAction(new DriveTrajectoryAction(generator.getTrajectorySet().citrusTwoBallAuto0Trajectory.left, false));
         runAction(new CollectAction(false));
         runAction(new AutoShootAction(5));
-        runAction(new TwistAction(90, true));
+        runAction(new TwistAction(90, true, 1));
         runAction(new CollectAction(true));
         runAction(new DriveTrajectoryAction(generator.getTrajectorySet().citrusTwoBallAuto1Trajectory.left, false));
         runAction(new CollectAction(false));
-        runAction(new TwistAction(-90, false));
+        runAction(new TwistAction(-90, false, 1));
         runAction(new CollectAction(true));
         runAction(new DriveTrajectoryAction(generator.getTrajectorySet().citrusTwoBallAuto2Trajectory.left, false));
         runAction(new CollectAction(false));
-        runAction(new TwistAction(43.5, true));
+        runAction(new TwistAction(43.5, false, 1));
         runAction(new BackAction(true));
         runAction(new WaitAction(2));
         runAction(new BackAction(false));
