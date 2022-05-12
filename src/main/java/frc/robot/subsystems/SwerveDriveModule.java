@@ -2,14 +2,10 @@ package frc.robot.subsystems;
 
 import java.util.Arrays;
 
-import com.ctre.phoenix.ErrorCode;
-import com.ctre.phoenix.motorcontrol.ControlFrame;
 import com.ctre.phoenix.motorcontrol.ControlMode;
-import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.StatorCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.StatusFrame;
-import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.sensors.AbsoluteSensorRange;
 import com.ctre.phoenix.sensors.CANCoder;
@@ -53,6 +49,7 @@ public class SwerveDriveModule extends Subsystem {
 
     String mModuleName;
 
+    @SuppressWarnings("unused")
     private final boolean mLoggingEnabled = true; // used to disable logging for this subsystem only
 
     // boolean tenVoltSteerMode = false;
@@ -314,6 +311,7 @@ public class SwerveDriveModule extends Subsystem {
      * 
      * @param angularVelocityInRadiansPerSecond Normalized value
      */
+    @SuppressWarnings("unused")
     private void setSteerOpenLoop(double angularVelocityInRadiansPerSecond) {
         mPeriodicIO.steerControlMode = ControlMode.PercentOutput;
         mPeriodicIO.steerDemand = angularVelocityInRadiansPerSecond;
@@ -347,31 +345,28 @@ public class SwerveDriveModule extends Subsystem {
         return (int) radiansToEncoderUnits(Math.toRadians(degrees));
     }
 
+    @SuppressWarnings("unused")
     private double encUnitsToDegrees(double encUnits) {
         return Math.toDegrees(encoderUnitsToRadians(encUnits));
     }
 
     // Drive motor
+    @SuppressWarnings("unused")
     private double encoderUnitsToDistance(double ticks) {
         return ticks * mConfig.kDriveTicksPerUnitDistance;
     }
 
+    @SuppressWarnings("unused")
     private double encoderUnitsToVelocity(double ticks) {
         return ticks * mConfig.kDriveTicksPerUnitVelocity;
     }
 
+    @SuppressWarnings("unused")
     private double distanceToEncoderUnits(double distanceInMeters) {
         return distanceInMeters / mConfig.kDriveTicksPerUnitDistance;
     }
 
-    // private double encUnitsToInches(double encUnits) {
-    // return Units.metersToInches(encoderUnitsToDistance(encUnits));
-    // }
-    //
-    // private double inchesToEncUnits(double inches) {
-    // return distanceToEncoderUnits(Units.inchesToMeters(inches));
-    // }
-
+    @SuppressWarnings("unused")
     private double metersPerSecondToEncVelocity(double metersPerSecond) {
         return metersPerSecond / mConfig.kDriveTicksPerUnitVelocity;
     }

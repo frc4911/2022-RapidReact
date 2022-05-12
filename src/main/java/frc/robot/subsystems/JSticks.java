@@ -2,15 +2,12 @@ package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.constants.Constants;
-import frc.robot.subsystems.Shooter.SystemState;
-import frc.robot.subsystems.Swerve.ControlState;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.util.LatchedBoolean;
 import libraries.cheesylib.util.TimeDelayedBoolean;
 import libraries.cyberlib.control.SwerveHeadingController;
 import libraries.cyberlib.io.CW;
-import libraries.cyberlib.io.LogitechPS4;
 import libraries.cyberlib.io.Xbox;
 
 public class JSticks extends Subsystem {
@@ -43,10 +40,7 @@ public class JSticks extends Subsystem {
     private final Superstructure mSuperstructure;
     private final Swerve mSwerve;
     private final Shooter mShooter;
-    private final Indexer mIndexer;
-    private final Climber mClimber;
 
-    @SuppressWarnings("unused")
     private final LatchedBoolean mSystemStateChange = new LatchedBoolean();
 
     private static String sClassName;
@@ -71,9 +65,6 @@ public class JSticks extends Subsystem {
         mSuperstructure = Superstructure.getInstance(sClassName);
         mSwerve = Swerve.getInstance(sClassName);
         mShooter = Shooter.getInstance(sClassName);
-        mIndexer = Indexer.getInstance(sClassName); // Getting instance to reset ball count: hopefully will be a
-                                                    // temporary fix
-        mClimber = Climber.getInstance(sClassName);
         mHeadingController.setPIDFConstants(
                 mSwerve.mSwerveConfiguration.kSwerveHeadingKp,
                 mSwerve.mSwerveConfiguration.kSwerveHeadingKi,
@@ -81,7 +72,6 @@ public class JSticks extends Subsystem {
                 mSwerve.mSwerveConfiguration.kSwerveHeadingKf);
         mDriver = new Xbox();
         mOperator = new Xbox();
-        // mTest = new LogitechPS4();
 
         printUsage(caller);
     }
@@ -157,7 +147,7 @@ public class JSticks extends Subsystem {
 
     private SystemState handleReadingButtons() {
         if (mStateChanged){
-            mDriver.rumble(5, 2);
+            mDriver.rumble(5, 2); // Rumble driver only when teleop begins
         }
         teleopRoutines();
 
@@ -165,9 +155,8 @@ public class JSticks extends Subsystem {
     }
 
     public void teleopRoutines() {
-        Superstructure.WantedState currentState = mSuperstructure.getWantedState();
-        Superstructure.WantedState previousState = currentState;
 
+        // Testing purposes only
         // if(mPeriodicIO.dr_AButton_ToggleDriveMode) {
         //     mSwerve.toggleThroughDriveModes();
         // }
@@ -179,6 +168,7 @@ public class JSticks extends Subsystem {
             double swerveXInput = mPeriodicIO.dr_LeftStickY_Translate;
             double swerveRotationInput = mPeriodicIO.dr_RightStickX_Rotate;
 
+            // Arbitrary multiplies to fit driver preference
             if (mPeriodicIO.dr_LeftTrigger_SlowSpeed) {
                 swerveYInput *= 0.25;
                 swerveXInput *= 0.25;
@@ -209,7 +199,6 @@ public class JSticks extends Subsystem {
             // Seems safest to disable heading controller if were resetting IMU.
             mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.OFF);
             mSwerve.setRobotPosition(Constants.kRobotStartingPose);
-            // mHeadingController.setHeadingControllerState(SwerveHeadingController.HeadingControllerState.MAINTAIN); // Reenable heading controller?
         }
 
         if (mPeriodicIO.dr_StartButton_ResetWheels){
@@ -234,13 +223,9 @@ public class JSticks extends Subsystem {
                 mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
             } else if (mPeriodicIO.op_XButton_AutoClimb) {
                 mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_CLIMB, sClassName);
-            } 
-            // else if (mPeriodicIO.op_YButton_MidBarClimb) {
-            //     mSuperstructure.setLastClimbState(Climber.WantedState.CLIMB_3_LIFT_MORE);
-            //     mSuperstructure.setWantedState(Superstructure.WantedState.AUTO_CLIMB, sClassName);
-            // }
-
+            }
         } else {
+            // Control collector only if robot is not climbing
             if (mPeriodicIO.op_RightTrigger_Collect) {
                 mSuperstructure.setWantedState(Superstructure.WantedState.COLLECT, sClassName);
             }
@@ -248,7 +233,6 @@ public class JSticks extends Subsystem {
             if (mPeriodicIO.op_LeftTrigger_Back) {
                 mSuperstructure.setWantedState(Superstructure.WantedState.BACK, sClassName);
             }
-
         }
 
         if (mPeriodicIO.op_BButton_StopShooter) {
@@ -299,19 +283,6 @@ public class JSticks extends Subsystem {
         if (mPeriodicIO.op_LeftTrigger_Back_Stop) {
             mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
         }
-
-        // if (mPeriodicIO.tst_POV90_flyup){
-        //     mShooter.setTempDemands(mShooter.getHoodDemand(), mShooter.getFlyDemand()+100);
-        // }
-        // if (mPeriodicIO.tst_POV270_flyDn){
-        //     mShooter.setTempDemands(mShooter.getHoodDemand(), mShooter.getFlyDemand()-50);
-        // }
-        // if (mPeriodicIO.tst_POV0_hoodup){
-        //     mShooter.setTempDemands(mShooter.getHoodDemand()+100, mShooter.getFlyDemand());
-        // }
-        // if (mPeriodicIO.tst_POV180_hooddn){
-        //     mShooter.setTempDemands(mShooter.getHoodDemand()-50, mShooter.getFlyDemand());
-        // }
     }
 
     private SystemState handleReadingTestButtons() {
@@ -331,8 +302,6 @@ public class JSticks extends Subsystem {
             mSuperstructure.setWantedState(Superstructure.WantedState.TEST, sClassName);
         }
 
-        // mShooter.setMotorTestDemand(-mOperator.getRaw(Xbox.LEFT_STICK_Y), -mOperator.getRaw(Xbox.RIGHT_STICK_Y));
-
         if (mPeriodicIO.op_RightTrigger_Collect) {
             mSuperstructure.setWantedState(Superstructure.WantedState.COLLECT, sClassName);
         }
@@ -348,7 +317,8 @@ public class JSticks extends Subsystem {
             mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
         }
 
-        // mShooter.setHoodTestDemand(mPeriodicIO.tst_LeftAxis_TestDemand);
+        // For debugging
+        // mShooter.setMotorTestDemand(-mOperator.getRaw(Xbox.LEFT_STICK_Y), -mOperator.getRaw(Xbox.RIGHT_STICK_Y));
         return defaultStateTransfer();
     }
 
@@ -380,8 +350,7 @@ public class JSticks extends Subsystem {
         mPeriodicIO.op_AButton_PreClimb = mOperator.getButton(Xbox.A_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.op_AButton_PreClimb_Stop = mOperator.getButton(Xbox.A_BUTTON, CW.RELEASED_EDGE);
         mPeriodicIO.op_XButton_AutoClimb = mOperator.getButton(Xbox.X_BUTTON, CW.PRESSED_EDGE);
-        // mPeriodicIO.op_XButton_AutoClimb_Stop = mOperator.getButton(Xbox.X_BUTTON, CW.RELEASED_EDGE);
-        mPeriodicIO.op_YButton_MidBarClimb = mOperator.getButton(Xbox.Y_BUTTON, CW.PRESSED_EDGE);
+        // mPeriodicIO.op_XButton_AutoClimb_Stop = mOperator.getButton(Xbox.X_BUTTON, CW.RELEASED_EDGE); // unused
 
         mPeriodicIO.op_BackButton_TestHome = mOperator.getButton(Xbox.BACK_BUTTON, CW.PRESSED_EDGE);
         mPeriodicIO.op_BackButton_TestHome_Stop = mOperator.getButton(Xbox.BACK_BUTTON, CW.RELEASED_EDGE);
@@ -408,21 +377,6 @@ public class JSticks extends Subsystem {
         mPeriodicIO.op_POV180_ManualShot_Robot_Stop = mOperator.getButton(Xbox.POV0_180, CW.RELEASED_EDGE);
         mPeriodicIO.op_POV270_ManualShot_Tarmac_Stop = mOperator.getButton(Xbox.POV0_270, CW.RELEASED_EDGE);
 
-        // mPeriodicIO.tst_AButton_AutoElev = mTest.getButton(LogitechPS4.A_BUTTON, CW.PRESSED_EDGE);
-        // mPeriodicIO.tst_AButton_AutoElev_Stop = mTest.getButton(LogitechPS4.A_BUTTON, CW.RELEASED_EDGE);
-        // mPeriodicIO.tst_BButton_AutoPre = mTest.getButton(LogitechPS4.B_BUTTON, CW.PRESSED_EDGE);
-        // mPeriodicIO.tst_BButton_AutoPre_Stop = mTest.getButton(LogitechPS4.B_BUTTON, CW.RELEASED_EDGE);
-        // mPeriodicIO.tst_LeftAxis_TestDemand = mTest.getRaw(LogitechPS4.LEFT_STICK_Y,.15);
-        // mPeriodicIO.tst_RightAxis_TestDemand = mTest.getRaw(LogitechPS4.RIGHT_STICK_Y,.15);
-        // mPeriodicIO.tst_LeftBumper_TestSolEngage = mTest.getButton(LogitechPS4.LEFT_BUMPER, CW.PRESSED_EDGE);
-        // mPeriodicIO.tst_RightBumper_TestSolDisengage = mTest.getButton(LogitechPS4.RIGHT_BUMPER, CW.PRESSED_EDGE);
-        // mPeriodicIO.tst_XButton_HOME = mTest.getButton(LogitechPS4.X_BUTTON, CW.PRESSED_EDGE);
-        // mPeriodicIO.tst_XButton_HOME_STOP = mTest.getButton(LogitechPS4.X_BUTTON, CW.RELEASED_EDGE);
-
-        // mPeriodicIO.tst_POV0_hoodup = mTest.getButton(LogitechPS4.POV0_0, CW.PRESSED_EDGE);
-        // mPeriodicIO.tst_POV90_flyup = mTest.getButton(LogitechPS4.POV0_90, CW.PRESSED_EDGE);
-        // mPeriodicIO.tst_POV180_hooddn = mTest.getButton(LogitechPS4.POV0_180, CW.PRESSED_EDGE);
-        // mPeriodicIO.tst_POV270_flyDn = mTest.getButton(LogitechPS4.POV0_270, CW.PRESSED_EDGE);
 
     }
 
@@ -463,13 +417,11 @@ public class JSticks extends Subsystem {
 
                 sClassName+".op_LeftBumper_ClimberLockout,"+
                 sClassName+".op_XButton_AutoClimb,"+
-                sClassName+".op_YButton_MidBarClimb,"+
                 sClassName+".op_AButton_PreClimb,"+
                 sClassName+".op_POV0_ManualShot_Fender,"+
                 sClassName+".op_POV90_ManualShot_Ball,"+
                 sClassName+".op_POV180_ManualShot_Robot,"+
                 sClassName+".op_POV270_ManualShot_Tarmac,"+
-                sClassName+".op_ManualShoot,"+
                 sClassName+".op_POV0_ManualShot_Fender_Stop,"+
                 sClassName+".op_POV90_ManualShot_Ball_Stop,"+
                 sClassName+".op_POV180_ManualShot_Robot_Stop,"+
@@ -507,13 +459,11 @@ public class JSticks extends Subsystem {
         mPeriodicIO.op_BButton_StopShooter+","+
         mPeriodicIO.op_LeftBumper_ClimberLockout+","+
         mPeriodicIO.op_XButton_AutoClimb+","+
-        mPeriodicIO.op_YButton_MidBarClimb+","+
         mPeriodicIO.op_AButton_PreClimb+","+
         mPeriodicIO.op_POV0_ManualShot_Fender+","+
         mPeriodicIO.op_POV90_ManualShot_Ball+","+
         mPeriodicIO.op_POV180_ManualShot_Robot+","+
         mPeriodicIO.op_POV270_ManualShot_Tarmac+","+
-        mPeriodicIO.op_ManualShoot+","+
         mPeriodicIO.op_POV0_ManualShot_Fender_Stop+","+
         mPeriodicIO.op_POV90_ManualShot_Ball_Stop+","+
         mPeriodicIO.op_POV180_ManualShot_Robot_Stop+","+
@@ -538,62 +488,53 @@ public class JSticks extends Subsystem {
         private double lastSchedStart;
 
         // Joystick Inputs
-        public double dr_LeftStickX_Translate; // drive
-        public double dr_LeftStickY_Translate; // drive
-        public double dr_RightStickX_Rotate; // drive
-        public boolean dr_RightTrigger_AutoShoot = false;
-        public boolean dr_RightTrigger_AutoShoot_Stop = false;
-        public boolean dr_LeftTrigger_SlowSpeed = false;
+
+        // drive
+        public double dr_LeftStickX_Translate;
+        public double dr_LeftStickY_Translate;
+        public double dr_RightStickX_Rotate;
+        public boolean dr_LeftTrigger_SlowSpeed   = false;
         public boolean dr_RightBumper_RobotOrient = false; // field/robot oriented
-        public boolean dr_YButton_ResetIMU = false; // reset direction
+        public boolean dr_YButton_ResetIMU        = false; // reset direction
         public boolean dr_AButton_ToggleDriveMode = false;
         public boolean dr_StartButton_ResetWheels = false;
-        public boolean dr_XButton_HomeHood = false;
-        public boolean dr_XButton_HomeHood_Stop = false;
+        public boolean dr_XButton_HomeHood        = false;
+        public boolean dr_XButton_HomeHood_Stop   = false;
 
+        // shoot
+        public boolean dr_RightTrigger_AutoShoot      = false;
+        public boolean dr_RightTrigger_AutoShoot_Stop = false;
+
+        public boolean op_POV0_ManualShot_Fender   = false;
+        public boolean op_POV90_ManualShot_Ball    = false;
+        public boolean op_POV180_ManualShot_Robot  = false;
+        public boolean op_POV270_ManualShot_Tarmac = false;
+
+        public boolean op_POV0_ManualShot_Fender_Stop   = false;
+        public boolean op_POV90_ManualShot_Ball_Stop    = false;
+        public boolean op_POV180_ManualShot_Robot_Stop  = false;
+        public boolean op_POV270_ManualShot_Tarmac_Stop = false;
+        public boolean op_BButton_StopShooter           = false;
+
+        // collect
+        public boolean op_RightTrigger_Collect      = false;
+        public boolean op_RightTrigger_Collect_Stop = false;
+        public boolean op_LeftTrigger_Back          = false;
+        public boolean op_LeftTrigger_Back_Stop     = false;
+
+        // climb
+        public boolean op_LeftBumper_ClimberLockout = false;
+        public boolean op_AButton_PreClimb          = false;
+        public boolean op_AButton_PreClimb_Stop     = false;
+        public boolean op_XButton_AutoClimb         = false;
+        public boolean op_XButton_AutoClimb_Stop    = false;
+
+        // test mode/reset
         public double op_LeftStickY_TestMidArms;
         public double op_RightStickY_TestSlappy;
-        public boolean op_LeftBumper_TestRelease;
-        public boolean op_RightBumper_TestLock;
-
-        public boolean op_RightTrigger_Collect = false;
-        public boolean op_RightTrigger_Collect_Stop = false;
-        public boolean op_LeftTrigger_Back = false;
-        public boolean op_LeftTrigger_Back_Stop = false;
-        public boolean op_BButton_StopShooter = false;
-        public boolean op_LeftBumper_ClimberLockout = false;
-        public boolean op_AButton_PreClimb = false;
-        public boolean op_AButton_PreClimb_Stop = false;
-        public boolean op_XButton_AutoClimb = false;
-        public boolean op_XButton_AutoClimb_Stop = false;
-        public boolean op_YButton_MidBarClimb = false;
-        public boolean op_BackButton_TestHome = false;
-        public boolean op_BackButton_TestHome_Stop = false;
-
-        public boolean op_POV0_ManualShot_Fender = false;
-        public boolean op_POV90_ManualShot_Ball = false;
-        public boolean op_POV180_ManualShot_Robot = false;
-        public boolean op_POV270_ManualShot_Tarmac = false;
-        public boolean op_ManualShoot = false; // Move to Pov once read
-
-        public boolean op_POV0_ManualShot_Fender_Stop = false;
-        public boolean op_POV90_ManualShot_Ball_Stop = false;
-        public boolean op_POV180_ManualShot_Robot_Stop = false;
-        public boolean op_POV270_ManualShot_Tarmac_Stop = false;
-
-        // public boolean tst_AButton_AutoElev = false;
-        // public boolean tst_AButton_AutoElev_Stop = false;
-        // public boolean tst_BButton_AutoPre = false;
-        // public boolean tst_BButton_AutoPre_Stop = false;
-        // public double  tst_LeftAxis_TestDemand = 0;
-        // public double  tst_RightAxis_TestDemand = 0;
-        // public boolean tst_LeftBumper_TestSolEngage = false;
-        // public boolean tst_RightBumper_TestSolDisengage = false;
-        // public boolean tst_XButton_HOME = false;
-        // public boolean tst_XButton_HOME_STOP = false;
-        // public boolean tst_POV0_hoodup = false;
-        // public boolean tst_POV180_hooddn = false;
-        // public boolean tst_POV90_flyup = false;
-        // public boolean tst_POV270_flyDn = false;
+        public boolean op_BackButton_TestHome       = false;
+        public boolean op_BackButton_TestHome_Stop  = false;
+        public boolean op_LeftBumper_TestRelease    = false;
+        public boolean op_RightBumper_TestLock      = false;
     }
 }

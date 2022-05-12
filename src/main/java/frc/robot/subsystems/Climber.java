@@ -174,6 +174,7 @@ public class Climber extends Subsystem {
     private double testMidArmDemand;
     private double testSlappyDemand;
     private boolean testSolenoidDemand;
+    @SuppressWarnings("unused")
     private boolean mPrintIt = false;
 
     // Climber homing state variables

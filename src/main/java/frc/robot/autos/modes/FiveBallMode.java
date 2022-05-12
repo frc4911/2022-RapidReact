@@ -1,14 +1,10 @@
 package frc.robot.autos.modes;
 
-import java.util.ArrayList;
-
 import frc.robot.actions.AutoShootAction;
 import frc.robot.actions.AutoShotScalerAction;
 import frc.robot.actions.CollectAction;
 import frc.robot.actions.DriveTrajectoryAction;
-import frc.robot.actions.ManualShootAction;
 import frc.robot.actions.SetEndOfAutoModePoseAction;
-import frc.robot.actions.SetPoseAction;
 import frc.robot.actions.SetShootDistanceAction;
 import frc.robot.actions.SetStartPoseAction;
 import frc.robot.actions.TwistAction;
@@ -20,8 +16,6 @@ import libraries.cheesylib.geometry.Pose2d;
 import libraries.cheesylib.geometry.Rotation2d;
 import libraries.cheesylib.geometry.Translation2d;
 import libraries.cheesylib.util.Units;
-import libraries.cheesylib.autos.actions.Action;
-import libraries.cheesylib.autos.actions.ParallelAction;
 
 
 public class FiveBallMode extends AutoModeBase {

@@ -22,6 +22,7 @@ public class RobotStateEstimator extends Subsystem {
     private final PeriodicIO mPeriodicIO;
     @SuppressWarnings("unused")
     private boolean mStateChanged;
+    @SuppressWarnings("unused")
     private final boolean mLoggingEnabled = true; // used to disable logging for this subsystem only
     private static int mDefaultSchedDelta = 20;
     RobotState mRobotState;

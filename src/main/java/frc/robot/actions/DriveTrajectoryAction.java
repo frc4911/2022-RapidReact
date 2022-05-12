@@ -1,6 +1,5 @@
 package frc.robot.actions;
 
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.RobotState;
 import frc.robot.subsystems.Swerve;

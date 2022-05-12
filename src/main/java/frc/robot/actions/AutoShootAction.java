@@ -4,7 +4,6 @@ import edu.wpi.first.wpilibj.Timer;
 import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.Swerve;
 import libraries.cheesylib.autos.actions.Action;
-import libraries.cyberlib.control.HeadingController;
 import libraries.cyberlib.control.SwerveHeadingController;
 
 public class AutoShootAction implements Action{

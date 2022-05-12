@@ -81,6 +81,7 @@ public class RobotState {
     private Twist2d vehicle_velocity_predicted_;
     private Twist2d vehicle_velocity_measured_;
     private MovingAverageTwist2d vehicle_velocity_measured_filtered_;
+    @SuppressWarnings("unused")
     private double distance_driven_;
 
     /**

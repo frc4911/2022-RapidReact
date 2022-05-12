@@ -42,8 +42,6 @@ public class Indexer extends Subsystem {
     private final int kSchedDeltaActive = 20;
     private final int kSchedDeltaDormant = 100;
     private final double kMinAssessmentMovement = 100; // ticks
-    private final int kActiveFramePeriod = 20;
-    private final int kDormantFramePeriod = 100;
 
     // Subsystem States
     public enum SystemState {

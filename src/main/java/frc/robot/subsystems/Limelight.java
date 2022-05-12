@@ -35,11 +35,13 @@ public class Limelight extends Subsystem {
     private final PeriodicIO mPeriodicIO = new PeriodicIO();
     private final double[] mZeroArray = new double[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     private final List<TargetInfo> mTargets = new ArrayList<>();
+    @SuppressWarnings("unused")
     private final boolean mLoggingEnabled = true;
     private LimelightConfiguration mConfig;
     private PipelineConfiguration mPipelineConfig;
     private boolean mOutputsHaveChanged = true;
     private boolean mSeesTarget = false;
+    @SuppressWarnings("unused")
     private double mLastStart;
     private int mDefaultSchedDelta = 20;
     private String sClassName;
@@ -347,6 +349,8 @@ public class Limelight extends Subsystem {
         // System.out.println("tcornxy: " + Arrays.toString(corners));
 
         // something went wrong
+        // if there is no target, there are not enough corners, 
+        // corners[] is empty, or there is an uneven number of corners
         if (!mSeesTarget || corners.length < 12 || corners == mZeroArray || corners.length % 4 != 0) {
             return null;
         }
