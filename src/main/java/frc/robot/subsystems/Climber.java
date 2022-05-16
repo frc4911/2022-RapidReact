@@ -24,15 +24,15 @@ public class Climber extends Subsystem {
     private final TalonFX mFXMidArm, mFXSlappy;
     private final Solenoid mSolenoidDeploy;
 
+    // Constants
     private final int kSchedActive = 20;
     private final int kSchedDormant = 100;
 
-    private final double kMidArmCurrentLimitLow = 10; // temp change while testing autoclimb reset to 80 when done
-    private final double kMidArmCurrentLimitHigh = 80; // temp change while testing autoclimb reset to 80 when done
+    private final double kMidArmCurrentLimitLow = 10;
+    private final double kMidArmCurrentLimitHigh = 80;
     private final double kSlappyCurrentLimitLow = 10;
     private final double kSlappyCurrentLimitHigh = 70;
 
-    // TODO: all values must be tuned
     private final double kClosedError = 50;
 
     private final double kConfig_arm_kP = 0.3;
@@ -80,11 +80,9 @@ public class Climber extends Subsystem {
         DISABLING,
         HOLDING,
         HOMING,
-        // CLIMBING_1_LIFT,
-        // CLIMBING_2_ROTATE_UP,
-        CLIMBING_3_LIFT_MORE,
-        CLIMBING_4_ENGAGE_TRAV,
-        CLIMBING_5_RELEASE_MID,
+        CLIMBING_1_LIFT_MORE,
+        CLIMBING_2_ENGAGE_TRAV,
+        CLIMBING_3_RELEASE_MID,
         PRECLIMBING,
         MANUAL_CONTROLLING
     }
@@ -94,17 +92,15 @@ public class Climber extends Subsystem {
         DISABLE,
         HOLD,
         HOME,
-        // CLIMB_1_LIFT,
-        // CLIMB_2_ROTATE_UP,
-        CLIMB_3_LIFT_MORE,
-        CLIMB_4_ENGAGE_TRAV,
-        CLIMB_5_RELEASE_MID,
+        CLIMB_1_LIFT_MORE,
+        CLIMB_2_ENGAGE_TRAV,
+        CLIMB_3_RELEASE_MID,
         PRECLIMB,
         MANUAL_CONTROL
     }
 
     public enum MidArmPosition {
-        MIDBAR(369000), //345000
+        MIDBAR(369000), //345000: mid bar position with belt nu climber
         MIDDLE(92500),
         DOWN(-6000), // -14900
         HOME(-400),
@@ -145,8 +141,6 @@ public class Climber extends Subsystem {
     private boolean stageOneComplete;
     private boolean stageTwoComplete;
     private boolean stageThreeComplete;
-    private boolean stageFourComplete;
-    private boolean stageFiveComplete;
     private int currentStage;
 
     private boolean midArmHomingComplete;
@@ -303,8 +297,6 @@ public class Climber extends Subsystem {
             stageOneComplete = false;
             stageTwoComplete = false;
             stageThreeComplete = false;
-            stageFourComplete = false;
-            stageFiveComplete = false;
             midArmHomingComplete = false;
             slappyHomingComplete = false;
             slappyJustFinishedHoming = false;
@@ -334,20 +326,14 @@ public class Climber extends Subsystem {
                     case PRECLIMBING:
                         newState = handlePreclimbing();
                         break;
-                    // case CLIMBING_1_LIFT:
-                    //     newState = handleClimbing_1_Lift();
-                    //     break;
-                    // case CLIMBING_2_ROTATE_UP:
-                    //     newState = handleClimbing_2_RotateUp();
-                    //     break;
-                    case CLIMBING_3_LIFT_MORE:
-                        newState = handleClimbing_3_LiftMore();
+                    case CLIMBING_1_LIFT_MORE:
+                        newState = handleClimbing_1_LiftMore();
                         break;
-                    case CLIMBING_4_ENGAGE_TRAV:
-                        newState = handleClimbing_4_EngageTrav();
+                    case CLIMBING_2_ENGAGE_TRAV:
+                        newState = handleClimbing_2_EngageTrav();
                         break;
-                    case CLIMBING_5_RELEASE_MID:
-                        newState = handleClimbing_5_ReleaseMid();
+                    case CLIMBING_3_RELEASE_MID:
+                        newState = handleClimbing_3_ReleaseMid();
                         break;
                     case MANUAL_CONTROLLING:
                         newState = handleManualControlling();
@@ -385,16 +371,12 @@ public class Climber extends Subsystem {
                 return SystemState.HOMING;
             case DISABLE:
                 return SystemState.DISABLING;
-            // case CLIMB_1_LIFT:
-            //     return SystemState.CLIMBING_1_LIFT;
-            // case CLIMB_2_ROTATE_UP:
-            //     return SystemState.CLIMBING_2_ROTATE_UP;
-            case CLIMB_3_LIFT_MORE:
-                return SystemState.CLIMBING_3_LIFT_MORE;
-            case CLIMB_4_ENGAGE_TRAV:
-                return SystemState.CLIMBING_4_ENGAGE_TRAV;
-            case CLIMB_5_RELEASE_MID:
-                return SystemState.CLIMBING_5_RELEASE_MID;
+            case CLIMB_1_LIFT_MORE:
+                return SystemState.CLIMBING_1_LIFT_MORE;
+            case CLIMB_2_ENGAGE_TRAV:
+                return SystemState.CLIMBING_2_ENGAGE_TRAV;
+            case CLIMB_3_RELEASE_MID:
+                return SystemState.CLIMBING_3_RELEASE_MID;
             case PRECLIMB:
                 return SystemState.PRECLIMBING;
             case MANUAL_CONTROL:
@@ -424,7 +406,7 @@ public class Climber extends Subsystem {
 
     private SystemState handleDisabling() {
         if (mStateChanged) {
-            if (currentStage == 4 || currentStage == 5) {
+            if (currentStage == 2 || currentStage == 3) {
                 // Activate stator current limits on disable to allow mid arm to slide off the mid bar for a traversal climb
                 masterConfig(0, true, 0, true, kSchedDormant);
             } else {
@@ -543,67 +525,14 @@ public class Climber extends Subsystem {
         return defaultStateTransfer();
     }
 
-    // private SystemState handleClimbing_1_Lift(){
-    //     if(mStateChanged) {
-    //         masterConfig(kMidArmCurrentLimitHigh, true,
-    //                      kSlappyCurrentLimitHigh, true,
-    //                      kSchedActive);
-    //         // mPeriodicIO.midArmDemand = MidArmPosition.MIDDLE.get();
-    //         // mPeriodicIO.midArmControlMode = ControlMode.MotionMagic;
-    //         stageOneComplete = true; // false;
-    //         currentStage = 1;
-    //     }
+    private double slappyTravelDist = SlappyPosition.MAX.get()-SlappyPosition.HOME.get();
+    private double midArmTravelDist = MidArmPosition.MIDBAR.get()-MidArmPosition.DOWN.get();
 
-    //     if (Math.abs(mPeriodicIO.midArmPosition - mPeriodicIO.midArmDemand) < midBarPosTolerance){
-    //         stageOneComplete = true;
-    //     }
-
-    //     if (mWantedState != WantedState.CLIMB_1_LIFT) {
-    //         stageOneComplete = false;
-    //     }
-    //     return defaultStateTransfer();
-    // }
-
-    // private SystemState handleClimbing_2_RotateUp(){
-    //     if (mStateChanged) {
-    //         masterConfig(kMidArmCurrentLimitHigh, true,
-    //                      kSlappyCurrentLimitHigh, true,
-    //                      kSchedActive);
-    //         configPIDF(mFXSlappy,
-    //                    kConfig_slappy_kP, //kP
-    //                    kConfig_slappy_kI, //kI
-    //                    kConfig_slappy_kD, //kD
-    //                    kConfig_slappy_kF, //kF
-    //                    kSlappyCruiseVelocity, kSlappyAcceleration); //cruise veloctiy, cruise acceleration
-    //         // mPeriodicIO.slappyDemand = SlappyPosition.MID.get();
-    //         // mPeriodicIO.slappyControlMode = ControlMode.MotionMagic;
-    //         stageTwoComplete = true; // false; // redundant
-    //         currentStage = 2;
-    //     }
-
-    //     if (Math.abs(mPeriodicIO.slappyPosition - mPeriodicIO.slappyDemand) < slappyPosTolerance) {
-    //         stageTwoComplete = true;
-    //     }
-
-    //     if (mWantedState != WantedState.CLIMB_2_ROTATE_UP) {
-    //         stageTwoComplete = false;
-    //     }
-    //     return defaultStateTransfer();
-    // }
-    double slappyDist = SlappyPosition.MAX.get()-SlappyPosition.HOME.get();
-    double midArmDist = MidArmPosition.MIDBAR.get()-MidArmPosition.DOWN.get();
-
-    // double[] slappyPosHist = new double[5];
-    // double[] midArmPosHist = new double[5];
-    // int histIndex = 0;
-    // boolean slappyHasMoved;
-    // boolean midArmHasMoved;
-    // boolean slappyIsStopped;
-    // boolean midArmIsStopped;
-    // final double kTolerance = 5;
-
-    double[] slappy = {0.0, 0.0, 0.0, 0.0, 0.0, 0.25, 0.5, 1.0, 1.0, 1.0, 1.0};
-    private SystemState handleClimbing_3_LiftMore(){
+    // Tracks the progress of the slappy sticks' position as the mid bar pulls the robot upward
+    // 0-100 percent of the slappy's total travel distance
+    // Each element represents 10% of the mid arm's travel, starting at 0%
+    private double[] slappyProgressBar = {0.0, 0.0, 0.0, 0.0, 0.0, 0.25, 0.5, 1.0, 1.0, 1.0, 1.0};
+    private SystemState handleClimbing_1_LiftMore(){
         if(mStateChanged) {
             mPrintIt = true;
             masterConfig(kMidArmCurrentLimitHigh, true,
@@ -615,175 +544,90 @@ public class Climber extends Subsystem {
                        kConfig_slappy_kD, //kD
                        kConfig_slappy_kF, //kF
                        kSlappyCruiseVelocity, kSlappyAcceleration); //cruise veloctiy, cruise acceleration
-            mPeriodicIO.slappyDemand = SlappyPosition.HOME.get()+slappyDist*slappy[0];  // slappy is already down so don't move yet
+            mPeriodicIO.slappyDemand = SlappyPosition.HOME.get()+slappyTravelDist*slappyProgressBar[0];  // slappy is already down so don't move yet
             mPeriodicIO.slappyControlMode = ControlMode.Position;
             mPeriodicIO.midArmDemand = MidArmPosition.DOWN.get();
             mPeriodicIO.midArmControlMode = ControlMode.Position;
             stageOneComplete = false;
-            currentStage = 3;
-            // histIndex = 0;
-            // slappyHasMoved = false;
-            // midArmHasMoved = false;
-            // slappyIsStopped = false;
-            // midArmIsStopped = false;
+            currentStage = 1;
         }
 
         // System.out.println("MIDARM: Pos "+ mPeriodicIO.midArmPosition + ", Demand " + mPeriodicIO.midArmDemand + ", Current "+ mPeriodicIO.midArmStatorCurrent 
         //                 + " SLAPPY: Pos " + mPeriodicIO.slappyPosition + ", Demand " + mPeriodicIO.slappyDemand + ", Current "+ mPeriodicIO.slappyStatorCurrent);
     
-        double midArmPercent = (MidArmPosition.MIDBAR.get()-mPeriodicIO.midArmPosition)/midArmDist;
-        int slapIndex = (int)(((double)slappy.length)*midArmPercent);
-        if (slapIndex >= slappy.length){
-            slapIndex = slappy.length-1;
+        double midArmPercent = (MidArmPosition.MIDBAR.get()-mPeriodicIO.midArmPosition)/midArmTravelDist;
+        int slapIndex = (int)(((double)slappyProgressBar.length)*midArmPercent);
+        if (slapIndex >= slappyProgressBar.length){
+            slapIndex = slappyProgressBar.length-1;
         }
-        mPeriodicIO.slappyDemand = SlappyPosition.HOME.get()+slappyDist*slappy[slapIndex];
+        mPeriodicIO.slappyDemand = SlappyPosition.HOME.get()+slappyTravelDist*slappyProgressBar[slapIndex];
         // System.out.println("midPos:"+mPeriodicIO.midArmPosition+" mid%:"+midArmPercent+" slapIndex:"+slapIndex+" slapDemand:"+mPeriodicIO.slappyDemand);
-
-        // int arrayLen = slappyPosHist.length;
-        // slappyPosHist[histIndex%arrayLen] = mPeriodicIO.slappyPosition;
-        // midArmPosHist[histIndex%arrayLen] = mPeriodicIO.midArmPosition;
-        // histIndex++; // now points to the oldest data point
-
-        // if (histIndex >= arrayLen){
-
-        //     if (!slappyHasMoved){
-        //         slappyHasMoved = true;
-        //         for (int i=histIndex+1; i<histIndex+slappyPosHist.length; i++){
-        //             double diff = Math.abs(slappyPosHist[(i-1)%arrayLen]-slappyPosHist[i%arrayLen]);
-
-        //             if (diff < kTolerance){
-        //                 slappyHasMoved = false;
-        //                 break;
-        //             }
-        //         }
-        //     }
-        //     else if (!slappyIsStopped){
-        //         slappyIsStopped = true;
-        //         for (int i=histIndex+1; i<histIndex+slappyPosHist.length; i++){
-        //             double diff = Math.abs(slappyPosHist[(i-1)%arrayLen]-slappyPosHist[i%arrayLen]);
-
-        //             if (diff > kTolerance){
-        //                 slappyIsStopped = false;
-        //                 break;
-        //             }
-        //         }
-        //     }
-        //     if (!midArmHasMoved){
-        //         midArmHasMoved = true;
-        //         for (int i=histIndex+1; i<histIndex+midArmPosHist.length; i++){
-        //             double diff = Math.abs(midArmPosHist[(i-1)%arrayLen]-midArmPosHist[i%arrayLen]);
-
-        //             if (diff < kTolerance){
-        //                 midArmHasMoved = false;
-        //                 break;
-            
-        //             }
-        //         }
-        //     }
-        //     else if (!midArmIsStopped){
-        //         midArmIsStopped = true;
-        //         for (int i=histIndex+1; i<histIndex+midArmPosHist.length; i++){
-        //             double diff = Math.abs(midArmPosHist[(i-1)%arrayLen]-midArmPosHist[i%arrayLen]);
-
-        //             if (diff > kTolerance){
-        //                 midArmIsStopped = false;
-        //                 break;
-        //             }
-        //         }
-        //     }
-        // }
 
         // System.out.println(slappyHasMoved+","+slappyIsStopped+","+midArmHasMoved+","+midArmIsStopped);
         if (((Math.abs(mPeriodicIO.midArmPosition - mPeriodicIO.midArmDemand) < midBarPosTolerance) /*|| midArmIsStopped*/) && 
             ((Math.abs(mPeriodicIO.slappyPosition - mPeriodicIO.slappyDemand) < slappyPosTolerance) /*|| slappyIsStopped*/)){
             // System.out.println("Climber 3 stage is complete. midArmIsStopped:"+midArmIsStopped+" slappyIsStopped:"+slappyIsStopped);
-            stageThreeComplete = true;
+            stageOneComplete = true;
         }
        
-        if (mWantedState != WantedState.CLIMB_3_LIFT_MORE) {
-            stageThreeComplete = false;
+        if (mWantedState != WantedState.CLIMB_1_LIFT_MORE) {
+            stageOneComplete = false;
             mPrintIt = false;
         }
         return defaultStateTransfer();
     }
 
-    // private SystemState handleClimbing_3_LiftMore(){
-    //     if(mStateChanged) {
-    //         masterConfig(kMidArmCurrentLimitHigh, true,
-    //                      kSlappyCurrentLimitHigh, true,
-    //                      kSchedActive);
-    //         mPeriodicIO.slappyDemand = SlappyPosition.MAX.get();
-    //         mPeriodicIO.midArmDemand = MidArmPosition.DOWN.get();
-    //         mPeriodicIO.midArmControlMode = ControlMode.Position;
-    //         stageOneComplete = false;
-    //         currentStage = 3;
-    //     }
-
-    //     // System.out.println("MIDARM: Pos "+ mPeriodicIO.midArmPosition + ", Demand " + mPeriodicIO.midArmDemand + ", Current "+ mPeriodicIO.midArmStatorCurrent 
-    //     //                 + " SLAPPY: Pos " + mPeriodicIO.slappyPosition + ", Demand " + mPeriodicIO.slappyDemand + ", Current "+ mPeriodicIO.slappyStatorCurrent);
-        
-    //     if ((Math.abs(mPeriodicIO.midArmPosition - mPeriodicIO.midArmDemand) < midBarPosTolerance) &&
-    //         (Math.abs(mPeriodicIO.slappyPosition - mPeriodicIO.slappyDemand) < slappyPosTolerance)){
-    //         stageThreeComplete = true;
-    //     }
-       
-    //     if (mWantedState != WantedState.CLIMB_3_LIFT_MORE) {
-    //         stageThreeComplete = false;
-    //     }
-    //     return defaultStateTransfer();
-    // }
-
-    private SystemState handleClimbing_4_EngageTrav(){
+    private SystemState handleClimbing_2_EngageTrav(){
         if (mStateChanged) {
             masterConfig(kMidArmCurrentLimitHigh, true,
                          kSlappyCurrentLimitHigh, true,
                          kSchedActive);
             configPIDF(mFXSlappy,
-                       0.1, //kP
-                       0, //kI
-                       0, //kD
-                       0, //kF
+                       kConfig_slappy_kP, //kP
+                       kConfig_slappy_kI, //kI
+                       kConfig_slappy_kD, //kD
+                       kConfig_slappy_kF, //kF
                        10000, 10000); //cruise veloctiy, cruise acceleration
             mPeriodicIO.slappyDemand = SlappyPosition.DOWN.get();
-            mPeriodicIO.slappyControlMode = ControlMode.Position; //ControlMode.MotionMagic;
-            stageFourComplete = false; // redundant
-            currentStage = 4;
+            mPeriodicIO.slappyControlMode = ControlMode.Position;
+            stageTwoComplete = false; // redundant
+            currentStage = 2;
         }
 
         // System.out.println("MIDARM: Pos "+ mPeriodicIO.midArmPosition + ", Demand " + mPeriodicIO.midArmDemand + ", Current "+ mPeriodicIO.midArmStatorCurrent 
         //                 + " SLAPPY: Pos " + mPeriodicIO.slappyPosition + ", Demand " + mPeriodicIO.slappyDemand + ", Current "+ mPeriodicIO.slappyStatorCurrent);
         
         if (Math.abs(mPeriodicIO.slappyPosition - mPeriodicIO.slappyDemand) < slappyPosTolerance) {
-            stageFourComplete = true;
+            stageTwoComplete = true;
         }
 
-        if (mWantedState != WantedState.CLIMB_4_ENGAGE_TRAV) {
-            stageFourComplete = false;
+        if (mWantedState != WantedState.CLIMB_2_ENGAGE_TRAV) {
+            stageTwoComplete = false;
         }
         return defaultStateTransfer();
 
     }
 
-    private SystemState handleClimbing_5_ReleaseMid(){
+    private SystemState handleClimbing_3_ReleaseMid(){
         if(mStateChanged) {
             masterConfig(0, false,
                          0, false,
                          kSchedActive);
             mPeriodicIO.midArmDemand = MidArmPosition.RELEASE.get();
             mPeriodicIO.midArmControlMode = ControlMode.Position;
-            stageFiveComplete = false;
-            currentStage = 5;
+            stageThreeComplete = false;
+            currentStage = 3;
         }
 
         // System.out.println("MIDARM: Pos "+ mPeriodicIO.midArmPosition + ", Demand " + mPeriodicIO.midArmDemand + ", Current "+ mPeriodicIO.midArmStatorCurrent 
         //                 + " SLAPPY: Pos " + mPeriodicIO.slappyPosition + ", Demand " + mPeriodicIO.slappyDemand + ", Current "+ mPeriodicIO.slappyStatorCurrent);
         
         if (Math.abs(mPeriodicIO.midArmPosition - mPeriodicIO.midArmDemand) < midBarPosTolerance){
-            stageFiveComplete = true;
+            stageThreeComplete = true;
         }
 
-        if (mWantedState != WantedState.CLIMB_5_RELEASE_MID) {
-            stageFiveComplete = false;
+        if (mWantedState != WantedState.CLIMB_3_RELEASE_MID) {
+            stageThreeComplete = false;
             mPrintIt = false;
         }
         return defaultStateTransfer();
@@ -940,16 +784,12 @@ public class Climber extends Subsystem {
                 return assessingComplete;
             case PRECLIMB:
                 return preClimbComplete;
-            // case CLIMB_1_LIFT:
-            //     return stageOneComplete;
-            // case CLIMB_2_ROTATE_UP:
-            //     return stageTwoComplete;
-            case CLIMB_3_LIFT_MORE:
+            case CLIMB_1_LIFT_MORE:
+                return stageOneComplete;
+            case CLIMB_2_ENGAGE_TRAV:
+                return stageTwoComplete;
+            case CLIMB_3_RELEASE_MID:
                 return stageThreeComplete;
-            case CLIMB_4_ENGAGE_TRAV:
-                return stageFourComplete;
-            case CLIMB_5_RELEASE_MID:
-                return stageFiveComplete;
             case HOME:
                 return midArmHomingComplete && slappyHomingComplete;
             default:
@@ -1057,12 +897,12 @@ public class Climber extends Subsystem {
 
     @Override
     public void outputTelemetry() {
-        SmartDashboard.putNumber("midArmPos", mPeriodicIO.midArmPosition);
-        SmartDashboard.putNumber("slappyPos", mPeriodicIO.slappyPosition);
+        SmartDashboard.putNumber("Mid Arm Pos", mPeriodicIO.midArmPosition);
+        SmartDashboard.putNumber("Slappy Pos", mPeriodicIO.slappyPosition);
         mPeriodicIO.slappyStator = FramePeriodSwitch.getStatorCurrent(mFXSlappy);
         mPeriodicIO.midArmStator = FramePeriodSwitch.getStatorCurrent(mFXMidArm);
-        SmartDashboard.putNumber("midArmCurrent", mPeriodicIO.midArmStator);
-        SmartDashboard.putNumber("slappyCurrent", mPeriodicIO.slappyStator);
+        SmartDashboard.putNumber("Mid Arm Current", mPeriodicIO.midArmStator);
+        SmartDashboard.putNumber("Slappy Current", mPeriodicIO.slappyStator);
         
     }
 

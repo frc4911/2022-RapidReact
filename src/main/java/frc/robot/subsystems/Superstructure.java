@@ -572,7 +572,7 @@ public class Superstructure extends Subsystem {
         return defaultStateTransfer();
     }
 
-    Climber.WantedState mClimbStopState = Climber.WantedState.CLIMB_5_RELEASE_MID;
+    Climber.WantedState mClimbStopState = Climber.WantedState.CLIMB_3_RELEASE_MID;
 
     public void setLastClimbState(Climber.WantedState climbState){
         mClimbStopState = climbState;
@@ -584,7 +584,7 @@ public class Superstructure extends Subsystem {
                 mLLManager.getLimelight().setLed(Limelight.LedMode.OFF);
             }
             mPeriodicIO.schedDeltaDesired = mFastCycle;
-            mClimber.setWantedState(Climber.WantedState.CLIMB_3_LIFT_MORE, sClassName);
+            mClimber.setWantedState(Climber.WantedState.CLIMB_1_LIFT_MORE, sClassName);
         }
 
         switch(mClimber.getWantedState()) {
@@ -598,24 +598,24 @@ public class Superstructure extends Subsystem {
             //         mClimber.setWantedState(Climber.WantedState.CLIMB_3_LIFT_MORE, sClassName);
             //     }
             //     break;
-            case CLIMB_3_LIFT_MORE:
-                if (mClimber.isHandlerComplete(Climber.WantedState.CLIMB_3_LIFT_MORE)) {
-                    if (mClimbStopState == Climber.WantedState.CLIMB_3_LIFT_MORE){
-                        mClimbStopState = Climber.WantedState.CLIMB_5_RELEASE_MID;
+            case CLIMB_1_LIFT_MORE:
+                if (mClimber.isHandlerComplete(Climber.WantedState.CLIMB_1_LIFT_MORE)) {
+                    if (mClimbStopState == Climber.WantedState.CLIMB_1_LIFT_MORE){
+                        mClimbStopState = Climber.WantedState.CLIMB_3_RELEASE_MID;
                         mClimber.setWantedState(Climber.WantedState.HOLD, sClassName);
                     }
                     else{
-                        mClimber.setWantedState(Climber.WantedState.CLIMB_4_ENGAGE_TRAV, sClassName);
+                        mClimber.setWantedState(Climber.WantedState.CLIMB_2_ENGAGE_TRAV, sClassName);
                     }
                 }
                 break;
-            case CLIMB_4_ENGAGE_TRAV:
-                if (mClimber.isHandlerComplete(Climber.WantedState.CLIMB_4_ENGAGE_TRAV)) {
-                    mClimber.setWantedState(Climber.WantedState.CLIMB_5_RELEASE_MID, sClassName);
+            case CLIMB_2_ENGAGE_TRAV:
+                if (mClimber.isHandlerComplete(Climber.WantedState.CLIMB_2_ENGAGE_TRAV)) {
+                    mClimber.setWantedState(Climber.WantedState.CLIMB_3_RELEASE_MID, sClassName);
                 }
                 break;
-            case CLIMB_5_RELEASE_MID: // Done with climb
-                if (mClimber.isHandlerComplete(Climber.WantedState.CLIMB_5_RELEASE_MID)) {
+            case CLIMB_3_RELEASE_MID: // Done with climb
+                if (mClimber.isHandlerComplete(Climber.WantedState.CLIMB_3_RELEASE_MID)) {
                     mClimber.setWantedState(Climber.WantedState.HOLD, sClassName);
                 }                
                 break;
