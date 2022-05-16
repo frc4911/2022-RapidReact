@@ -10,6 +10,8 @@ public class Xbox extends CW {
     public static final int RIGHT_BUMPER = CW.BUTTONS_OFFSET + 6;
     public static final int BACK_BUTTON = CW.BUTTONS_OFFSET + 7;
     public static final int START_BUTTON = CW.BUTTONS_OFFSET + 8;
+    public static final int LEFT_STICK_BUTTON = CW.BUTTONS_OFFSET + 9;
+    public static final int RIGHT_STICK_BUTTON = CW.BUTTONS_OFFSET + 10;
 
     public static final int LEFT_STICK_X = CW.AXIS_OFFSET + 0;
     public static final int LEFT_STICK_Y = CW.AXIS_OFFSET + 1;
