@@ -8,20 +8,22 @@ public class TwistAction implements Action {
 	private String sClassName;
 	private Swerve mSwerve;
 	private double targetHeading; // Assume the start heading is 0 - var is the desired heading 0-360
-	private boolean relative; // CCW is true, CW is false
+	private boolean relative;
 	private double speed;
 		
 	public TwistAction(double heading, boolean relative) { 
 		this(heading, relative, .7);
 	}
 
+	/**
+	 * Independent action to twist without translation
+	 * @param heading Desired angle to twist to
+	 * @param relative Relative to the robot's current heading or field heading
+	 * @param speed Percent output
+	 */
 	public TwistAction(double heading, boolean relative, double speed) {
 		sClassName = this.getClass().getSimpleName();
 		mSwerve = Swerve.getInstance(sClassName);
-		// heading %= 360;
-		// if (heading < 0) {
-		// 	heading += 360;
-		// }
 		this.targetHeading = heading;
 		this.speed = Math.abs(speed);
 		this.relative = relative;

@@ -3,7 +3,9 @@ package frc.robot.limelight;
 import frc.robot.subsystems.Limelight;
 
 public class LimelightManager {
+    @SuppressWarnings("unused")
     private static String sClassName;
+    @SuppressWarnings("unused")
     private static int sInstanceCount;
 
     private Limelight limelight;
