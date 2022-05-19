@@ -220,8 +220,8 @@ public class Swerve extends Subsystem {
         }
     }
 
-    SlewRateLimiter forwardLimiter = new SlewRateLimiter(3.0, 0); // 1.5
-    SlewRateLimiter strafeLimiter = new SlewRateLimiter(3.0, 0); // 1.5
+    SlewRateLimiter forwardLimiter = new SlewRateLimiter(6.9, 0); // 1.5
+    SlewRateLimiter strafeLimiter = new SlewRateLimiter(6.9, 0); // 1.5
     SlewRateLimiter rotationLimiter = new SlewRateLimiter(2, 0);
 
     /**

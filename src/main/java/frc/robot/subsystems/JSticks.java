@@ -245,14 +245,15 @@ public class JSticks extends Subsystem {
             // }
 
         } else {
-            if (mPeriodicIO.dr_LeftTrigger_Collect) {
-                mSuperstructure.setWantedState(Superstructure.WantedState.COLLECT, sClassName);
+            if(mPeriodicIO.dr_LeftBumper_BackingLock){
+                if (mPeriodicIO.dr_LeftTrigger_Collect) {
+                    mSuperstructure.setWantedState(Superstructure.WantedState.BACK, sClassName);
+                }
+            } else {
+                if (mPeriodicIO.dr_LeftTrigger_Collect) {
+                    mSuperstructure.setWantedState(Superstructure.WantedState.COLLECT, sClassName);
+                }
             }
-    
-            if (mPeriodicIO.dr_LeftBumper_Back) {
-                mSuperstructure.setWantedState(Superstructure.WantedState.BACK, sClassName);
-            }
-
         }
 
         if (mPeriodicIO.dr_POV180_ManualShot_FlyStop) {
@@ -344,7 +345,7 @@ public class JSticks extends Subsystem {
             mSuperstructure.setWantedState(Superstructure.WantedState.HOLD, sClassName);
         }
 
-        if (mPeriodicIO.dr_LeftBumper_Back) {
+        if (mPeriodicIO.dr_LeftBumper_BackingLock) {
             mSuperstructure.setWantedState(Superstructure.WantedState.BACK, sClassName);
         }
         
@@ -396,11 +397,11 @@ public class JSticks extends Subsystem {
         mPeriodicIO.dr_LeftTrigger_Collect = mDriver.getButton(Xbox.LEFT_TRIGGER, CW.PRESSED_EDGE);
         mPeriodicIO.dr_LeftTrigger_Collect_Stop = mDriver.getButton(Xbox.LEFT_TRIGGER, CW.RELEASED_EDGE);
 
-        mPeriodicIO.dr_LeftBumper_Back = mDriver.getButton(Xbox.LEFT_BUMPER, CW.PRESSED_EDGE);
+        mPeriodicIO.dr_LeftBumper_BackingLock = mDriver.getButton(Xbox.LEFT_BUMPER, CW.PRESSED_LEVEL);
         mPeriodicIO.dr_LeftBumper_Back_Stop = mDriver.getButton(Xbox.LEFT_BUMPER, CW.RELEASED_EDGE);
 
         //Shooting
-        mPeriodicIO.op_BButton_StopShooter = mDriver.getButton(Xbox.B_BUTTON, CW.PRESSED_EDGE);
+        mPeriodicIO.op_BButton_StopShooter = mOperator.getButton(Xbox.B_BUTTON, CW.PRESSED_EDGE);
 
         mPeriodicIO.dr_POV0_ManualShot_Fender = mDriver.getButton(Xbox.POV0_0, CW.PRESSED_EDGE);
         mPeriodicIO.dr_POV90_ManualShot_Ball = mDriver.getButton(Xbox.POV0_90, CW.PRESSED_EDGE);
@@ -506,7 +507,7 @@ public class JSticks extends Subsystem {
         mPeriodicIO.dr_XButton_HomeHood_Stop+","+
         mPeriodicIO.dr_LeftTrigger_Collect+","+
         mPeriodicIO.dr_LeftTrigger_Collect_Stop+","+
-        mPeriodicIO.dr_LeftBumper_Back+","+
+        mPeriodicIO.dr_LeftBumper_BackingLock+","+
         mPeriodicIO.dr_LeftBumper_Back_Stop+","+
         mPeriodicIO.op_BButton_StopShooter+","+
         mPeriodicIO.dr_RightBumper_ClimberLockout+","+
@@ -563,7 +564,7 @@ public class JSticks extends Subsystem {
 
         public boolean dr_LeftTrigger_Collect = false;
         public boolean dr_LeftTrigger_Collect_Stop = false;
-        public boolean dr_LeftBumper_Back = false;
+        public boolean dr_LeftBumper_BackingLock = false;
         public boolean dr_LeftBumper_Back_Stop = false;
         public boolean op_BButton_StopShooter = false;
         public boolean dr_RightBumper_ClimberLockout = false;
