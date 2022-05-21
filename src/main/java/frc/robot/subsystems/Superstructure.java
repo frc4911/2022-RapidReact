@@ -316,12 +316,15 @@ public class Superstructure extends Subsystem {
 
     private SystemState handleHolding() {
         if (mStateChanged) {
+            
             if (!mOverrideLimelightLEDs) {
                 mLLManager.getLimelight().setLed(Limelight.LedMode.PIPELINE);
             }
+
             if(mCollector.getWantedState() != Collector.WantedState.HOLD){
                 mCollector.setWantedState(Collector.WantedState.HOLD, sClassName);
             }
+
             if(mIndexer.getWantedState() != Indexer.WantedState.HOLD){
                 mIndexer.setWantedState(Indexer.WantedState.HOLD, sClassName);
             }

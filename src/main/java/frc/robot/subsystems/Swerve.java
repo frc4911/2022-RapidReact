@@ -37,7 +37,11 @@ import libraries.cyberlib.utils.SwerveDriveHelper;
 public class Swerve extends Subsystem {
 
     public enum ControlState {
-        NEUTRAL, MANUAL, DISABLED, PATH_FOLLOWING, VISION_AIM
+        NEUTRAL, 
+        MANUAL, 
+        DISABLED, 
+        PATH_FOLLOWING, 
+        VISION_AIM
     }
 
     private ControlState mControlState = ControlState.NEUTRAL;
@@ -45,7 +49,7 @@ public class Swerve extends Subsystem {
     public SwerveConfiguration mSwerveConfiguration;
     public RobotConfiguration mRobotConfiguration;
 
-    PeriodicIO mPeriodicIO = new PeriodicIO();
+    private PeriodicIO mPeriodicIO = new PeriodicIO();
     private int mDefaultSchedDelta = 20;
 
     // Module declaration
@@ -55,11 +59,14 @@ public class Swerve extends Subsystem {
     private final SwerveDriveModule mBackLeft;
     private final SwerveDriveModule mBackRight;
 
-    private double lastUpdateTimestamp = 0;
-    private int driveMode = 3;
-    private boolean inAimingDeadzone;
-    private final double kDefaultScaler = 4.0;//2.5; // May need to be increased in Houston
+    private final SlewRateLimiter forwardLimiter = new SlewRateLimiter(3.0, 0); // 1.5
+    private final SlewRateLimiter strafeLimiter = new SlewRateLimiter(3.0, 0); // 1.5
+
+    private final double kDefaultScaler = 4.0; //2.5;
     private double mAimingScaler = kDefaultScaler;
+    private double lastUpdateTimestamp = 0;
+    private boolean inAimingDeadzone;
+    private int driveMode = 3;
 
     // Swerve kinematics & odometry
     private final IMU mIMU;
@@ -130,10 +137,6 @@ public class Swerve extends Subsystem {
 
         mMotionPlanner = new DriveMotionPlanner();
 
-        // rotationPow = SmartDashboard.getNumber("Rotation Power", -1);
-        // if(rotationPow == -1) {
-        //     SmartDashboard.putNumber("Rotation Power", 0);
-        // }
     }
 
     @Override
@@ -198,6 +201,14 @@ public class Swerve extends Subsystem {
         zeroSensors(Constants.kRobotStartingPose);
     }
 
+    /**
+     * Toggles through swerve drive modes in response to a button press
+     * Drive mode defaults to 3 as of the 2022 competition season
+     * Option 0: Cyberlib SwerveDriveHelper
+     * 1: Raw inputs with arbitrary scalars - old mode
+     * 2: Squared inputs
+     * 3: SlewRate Limiter
+     */
     public void toggleThroughDriveModes() {
         driveMode = ++driveMode % 4;
         System.out.println("Shifting Drive Mode***** to " + driveMode);
@@ -212,17 +223,13 @@ public class Swerve extends Subsystem {
                 SmartDashboard.putString("Swerve/DriveMode", driveMode + " Squared Inputs");
                 break;
             case 3:
-                SmartDashboard.putString("Swerve/DriveMode", driveMode + " Raw");
+                SmartDashboard.putString("Swerve/DriveMode", driveMode + " SlewRate Limiter");
                 break;
             default:
                 SmartDashboard.putString("Swerve/DriveMode", driveMode + " Unknown");
                 break;
         }
     }
-
-    SlewRateLimiter forwardLimiter = new SlewRateLimiter(3.0, 0); // 1.5
-    SlewRateLimiter strafeLimiter = new SlewRateLimiter(3.0, 0); // 1.5
-    SlewRateLimiter rotationLimiter = new SlewRateLimiter(2, 0);
 
     /**
      * Handles MANUAL state which corresponds to joy stick inputs.
@@ -234,10 +241,10 @@ public class Swerve extends Subsystem {
     private void handleManual() {
         HolonomicDriveSignal driveSignal;
 
-        // TODO: Check deadband code in JStick (which reduces range and still returns 0 .s low).
         //  Should always get raw values here and apply deadband code here.
         switch (driveMode) {
             case 0:
+                // Swerve Drive Helper
                 driveSignal = SwerveDriveHelper.calculate(
                         mPeriodicIO.forward, mPeriodicIO.strafe, mPeriodicIO.rotation,
                         mPeriodicIO.low_power, mPeriodicIO.field_relative, mPeriodicIO.use_heading_controller);
@@ -280,6 +287,10 @@ public class Swerve extends Subsystem {
         setOpenLoop(driveSignal);
     }
 
+    /**
+     * Calculates swerve module states periodically based on a drive signal
+     * @param driveSignal The drive signal to update the swerve
+     */
     private void updateModules(HolonomicDriveSignal driveSignal) {
         ChassisSpeeds chassisSpeeds;
 
@@ -396,11 +407,7 @@ public class Swerve extends Subsystem {
             System.out.println(mControlState + " to " + newState);
             switch (newState) {
                 case NEUTRAL:
-                    // mPeriodicIO.strafe = 0;
-                    // mPeriodicIO.forward = 0;
-                    // mPeriodicIO.rotation = 0;
-                    // stopSwerveDriveModules();
-                    mPeriodicIO.forward= 0.0;
+                    mPeriodicIO.forward = 0.0;
                     mPeriodicIO.strafe = 0.0;
                     mPeriodicIO.rotation = 0.0;
                     mPeriodicIO.visionSetpointInRadians = getHeading().getRadians();
