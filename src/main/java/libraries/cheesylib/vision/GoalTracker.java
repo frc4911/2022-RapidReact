@@ -34,6 +34,7 @@ public class GoalTracker {
         // The track id
         public int id;
 
+        @SuppressWarnings("unused")
         private GoalTrackerConfig mConfig;
 
         public TrackReport(GoalTrack track, GoalTrackerConfig goalTrackerConfig) {

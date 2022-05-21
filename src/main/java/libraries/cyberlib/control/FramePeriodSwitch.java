@@ -14,6 +14,7 @@ public class FramePeriodSwitch {
     private FramePeriodSwitch(){
     }
 
+    @SuppressWarnings("unused")
     private static void setOneStatusFramePeriod(TalonFX FXMotor, StatusFrameEnhanced statusFrame, int framePeriod){
         int retries = 5;
         ErrorCode retVal;
@@ -27,6 +28,7 @@ public class FramePeriodSwitch {
         }
     }
 
+    @SuppressWarnings("unused")
     private static void setOneControlFramePeriod(TalonFX FXMotor, ControlFrame controlFrame, int framePeriod){
         final int totalRetries = 5;
         int retries = totalRetries;
