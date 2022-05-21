@@ -1,6 +1,5 @@
 package libraries.cheesylib.subsystems;
 
-import libraries.cheesylib.loops.ILooper;
 import libraries.cheesylib.loops.Loop.Phase;
 
 /**

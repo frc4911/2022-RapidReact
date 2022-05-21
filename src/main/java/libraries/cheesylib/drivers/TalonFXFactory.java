@@ -1,19 +1,15 @@
 package libraries.cheesylib.drivers;
 
-import com.ctre.phoenix.ErrorCode;
-import com.ctre.phoenix.ParamEnum;
 import com.ctre.phoenix.motorcontrol.*;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.sensors.SensorVelocityMeasPeriod;
-
-import edu.wpi.first.wpilibj.Timer;
-import libraries.cyberlib.control.FramePeriodSwitch;
 
 /**
  * Creates TalonFX objects and configures all the parameters we care about to factory defaults. Closed-loop and sensor
  * parameters are not set, as these are expected to be set by the application.
  */
 public class TalonFXFactory {
+    @SuppressWarnings("unused")
     private final static int kTimeoutMs = 120;
 
     public static class Configuration {
@@ -148,7 +144,6 @@ public class TalonFXFactory {
         // talon.configVoltageMeasurementFilter(32, kTimeoutMs);
         // talon.enableVoltageCompensation(false);
 
-        // TODO: Consider configuring supply and stator current limits
 //        talon.enableCurrentLimit(config.ENABLE_CURRENT_LIMIT);
         // int defaultRefreshRate = 255;
         // int kTimeoutMs2 = 50; // recommended by CTRE tech support

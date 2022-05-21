@@ -7,7 +7,6 @@ import libraries.cheesylib.loops.Looper;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
