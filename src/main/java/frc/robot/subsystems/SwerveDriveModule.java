@@ -7,7 +7,6 @@ import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.sensors.AbsoluteSensorRange;
 import com.ctre.phoenix.sensors.CANCoder;
 import com.ctre.phoenix.sensors.CANCoderConfiguration;
-import com.ctre.phoenix.sensors.CANCoderStatusFrame;
 
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -81,7 +80,7 @@ public class SwerveDriveModule extends Subsystem {
         config.initializationStrategy = mConfig.kCANCoderSensorInitializationStrategy;
         config.absoluteSensorRange = AbsoluteSensorRange.Unsigned_0_to_360;
         config.magnetOffsetDegrees = mConfig.kCANCoderOffsetDegrees;
-        config.sensorDirection = false; // TODO - Make cancoder direction configurable through robot config files
+        config.sensorDirection = false;
 
         mCANCoder.configAllSettings(config, Constants.kLongCANTimeoutMs);
 
@@ -142,6 +141,13 @@ public class SwerveDriveModule extends Subsystem {
     protected void convertCancoderToFX2(){
         convertCancoderToFX2(true);
     }
+
+    /**
+     * Converts starting cancoder value into motor ticks for TalonFX devices.
+     * Primarily used on robot startup to estimate a swerve module's current
+     * heading, relative to robot forward
+     * @param useCancoders True uses cancoder values to estimate the tick values. False skips this.
+     */
     protected void convertCancoderToFX2(boolean useCancoders){
         int limit = 500;
         // mCANCoder.setStatusFramePeriod(CANCoderStatusFrame.SensorData, 50);
