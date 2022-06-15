@@ -1,7 +1,7 @@
 # Swerve Drive
 A swerve drivetrain is a special type of drivetrain where each individual wheel is independently driven and steered. This is also known as a holonomic drivetrain.
 
-A picture containing drawing
+![](resources/Swerve.png)
 
 Description automatically generated
 There are 3 different things a swerve drive can do:
@@ -11,30 +11,26 @@ There are 3 different things a swerve drive can do:
 
 These are all done with different wheel arrangements
 
-A picture containing clock
+![](resources/Swerve-Modes.png)
 
-Description automatically generated
- 
 
 ## Field Centric
 In field centric mode control is from the perspective of the driver. This means that, no matter where the robot is on the field and how it is turned, if the driver moves the joystick forward, then the robot will go forward from the driver’s perspective.  The robot uses absolute orientation.
 
-A close up of a sign
+![](resources/Swerve-Field-Centric.png)
 
-Description automatically generated
 This type of control requires a gyro (which any swerve drive robot should have).  The gyro gives the angle the robot is facing relative to the angle it was at when it was calibrated (let us assume for now that is forward). To transform the joystick inputs into field-relative coordinates, follow these steps:
 
-Convert the joystick cartesian coordinates (x, y) into polar coordinates (r, θ)
-Subtract the gyro angle from the joystick angle
-Convert back to cartesian coordinates
+1. Convert the joystick cartesian coordinates (x, y) into polar coordinates (r, θ)
+2. Subtract the gyro angle from the joystick angle
+3. Convert back to cartesian coordinates
+
 The new (x, y) coordinates are now “field-relative.”
 
 ## Robot Centric
 In robot centric mode, however, if the robot were turned to the right, then the robot would go rightwards from the driver’s perspective.  The robot drives like a standard differential drive.  This mode can be used to help the driver (or autonomous control) align the robot to a target.
 
-A close up of a sign
-
-Description automatically generated
+![](resources/Swerve-Robot-Centric.png)
 
 # Manual Control
 When the robot is controlled by the driver, the joystick inputs for control are the desired translation and rotation velocities.  This maps to kinematics definitions of a velocity vector (Vx, Vy) and angular rotation (θ) in rad/s. These are also commonly referred to as forward (Vx), strafe (Vy), rotation (θ).  Additionally, an indicator of whether the robot is driving field-oriented is provided.The inputs are used to calculate each module’s translational and angular velocity. 
