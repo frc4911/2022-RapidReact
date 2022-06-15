@@ -60,7 +60,7 @@ public class Climber extends Subsystem {
 
     // Subsystem States
     public enum SolenoidState {
-        RELEASE(true),
+        RELEASE(true), // Release passive traversal hooks
         LOCK(false);
 
         private final boolean state;
@@ -70,7 +70,6 @@ public class Climber extends Subsystem {
         }
 
         public boolean get() {
-
             return state;
         }
     }
@@ -100,7 +99,7 @@ public class Climber extends Subsystem {
     }
 
     public enum MidArmPosition {
-        MIDBAR(369000), //345000: mid bar position with belt nu climber
+        MIDBAR(369000), //345000: mid bar position with belt nu climber (old)
         MIDDLE(92500),
         DOWN(-6000), // -14900
         HOME(-400),
@@ -177,16 +176,16 @@ public class Climber extends Subsystem {
     // amount of time
     private final double midArmMovementThreshhold = 50; // encoder movements below this threshhold are considered
                                                         // stopped
-    private final double midArmNonMovementDuration = .1; // reading below threshhold encoder reads for this long is
-                                                           // considered stopped
-    private final double midArmHomingDemand = -0.4;
+    private final double midArmNonMovementDuration = .1; // reading below threshhold encoder reads for this many
+                                                         // seconds is considered stopped
+    private final double midArmHomingDemand = -0.4; // Percent output for motor
     private double midArmNonMovementTimeout; // timestamp of when low readings are sufficient
 
     private final double slappyMovementThreshhold = 50; // encoder movements below this threshhold are considered
                                                         // stopped
-    private final double slappyNonMovementDuration = 0.5; // reading below threshhold encoder reads for this long is
-                                                           // considered stopped
-    private final double slappyHomingDemand = -0.4;
+    private final double slappyNonMovementDuration = 0.5; // reading below threshhold encoder reads for this many
+                                                           // seconds is considered stopped
+    private final double slappyHomingDemand = -0.4; // Percent output of motor
     private double slappyNonMovementTimeout; // timestamp of when low readings are sufficient
 
     // Other
@@ -557,7 +556,7 @@ public class Climber extends Subsystem {
     
         double midArmPercent = (MidArmPosition.MIDBAR.get()-mPeriodicIO.midArmPosition)/midArmTravelDist;
         int slapIndex = (int)(((double)slappyProgressBar.length)*midArmPercent);
-        if (slapIndex >= slappyProgressBar.length){
+        if (slapIndex >= slappyProgressBar.length){ // Prevents throwing an indexOutOfBounds exception: mid arm will overdrive on high battery and crash without this
             slapIndex = slappyProgressBar.length-1;
         }
         mPeriodicIO.slappyDemand = SlappyPosition.HOME.get()+slappyTravelDist*slappyProgressBar[slapIndex];
@@ -662,7 +661,8 @@ public class Climber extends Subsystem {
             mPeriodicIO.solenoidDemand = SolenoidState.RELEASE;
         }
 
-        // Switch if statements to flip homing sequence order
+        // Switch if statement arguments to flip homing sequence order
+        // Also see individual homing methods
         if (!slappyHomingComplete) {
             homeSlappySticks();
         } else if (!midArmHomingComplete) {
@@ -692,11 +692,14 @@ public class Climber extends Subsystem {
             mPeriodicIO.midArmControlMode = ControlMode.PercentOutput;
         }
 
+        // if still moving - difference between last position and now is large
         double distance = Math.abs(mPeriodicIO.midArmPosition - mPeriodicIO.lastClimberPosition);
         if (distance > midArmMovementThreshhold) {
+            // increase timeout to continue
             midArmNonMovementTimeout = now + midArmNonMovementDuration;
         }
 
+        //  if timeout has stopped moving, then finished
         if (now > midArmNonMovementTimeout) {
 
             System.out.println("Mid Arm Homing Sequence Complete");
