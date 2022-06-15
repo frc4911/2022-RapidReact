@@ -29,6 +29,5 @@ Team 4911 2022 FRC robot code is written in Java and is based off WPILib's Java 
 We break our code up into robot code and libraries. 
 
 * [robot code](src/main/java/frc/robot) contains code for the 2022 competition robot.
-* [cheesylib](src/main/java/libraries/cheesylib) Written by Team 254, Cheesey Poofs, for 2018-2019, it includes rotation and translation support needed for swerve drive modules courtesy of Team 1323 MadTown Robotics.
-* [madtownlib](src/main/java/libraries/madtownlib) Written by Team 1323, Madtown Robotics, for 2019, it includes for swerve drive modules.  This library builds on cheesylib.
-* [cyberlib](src/main/java/libraries/cyberlib) Written by Team 4911, CyberKnights, it contains utility code for i/o controllers, annotations, logging, etc.  This library builds on cheesylib
+* [cheesylib](src/main/java/libraries/cheesylib) Written by Team 254, Cheesey Poofs, for 2018-2019, it includes rotation and translation support needed for swerve drive modules.
+* [cyberlib](src/main/java/libraries/cyberlib) Written by Team 4911, CyberKnights, it contains utility code for i/o controllers, annotations, logging, etc.  This library builds on cheesylib and converts swerve code from WPILib to use cheesylib geometry.
