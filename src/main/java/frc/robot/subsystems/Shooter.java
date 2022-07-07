@@ -371,41 +371,148 @@ public class Shooter extends Subsystem {
 
     @Override
     public void readPeriodicInputs() {
-        
+        double now = Timer.getFPGATimestamp();
+        mPeriodicIO.schedDeltaActual = now - mPeriodicIO.lastSchedStart;
+        mPeriodicIO.lastSchedStart = now;
+
+        mPeriodicIO.flyVelocity = mFXFlyLeft.getSelectedSensorVelocity();
+        mPeriodicIO.lastHoodPosition = mPeriodicIO.hoodPosition;
+        mPeriodicIO.hoodPosition = mFXHood.getSelectedSensorPosition();
+
+        updateShooterStatus();
     }
 
     @Override
     public void writePeriodicOutputs() {
-        
+        // double flyDemand = mPeriodicIO.flyDemand;
+        // if (mPeriodicIO.flyControlMode == ControlMode.Velocity && turnOffFlywheel){
+        //     flyDemand = 0;
+        // }
+
+        mFXHood.set(mPeriodicIO.hoodControlMode, mPeriodicIO.hoodDemand);
+        mFXFlyLeft.set(mPeriodicIO.flyControlMode, mPeriodicIO.flyDemand);
+        mFXFlyRight.set(mPeriodicIO.flyControlMode, mPeriodicIO.flyDemand);
+        // if (mPhase != Phase.DISABLED){
+        //     System.out.println("writePer hood CDP ("+mPeriodicIO.hoodControlMode+","+mPeriodicIO.hoodDemand+","+mPeriodicIO.hoodPosition+") "+mSystemState.toString());
+        //     System.out.println("writePer fly  CDV ("+mPeriodicIO.flyControlMode+ ","+mPeriodicIO.flyDemand+ ","+mPeriodicIO.flyVelocity+ ") "+mSystemState.toString());
+        // }
     }
 
     @Override
     public void stop() {
-        
+        mPeriodicIO.flyControlMode = ControlMode.PercentOutput;
+        mPeriodicIO.hoodControlMode = ControlMode.PercentOutput;
+        mPeriodicIO.hoodDemand = 0;
+        mPeriodicIO.flyDemand = 0;
+
+        writePeriodicOutputs();
     }
 
     @Override
     public int whenRunAgain() {
-        return 0;
+        return mPeriodicIO.schedDeltaDesired;
     }
 
     @Override
     public String getLogHeaders() {
-        return "";
+        return  sClassName+".schedDeltaDesired,"+
+                sClassName+".schedDeltaActual,"+
+                sClassName+".schedDuration,"+
+                sClassName+".mSystemState,"+
+                sClassName+".flywheelVelocity,"+
+                sClassName+".hoodPosition,"+
+                sClassName+".flyDemand,"+
+                sClassName+".hoodDemand,"+
+                sClassName+".flyControlMode,"+
+                sClassName+".hoodControlMode,"+
+                sClassName+".reachedDesiredSpeed,"+
+                sClassName+".reachedDesiredHoodPosition,"+
+                sClassName+".flyLeftStator,"+
+                sClassName+".flyRightStator,"+
+                sClassName+".hoodStator,"+
+                sClassName+".mDistance,"+
+                sClassName+".hoodHomed";
     }
 
     @Override
     public String getLogValues(boolean telemetry) {
-        return "";
+        String start;
+        if (telemetry){
+            start = ",,,";
+        }
+        else{
+            start = mPeriodicIO.schedDeltaDesired+","+
+                    mPeriodicIO.schedDeltaActual+","+
+                    (Timer.getFPGATimestamp()-mPeriodicIO.lastSchedStart)+",";
+        }
+        return  start+
+        mSystemState+","+
+        mPeriodicIO.flyVelocity+","+
+        mPeriodicIO.hoodPosition+","+
+        mPeriodicIO.flyDemand+","+
+        mPeriodicIO.hoodDemand+","+
+        mPeriodicIO.flyControlMode+","+
+        mPeriodicIO.hoodControlMode+","+
+        mPeriodicIO.reachedDesiredSpeed+","+
+        mPeriodicIO.reachedDesiredHoodPosition+","+
+        mPeriodicIO.flyLeftStator+","+
+        mPeriodicIO.flyRightStator+","+
+        mPeriodicIO.hoodStator+","+
+        mDistance+","+
+        hoodHomed;
     }
 
     @Override
     public void outputTelemetry() {
-        
+        mPeriodicIO.flyLeftStator = FramePeriodSwitch.getStatorCurrent(mFXFlyLeft);
+        mPeriodicIO.flyRightStator = FramePeriodSwitch.getStatorCurrent(mFXFlyRight);
+        mPeriodicIO.hoodStator = FramePeriodSwitch.getStatorCurrent(mFXHood);
+
+        SmartDashboard.putNumber("Hood demand", mPeriodicIO.hoodDemand);
+        SmartDashboard.putNumber("Flywheel demand", mPeriodicIO.flyDemand);
+        SmartDashboard.putNumber("Hood Position", mPeriodicIO.hoodPosition);
+        SmartDashboard.putNumber("Flywheel Speed", mPeriodicIO.flyVelocity);
+        SmartDashboard.putBoolean("Reached Desired Speed", mPeriodicIO.reachedDesiredSpeed);
+        SmartDashboard.putBoolean("Reached Desired Hood", mPeriodicIO.reachedDesiredHoodPosition);
+        // SmartDashboard.putBoolean("Ready To Shoot", readyToShoot());
+        // // these next values are bypassing readPeriodicInputs to reduce the ctre errors
+        // // in
+        // // riolog
+        // SmartDashboard.putNumber("FlyStatorRight", mFXRightFlyWheel.getStatorCurrent());
+        // SmartDashboard.putNumber("FlyStatorLeft", mFXLeftFlyWheel.getStatorCurrent());
+        // SmartDashboard.putNumber("HoodStator", mFXHood.getStatorCurrent());
+        // SmartDashboard.putNumber("FlySupplyRight", mFXRightFlyWheel.getSupplyCurrent());
+        // SmartDashboard.putNumber("FlySupplyLeft", mFXLeftFlyWheel.getSupplyCurrent());
+        // SmartDashboard.putNumber("HoodSupply", mFXHood.getSupplyCurrent());
     }
 
     public static class PeriodicIO {
-       
+        // Logging
+        public int schedDeltaDesired;
+        public double schedDeltaActual;
+        public double lastSchedStart;
+
+        // Inputs
+        public double flyVelocity;
+        public double hoodPosition;
+
+        public double flyLeftStator;
+        public double flyRightStator;
+        public double hoodStator;
+
+        // Outputs
+        public double flyDemand;
+        public double hoodDemand;
+
+        // Other
+        public ControlMode flyControlMode;
+        public ControlMode hoodControlMode;
+        public double hoodTestDemand;
+        public double flyTestDemand;
+
+        public double lastHoodPosition;
+        public boolean reachedDesiredSpeed;
+        public boolean reachedDesiredHoodPosition;
     }
 
 }
