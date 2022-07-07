@@ -255,18 +255,6 @@ public class Superstructure extends Subsystem {
                     currentAssessingState = AssessingState.SHOOTER;
                 }
                 break;
-            case SHOOTER:
-                if (assessingStateChange){
-                    assessingStateChange = false;
-                    mShooter.setWantedState(Shooter.WantedState.ASSESS, sClassName);
-                }
-
-                if(mShooter.isHandlerComplete(Shooter.WantedState.ASSESS)){
-                    mShooter.setWantedState(Shooter.WantedState.DISABLE, sClassName);
-                    assessingStateChange = true;
-                    currentAssessingState = AssessingState.CLIMBER;
-                }
-                break;
             case CLIMBER:
                 if (assessingStateChange){
                     assessingStateChange = false;
