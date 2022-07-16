@@ -13,8 +13,6 @@ import libraries.cheesylib.drivers.TalonFXFactory;
 import libraries.cheesylib.loops.Loop.Phase;
 import libraries.cheesylib.subsystems.Subsystem;
 import libraries.cheesylib.subsystems.SubsystemManager;
-import libraries.cheesylib.util.InterpolatingDouble;
-import libraries.cheesylib.util.InterpolatingTreeMap;
 import libraries.cheesylib.util.LatchedBoolean;
 import libraries.cyberlib.control.FramePeriodSwitch;
 
@@ -81,10 +79,6 @@ public class Shooter extends Subsystem {
         private double hoodNonMovementTimeout; // timestamp of when low readings are sufficient
     private final double kHoodHomingDemand = -.2;
     
-    InterpolatingTreeMap<InterpolatingDouble, InterpolatingDouble> shooterSpeedMap= new InterpolatingTreeMap<>();
-    InterpolatingTreeMap<InterpolatingDouble, InterpolatingDouble> shooterHoodMap= new InterpolatingTreeMap<>();
-    InterpolatingTreeMap<InterpolatingDouble, InterpolatingDouble> shooterLLTYDist= new InterpolatingTreeMap<>();
-
      private double mDistance = -1;
     // private boolean turnOffFlywheel = false;
 
@@ -116,7 +110,6 @@ public class Shooter extends Subsystem {
         mFXHood = TalonFXFactory.createDefaultTalon(Ports.SHOOTER_HOOD, Constants.kCanivoreName);
         mSubsystemManager = SubsystemManager.getInstance(sClassName);
         configMotors();
-        buildInterpTree();
 
         // assume hood is homed
         mFXHood.setSelectedSensorPosition(kHoodPositionAtFender);
@@ -183,31 +176,6 @@ public class Shooter extends Subsystem {
 
     }
 
-    private void buildInterpTree(){
-        shooterHoodMap.put(new InterpolatingDouble(0.0),   new InterpolatingDouble(kHoodPositionAtFender));//8000.0
-        shooterHoodMap.put(new InterpolatingDouble(24.0),  new InterpolatingDouble(12000.0 - 1000.0));
-        shooterHoodMap.put(new InterpolatingDouble(48.0),  new InterpolatingDouble(16500.0 - 1000.0));
-        shooterHoodMap.put(new InterpolatingDouble(72.0),  new InterpolatingDouble(22000.0 - 1000.0));
-        shooterHoodMap.put(new InterpolatingDouble(96.0),  new InterpolatingDouble(28500.0 - 1000.0));
-        shooterHoodMap.put(new InterpolatingDouble(120.0), new InterpolatingDouble(28500.0));
-        shooterHoodMap.put(new InterpolatingDouble(144.0), new InterpolatingDouble(28500.0));
-
-        shooterSpeedMap.put(new InterpolatingDouble(0.0),   new InterpolatingDouble(10900.0));
-        shooterSpeedMap.put(new InterpolatingDouble(24.0),  new InterpolatingDouble(11300.0)); // 10900 for modified fender shot
-        shooterSpeedMap.put(new InterpolatingDouble(48.0),  new InterpolatingDouble(11700.0)); // 10900 for modified fender shot 11200
-        shooterSpeedMap.put(new InterpolatingDouble(72.0),  new InterpolatingDouble(12100.0)); //12300
-        shooterSpeedMap.put(new InterpolatingDouble(96.0),  new InterpolatingDouble(12200.0)); //12450 12750
-        shooterSpeedMap.put(new InterpolatingDouble(120.0), new InterpolatingDouble(12800.0)); //13125 3800 13000
-        shooterSpeedMap.put(new InterpolatingDouble(144.0), new InterpolatingDouble(13800.0)); //15300 14750
-
-        shooterLLTYDist.put(new InterpolatingDouble(2.7), new InterpolatingDouble(24.0));
-        shooterLLTYDist.put(new InterpolatingDouble(-6.6), new InterpolatingDouble(48.0));
-        shooterLLTYDist.put(new InterpolatingDouble(-13.3), new InterpolatingDouble(72.0));
-        shooterLLTYDist.put(new InterpolatingDouble(-18.0), new InterpolatingDouble(96.0));
-        shooterLLTYDist.put(new InterpolatingDouble(-20.7), new InterpolatingDouble(120.0)); // -22.4
-        shooterLLTYDist.put(new InterpolatingDouble(-23.2), new InterpolatingDouble(144.0)); // -24.4
-
-    }
 
     @Override
     public void onStart(Phase phase) {
@@ -312,40 +280,40 @@ public class Shooter extends Subsystem {
     }
 
     // home hood, ignore fly
-    // private SystemState handleHomingHood() {
-    //     double now = Timer.getFPGATimestamp();
-    //     if (mStateChanged) {
-    //         System.out.println("Start homing hood");
-    //         FramePeriodSwitch.configStatorCurrentLimitPermanent(mFXHood,new StatorCurrentLimitConfiguration(true, kHoodCurrentLimitLow, kHoodCurrentLimitLow, 0));    
-    //         hoodHomed = false;
-    //         hoodNonMovementTimeout = now + hoodNonMovementDuration;
-    //         mPeriodicIO.schedDeltaDesired = mSchedActive;
-    //         mPeriodicIO.hoodControlMode = ControlMode.PercentOutput;
-    //         mPeriodicIO.hoodDemand = kHoodHomingDemand; // small negative speed
-    //     }
+    private SystemState handleHomingHood() {
+        double now = Timer.getFPGATimestamp();
+        if (mStateChanged) {
+            System.out.println("Start homing hood");
+            FramePeriodSwitch.configStatorCurrentLimitPermanent(mFXHood,new StatorCurrentLimitConfiguration(true, kHoodCurrentLimitLow, kHoodCurrentLimitLow, 0));    
+            hoodHomed = false;
+            hoodNonMovementTimeout = now + hoodNonMovementDuration;
+            mPeriodicIO.schedDeltaDesired = mSchedActive;
+            mPeriodicIO.hoodControlMode = ControlMode.PercentOutput;
+            mPeriodicIO.hoodDemand = kHoodHomingDemand; // small negative speed
+        }
 
-    //     if(!hoodHomed){
-    //         // while moving continually move timeout
-    //         double distance = Math.abs(mPeriodicIO.hoodPosition - mPeriodicIO.lastHoodPosition);
-    //         if (distance > hoodNonMovementThreshhold) {
-    //             hoodNonMovementTimeout = now + hoodNonMovementDuration;
-    //         }
+        if(!hoodHomed){
+            // while moving continually move timeout
+            double distance = Math.abs(mPeriodicIO.hoodPosition - mPeriodicIO.lastHoodPosition);
+            if (distance > hoodNonMovementThreshhold) {
+                hoodNonMovementTimeout = now + hoodNonMovementDuration;
+            }
 
-    //         // check if stopped moving for enough time
-    //         if (now > hoodNonMovementTimeout) {
-    //             mFXHood.setSelectedSensorPosition(kHoodPositionAtFender-50); // -50 makes going to fender shot position easier
+            // check if stopped moving for enough time
+            if (now > hoodNonMovementTimeout) {
+                mFXHood.setSelectedSensorPosition(kHoodPositionAtFender-50); // -50 makes going to fender shot position easier
 
-    //             hoodHomed = true;
-    //             FramePeriodSwitch.configStatorCurrentLimitPermanent(mFXHood,new StatorCurrentLimitConfiguration(true, kHoodCurrentLimitHigh, kHoodCurrentLimitHigh, 0));    
+                hoodHomed = true;
+                FramePeriodSwitch.configStatorCurrentLimitPermanent(mFXHood,new StatorCurrentLimitConfiguration(true, kHoodCurrentLimitHigh, kHoodCurrentLimitHigh, 0));    
                 
-    //             // homing complete stay at home position
-    //             setShootDistance(0);
-    //             updateShooterDemandsBasedOnDist();
-    //             System.out.println("homing hood is complete");
-    //         }
-    //     }
+                // homing complete stay at home position
+                setShootDistance(0);
+                updateShooterDemandsBasedOnDist();
+                System.out.println("homing hood is complete");
+            }
+        }
 
-        // System.out.println("hood pos="+mPeriodicIO.hoodPosition+ " demand "+mPeriodicIO.hoodDemand + " control="+mPeriodicIO.hoodControlMode);
+        System.out.println("hood pos="+mPeriodicIO.hoodPosition+ " demand "+mPeriodicIO.hoodDemand + " control="+mPeriodicIO.hoodControlMode);
         return defaultStateTransfer();
     }
 
