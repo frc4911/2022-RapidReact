@@ -11,8 +11,8 @@ package libraries.cheesylib.util;
  *
  ******************************************************************************/
 
-import Jama.Matrix;
-import Jama.QRDecomposition;
+import libraries.Jama.Matrix;
+import libraries.Jama.QRDecomposition;
 
 /**
  * The {@code PolynomialRegression} class performs a polynomial regression on an set of <em>N</em> data points (

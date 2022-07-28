@@ -256,7 +256,7 @@ public class JSticks extends Subsystem {
             }
         }
 
-        if (mPeriodicIO.dr_POV180_ManualShot_FlyStop) {
+        if (mPeriodicIO.dr_POV180_ManualShot_StopShooter) {
             mShooter.stopFlywheel();
         }
 
@@ -405,7 +405,7 @@ public class JSticks extends Subsystem {
 
         mPeriodicIO.dr_POV0_ManualShot_Fender = mDriver.getButton(Xbox.POV0_0, CW.PRESSED_EDGE);
         mPeriodicIO.dr_POV90_ManualShot_Ball = mDriver.getButton(Xbox.POV0_90, CW.PRESSED_EDGE);
-        mPeriodicIO.dr_POV180_ManualShot_FlyStop = mDriver.getButton(Xbox.POV0_180, CW.PRESSED_EDGE);
+        mPeriodicIO.dr_POV180_ManualShot_StopShooter = mDriver.getButton(Xbox.POV0_180, CW.PRESSED_EDGE);
         mPeriodicIO.dr_POV270_ManualShot_Tarmac = mDriver.getButton(Xbox.POV0_270, CW.PRESSED_EDGE);
 
         mPeriodicIO.dr_POV0_ManualShot_Fender_Stop = mDriver.getButton(Xbox.POV0_0, CW.RELEASED_EDGE);
@@ -516,7 +516,7 @@ public class JSticks extends Subsystem {
         mPeriodicIO.dr_AButton_PreClimb+","+
         mPeriodicIO.dr_POV0_ManualShot_Fender+","+
         mPeriodicIO.dr_POV90_ManualShot_Ball+","+
-        mPeriodicIO.dr_POV180_ManualShot_FlyStop+","+
+        mPeriodicIO.dr_POV180_ManualShot_StopShooter+","+
         mPeriodicIO.dr_POV270_ManualShot_Tarmac+","+
         mPeriodicIO.dr_ManualShoot+","+
         mPeriodicIO.dr_POV0_ManualShot_Fender_Stop+","+
@@ -557,28 +557,21 @@ public class JSticks extends Subsystem {
         public boolean dr_XButton_HomeHood_Stop = false;
         public boolean dr_LeftStickButton_SlowSpeed = false;
 
-        public double op_LeftStickY_TestMidArms;
-        public double op_RightStickY_TestSlappy;
-        public boolean op_LeftBumper_TestRelease;
-        public boolean op_RightBumper_TestLock;
-
         public boolean dr_LeftTrigger_Collect = false;
         public boolean dr_LeftTrigger_Collect_Stop = false;
         public boolean dr_LeftBumper_BackingLock = false;
         public boolean dr_LeftBumper_Back_Stop = false;
-        public boolean op_BButton_StopShooter = false;
         public boolean dr_RightBumper_ClimberLockout = false;
         public boolean dr_AButton_PreClimb = false;
         public boolean dr_AButton_PreClimb_Stop = false;
         public boolean dr_BButton_AutoClimb = false;
         public boolean dr_BButton_AutoClimb_Stop = false;
-        public boolean op_YButton_MidBarClimb = false;
         public boolean dr_BackButton_TestHome = false;
         public boolean dr_BackButton_TestHome_Stop = false;
 
         public boolean dr_POV0_ManualShot_Fender = false;
         public boolean dr_POV90_ManualShot_Ball = false;
-        public boolean dr_POV180_ManualShot_FlyStop = false;
+        public boolean dr_POV180_ManualShot_StopShooter = false;
         public boolean dr_POV270_ManualShot_Tarmac = false;
         public boolean dr_ManualShoot = false; // Move to Pov once read
 
@@ -586,6 +579,13 @@ public class JSticks extends Subsystem {
         public boolean dr_POV90_ManualShot_Ball_Stop = false;
         public boolean dr_POV180_ManualShot_FlyStop_Stop = false;
         public boolean dr_POV270_ManualShot_Tarmac_Stop = false;
+
+        public double op_LeftStickY_TestMidArms;
+        public double op_RightStickY_TestSlappy;
+        public boolean op_LeftBumper_TestRelease;
+        public boolean op_RightBumper_TestLock;
+        public boolean op_YButton_MidBarClimb = false;
+        public boolean op_BButton_StopShooter = false;
 
         // public boolean tst_AButton_AutoElev = false;
         // public boolean tst_AButton_AutoElev_Stop = false;

@@ -214,7 +214,7 @@ public class Shooter extends Subsystem {
         shooterSpeedMap.put(new InterpolatingDouble(48.0),  new InterpolatingDouble(11700.0)); // 10900 for modified fender shot 11200
         shooterSpeedMap.put(new InterpolatingDouble(60.0),   new InterpolatingDouble(11900.0));
         shooterSpeedMap.put(new InterpolatingDouble(72.0),  new InterpolatingDouble(12100.0)); //12300
-        shooterSpeedMap.put(new InterpolatingDouble(84.0),   new InterpolatingDouble(12169.0));
+        shooterSpeedMap.put(new InterpolatingDouble(84.0),   new InterpolatingDouble(12142.0));
         shooterSpeedMap.put(new InterpolatingDouble(96.0),  new InterpolatingDouble(12200.0)); //12450 12750
         shooterSpeedMap.put(new InterpolatingDouble(108.0),   new InterpolatingDouble(12500.0));
         shooterSpeedMap.put(new InterpolatingDouble(120.0), new InterpolatingDouble(12800.0)); //13125 3800 13000

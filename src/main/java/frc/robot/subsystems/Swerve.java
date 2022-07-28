@@ -222,7 +222,7 @@ public class Swerve extends Subsystem {
 
     SlewRateLimiter forwardLimiter = new SlewRateLimiter(6.9, 0); // 1.5
     SlewRateLimiter strafeLimiter = new SlewRateLimiter(6.9, 0); // 1.5
-    SlewRateLimiter rotationLimiter = new SlewRateLimiter(2, 0);
+    SlewRateLimiter rotationLimiter = new SlewRateLimiter(4.20, 0);
 
     /**
      * Handles MANUAL state which corresponds to joy stick inputs.
