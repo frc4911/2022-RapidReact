@@ -27,7 +27,7 @@ public class Indexer extends Subsystem {
 
     // Subsystem Constants
     private final double kBackingSpeed = -.3;
-    private final double kFeedingSpeed = .40;
+    private final double kFeedingSpeed = .30;
     private final double kLoadingSpeed = .3;
     private double mTempFeedSpeed;
     private boolean mHasBallOnLoadingStart;

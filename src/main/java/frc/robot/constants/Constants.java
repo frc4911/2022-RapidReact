@@ -153,7 +153,7 @@ public class Constants {
     public static double kAimingKI = 0.0;
     public static double kAimingKD = 0.001;
 
-//    // Goal tracker constants
+//    // Goal tracker constants%
 //    public static final double kDefaultCurveDistance = kRobotHalfLength + 36.0;
 //    public static final double kVisionUpdateDistance = kRobotHalfLength + 75.0;
 //    public static final double kVisionDistanceStep = 4.0;

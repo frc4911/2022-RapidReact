@@ -31,7 +31,7 @@ public class Shooter extends Subsystem {
     private final double kMaxShootDistance = 144; // inches
 
     // Configuration Constants
-    private final double kFlywheelKp = 0.175;
+    private final double kFlywheelKp = 0.183;
     private final double kFlywheelKi = 0.0;//001;
     private final double kFlywheelKd = 2.0;
     private final double kFlywheelKf = 0.05;
@@ -196,41 +196,26 @@ public class Shooter extends Subsystem {
 
     private void buildInterpTree(){
         shooterHoodMap.put(new InterpolatingDouble(0.0),   new InterpolatingDouble(kHoodPositionAtFender));//8000.0
-        shooterHoodMap.put(new InterpolatingDouble(24.0),  new InterpolatingDouble(11000.0));
-        shooterHoodMap.put(new InterpolatingDouble(32.0),  new InterpolatingDouble(13000.0));
-        shooterHoodMap.put(new InterpolatingDouble(48.0),  new InterpolatingDouble(15500.0));
-        shooterHoodMap.put(new InterpolatingDouble(60.0),  new InterpolatingDouble(17690.0));
-        shooterHoodMap.put(new InterpolatingDouble(72.0),  new InterpolatingDouble(21000.0));
-        shooterHoodMap.put(new InterpolatingDouble(84.0),  new InterpolatingDouble(24500.0));
-        shooterHoodMap.put(new InterpolatingDouble(96.0),  new InterpolatingDouble(27500.0));
-        shooterHoodMap.put(new InterpolatingDouble(108.0),  new InterpolatingDouble(28000.0));
+        shooterHoodMap.put(new InterpolatingDouble(24.0),  new InterpolatingDouble(12000.0 - 1000.0));
+        shooterHoodMap.put(new InterpolatingDouble(48.0),  new InterpolatingDouble(16500.0 - 1000.0));
+        shooterHoodMap.put(new InterpolatingDouble(72.0),  new InterpolatingDouble(22000.0 - 1000.0));
+        shooterHoodMap.put(new InterpolatingDouble(96.0),  new InterpolatingDouble(28500.0 - 1000.0));
         shooterHoodMap.put(new InterpolatingDouble(120.0), new InterpolatingDouble(28500.0));
-        shooterHoodMap.put(new InterpolatingDouble(132.0), new InterpolatingDouble(28500.0));
         shooterHoodMap.put(new InterpolatingDouble(144.0), new InterpolatingDouble(28500.0));
 
         shooterSpeedMap.put(new InterpolatingDouble(0.0),   new InterpolatingDouble(10900.0));
         shooterSpeedMap.put(new InterpolatingDouble(24.0),  new InterpolatingDouble(11300.0)); // 10900 for modified fender shot
-        shooterSpeedMap.put(new InterpolatingDouble(32.0),   new InterpolatingDouble(11500.0));
         shooterSpeedMap.put(new InterpolatingDouble(48.0),  new InterpolatingDouble(11700.0)); // 10900 for modified fender shot 11200
-        shooterSpeedMap.put(new InterpolatingDouble(60.0),   new InterpolatingDouble(11900.0));
         shooterSpeedMap.put(new InterpolatingDouble(72.0),  new InterpolatingDouble(12100.0)); //12300
-        shooterSpeedMap.put(new InterpolatingDouble(84.0),   new InterpolatingDouble(12142.0));
         shooterSpeedMap.put(new InterpolatingDouble(96.0),  new InterpolatingDouble(12200.0)); //12450 12750
-        shooterSpeedMap.put(new InterpolatingDouble(108.0),   new InterpolatingDouble(12500.0));
         shooterSpeedMap.put(new InterpolatingDouble(120.0), new InterpolatingDouble(12800.0)); //13125 3800 13000
-        shooterSpeedMap.put(new InterpolatingDouble(132.0),   new InterpolatingDouble(13300.0));
         shooterSpeedMap.put(new InterpolatingDouble(144.0), new InterpolatingDouble(13800.0)); //15300 14750
 
         shooterLLTYDist.put(new InterpolatingDouble(2.7), new InterpolatingDouble(24.0));
-        shooterLLTYDist.put(new InterpolatingDouble(-1.0), new InterpolatingDouble(32.0));
         shooterLLTYDist.put(new InterpolatingDouble(-6.6), new InterpolatingDouble(48.0));
-        shooterLLTYDist.put(new InterpolatingDouble(-9.5), new InterpolatingDouble(60.0));
         shooterLLTYDist.put(new InterpolatingDouble(-13.3), new InterpolatingDouble(72.0));
-        shooterLLTYDist.put(new InterpolatingDouble(-15.0), new InterpolatingDouble(84.0));
         shooterLLTYDist.put(new InterpolatingDouble(-18.0), new InterpolatingDouble(96.0));
-        shooterLLTYDist.put(new InterpolatingDouble(-19.3), new InterpolatingDouble(108.0));
         shooterLLTYDist.put(new InterpolatingDouble(-20.7), new InterpolatingDouble(120.0)); // -22.4
-        shooterLLTYDist.put(new InterpolatingDouble(-21.8), new InterpolatingDouble(132.0));
         shooterLLTYDist.put(new InterpolatingDouble(-23.2), new InterpolatingDouble(144.0)); // -24.4
 
     }
