@@ -23,11 +23,12 @@ import libraries.cheesylib.autos.actions.ParallelAction;
 
 public class FourBallMode extends AutoModeBase{
     //start
-        //trajectory
         //collect
+        //trajectory
         //shoot
-        //trajectory
         //collect
+        //trajectory
+        //wait
         //trajectory
         //shoot
         //done
@@ -37,17 +38,16 @@ public class FourBallMode extends AutoModeBase{
         // Rotation2d.fromDegrees(10));
 
         // runAction(new SetStartPoseAction(startPose));
-
         runAction(new CollectAction(true));
         runAction(new DriveTrajectoryAction(TrajectoryGenerator.getInstance().getTrajectorySet().fourBallAuto0Trajectory.left, false));
+        runAction(new WaitAction(.5));
         runAction(new CollectAction(false));
         runAction(new AutoShootAction(30.0));
-        // runAction(new CollectAction(true));
-        // runAction(new DriveTrajectoryAction(TrajectoryGenerator.getInstance().getTrajectorySet().fourBallAuto1Trajectory.left, false));
-        // runAction(new WaitAction(2));
-        // runAction(new CollectAction(false));
-        // runAction(new DriveTrajectoryAction(TrajectoryGenerator.getInstance().getTrajectorySet().fourBallAuto2Trajectory.left, false));
-        // runAction(new AutoShootAction(30.0));
-        
+        runAction(new CollectAction(true));
+        runAction(new DriveTrajectoryAction(TrajectoryGenerator.getInstance().getTrajectorySet().fourBallAuto1Trajectory.left, false));
+        runAction(new WaitAction(2));
+        runAction(new CollectAction(false));
+        runAction(new DriveTrajectoryAction(TrajectoryGenerator.getInstance().getTrajectorySet().fourBallAuto2Trajectory.left, false));
+        runAction(new AutoShootAction(30.0));
     }
 }

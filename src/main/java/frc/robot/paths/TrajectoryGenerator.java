@@ -343,20 +343,20 @@ public class TrajectoryGenerator {
 
         private Trajectory<TimedState<Pose2dWithCurvature>> getFourBallAutoPhase0Trajectory (TrajectoryConfig config) {
             List<Pose2d> waypoints = new ArrayList<>();
-            waypoints.add(new Pose2d(Translation2d.identity(), Rotation2d.fromDegrees(0)));
+            waypoints.add(new Pose2d(Translation2d.identity(), Rotation2d.fromDegrees(184.57)));
             waypoints.add(new Pose2d(Units.inches_to_meters(-45), Units.inches_to_meters(-3.5), Rotation2d.fromDegrees(184.57)));
             return generateTrajectory(waypoints, config);
         }
         private Trajectory<TimedState<Pose2dWithCurvature>> getFourBallAutoPhase1Trajectory (TrajectoryConfig config) {
             List<Pose2d> waypoints = new ArrayList<>();
-            waypoints.add(new Pose2d(Units.inches_to_meters(-3.5), Units.inches_to_meters(-45), Rotation2d.fromDegrees(184.57)));
-            waypoints.add(new Pose2d(Units.inches_to_meters(38), Units.inches_to_meters(-157), Rotation2d.fromDegrees(166.5)));
+            waypoints.add(new Pose2d(Units.inches_to_meters(-45), Units.inches_to_meters(-3.5), Rotation2d.fromDegrees(166.5)));
+            waypoints.add(new Pose2d(Units.inches_to_meters(-200), Units.inches_to_meters(37.5), Rotation2d.fromDegrees(166.5))); // -157 and 38
             return generateTrajectory(waypoints, config);
         }
         private Trajectory<TimedState<Pose2dWithCurvature>> getFourBallAutoPhase2Trajectory (TrajectoryConfig config) {
             List<Pose2d> waypoints = new ArrayList<>();
-            waypoints.add(new Pose2d(Units.inches_to_meters(38), Units.inches_to_meters(-157), Rotation2d.fromDegrees(166.5)));
-            waypoints.add(new Pose2d(Units.inches_to_meters(-38), Units.inches_to_meters(157), Rotation2d.fromDegrees(-13.5)));
+            waypoints.add(new Pose2d(Units.inches_to_meters(-200), Units.inches_to_meters(37.5), Rotation2d.fromDegrees(-13.5)));
+            waypoints.add(new Pose2d(Units.inches_to_meters(-45), Units.inches_to_meters(-3.5), Rotation2d.fromDegrees(0)));
             return generateTrajectory(waypoints, config);
         }
     
