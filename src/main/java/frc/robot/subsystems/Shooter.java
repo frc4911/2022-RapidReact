@@ -38,6 +38,7 @@ public class Shooter extends Subsystem {
     private final double kClosedRamp = 1;
     private final double kClosedError = 25.0;
     private final double kFlyIntegralZone = 700;
+    private final double kFlywheelOffseasonBoost = 550;
 
     private final double kFlywheelCurrentLimit = 40;
     private final double kHoodCurrentLimitLow = 5;
@@ -203,13 +204,13 @@ public class Shooter extends Subsystem {
         shooterHoodMap.put(new InterpolatingDouble(120.0), new InterpolatingDouble(28500.0));
         shooterHoodMap.put(new InterpolatingDouble(144.0), new InterpolatingDouble(28500.0));
 
-        shooterSpeedMap.put(new InterpolatingDouble(0.0),   new InterpolatingDouble(10900.0 + 550.0));
-        shooterSpeedMap.put(new InterpolatingDouble(24.0),  new InterpolatingDouble(11300.0 + 550.0)); // 10900 for modified fender shot
-        shooterSpeedMap.put(new InterpolatingDouble(48.0),  new InterpolatingDouble(11700.0 + 550.0)); // 10900 for modified fender shot 11200
-        shooterSpeedMap.put(new InterpolatingDouble(72.0),  new InterpolatingDouble(12100.0 + 550.0)); //12300
-        shooterSpeedMap.put(new InterpolatingDouble(96.0),  new InterpolatingDouble(12200.0 + 550.0)); //12450 12750
-        shooterSpeedMap.put(new InterpolatingDouble(120.0), new InterpolatingDouble(12800.0 + 550.0)); //13125 3800 13000
-        shooterSpeedMap.put(new InterpolatingDouble(144.0), new InterpolatingDouble(13800.0 + 550.0)); //15300 14750
+        shooterSpeedMap.put(new InterpolatingDouble(0.0),   new InterpolatingDouble(10900.0 + kFlywheelOffseasonBoost));
+        shooterSpeedMap.put(new InterpolatingDouble(24.0),  new InterpolatingDouble(11300.0 + kFlywheelOffseasonBoost)); // 10900 for modified fender shot
+        shooterSpeedMap.put(new InterpolatingDouble(48.0),  new InterpolatingDouble(11700.0 + kFlywheelOffseasonBoost)); // 10900 for modified fender shot 11200
+        shooterSpeedMap.put(new InterpolatingDouble(72.0),  new InterpolatingDouble(12100.0 + kFlywheelOffseasonBoost)); //12300
+        shooterSpeedMap.put(new InterpolatingDouble(96.0),  new InterpolatingDouble(12200.0 + kFlywheelOffseasonBoost)); //12450 12750
+        shooterSpeedMap.put(new InterpolatingDouble(120.0), new InterpolatingDouble(12800.0 + kFlywheelOffseasonBoost)); //13125 3800 13000
+        shooterSpeedMap.put(new InterpolatingDouble(144.0), new InterpolatingDouble(13800.0 + kFlywheelOffseasonBoost)); //15300 14750
 
         shooterLLTYDist.put(new InterpolatingDouble(2.7), new InterpolatingDouble(24.0));
         shooterLLTYDist.put(new InterpolatingDouble(-6.6), new InterpolatingDouble(48.0));
